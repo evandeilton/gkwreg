@@ -28,11 +28,12 @@ devtools::install(force = TRUE)
 devtools::build()
 
 
-devtools::build_manual()
+# devtools::build_manual()
 # devtools::build_readme()
 # devtools::build_vignettes()
 
 ## -------------------------------------------------------------------------- ##
-# pkgdown::init_site()
+
 pkgdown::build_site()
+pkgdown::init_site()
 pkgdown::build_site_github_pages()
