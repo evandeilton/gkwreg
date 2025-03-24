@@ -1,7 +1,5 @@
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::plugins(openmp)]]
 #include <RcppArmadillo.h>
-#include <omp.h>
 #include <cmath>
 #include <map>
 #include <string>
@@ -328,6 +326,7 @@ double score_mean_gkw(const double y,
   return score;
 }
 
+
 // ========================
 // Exported functions (PREDICT)
 // ========================
@@ -355,54 +354,53 @@ double score_mean_gkw(const double y,
 //' @export
 // [[Rcpp::export]]
 NumericMatrix calculateParameters(const NumericMatrix& X1, const NumericMatrix& X2,
-                                  const NumericMatrix& X3, const NumericMatrix& X4,
-                                  const NumericMatrix& X5,
-                                  const NumericVector& beta1, const NumericVector& beta2,
-                                  const NumericVector& beta3, const NumericVector& beta4,
-                                  const NumericVector& beta5,
-                                  const IntegerVector& link_types,
-                                  const NumericVector& scale_factors) {
-  int n = X1.nrow();
-  NumericMatrix params(n, 5); // [alpha, beta, gamma, delta, lambda]
+                                 const NumericMatrix& X3, const NumericMatrix& X4,
+                                 const NumericMatrix& X5,
+                                 const NumericVector& beta1, const NumericVector& beta2,
+                                 const NumericVector& beta3, const NumericVector& beta4,
+                                 const NumericVector& beta5,
+                                 const IntegerVector& link_types,
+                                 const NumericVector& scale_factors) {
+ int n = X1.nrow();
+ NumericMatrix params(n, 5); // [alpha, beta, gamma, delta, lambda]
 
-  NumericVector eta1(n), eta2(n), eta3(n), eta4(n), eta5(n);
+ NumericVector eta1(n), eta2(n), eta3(n), eta4(n), eta5(n);
 
-  // Calculate linear predictors X * beta for each design matrix
-  for (int i = 0; i < n; i++) {
-    double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4 = 0.0, sum5 = 0.0;
-    for (int j = 0; j < X1.ncol(); j++) {
-      sum1 += X1(i, j) * beta1[j];
-    }
-    for (int j = 0; j < X2.ncol(); j++) {
-      sum2 += X2(i, j) * beta2[j];
-    }
-    for (int j = 0; j < X3.ncol(); j++) {
-      sum3 += X3(i, j) * beta3[j];
-    }
-    for (int j = 0; j < X4.ncol(); j++) {
-      sum4 += X4(i, j) * beta4[j];
-    }
-    for (int j = 0; j < X5.ncol(); j++) {
-      sum5 += X5(i, j) * beta5[j];
-    }
-    eta1[i] = sum1;
-    eta2[i] = sum2;
-    eta3[i] = sum3;
-    eta4[i] = sum4;
-    eta5[i] = sum5;
-  }
+ // Calculate linear predictors X * beta for each design matrix
+ for (int i = 0; i < n; i++) {
+   double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4 = 0.0, sum5 = 0.0;
+   for (int j = 0; j < X1.ncol(); j++) {
+     sum1 += X1(i, j) * beta1[j];
+   }
+   for (int j = 0; j < X2.ncol(); j++) {
+     sum2 += X2(i, j) * beta2[j];
+   }
+   for (int j = 0; j < X3.ncol(); j++) {
+     sum3 += X3(i, j) * beta3[j];
+   }
+   for (int j = 0; j < X4.ncol(); j++) {
+     sum4 += X4(i, j) * beta4[j];
+   }
+   for (int j = 0; j < X5.ncol(); j++) {
+     sum5 += X5(i, j) * beta5[j];
+   }
+   eta1[i] = sum1;
+   eta2[i] = sum2;
+   eta3[i] = sum3;
+   eta4[i] = sum4;
+   eta5[i] = sum5;
+ }
 
-  // Apply the link functions in parallel
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    params(i, 0) = apply_positive_link(eta1[i], link_types[0], scale_factors[0]);
-    params(i, 1) = apply_positive_link(eta2[i], link_types[1], scale_factors[1]);
-    params(i, 2) = apply_positive_link(eta3[i], link_types[2], scale_factors[2]);
-    params(i, 3) = apply_positive_link(eta4[i], link_types[3], scale_factors[3]);
-    params(i, 4) = apply_positive_link(eta5[i], link_types[4], scale_factors[4]);
-  }
+ // Apply the link functions (sequentially instead of in parallel)
+ for (int i = 0; i < n; i++) {
+   params(i, 0) = apply_positive_link(eta1[i], link_types[0], scale_factors[0]);
+   params(i, 1) = apply_positive_link(eta2[i], link_types[1], scale_factors[1]);
+   params(i, 2) = apply_positive_link(eta3[i], link_types[2], scale_factors[2]);
+   params(i, 3) = apply_positive_link(eta4[i], link_types[3], scale_factors[3]);
+   params(i, 4) = apply_positive_link(eta5[i], link_types[4], scale_factors[4]);
+ }
 
-  return params;
+ return params;
 }
 
 //' @title Calculate Means for the Generalized Kumaraswamy Distribution
@@ -417,29 +415,26 @@ NumericMatrix calculateParameters(const NumericMatrix& X1, const NumericMatrix& 
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateMeans(const NumericMatrix& params) {
-  int n = params.nrow();
-  NumericVector means(n);
-  std::map<std::string, double> cache;
+ int n = params.nrow();
+ NumericVector means(n);
+ std::map<std::string, double> cache;
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    std::string key = make_cache_key(params(i, 0), params(i, 1), params(i, 2),
-                                     params(i, 3), params(i, 4));
-#pragma omp critical
-{
-  auto it = cache.find(key);
-  if (it != cache.end()) {
-    means[i] = it->second;
-  } else {
-    double mean_val = calc_mean_gkw(params(i, 0), params(i, 1),
-                                    params(i, 2), params(i, 3),
-                                    params(i, 4));
-    cache[key] = mean_val;
-    means[i] = mean_val;
-  }
-}
-  }
-  return means;
+ for (int i = 0; i < n; i++) {
+   std::string key = make_cache_key(params(i, 0), params(i, 1), params(i, 2),
+                                    params(i, 3), params(i, 4));
+
+   auto it = cache.find(key);
+   if (it != cache.end()) {
+     means[i] = it->second;
+   } else {
+     double mean_val = calc_mean_gkw(params(i, 0), params(i, 1),
+                                     params(i, 2), params(i, 3),
+                                     params(i, 4));
+     cache[key] = mean_val;
+     means[i] = mean_val;
+   }
+ }
+ return means;
 }
 
 //' @title Calculate Densities for the Generalized Kumaraswamy Distribution
@@ -455,17 +450,16 @@ NumericVector calculateMeans(const NumericMatrix& params) {
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateDensities(const NumericVector& y, const NumericMatrix& params,
-                                 bool log = false) {
-  int n = y.size();
-  NumericVector densities(n);
+                                bool log = false) {
+ int n = y.size();
+ NumericVector densities(n);
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    double logf = log_pdf_gkw(y[i], params(i, 0), params(i, 1),
-                              params(i, 2), params(i, 3), params(i, 4));
-    densities[i] = log ? logf : safeExp(logf);
-  }
-  return densities;
+ for (int i = 0; i < n; i++) {
+   double logf = log_pdf_gkw(y[i], params(i, 0), params(i, 1),
+                             params(i, 2), params(i, 3), params(i, 4));
+   densities[i] = log ? logf : safeExp(logf);
+ }
+ return densities;
 }
 
 //' @title Calculate Cumulative Probabilities for the Generalized Kumaraswamy Distribution
@@ -480,15 +474,14 @@ NumericVector calculateDensities(const NumericVector& y, const NumericMatrix& pa
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateProbabilities(const NumericVector& y, const NumericMatrix& params) {
-  int n = y.size();
-  NumericVector probs(n);
+ int n = y.size();
+ NumericVector probs(n);
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    probs[i] = cdf_gkw(y[i], params(i, 0), params(i, 1),
-                       params(i, 2), params(i, 3), params(i, 4));
-  }
-  return probs;
+ for (int i = 0; i < n; i++) {
+   probs[i] = cdf_gkw(y[i], params(i, 0), params(i, 1),
+                      params(i, 2), params(i, 3), params(i, 4));
+ }
+ return probs;
 }
 
 //' @title Calculate Quantiles for the Generalized Kumaraswamy Distribution
@@ -504,48 +497,47 @@ NumericVector calculateProbabilities(const NumericVector& y, const NumericMatrix
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateQuantiles(const NumericVector& probs, const NumericMatrix& params) {
-  int n = probs.size();
-  NumericVector quantiles(n);
+ int n = probs.size();
+ NumericVector quantiles(n);
 
-  for (int i = 0; i < n; i++) {
-    if (probs[i] < 0.0 || probs[i] > 1.0) {
-      Rcpp::stop("All probabilities must be in [0,1]");
-    }
-  }
+ for (int i = 0; i < n; i++) {
+   if (probs[i] < 0.0 || probs[i] > 1.0) {
+     Rcpp::stop("All probabilities must be in [0,1]");
+   }
+ }
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    double p = probs[i];
-    if (p <= eps_prob) {
-      quantiles[i] = eps_prob;
-      continue;
-    }
-    if (p >= 1.0 - eps_prob) {
-      quantiles[i] = 1.0 - eps_prob;
-      continue;
-    }
-    // Using the first row of parameters for quantile calculation
-    double alpha  = params(0, 0);
-    double beta   = params(0, 1);
-    double gamma  = params(0, 2);
-    double delta  = params(0, 3);
-    double lambda = params(0, 4);
-    double lower = eps_prob;
-    double upper = 1.0 - eps_prob;
-    double mid, cdf_mid;
+ for (int i = 0; i < n; i++) {
+   double p = probs[i];
+   if (p <= eps_prob) {
+     quantiles[i] = eps_prob;
+     continue;
+   }
+   if (p >= 1.0 - eps_prob) {
+     quantiles[i] = 1.0 - eps_prob;
+     continue;
+   }
+   // Using the first row of parameters for quantile calculation
+   double alpha  = params(0, 0);
+   double beta   = params(0, 1);
+   double gamma  = params(0, 2);
+   double delta  = params(0, 3);
+   double lambda = params(0, 4);
+   double lower = eps_prob;
+   double upper = 1.0 - eps_prob;
+   double mid, cdf_mid;
 
-    for (int iter = 0; iter < 100; iter++) {
-      mid = (lower + upper) / 2.0;
-      cdf_mid = cdf_gkw(mid, alpha, beta, gamma, delta, lambda);
-      if (std::abs(cdf_mid - p) < 1e-8) break;
-      if (cdf_mid < p)
-        lower = mid;
-      else
-        upper = mid;
-    }
-    quantiles[i] = mid;
-  }
-  return quantiles;
+   for (int iter = 0; iter < 100; iter++) {
+     mid = (lower + upper) / 2.0;
+     cdf_mid = cdf_gkw(mid, alpha, beta, gamma, delta, lambda);
+     if (std::abs(cdf_mid - p) < 1e-8) break;
+     if (cdf_mid < p)
+       lower = mid;
+     else
+       upper = mid;
+   }
+   quantiles[i] = mid;
+ }
+ return quantiles;
 }
 
 // ========================
@@ -564,12 +556,12 @@ NumericVector calculateQuantiles(const NumericVector& probs, const NumericMatrix
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateResponseResiduals(const NumericVector& y, const NumericVector& fitted) {
-  int n = y.size();
-  NumericVector residuals(n);
-  for (int i = 0; i < n; i++) {
-    residuals[i] = y[i] - fitted[i];
-  }
-  return residuals;
+ int n = y.size();
+ NumericVector residuals(n);
+ for (int i = 0; i < n; i++) {
+   residuals[i] = y[i] - fitted[i];
+ }
+ return residuals;
 }
 
 //' @title Calculate Pearson Residuals
@@ -589,23 +581,22 @@ NumericVector calculateResponseResiduals(const NumericVector& y, const NumericVe
 //' @export
 // [[Rcpp::export]]
 NumericVector calculatePearsonResiduals(const NumericVector& y,
-                                        const NumericVector& fitted,
-                                        const NumericVector& alpha,
-                                        const NumericVector& beta,
-                                        const NumericVector& gamma,
-                                        const NumericVector& delta,
-                                        const NumericVector& lambda) {
-  int n = y.size();
-  NumericVector residuals(n);
+                                       const NumericVector& fitted,
+                                       const NumericVector& alpha,
+                                       const NumericVector& beta,
+                                       const NumericVector& gamma,
+                                       const NumericVector& delta,
+                                       const NumericVector& lambda) {
+ int n = y.size();
+ NumericVector residuals(n);
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    double mu_i = fitted[i];
-    double var_i = var_gkw(mu_i, alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
-    double sd_i = std::sqrt(var_i);
-    residuals[i] = (y[i] - mu_i) / (sd_i + eps_pos);
-  }
-  return residuals;
+ for (int i = 0; i < n; i++) {
+   double mu_i = fitted[i];
+   double var_i = var_gkw(mu_i, alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+   double sd_i = std::sqrt(var_i);
+   residuals[i] = (y[i] - mu_i) / (sd_i + eps_pos);
+ }
+ return residuals;
 }
 
 //' @title Calculate Deviance Residuals
@@ -625,22 +616,21 @@ NumericVector calculatePearsonResiduals(const NumericVector& y,
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateDevianceResiduals(const NumericVector& y,
-                                         const NumericVector& fitted,
-                                         const NumericVector& alpha,
-                                         const NumericVector& beta,
-                                         const NumericVector& gamma,
-                                         const NumericVector& delta,
-                                         const NumericVector& lambda) {
-  int n = y.size();
-  NumericVector residuals(n);
+                                        const NumericVector& fitted,
+                                        const NumericVector& alpha,
+                                        const NumericVector& beta,
+                                        const NumericVector& gamma,
+                                        const NumericVector& delta,
+                                        const NumericVector& lambda) {
+ int n = y.size();
+ NumericVector residuals(n);
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    double logf = log_pdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
-    double sign_res = (y[i] - fitted[i] > 0.0) ? 1.0 : -1.0;
-    residuals[i] = sign_res * std::sqrt(std::fabs(2.0 * (-logf)));
-  }
-  return residuals;
+ for (int i = 0; i < n; i++) {
+   double logf = log_pdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+   double sign_res = (y[i] - fitted[i] > 0.0) ? 1.0 : -1.0;
+   residuals[i] = sign_res * std::sqrt(std::fabs(2.0 * (-logf)));
+ }
+ return residuals;
 }
 
 //' @title Calculate Quantile Residuals
@@ -659,22 +649,21 @@ NumericVector calculateDevianceResiduals(const NumericVector& y,
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateQuantileResiduals(const NumericVector& y,
-                                         const NumericVector& alpha,
-                                         const NumericVector& beta,
-                                         const NumericVector& gamma,
-                                         const NumericVector& delta,
-                                         const NumericVector& lambda) {
-  int n = y.size();
-  NumericVector residuals(n);
+                                        const NumericVector& alpha,
+                                        const NumericVector& beta,
+                                        const NumericVector& gamma,
+                                        const NumericVector& delta,
+                                        const NumericVector& lambda) {
+ int n = y.size();
+ NumericVector residuals(n);
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    double cdf_val = cdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
-    double prob = enforceProbability(cdf_val);
-    prob = std::max(0.001, std::min(0.999, prob));
-    residuals[i] = R::qnorm(prob, 0.0, 1.0, 1, 0);
-  }
-  return residuals;
+ for (int i = 0; i < n; i++) {
+   double cdf_val = cdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+   double prob = enforceProbability(cdf_val);
+   prob = std::max(0.001, std::min(0.999, prob));
+   residuals[i] = R::qnorm(prob, 0.0, 1.0, 1, 0);
+ }
+ return residuals;
 }
 
 //' @title Calculate Cox-Snell Residuals
@@ -693,21 +682,20 @@ NumericVector calculateQuantileResiduals(const NumericVector& y,
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateCoxSnellResiduals(const NumericVector& y,
-                                         const NumericVector& alpha,
-                                         const NumericVector& beta,
-                                         const NumericVector& gamma,
-                                         const NumericVector& delta,
-                                         const NumericVector& lambda) {
-  int n = y.size();
-  NumericVector residuals(n);
+                                        const NumericVector& alpha,
+                                        const NumericVector& beta,
+                                        const NumericVector& gamma,
+                                        const NumericVector& delta,
+                                        const NumericVector& lambda) {
+ int n = y.size();
+ NumericVector residuals(n);
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    double cdf_val = cdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
-    cdf_val = std::max(eps_prob, std::min(1.0 - eps_prob, cdf_val));
-    residuals[i] = -std::log(1.0 - cdf_val);
-  }
-  return residuals;
+ for (int i = 0; i < n; i++) {
+   double cdf_val = cdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+   cdf_val = std::max(eps_prob, std::min(1.0 - eps_prob, cdf_val));
+   residuals[i] = -std::log(1.0 - cdf_val);
+ }
+ return residuals;
 }
 
 //' @title Calculate Score Residuals
@@ -727,20 +715,19 @@ NumericVector calculateCoxSnellResiduals(const NumericVector& y,
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateScoreResiduals(const NumericVector& y,
-                                      const NumericVector& fitted,
-                                      const NumericVector& alpha,
-                                      const NumericVector& beta,
-                                      const NumericVector& gamma,
-                                      const NumericVector& delta,
-                                      const NumericVector& lambda) {
-  int n = y.size();
-  NumericVector residuals(n);
+                                     const NumericVector& fitted,
+                                     const NumericVector& alpha,
+                                     const NumericVector& beta,
+                                     const NumericVector& gamma,
+                                     const NumericVector& delta,
+                                     const NumericVector& lambda) {
+ int n = y.size();
+ NumericVector residuals(n);
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    residuals[i] = score_mean_gkw(y[i], fitted[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
-  }
-  return residuals;
+ for (int i = 0; i < n; i++) {
+   residuals[i] = score_mean_gkw(y[i], fitted[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+ }
+ return residuals;
 }
 
 //' @title Calculate Modified Deviance Residuals
@@ -760,32 +747,32 @@ NumericVector calculateScoreResiduals(const NumericVector& y,
 //' @export
 // [[Rcpp::export]]
 NumericVector calculateModifiedDevianceResiduals(const NumericVector& y,
-                                                 const NumericVector& fitted,
-                                                 const NumericVector& alpha,
-                                                 const NumericVector& beta,
-                                                 const NumericVector& gamma,
-                                                 const NumericVector& delta,
-                                                 const NumericVector& lambda) {
-  int n = y.size();
-  NumericVector residuals(n);
-  NumericVector dev_res = calculateDevianceResiduals(y, fitted, alpha, beta, gamma, delta, lambda);
-  double mean_dev = 0.0;
-  for (int i = 0; i < n; i++) {
-    mean_dev += dev_res[i];
-  }
-  mean_dev /= n;
+                                                const NumericVector& fitted,
+                                                const NumericVector& alpha,
+                                                const NumericVector& beta,
+                                                const NumericVector& gamma,
+                                                const NumericVector& delta,
+                                                const NumericVector& lambda) {
+ int n = y.size();
+ NumericVector residuals(n);
+ NumericVector dev_res = calculateDevianceResiduals(y, fitted, alpha, beta, gamma, delta, lambda);
+ double mean_dev = 0.0;
+ for (int i = 0; i < n; i++) {
+   mean_dev += dev_res[i];
+ }
+ mean_dev /= n;
 
-  double sd_dev = 0.0;
-  for (int i = 0; i < n; i++) {
-    double diff = dev_res[i] - mean_dev;
-    sd_dev += diff * diff;
-  }
-  sd_dev = std::sqrt(sd_dev / (n - 1));
+ double sd_dev = 0.0;
+ for (int i = 0; i < n; i++) {
+   double diff = dev_res[i] - mean_dev;
+   sd_dev += diff * diff;
+ }
+ sd_dev = std::sqrt(sd_dev / (n - 1));
 
-  for (int i = 0; i < n; i++) {
-    residuals[i] = (dev_res[i] - mean_dev) / sd_dev;
-  }
-  return residuals;
+ for (int i = 0; i < n; i++) {
+   residuals[i] = (dev_res[i] - mean_dev) / sd_dev;
+ }
+ return residuals;
 }
 
 //' @title Calculate Partial Residuals
@@ -804,21 +791,525 @@ NumericVector calculateModifiedDevianceResiduals(const NumericVector& y,
 //' @export
 // [[Rcpp::export]]
 NumericVector calculatePartialResiduals(const NumericVector& y,
-                                        const NumericVector& fitted,
-                                        const NumericMatrix& X,
-                                        const NumericVector& beta,
-                                        int covariate_idx) {
-  int n = y.size();
-  int p = beta.size();
-  NumericVector residuals(n);
-  if (covariate_idx < 0 || covariate_idx >= p) {
-    stop("covariate_idx must be between 0 and %d", p - 1);
-  }
+                                       const NumericVector& fitted,
+                                       const NumericMatrix& X,
+                                       const NumericVector& beta,
+                                       int covariate_idx) {
+ int n = y.size();
+ int p = beta.size();
+ NumericVector residuals(n);
+ if (covariate_idx < 0 || covariate_idx >= p) {
+   stop("covariate_idx must be between 0 and %d", p - 1);
+ }
 
-#pragma omp parallel for
-  for (int i = 0; i < n; i++) {
-    residuals[i] = (y[i] - fitted[i]) + beta[covariate_idx] * X(i, covariate_idx);
-  }
-  return residuals;
+ for (int i = 0; i < n; i++) {
+   residuals[i] = (y[i] - fitted[i]) + beta[covariate_idx] * X(i, covariate_idx);
+ }
+ return residuals;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+// // ========================
+// // Exported functions (PREDICT)
+// // ========================
+//
+// //' @title Calculate Parameters for the Generalized Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Computes the parameters (alpha, beta, gamma, delta, lambda) for each observation based on design matrices and regression coefficients,
+// //' applying a positive link function as specified by link types and scale factors.
+// //'
+// //' @param X1 NumericMatrix design matrix for alpha.
+// //' @param X2 NumericMatrix design matrix for beta.
+// //' @param X3 NumericMatrix design matrix for gamma.
+// //' @param X4 NumericMatrix design matrix for delta.
+// //' @param X5 NumericMatrix design matrix for lambda.
+// //' @param beta1 NumericVector regression coefficients for X1.
+// //' @param beta2 NumericVector regression coefficients for X2.
+// //' @param beta3 NumericVector regression coefficients for X3.
+// //' @param beta4 NumericVector regression coefficients for X4.
+// //' @param beta5 NumericVector regression coefficients for X5.
+// //' @param link_types IntegerVector containing the link function type for each parameter.
+// //' @param scale_factors NumericVector with scale factors for each parameter.
+// //'
+// //' @return NumericMatrix with n rows and 5 columns corresponding to the calculated parameters.
+// //' @export
+// // [[Rcpp::export]]
+// NumericMatrix calculateParameters(const NumericMatrix& X1, const NumericMatrix& X2,
+//                                   const NumericMatrix& X3, const NumericMatrix& X4,
+//                                   const NumericMatrix& X5,
+//                                   const NumericVector& beta1, const NumericVector& beta2,
+//                                   const NumericVector& beta3, const NumericVector& beta4,
+//                                   const NumericVector& beta5,
+//                                   const IntegerVector& link_types,
+//                                   const NumericVector& scale_factors) {
+//   int n = X1.nrow();
+//   NumericMatrix params(n, 5); // [alpha, beta, gamma, delta, lambda]
+//
+//   NumericVector eta1(n), eta2(n), eta3(n), eta4(n), eta5(n);
+//
+//   // Calculate linear predictors X * beta for each design matrix
+//   for (int i = 0; i < n; i++) {
+//     double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4 = 0.0, sum5 = 0.0;
+//     for (int j = 0; j < X1.ncol(); j++) {
+//       sum1 += X1(i, j) * beta1[j];
+//     }
+//     for (int j = 0; j < X2.ncol(); j++) {
+//       sum2 += X2(i, j) * beta2[j];
+//     }
+//     for (int j = 0; j < X3.ncol(); j++) {
+//       sum3 += X3(i, j) * beta3[j];
+//     }
+//     for (int j = 0; j < X4.ncol(); j++) {
+//       sum4 += X4(i, j) * beta4[j];
+//     }
+//     for (int j = 0; j < X5.ncol(); j++) {
+//       sum5 += X5(i, j) * beta5[j];
+//     }
+//     eta1[i] = sum1;
+//     eta2[i] = sum2;
+//     eta3[i] = sum3;
+//     eta4[i] = sum4;
+//     eta5[i] = sum5;
+//   }
+//
+//   // Apply the link functions in parallel
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     params(i, 0) = apply_positive_link(eta1[i], link_types[0], scale_factors[0]);
+//     params(i, 1) = apply_positive_link(eta2[i], link_types[1], scale_factors[1]);
+//     params(i, 2) = apply_positive_link(eta3[i], link_types[2], scale_factors[2]);
+//     params(i, 3) = apply_positive_link(eta4[i], link_types[3], scale_factors[3]);
+//     params(i, 4) = apply_positive_link(eta5[i], link_types[4], scale_factors[4]);
+//   }
+//
+//   return params;
+// }
+//
+// //' @title Calculate Means for the Generalized Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Computes the mean of the distribution for each observation using numerical integration
+// //' (quadrature) with caching to avoid redundant calculations.
+// //'
+// //' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+// //'
+// //' @return NumericVector containing the calculated means for each observation.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateMeans(const NumericMatrix& params) {
+//   int n = params.nrow();
+//   NumericVector means(n);
+//   std::map<std::string, double> cache;
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     std::string key = make_cache_key(params(i, 0), params(i, 1), params(i, 2),
+//                                      params(i, 3), params(i, 4));
+// #pragma omp critical
+// {
+//   auto it = cache.find(key);
+//   if (it != cache.end()) {
+//     means[i] = it->second;
+//   } else {
+//     double mean_val = calc_mean_gkw(params(i, 0), params(i, 1),
+//                                     params(i, 2), params(i, 3),
+//                                     params(i, 4));
+//     cache[key] = mean_val;
+//     means[i] = mean_val;
+//   }
+// }
+//   }
+//   return means;
+// }
+//
+// //' @title Calculate Densities for the Generalized Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Evaluates the density (or its logarithm) for each observation given the parameters.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+// //' @param log Logical indicating whether to return the log-density (default FALSE).
+// //'
+// //' @return NumericVector containing the evaluated densities.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateDensities(const NumericVector& y, const NumericMatrix& params,
+//                                  bool log = false) {
+//   int n = y.size();
+//   NumericVector densities(n);
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     double logf = log_pdf_gkw(y[i], params(i, 0), params(i, 1),
+//                               params(i, 2), params(i, 3), params(i, 4));
+//     densities[i] = log ? logf : safeExp(logf);
+//   }
+//   return densities;
+// }
+//
+// //' @title Calculate Cumulative Probabilities for the Generalized Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Computes the cumulative probabilities (CDF) for each observation given the parameters.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+// //'
+// //' @return NumericVector containing the evaluated cumulative probabilities.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateProbabilities(const NumericVector& y, const NumericMatrix& params) {
+//   int n = y.size();
+//   NumericVector probs(n);
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     probs[i] = cdf_gkw(y[i], params(i, 0), params(i, 1),
+//                        params(i, 2), params(i, 3), params(i, 4));
+//   }
+//   return probs;
+// }
+//
+// //' @title Calculate Quantiles for the Generalized Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Computes quantiles for the given probability levels using a bisection method for the first set
+// //' of parameters in the matrix.
+// //'
+// //' @param probs NumericVector of probabilities (values in (0,1)).
+// //' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+// //'
+// //' @return NumericVector containing the calculated quantiles.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateQuantiles(const NumericVector& probs, const NumericMatrix& params) {
+//   int n = probs.size();
+//   NumericVector quantiles(n);
+//
+//   for (int i = 0; i < n; i++) {
+//     if (probs[i] < 0.0 || probs[i] > 1.0) {
+//       Rcpp::stop("All probabilities must be in [0,1]");
+//     }
+//   }
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     double p = probs[i];
+//     if (p <= eps_prob) {
+//       quantiles[i] = eps_prob;
+//       continue;
+//     }
+//     if (p >= 1.0 - eps_prob) {
+//       quantiles[i] = 1.0 - eps_prob;
+//       continue;
+//     }
+//     // Using the first row of parameters for quantile calculation
+//     double alpha  = params(0, 0);
+//     double beta   = params(0, 1);
+//     double gamma  = params(0, 2);
+//     double delta  = params(0, 3);
+//     double lambda = params(0, 4);
+//     double lower = eps_prob;
+//     double upper = 1.0 - eps_prob;
+//     double mid, cdf_mid;
+//
+//     for (int iter = 0; iter < 100; iter++) {
+//       mid = (lower + upper) / 2.0;
+//       cdf_mid = cdf_gkw(mid, alpha, beta, gamma, delta, lambda);
+//       if (std::abs(cdf_mid - p) < 1e-8) break;
+//       if (cdf_mid < p)
+//         lower = mid;
+//       else
+//         upper = mid;
+//     }
+//     quantiles[i] = mid;
+//   }
+//   return quantiles;
+// }
+//
+// // ========================
+// // Exported functions (RESIDUALS)
+// // ========================
+//
+// //' @title Calculate Response Residuals
+// //'
+// //' @description
+// //' Computes the raw response residuals as the difference between the observed and fitted values.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param fitted NumericVector of fitted values.
+// //'
+// //' @return NumericVector of response residuals.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateResponseResiduals(const NumericVector& y, const NumericVector& fitted) {
+//   int n = y.size();
+//   NumericVector residuals(n);
+//   for (int i = 0; i < n; i++) {
+//     residuals[i] = y[i] - fitted[i];
+//   }
+//   return residuals;
+// }
+//
+// //' @title Calculate Pearson Residuals
+// //'
+// //' @description
+// //' Computes the Pearson residuals based on the observed values, fitted means, and the approximate variance of the distribution.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param fitted NumericVector of fitted values (means).
+// //' @param alpha NumericVector of alpha parameters.
+// //' @param beta NumericVector of beta parameters.
+// //' @param gamma NumericVector of gamma parameters.
+// //' @param delta NumericVector of delta parameters.
+// //' @param lambda NumericVector of lambda parameters.
+// //'
+// //' @return NumericVector of Pearson residuals.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculatePearsonResiduals(const NumericVector& y,
+//                                         const NumericVector& fitted,
+//                                         const NumericVector& alpha,
+//                                         const NumericVector& beta,
+//                                         const NumericVector& gamma,
+//                                         const NumericVector& delta,
+//                                         const NumericVector& lambda) {
+//   int n = y.size();
+//   NumericVector residuals(n);
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     double mu_i = fitted[i];
+//     double var_i = var_gkw(mu_i, alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+//     double sd_i = std::sqrt(var_i);
+//     residuals[i] = (y[i] - mu_i) / (sd_i + eps_pos);
+//   }
+//   return residuals;
+// }
+//
+// //' @title Calculate Deviance Residuals
+// //'
+// //' @description
+// //' Computes deviance residuals based on the log-likelihood of the observations.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param fitted NumericVector of fitted values (means).
+// //' @param alpha NumericVector of alpha parameters.
+// //' @param beta NumericVector of beta parameters.
+// //' @param gamma NumericVector of gamma parameters.
+// //' @param delta NumericVector of delta parameters.
+// //' @param lambda NumericVector of lambda parameters.
+// //'
+// //' @return NumericVector of deviance residuals.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateDevianceResiduals(const NumericVector& y,
+//                                          const NumericVector& fitted,
+//                                          const NumericVector& alpha,
+//                                          const NumericVector& beta,
+//                                          const NumericVector& gamma,
+//                                          const NumericVector& delta,
+//                                          const NumericVector& lambda) {
+//   int n = y.size();
+//   NumericVector residuals(n);
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     double logf = log_pdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+//     double sign_res = (y[i] - fitted[i] > 0.0) ? 1.0 : -1.0;
+//     residuals[i] = sign_res * std::sqrt(std::fabs(2.0 * (-logf)));
+//   }
+//   return residuals;
+// }
+//
+// //' @title Calculate Quantile Residuals
+// //'
+// //' @description
+// //' Computes quantile residuals by transforming the cumulative distribution function (CDF) values to the standard normal quantiles.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param alpha NumericVector of alpha parameters.
+// //' @param beta NumericVector of beta parameters.
+// //' @param gamma NumericVector of gamma parameters.
+// //' @param delta NumericVector of delta parameters.
+// //' @param lambda NumericVector of lambda parameters.
+// //'
+// //' @return NumericVector of quantile residuals.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateQuantileResiduals(const NumericVector& y,
+//                                          const NumericVector& alpha,
+//                                          const NumericVector& beta,
+//                                          const NumericVector& gamma,
+//                                          const NumericVector& delta,
+//                                          const NumericVector& lambda) {
+//   int n = y.size();
+//   NumericVector residuals(n);
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     double cdf_val = cdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+//     double prob = enforceProbability(cdf_val);
+//     prob = std::max(0.001, std::min(0.999, prob));
+//     residuals[i] = R::qnorm(prob, 0.0, 1.0, 1, 0);
+//   }
+//   return residuals;
+// }
+//
+// //' @title Calculate Cox-Snell Residuals
+// //'
+// //' @description
+// //' Computes Cox-Snell residuals defined as -log(1 - F(y)), where F is the cumulative distribution function.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param alpha NumericVector of alpha parameters.
+// //' @param beta NumericVector of beta parameters.
+// //' @param gamma NumericVector of gamma parameters.
+// //' @param delta NumericVector of delta parameters.
+// //' @param lambda NumericVector of lambda parameters.
+// //'
+// //' @return NumericVector of Cox-Snell residuals.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateCoxSnellResiduals(const NumericVector& y,
+//                                          const NumericVector& alpha,
+//                                          const NumericVector& beta,
+//                                          const NumericVector& gamma,
+//                                          const NumericVector& delta,
+//                                          const NumericVector& lambda) {
+//   int n = y.size();
+//   NumericVector residuals(n);
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     double cdf_val = cdf_gkw(y[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+//     cdf_val = std::max(eps_prob, std::min(1.0 - eps_prob, cdf_val));
+//     residuals[i] = -std::log(1.0 - cdf_val);
+//   }
+//   return residuals;
+// }
+//
+// //' @title Calculate Score Residuals
+// //'
+// //' @description
+// //' Computes score residuals based on the numerical derivative (score) of the log-likelihood with respect to the observation.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param fitted NumericVector of fitted values (means).
+// //' @param alpha NumericVector of alpha parameters.
+// //' @param beta NumericVector of beta parameters.
+// //' @param gamma NumericVector of gamma parameters.
+// //' @param delta NumericVector of delta parameters.
+// //' @param lambda NumericVector of lambda parameters.
+// //'
+// //' @return NumericVector of score residuals.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateScoreResiduals(const NumericVector& y,
+//                                       const NumericVector& fitted,
+//                                       const NumericVector& alpha,
+//                                       const NumericVector& beta,
+//                                       const NumericVector& gamma,
+//                                       const NumericVector& delta,
+//                                       const NumericVector& lambda) {
+//   int n = y.size();
+//   NumericVector residuals(n);
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     residuals[i] = score_mean_gkw(y[i], fitted[i], alpha[i], beta[i], gamma[i], delta[i], lambda[i]);
+//   }
+//   return residuals;
+// }
+//
+// //' @title Calculate Modified Deviance Residuals
+// //'
+// //' @description
+// //' Adjusts deviance residuals to have a distribution closer to N(0,1) by standardizing them.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param fitted NumericVector of fitted values (means).
+// //' @param alpha NumericVector of alpha parameters.
+// //' @param beta NumericVector of beta parameters.
+// //' @param gamma NumericVector of gamma parameters.
+// //' @param delta NumericVector of delta parameters.
+// //' @param lambda NumericVector of lambda parameters.
+// //'
+// //' @return NumericVector of modified deviance residuals.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculateModifiedDevianceResiduals(const NumericVector& y,
+//                                                  const NumericVector& fitted,
+//                                                  const NumericVector& alpha,
+//                                                  const NumericVector& beta,
+//                                                  const NumericVector& gamma,
+//                                                  const NumericVector& delta,
+//                                                  const NumericVector& lambda) {
+//   int n = y.size();
+//   NumericVector residuals(n);
+//   NumericVector dev_res = calculateDevianceResiduals(y, fitted, alpha, beta, gamma, delta, lambda);
+//   double mean_dev = 0.0;
+//   for (int i = 0; i < n; i++) {
+//     mean_dev += dev_res[i];
+//   }
+//   mean_dev /= n;
+//
+//   double sd_dev = 0.0;
+//   for (int i = 0; i < n; i++) {
+//     double diff = dev_res[i] - mean_dev;
+//     sd_dev += diff * diff;
+//   }
+//   sd_dev = std::sqrt(sd_dev / (n - 1));
+//
+//   for (int i = 0; i < n; i++) {
+//     residuals[i] = (dev_res[i] - mean_dev) / sd_dev;
+//   }
+//   return residuals;
+// }
+//
+// //' @title Calculate Partial Residuals
+// //'
+// //' @description
+// //' Computes partial residuals for a selected covariate by adding the product of the regression coefficient and
+// //' the corresponding design matrix value to the raw residual.
+// //'
+// //' @param y NumericVector of observations.
+// //' @param fitted NumericVector of fitted values.
+// //' @param X NumericMatrix of design matrix values.
+// //' @param beta NumericVector of regression coefficients.
+// //' @param covariate_idx Integer index for the selected covariate (0-indexed).
+// //'
+// //' @return NumericVector of partial residuals.
+// //' @export
+// // [[Rcpp::export]]
+// NumericVector calculatePartialResiduals(const NumericVector& y,
+//                                         const NumericVector& fitted,
+//                                         const NumericMatrix& X,
+//                                         const NumericVector& beta,
+//                                         int covariate_idx) {
+//   int n = y.size();
+//   int p = beta.size();
+//   NumericVector residuals(n);
+//   if (covariate_idx < 0 || covariate_idx >= p) {
+//     stop("covariate_idx must be between 0 and %d", p - 1);
+//   }
+//
+// #pragma omp parallel for
+//   for (int i = 0; i < n; i++) {
+//     residuals[i] = (y[i] - fitted[i]) + beta[covariate_idx] * X(i, covariate_idx);
+//   }
+//   return residuals;
+// }
+//

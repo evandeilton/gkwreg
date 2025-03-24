@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gkwreg</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.1.9000</span>
       </span>
     </div>
 
@@ -62,11 +62,19 @@
 
 
 <dl><dt id="arg-p">p<a class="anchor" aria-label="anchor" href="#arg-p"></a></dt>
-<dd><p>Vector of probabilities in 0,1.</p></dd>
+<dd><p>Vector of probabilities in (0,1).</p></dd>
 
 
-<dt id="arg-alpha-">alpha, <a class="anchor" aria-label="anchor" href="#arg-alpha-"></a></dt>
-<dd><p>beta, lambda Distribution parameters.</p></dd>
+<dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
+<dd><p>Shape parameter \(\alpha &gt; 0\).</p></dd>
+
+
+<dt id="arg-beta">beta<a class="anchor" aria-label="anchor" href="#arg-beta"></a></dt>
+<dd><p>Shape parameter \(\beta &gt; 0\).</p></dd>
+
+
+<dt id="arg-lambda">lambda<a class="anchor" aria-label="anchor" href="#arg-lambda"></a></dt>
+<dd><p>Shape parameter \(\lambda &gt; 0\).</p></dd>
 
 
 <dt id="arg-lower-tail">lower_tail<a class="anchor" aria-label="anchor" href="#arg-lower-tail"></a></dt>
@@ -79,7 +87,7 @@
 </dl></div>
     <div id="details">
     <h2>Details</h2>
-    <p>The inverse of F(x)= 1 - (1 - x^α)^β ^λ is
+    <p>The inverse of \(F(x)= [1 - (1 - x^\alpha)^\beta ]^\lambda\) is
 $$
   Q(p)= \Bigl\{1 - \bigl[1 - p^{1/\lambda}\bigr]^{1/\beta}\Bigr\}^{1/\alpha}.
 $$
