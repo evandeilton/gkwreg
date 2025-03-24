@@ -38,6 +38,12 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - name: Install system dependencies (Windows)
+        if: matrix.config.os == 'windows-latest'
+        run: |
+          choco install lapack
+          choco install openblas
+
       - name: Install pak
         run: Rscript -e 'install.packages("pak", repos = "https://cran.rstudio.com")'
 
@@ -45,6 +51,17 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+
+      - name: Run R CMD check
+        run: |
+          R CMD check --no-manual --compact-vignettes=gs+qpdf
+        continue-on-error: true
+
+      - name: Display R CMD check logs on error
+        if: failure()
+        run: |
+          cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00install.out
+          cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00check.log
 
       - uses: r-lib/actions/check-r-package@v2
         with:
