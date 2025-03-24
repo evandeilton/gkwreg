@@ -1,11 +1,9 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+name: R-CMD-check.yaml
+
 on:
   push:
     branches: [main, master]
   pull_request:
-
-name: R-CMD-check.yaml
 
 permissions: read-all
 
@@ -39,6 +37,9 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
+
+      - name: Install pak
+        run: R -e 'install.packages("pak", repos = "https://cran.rstudio.com")'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
