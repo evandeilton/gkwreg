@@ -1,4 +1,4 @@
-# usethis::use_package("ggplot2")
+# usethis::use_package("patchwork")
 # usethis::use_mit_license()
 # usethis::use_git()
 # usethis::use_rcpp()

@@ -19,7 +19,8 @@ Imports:
     ggplot2,
     ggpubr,
     gridExtra,
-    rappdirs
+    rappdirs,
+    patchwork
 LinkingTo: 
     Rcpp,
     RcppArmadillo
