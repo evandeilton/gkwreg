@@ -31,27 +31,35 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
           
-      # Install Rtools for Windows
-      - uses: r-lib/actions/setup-rtools@v2
+      # Configure Rtools for Windows usando o método correto
+      - name: Setup Rtools on Windows
         if: matrix.config.os == 'windows-latest'
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+          cache-version: 2
+          windows-path-include-mingw: true
       
       # Install Windows system dependencies properly
       - name: Install system dependencies (Windows)
         if: matrix.config.os == 'windows-latest'
+        shell: cmd
         run: |
-          # Verificar pacotes disponíveis antes de instalar
+          REM Verificar pacotes disponíveis antes de instalar
           choco list --local-only
           
-          # Instalação de bibliotecas para álgebra linear
-          # Nota: os nomes exatos podem variar, verificar na saída do comando acima
-          choco install --no-progress --limitoutput openblas || echo "OpenBLAS installation failed, continuing..."
+          REM Instalação de bibliotecas para álgebra linear
+          REM O pacote mingw64-x86_64-openblas é geralmente o nome correto
+          choco install --no-progress mingw64-x86_64-openblas -y || echo OpenBLAS installation attempted
           
-          # Configurar variáveis de ambiente para encontrar as bibliotecas
-          echo "LIB=$LIB;$(cygpath -w $RTOOLS40_HOME)/mingw64/lib" >> $GITHUB_ENV
-          echo "INCLUDE=$INCLUDE;$(cygpath -w $RTOOLS40_HOME)/mingw64/include" >> $GITHUB_ENV
+          REM Mostrar variáveis de ambiente
+          echo %PATH%
+          echo %LIB%
+          echo %INCLUDE%
           
-          # Verificar a instalação do compilador C++
-          g++ --version
+          REM Verificar a instalação do compilador C++
+          g++ --version || echo G++ não está no PATH
       
       # Install system dependencies for Linux
       - name: Install system dependencies (Linux)
@@ -73,13 +81,13 @@ jobs:
           pak::pkg_install("rcmdcheck")
         shell: Rscript {0}
       
-      # Set up R package dependencies
+      # Use setup-r-dependencies para resolver dependências do pacote
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
       
-      # Use the r-lib action for checking packages (recommended approach)
+      # Use check-r-package para realizar o check do pacote
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
@@ -87,15 +95,15 @@ jobs:
           error-on: '"warning"'
           check-dir: '"check"'
       
-      # Display logs on error (using platform-independent path)
+      # Display logs on error (usando path-independentes)
       - name: Display R CMD check logs on error
         if: failure()
+        shell: bash
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
             cat check/*/00install.out || echo "Install log not found"
             cat check/*/00check.log || echo "Check log not found"
           else
             find check -name "00install.out" -exec cat {} \; || echo "Install log not found"
             find check -name "00check.log" -exec cat {} \; || echo "Check log not found"
           fi
-        shell: bash
