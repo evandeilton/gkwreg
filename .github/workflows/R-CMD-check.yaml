@@ -1,18 +1,13 @@
-name: R-CMD-check.yaml
-
+name: R-CMD-check
 on:
   push:
     branches: [main, master]
   pull_request:
-
 permissions: read-all
-
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
-
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-
     strategy:
       fail-fast: false
       matrix:
@@ -22,48 +17,85 @@ jobs:
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
           - {os: ubuntu-latest,   r: 'oldrel-1'}
-
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-
     steps:
       - uses: actions/checkout@v4
-
+      
       - uses: r-lib/actions/setup-pandoc@v2
-
+      
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
-
+          
+      # Install Rtools for Windows
+      - uses: r-lib/actions/setup-rtools@v2
+        if: matrix.config.os == 'windows-latest'
+      
+      # Install Windows system dependencies properly
       - name: Install system dependencies (Windows)
         if: matrix.config.os == 'windows-latest'
         run: |
-          choco install lapack
-          choco install openblas
-
-      - name: Install pak
-        run: Rscript -e 'install.packages("pak", repos = "https://cran.rstudio.com")'
-
+          # Verificar pacotes disponíveis antes de instalar
+          choco list --local-only
+          
+          # Instalação de bibliotecas para álgebra linear
+          # Nota: os nomes exatos podem variar, verificar na saída do comando acima
+          choco install --no-progress --limitoutput openblas || echo "OpenBLAS installation failed, continuing..."
+          
+          # Configurar variáveis de ambiente para encontrar as bibliotecas
+          echo "LIB=$LIB;$(cygpath -w $RTOOLS40_HOME)/mingw64/lib" >> $GITHUB_ENV
+          echo "INCLUDE=$INCLUDE;$(cygpath -w $RTOOLS40_HOME)/mingw64/include" >> $GITHUB_ENV
+          
+          # Verificar a instalação do compilador C++
+          g++ --version
+      
+      # Install system dependencies for Linux
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libopenblas-dev liblapack-dev
+      
+      # Install system dependencies for macOS
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install openblas || echo "OpenBLAS already installed or failed, continuing..."
+      
+      # Install pak for managing R packages
+      - name: Install pak and dependencies
+        run: |
+          install.packages("pak", repos = "https://cran.rstudio.com")
+          pak::pkg_install("rcmdcheck")
+        shell: Rscript {0}
+      
+      # Set up R package dependencies
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
-
-      - name: Run R CMD check
-        run: |
-          R CMD check --no-manual --compact-vignettes=gs+qpdf
-        continue-on-error: true
-
-      - name: Display R CMD check logs on error
-        if: failure()
-        run: |
-          cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00install.out
-          cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00check.log
-
+      
+      # Use the r-lib action for checking packages (recommended approach)
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+          error-on: '"warning"'
+          check-dir: '"check"'
+      
+      # Display logs on error (using platform-independent path)
+      - name: Display R CMD check logs on error
+        if: failure()
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            cat check/*/00install.out || echo "Install log not found"
+            cat check/*/00check.log || echo "Check log not found"
+          else
+            find check -name "00install.out" -exec cat {} \; || echo "Install log not found"
+            find check -name "00check.log" -exec cat {} \; || echo "Check log not found"
+          fi
+        shell: bash
