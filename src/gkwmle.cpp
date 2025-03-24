@@ -1553,8 +1553,6 @@ Rcpp::NumericVector grgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  return grad;
 }
 
-
-
 //' @title Analytic Hessian Matrix for Generalized Kumaraswamy Distribution
 //'
 //' @description
@@ -1713,12 +1711,8 @@ Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
 
    // --- L6: (β-1) ln(v) ---
-   // First derivative w.r.t. α: (β-1) * (1/v)*dv_dalpha
-   double dL6_dalpha = (beta - 1.0) * (dv_dalpha / v);
    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
    double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
-   // First derivative w.r.t. β: dL6/dβ = ln(v)
-   double dL6_dbeta = ln_v;
    // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
    double d2L6_dalpha_dbeta = dv_dalpha / v;
 
@@ -1730,8 +1724,6 @@ Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double dw_dv = -beta * std::pow(v, beta - 1.0);
    // Chain rule: dw/dα = dw/dv * dv/dα
    double dw_dalpha = dw_dv * dv_dalpha;
-   // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
-   double dL7_dalpha = (gamma * lambda - 1.0) * (dw_dalpha / w);
    // Second derivative w.r.t. α for L7:
    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
    // Computing d²w/dα²:
@@ -1742,7 +1734,6 @@ Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double d2L7_dalpha2 = (gamma * lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
    double dw_dbeta = -v_beta * ln_v;
-   double dL7_dbeta = (gamma * lambda - 1.0) * (dw_dbeta / w);
    // Second derivative w.r.t. β for L7:
    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
@@ -1756,20 +1747,16 @@ Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    // --- L8: δ ln(z), where z = 1 - w^λ ---
    double w_lambda_val = std::pow(w, lambda);       // w^λ
    double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
-   double ln_z = std::log(z);                       // ln(z)
    // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
    double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
-   double dL8_dalpha = delta * (dz_dalpha / z);
    // Second derivative w.r.t. α for L8:
    // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
-   double d2w_dalpha2_dummy = d2w_dalpha2; // already calculated for L7
    double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
-                                     + std::pow(w, lambda-1.0) * d2w_dalpha2_dummy);
+                                     + std::pow(w, lambda-1.0) * d2w_dalpha2);
    double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
 
    // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
    double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
-   double dL8_dbeta = delta * (dz_dbeta / z);
    // Second derivative w.r.t. β for L8:
    // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
    double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
@@ -1786,7 +1773,6 @@ Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    // Derivatives of L8 with respect to λ:
    // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
    double dz_dlambda = -w_lambda_val * ln_w;
-   double dL8_dlambda = delta * (dz_dlambda / z);
    // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
    double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
    double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
@@ -1875,6 +1861,328 @@ Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  // Returns the analytic Hessian matrix of the log-likelihood
  return Rcpp::wrap(-H);
 }
+
+
+// //' @title Analytic Hessian Matrix for Generalized Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Computes the analytic Hessian matrix of the log-likelihood function for
+// //' the Generalized Kumaraswamy (GKw) distribution. This function provides
+// //' exact second derivatives needed for optimization and inference.
+// //'
+// //' @param par Numeric vector of length 5 containing the parameters
+// //'        (α, β, γ, δ, λ) in that order. All parameters must be positive.
+// //' @param data Numeric vector of observations, where all values must be
+// //'        in the open interval (0,1).
+// //'
+// //' @return A 5×5 numeric matrix representing the Hessian of the negative
+// //'         log-likelihood function. If parameters or data are invalid
+// //'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
+// //'         NaN values.
+// //'
+// //' @details
+// //' The log-likelihood for the generalized Kumaraswamy distribution is:
+// //'
+// //' \deqn{
+// //' \ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta) - n \ln B(\gamma, \delta+1)
+// //' + (\alpha-1) \sum \ln(x_i)
+// //' + (\beta-1) \sum \ln(1 - x_i^\alpha)
+// //' + (\gamma\lambda - 1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
+// //' + \delta \sum \ln\{1 - \{1 - (1 - x_i^\alpha)^\beta\}^\lambda\}
+// //' }
+// //'
+// //' where B refers to the Beta function.
+// //'
+// //' The implementation computes all second derivatives analytically for each term.
+// //' For computational efficiency, the following transformations are used:
+// //' \itemize{
+// //'   \item \deqn{A = x^α} and derivatives
+// //'   \item \deqn{v = 1 - A}
+// //'   \item \deqn{w = 1 - v^β}
+// //'   \item \deqn{z = 1 - w^λ}
+// //' }
+// //'
+// //' The returned Hessian matrix has the following structure:
+// //' \itemize{
+// //'   \item Rows/columns 1-5 correspond to α, β, γ, δ, λ respectively
+// //'   \item The matrix is symmetric (as expected for a Hessian)
+// //'   \item The matrix represents second derivatives of the negative log-likelihood
+// //' }
+// //'
+// //' This function is implemented in C++ for computational efficiency.
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Generate sample data from a GKw distribution
+// //' set.seed(123)
+// //' x <- rgkw(100, 2, 3, 1.0, 0.5, 0.5)
+// //' hist(x, breaks = 20, main = "GKw(2, 3, 1.0, 0.5, 0.5) Sample")
+// //'
+// //' # Use in optimization with Hessian-based methods
+// //' result <- optim(c(0.5, 0.5, 0.5, 0.5, 0.5), llgkw, method = "BFGS",
+// //'                 hessian = TRUE, data = x)
+// //'
+// //' # Compare numerical and analytical derivatives
+// //' num_grad <- numDeriv::grad(llgkw, x = result$par, data = x)
+// //' num_hess <- numDeriv::hessian(llgkw, x = result$par, data = x)
+// //'
+// //' ana_grad <- grgkw(result$par, data = x)
+// //' ana_hess <- hsgkw(result$par, data = x)
+// //'
+// //' # Check differences (should be very small)
+// //' round(num_grad - ana_grad, 4)
+// //' round(num_hess - ana_hess, 4)
+// //'
+// //' }
+// //'
+// //' @seealso
+// //' \code{\link[gkwreg]{dgkw}} for the GKw density function,
+// //' \code{\link[gkwreg]{gkwreg}} for fitting GKw regression models,
+// //' \code{\link[gkwreg]{pgkw}} for the GKw cumulative distribution function
+// //'
+// //' @references
+// //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
+// //' Journal of Hydrology, 46(1-2), 79-88.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
+// //' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double alpha  = par[0];   // θ[0] = α
+//  double beta   = par[1];   // θ[1] = β
+//  double gamma  = par[2];   // θ[2] = γ
+//  double delta  = par[3];   // θ[3] = δ
+//  double lambda = par[4];   // θ[4] = λ
+//
+//  // Simple parameter validation (all > 0)
+//  if(alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0 || lambda <= 0) {
+//    Rcpp::NumericMatrix nanH(5,5);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  // Data conversion and basic validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if(arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericMatrix nanH(5,5);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  int n = x.n_elem;  // sample size
+//
+//  // Initialize Hessian matrix H (of ℓ(θ)) as 5x5
+//  arma::mat H(5,5, arma::fill::zeros);
+//
+//  // --- CONSTANT TERMS (do not depend on x) ---
+//  // L1: n ln(λ)  => d²/dλ² = -n/λ²
+//  H(4,4) += - n/(lambda*lambda);
+//  // L2: n ln(α)  => d²/dα² = -n/α²
+//  H(0,0) += - n/(alpha*alpha);
+//  // L3: n ln(β)  => d²/dβ² = -n/β²
+//  H(1,1) += - n/(beta*beta);
+//  // L4: - n ln[B(γ, δ+1)]
+//  //   d²/dγ² = -n [ψ₁(γ) - ψ₁(γ+δ+1)]  where ψ₁ is the trigamma function
+//  H(2,2) += - n * ( R::trigamma(gamma) - R::trigamma(gamma+delta+1) );
+//  //   d²/dδ² = -n [ψ₁(δ+1) - ψ₁(γ+δ+1)]
+//  H(3,3) += - n * ( R::trigamma(delta+1) - R::trigamma(gamma+delta+1) );
+//  //   Mixed derivative (γ,δ): = n ψ₁(γ+δ+1)
+//  H(2,3) += n * R::trigamma(gamma+delta+1);
+//  H(3,2) = H(2,3);
+//  // L5: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
+//
+//  // Accumulators for mixed derivatives with λ
+//  double acc_gamma_lambda = 0.0;  // Sum of ln(w)
+//  double acc_delta_lambda = 0.0;  // Sum of dz_dlambda / z
+//  double acc_alpha_lambda = 0.0;  // For α,λ contributions
+//  double acc_beta_lambda = 0.0;   // For β,λ contributions
+//
+//  // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
+//  // Loop over each observation to accumulate contributions from:
+//  // L6: (β-1) Σ ln(v), where v = 1 - x^α
+//  // L7: (γλ-1) Σ ln(w), where w = 1 - v^β
+//  // L8: δ Σ ln(z), where z = 1 - w^λ
+//  for (int i = 0; i < n; i++) {
+//    double xi    = x(i);
+//    double ln_xi = std::log(xi);
+//
+//    // -- Compute A = x^α and its derivatives --
+//    double A = std::pow(xi, alpha);                  // A = x^α
+//    double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
+//    double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+//
+//    // -- v = 1 - A and its derivatives --
+//    double v = 1.0 - A;                              // v = 1 - x^α
+//    double ln_v = std::log(v);                       // ln(v)
+//    double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
+//    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+//
+//    // --- L6: (β-1) ln(v) ---
+//    // First derivative w.r.t. α: (β-1) * (1/v)*dv_dalpha
+//    double dL6_dalpha = (beta - 1.0) * (dv_dalpha / v);
+//    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
+//    double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
+//    // First derivative w.r.t. β: dL6/dβ = ln(v)
+//    double dL6_dbeta = ln_v;
+//    // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
+//    double d2L6_dalpha_dbeta = dv_dalpha / v;
+//
+//    // --- L7: (γλ - 1) ln(w), where w = 1 - v^β ---
+//    double v_beta = std::pow(v, beta);               // v^β
+//    double w = 1.0 - v_beta;                         // w = 1 - v^β
+//    double ln_w = std::log(w);                       // ln(w)
+//    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
+//    double dw_dv = -beta * std::pow(v, beta - 1.0);
+//    // Chain rule: dw/dα = dw/dv * dv/dα
+//    double dw_dalpha = dw_dv * dv_dalpha;
+//    // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
+//    double dL7_dalpha = (gamma * lambda - 1.0) * (dw_dalpha / w);
+//    // Second derivative w.r.t. α for L7:
+//    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
+//    // Computing d²w/dα²:
+//    //   dw/dα = -β * v^(β-1)*dv_dalpha,
+//    //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
+//    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
+//                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
+//    double d2L7_dalpha2 = (gamma * lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+//    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
+//    double dw_dbeta = -v_beta * ln_v;
+//    double dL7_dbeta = (gamma * lambda - 1.0) * (dw_dbeta / w);
+//    // Second derivative w.r.t. β for L7:
+//    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
+//    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+//    double d2L7_dbeta2 = (gamma * lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+//    // Mixed derivative L7 (α,β): d²/(dα dβ) ln(w) =
+//    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
+//    // Approximate d/dβ dw_dalpha:
+//    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
+//    double d2L7_dalpha_dbeta = (gamma * lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+//
+//    // --- L8: δ ln(z), where z = 1 - w^λ ---
+//    double w_lambda_val = std::pow(w, lambda);       // w^λ
+//    double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
+//    double ln_z = std::log(z);                       // ln(z)
+//    // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
+//    double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
+//    double dL8_dalpha = delta * (dz_dalpha / z);
+//    // Second derivative w.r.t. α for L8:
+//    // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
+//    double d2w_dalpha2_dummy = d2w_dalpha2; // already calculated for L7
+//    double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
+//                                      + std::pow(w, lambda-1.0) * d2w_dalpha2_dummy);
+//    double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
+//
+//    // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
+//    double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
+//    double dL8_dbeta = delta * (dz_dbeta / z);
+//    // Second derivative w.r.t. β for L8:
+//    // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
+//    double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
+//                                     + std::pow(w, lambda-1.0) * d2w_dbeta2);
+//    double d2L8_dbeta2 = delta * ((d2z_dbeta2 * z - dz_dbeta*dz_dbeta)/(z*z));
+//
+//    // Mixed derivative L8 (α,β): d²/(dα dβ) ln(z)
+//    // = (d/dβ dz_dalpha)/z - (dz_dalpha*dz_dbeta)/(z*z)
+//    // Approximate d/dβ dz_dalpha = -λ * [(λ-1)*w^(λ-2)*(dw_dβ*dw_dα) + w^(λ-1)*(d/dβ dw_dalpha)]
+//    double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * dw_dbeta * dw_dalpha
+//                                              + std::pow(w, lambda-1.0) * d_dw_dalpha_dbeta);
+//    double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha*dz_dbeta)/(z*z));
+//
+//    // Derivatives of L8 with respect to λ:
+//    // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
+//    double dz_dlambda = -w_lambda_val * ln_w;
+//    double dL8_dlambda = delta * (dz_dlambda / z);
+//    // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
+//    double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
+//    double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
+//
+//    // Mixed derivative L8 (α,λ): d²/(dα dλ) ln(z) = (d/dα dz_dλ)/z - (dz_dλ*dz_dalpha)/(z*z)
+//    // Correct formula: sum of two terms, not multiplication
+//    double d_dalpha_dz_dlambda = -std::pow(w, lambda-1.0) * dw_dalpha -
+//      lambda * ln_w * std::pow(w, lambda-1.0) * dw_dalpha;
+//    double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda*dz_dalpha)/(z*z));
+//
+//    // Mixed derivative L8 (β,λ): d²/(dβ dλ) ln(z) = (d/dβ dz_dλ)/z - (dz_dlambda*dz_dbeta)/(z*z)
+//    // Correct formula: sum of two terms, not multiplication
+//    double d_dbeta_dz_dlambda = -std::pow(w, lambda-1.0) * dw_dbeta -
+//      lambda * ln_w * std::pow(w, lambda-1.0) * dw_dbeta;
+//    double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda*dz_dbeta)/(z*z));
+//
+//    // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
+//    // Index: 0 = α, 1 = β, 2 = γ, 3 = δ, 4 = λ
+//
+//    // H(α,α): sum of L2, L6, L7, and L8 (constants already added)
+//    H(0,0) += d2L6_dalpha2 + d2L7_dalpha2 + d2L8_dalpha2;
+//
+//    // H(α,β): mixed from L6, L7, and L8
+//    H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta + d2L8_dalpha_dbeta;
+//    H(1,0) = H(0,1);
+//
+//    // H(β,β): contributions from L3, L7, and L8
+//    H(1,1) += d2L7_dbeta2 + d2L8_dbeta2;
+//
+//    // H(λ,λ): contains L1 and L8 (L1 already added)
+//    H(4,4) += d2L8_dlambda2;
+//
+//    // H(γ,α): from L7 - derivative of ln(w) in α multiplied by λ factor of (γλ-1)
+//    H(2,0) += lambda * (dw_dalpha / w);
+//    H(0,2) = H(2,0);
+//
+//    // H(γ,β): from L7 - derivative of ln(w) in β multiplied by λ
+//    H(2,1) += lambda * (dw_dbeta / w);
+//    H(1,2) = H(2,1);
+//
+//    // H(δ,α): L8 - mixed derivative: d/dα ln(z)
+//    H(3,0) += dz_dalpha / z;
+//    H(0,3) = H(3,0);
+//
+//    // H(δ,β): L8 - d/dβ ln(z)
+//    H(3,1) += dz_dbeta / z;
+//    H(1,3) = H(3,1);
+//
+//    // Accumulating terms for mixed derivatives with λ
+//    // (α,λ): Term from L7 (γ contribution) + term from L8 (δ contribution)
+//    double term1_alpha_lambda = gamma * (dw_dalpha / w);
+//    double term2_alpha_lambda = d2L8_dalpha_dlambda;
+//    acc_alpha_lambda += term1_alpha_lambda + term2_alpha_lambda;
+//
+//    // (β,λ): Term from L7 (γ contribution) + term from L8 (δ contribution)
+//    double term1_beta_lambda = gamma * (dw_dbeta / w);
+//    double term2_beta_lambda = d2L8_dbeta_dlambda;
+//    acc_beta_lambda += term1_beta_lambda + term2_beta_lambda;
+//
+//    // (γ,λ): Contribution from L7 (γλ-1)*ln(w)
+//    acc_gamma_lambda += ln_w;
+//
+//    // (δ,λ): Contribution from L8 δ*ln(z)
+//    acc_delta_lambda += dz_dlambda / z;
+//  } // end of loop
+//
+//  // Applying mixed derivatives with λ
+//  // Note: All signs are positive for log-likelihood (not negative log-likelihood)
+//
+//  // H(α,λ): Positive sign for log-likelihood
+//  H(0,4) = acc_alpha_lambda;
+//  H(4,0) = H(0,4);
+//
+//  // H(β,λ): Positive sign for log-likelihood
+//  H(1,4) = acc_beta_lambda;
+//  H(4,1) = H(1,4);
+//
+//  // H(γ,λ): Positive sign for log-likelihood
+//  H(2,4) = acc_gamma_lambda;
+//  H(4,2) = H(2,4);
+//
+//  // H(δ,λ): Positive sign for log-likelihood
+//  H(3,4) = acc_delta_lambda;
+//  H(4,3) = H(3,4);
+//
+//  // Returns the analytic Hessian matrix of the log-likelihood
+//  return Rcpp::wrap(-H);
+// }
 
 
 
@@ -2909,12 +3217,8 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
 
    // --- L6: (β-1) ln(v) ---
-   // First derivative w.r.t. α: (β-1) * (1/v)*dv_dalpha
-   double dL6_dalpha = (beta - 1.0) * (dv_dalpha / v);
    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
    double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
-   // First derivative w.r.t. β: dL6/dβ = ln(v)
-   double dL6_dbeta = ln_v;
    // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
    double d2L6_dalpha_dbeta = dv_dalpha / v;
 
@@ -2926,8 +3230,6 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double dw_dv = -beta * std::pow(v, beta - 1.0);
    // Chain rule: dw/dα = dw/dv * dv/dα
    double dw_dalpha = dw_dv * dv_dalpha;
-   // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
-   double dL7_dalpha = (lambda - 1.0) * (dw_dalpha / w);
    // Second derivative w.r.t. α for L7:
    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
    // Computing d²w/dα²:
@@ -2938,34 +3240,28 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double d2L7_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
    double dw_dbeta = -v_beta * ln_v;
-   double dL7_dbeta = (lambda - 1.0) * (dw_dbeta / w);
    // Second derivative w.r.t. β for L7:
    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
    double d2L7_dbeta2 = (lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
    // Mixed derivative L7 (α,β): d²/(dα dβ) ln(w) =
    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
-   // Approximate d/dβ dw_dalpha:
    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
    double d2L7_dalpha_dbeta = (lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
 
    // --- L8: δ ln(z), where z = 1 - w^λ ---
    double w_lambda_val = std::pow(w, lambda);       // w^λ
    double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
-   double ln_z = std::log(z);                       // ln(z)
    // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
    double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
-   double dL8_dalpha = delta * (dz_dalpha / z);
    // Second derivative w.r.t. α for L8:
    // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
-   double d2w_dalpha2_dummy = d2w_dalpha2; // already calculated for L7
    double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
-                                     + std::pow(w, lambda-1.0) * d2w_dalpha2_dummy);
+                                     + std::pow(w, lambda-1.0) * d2w_dalpha2);
    double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
 
    // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
    double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
-   double dL8_dbeta = delta * (dz_dbeta / z);
    // Second derivative w.r.t. β for L8:
    // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
    double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
@@ -2974,7 +3270,6 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 
    // Mixed derivative L8 (α,β): d²/(dα dβ) ln(z)
    // = (d/dβ dz_dalpha)/z - (dz_dalpha*dz_dbeta)/(z*z)
-   // Approximate d/dβ dz_dalpha = -λ * [(λ-1)*w^(λ-2)*(dw_dβ*dw_dα) + w^(λ-1)*(d/dβ dw_dalpha)]
    double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * dw_dbeta * dw_dalpha
                                              + std::pow(w, lambda-1.0) * d_dw_dalpha_dbeta);
    double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha*dz_dbeta)/(z*z));
@@ -2982,21 +3277,16 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    // Derivatives of L8 with respect to λ:
    // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
    double dz_dlambda = -w_lambda_val * ln_w;
-   double dL8_dlambda = delta * (dz_dlambda / z);
    // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
    double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
    double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
 
    // Mixed derivative L8 (α,λ): d²/(dα dλ) ln(z) = (d/dα dz_dλ)/z - (dz_dλ*dz_dalpha)/(z*z)
-   // The correct formula for d/dα[dz_dλ] = d/dα[-w^λ*ln(w)]
-   // = -λ*w^(λ-1)*dw/dα*ln(w) - w^λ*(1/w)*dw/dα
    double d_dalpha_dz_dlambda = -lambda * std::pow(w, lambda-1.0) * dw_dalpha * ln_w -
      w_lambda_val * (dw_dalpha / w);
    double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda*dz_dalpha)/(z*z));
 
    // Mixed derivative L8 (β,λ): d²/(dβ dλ) ln(z) = (d/dβ dz_dλ)/z - (dz_dlambda*dz_dbeta)/(z*z)
-   // The correct formula for d/dβ[dz_dλ] = d/dβ[-w^λ*ln(w)]
-   // = -λ*w^(λ-1)*dw/dβ*ln(w) - w^λ*(1/w)*dw/dβ
    double d_dbeta_dz_dlambda = -lambda * std::pow(w, lambda-1.0) * dw_dbeta * ln_w -
      w_lambda_val * (dw_dbeta / w);
    double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda*dz_dbeta)/(z*z));
@@ -3052,6 +3342,295 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  // Returns the analytic Hessian matrix of the negative log-likelihood
  return Rcpp::wrap(-H);
 }
+
+// //' @title Analytic Hessian Matrix for Kumaraswamy-Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Computes the analytic Hessian matrix of the log-likelihood function for
+// //' the Kumaraswamy-Kumaraswamy (KKw) distribution. This function provides
+// //' exact second derivatives needed for optimization and inference.
+// //'
+// //' @param par Numeric vector of length 4 containing the parameters
+// //'        (α, β, δ, λ) in that order. All parameters must be positive.
+// //' @param data Numeric vector of observations, where all values must be
+// //'        in the open interval (0,1).
+// //'
+// //' @return A 4×4 numeric matrix representing the Hessian of the negative
+// //'         log-likelihood function. If parameters or data are invalid
+// //'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
+// //'         NaN values.
+// //'
+// //' @details
+// //' The log-likelihood for the Kumaraswamy-Kumaraswamy distribution is:
+// //'
+// //' \deqn{
+// //' \ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta) + n \ln(\delta+1)
+// //' + (\alpha-1) \sum \ln(x_i)
+// //' + (\beta-1) \sum \ln(1 - x_i^\alpha)
+// //' + (\lambda-1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
+// //' + \delta \sum \ln\{1 - \{1 - (1 - x_i^\alpha)^\beta\}^\lambda\}
+// //' }
+// //'
+// //' where γ is fixed at 1 for this distribution.
+// //'
+// //' The implementation computes all second derivatives analytically for each term.
+// //' For computational efficiency, the following transformations are used:
+// //' \itemize{
+// //'   \item \deqn{A = x^α} and derivatives
+// //'   \item \deqn{v = 1 - A}
+// //'   \item \deqn{w = 1 - v^β}
+// //'   \item \deqn{z = 1 - w^λ}
+// //' }
+// //'
+// //' The returned Hessian matrix has the following structure:
+// //' \itemize{
+// //'   \item Rows/columns 1-4 correspond to α, β, δ, λ respectively
+// //'   \item The matrix is symmetric (as expected for a Hessian)
+// //'   \item The matrix represents second derivatives of the negative log-likelihood
+// //' }
+// //'
+// //' This function is implemented in C++ for computational efficiency.
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Generate sample data from a KKw distribution
+// //' set.seed(123)
+// //' x <- rkkw(100, 2, 3, 1.5, 0.5)
+// //' hist(x, breaks = 20, main = "KKw(2, 3, 1.5, 0.5) Sample")
+// //'
+// //' # Use in optimization with Hessian-based methods
+// //' result <- optim(c(0.5, 0.5, 0.5, 0.5), llkkw, method = "BFGS",
+// //'                 hessian = TRUE, data = x)
+// //'
+// //' # Compare numerical and analytical derivatives
+// //' num_grad <- numDeriv::grad(llkkw, x = result$par, data = x)
+// //' num_hess <- numDeriv::hessian(llkkw, x = result$par, data = x)
+// //'
+// //' ana_grad <- grkkw(result$par, data = x)
+// //' ana_hess <- hskkw(result$par, data = x)
+// //'
+// //' # Check differences (should be very small)
+// //' round(num_grad - ana_grad, 4)
+// //' round(num_hess - ana_hess, 4)
+// //' }
+// //'
+// //'
+// //' @references
+// //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
+// //' Journal of Hydrology, 46(1-2), 79-88.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
+// //' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double alpha  = par[0];   // θ[0] = α
+//  double beta   = par[1];   // θ[1] = β
+//  double delta  = par[2];   // θ[2] = δ
+//  double lambda = par[3];   // θ[3] = λ
+//
+//  // Simple parameter validation (all > 0)
+//  if(alpha <= 0 || beta <= 0 || delta <= 0 || lambda <= 0) {
+//    Rcpp::NumericMatrix nanH(4,4);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  // Data conversion and basic validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if(arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericMatrix nanH(4,4);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  int n = x.n_elem;  // sample size
+//
+//  // Initialize Hessian matrix H (of ℓ(θ)) as 4x4
+//  arma::mat H(4,4, arma::fill::zeros);
+//
+//  // --- CONSTANT TERMS (do not depend on x) ---
+//  // L1: n ln(λ)  => d²/dλ² = -n/λ²
+//  H(3,3) += -n/(lambda*lambda);
+//  // L2: n ln(α)  => d²/dα² = -n/α²
+//  H(0,0) += -n/(alpha*alpha);
+//  // L3: n ln(β)  => d²/dβ² = -n/β²
+//  H(1,1) += -n/(beta*beta);
+//  // L4: n ln(δ+1) => d²/dδ² = -n/(δ+1)²
+//  H(2,2) += -n/std::pow(delta+1.0, 2.0);
+//
+//  // Accumulators for mixed derivatives with λ
+//  double acc_delta_lambda = 0.0;  // Sum of dz_dlambda / z
+//  double acc_alpha_lambda = 0.0;  // For α,λ contributions
+//  double acc_beta_lambda = 0.0;   // For β,λ contributions
+//
+//  // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
+//  // Loop over each observation to accumulate contributions from:
+//  // L5: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
+//  // L6: (β-1) Σ ln(v), where v = 1 - x^α
+//  // L7: (λ-1) Σ ln(w), where w = 1 - v^β
+//  // L8: δ Σ ln(z), where z = 1 - w^λ
+//  for (int i = 0; i < n; i++) {
+//    double xi    = x(i);
+//    double ln_xi = std::log(xi);
+//
+//    // -- Compute A = x^α and its derivatives --
+//    double A = std::pow(xi, alpha);                  // A = x^α
+//    double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
+//    double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+//
+//    // -- v = 1 - A and its derivatives --
+//    double v = 1.0 - A;                              // v = 1 - x^α
+//    double ln_v = std::log(v);                       // ln(v)
+//    double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
+//    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+//
+//    // --- L6: (β-1) ln(v) ---
+//    // First derivative w.r.t. α: (β-1) * (1/v)*dv_dalpha
+//    double dL6_dalpha = (beta - 1.0) * (dv_dalpha / v);
+//    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
+//    double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
+//    // First derivative w.r.t. β: dL6/dβ = ln(v)
+//    double dL6_dbeta = ln_v;
+//    // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
+//    double d2L6_dalpha_dbeta = dv_dalpha / v;
+//
+//    // --- L7: (λ - 1) ln(w), where w = 1 - v^β ---
+//    double v_beta = std::pow(v, beta);               // v^β
+//    double w = 1.0 - v_beta;                         // w = 1 - v^β
+//    double ln_w = std::log(w);                       // ln(w)
+//    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
+//    double dw_dv = -beta * std::pow(v, beta - 1.0);
+//    // Chain rule: dw/dα = dw/dv * dv/dα
+//    double dw_dalpha = dw_dv * dv_dalpha;
+//    // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
+//    double dL7_dalpha = (lambda - 1.0) * (dw_dalpha / w);
+//    // Second derivative w.r.t. α for L7:
+//    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
+//    // Computing d²w/dα²:
+//    //   dw/dα = -β * v^(β-1)*dv_dalpha,
+//    //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
+//    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
+//                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
+//    double d2L7_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+//    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
+//    double dw_dbeta = -v_beta * ln_v;
+//    double dL7_dbeta = (lambda - 1.0) * (dw_dbeta / w);
+//    // Second derivative w.r.t. β for L7:
+//    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
+//    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+//    double d2L7_dbeta2 = (lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+//    // Mixed derivative L7 (α,β): d²/(dα dβ) ln(w) =
+//    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
+//    // Approximate d/dβ dw_dalpha:
+//    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
+//    double d2L7_dalpha_dbeta = (lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+//
+//    // --- L8: δ ln(z), where z = 1 - w^λ ---
+//    double w_lambda_val = std::pow(w, lambda);       // w^λ
+//    double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
+//    double ln_z = std::log(z);                       // ln(z)
+//    // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
+//    double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
+//    double dL8_dalpha = delta * (dz_dalpha / z);
+//    // Second derivative w.r.t. α for L8:
+//    // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
+//    double d2w_dalpha2_dummy = d2w_dalpha2; // already calculated for L7
+//    double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
+//                                      + std::pow(w, lambda-1.0) * d2w_dalpha2_dummy);
+//    double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
+//
+//    // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
+//    double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
+//    double dL8_dbeta = delta * (dz_dbeta / z);
+//    // Second derivative w.r.t. β for L8:
+//    // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
+//    double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
+//                                     + std::pow(w, lambda-1.0) * d2w_dbeta2);
+//    double d2L8_dbeta2 = delta * ((d2z_dbeta2 * z - dz_dbeta*dz_dbeta)/(z*z));
+//
+//    // Mixed derivative L8 (α,β): d²/(dα dβ) ln(z)
+//    // = (d/dβ dz_dalpha)/z - (dz_dalpha*dz_dbeta)/(z*z)
+//    // Approximate d/dβ dz_dalpha = -λ * [(λ-1)*w^(λ-2)*(dw_dβ*dw_dα) + w^(λ-1)*(d/dβ dw_dalpha)]
+//    double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * dw_dbeta * dw_dalpha
+//                                              + std::pow(w, lambda-1.0) * d_dw_dalpha_dbeta);
+//    double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha*dz_dbeta)/(z*z));
+//
+//    // Derivatives of L8 with respect to λ:
+//    // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
+//    double dz_dlambda = -w_lambda_val * ln_w;
+//    double dL8_dlambda = delta * (dz_dlambda / z);
+//    // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
+//    double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
+//    double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
+//
+//    // Mixed derivative L8 (α,λ): d²/(dα dλ) ln(z) = (d/dα dz_dλ)/z - (dz_dλ*dz_dalpha)/(z*z)
+//    // The correct formula for d/dα[dz_dλ] = d/dα[-w^λ*ln(w)]
+//    // = -λ*w^(λ-1)*dw/dα*ln(w) - w^λ*(1/w)*dw/dα
+//    double d_dalpha_dz_dlambda = -lambda * std::pow(w, lambda-1.0) * dw_dalpha * ln_w -
+//      w_lambda_val * (dw_dalpha / w);
+//    double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda*dz_dalpha)/(z*z));
+//
+//    // Mixed derivative L8 (β,λ): d²/(dβ dλ) ln(z) = (d/dβ dz_dλ)/z - (dz_dlambda*dz_dbeta)/(z*z)
+//    // The correct formula for d/dβ[dz_dλ] = d/dβ[-w^λ*ln(w)]
+//    // = -λ*w^(λ-1)*dw/dβ*ln(w) - w^λ*(1/w)*dw/dβ
+//    double d_dbeta_dz_dlambda = -lambda * std::pow(w, lambda-1.0) * dw_dbeta * ln_w -
+//      w_lambda_val * (dw_dbeta / w);
+//    double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda*dz_dbeta)/(z*z));
+//
+//    // Mixed derivative L8 (δ,λ): d²/(dδ dλ) ln(z) = d/dλ [δ * (dz_dlambda / z)] = dz_dlambda / z
+//    double d2L8_ddelta_dlambda = dz_dlambda / z;
+//
+//    // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
+//    // Index: 0 = α, 1 = β, 2 = δ, 3 = λ
+//
+//    // H(α,α): sum of L2, L6, L7, and L8 (constants already added)
+//    H(0,0) += d2L6_dalpha2 + d2L7_dalpha2 + d2L8_dalpha2;
+//
+//    // H(α,β): mixed from L6, L7, and L8
+//    H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta + d2L8_dalpha_dbeta;
+//    H(1,0) = H(0,1);
+//
+//    // H(β,β): contributions from L3, L7, and L8
+//    H(1,1) += d2L7_dbeta2 + d2L8_dbeta2;
+//
+//    // H(λ,λ): contributions from L1 and L8 (L1 already added)
+//    H(3,3) += d2L8_dlambda2;
+//
+//    // H(α,δ): From L8 - d/dα ln(z)
+//    H(0,2) += dz_dalpha / z;
+//    H(2,0) = H(0,2);
+//
+//    // H(β,δ): From L8 - d/dβ ln(z)
+//    H(1,2) += dz_dbeta / z;
+//    H(2,1) = H(1,2);
+//
+//    // Accumulating terms for mixed derivatives with λ
+//    // The term from L7 is Σ ln(w) derived w.r.t. α and Σ ln(w) derived w.r.t. β
+//    acc_alpha_lambda += (dw_dalpha / w) + d2L8_dalpha_dlambda;
+//    acc_beta_lambda += (dw_dbeta / w) + d2L8_dbeta_dlambda;
+//    acc_delta_lambda += d2L8_ddelta_dlambda;
+//
+//  } // end of loop
+//
+//  // Applying mixed derivatives with λ
+//  // H(α,λ):
+//  H(0,3) = acc_alpha_lambda;
+//  H(3,0) = H(0,3);
+//
+//  // H(β,λ):
+//  H(1,3) = acc_beta_lambda;
+//  H(3,1) = H(1,3);
+//
+//  // H(δ,λ):
+//  H(2,3) = acc_delta_lambda;
+//  H(3,2) = H(2,3);
+//
+//  // Returns the analytic Hessian matrix of the negative log-likelihood
+//  return Rcpp::wrap(-H);
+// }
 
 
 
@@ -3922,9 +4501,6 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  double gamma  = par[2];   // θ[2] = γ
  double delta  = par[3];   // θ[3] = δ
 
- // Fixed parameter for BKw distribution
- const double lambda = 1.0;  // λ=1 for BKw
-
  // Simple parameter validation (all > 0)
  if(alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0) {
    Rcpp::NumericMatrix nanH(4,4);
@@ -3981,14 +4557,8 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 
    // --- L5: (β(δ+1)-1) ln(v) ---
    double beta_delta_factor = beta * (delta + 1.0) - 1.0;
-   // First derivative w.r.t. α: (β(δ+1)-1) * (1/v)*dv_dalpha
-   double dL5_dalpha = beta_delta_factor * (dv_dalpha / v);
    // Second derivative w.r.t. α: (β(δ+1)-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
    double d2L5_dalpha2 = beta_delta_factor * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
-   // First derivative w.r.t. β: dL5/dβ = (δ+1) * ln(v)
-   double dL5_dbeta = (delta + 1.0) * ln_v;
-   // First derivative w.r.t. δ: dL5/dδ = β * ln(v)
-   double dL5_ddelta = beta * ln_v;
    // Mixed derivative: d²L5/(dα dβ) = d/dβ[(β(δ+1)-1)*(dv_dalpha/v)] = (δ+1)*(dv_dalpha/v)
    double d2L5_dalpha_dbeta = (delta + 1.0) * (dv_dalpha / v);
    // Mixed derivative: d²L5/(dα dδ) = d/dδ[(β(δ+1)-1)*(dv_dalpha/v)] = β*(dv_dalpha/v)
@@ -4004,8 +4574,6 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double dw_dv = -beta * std::pow(v, beta - 1.0);
    // Chain rule: dw/dα = dw/dv * dv/dα
    double dw_dalpha = dw_dv * dv_dalpha;
-   // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
-   double dL6_dalpha = (gamma - 1.0) * (dw_dalpha / w);
    // Second derivative w.r.t. α for L6:
    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
    // Computing d²w/dα²:
@@ -4014,20 +4582,19 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
    double d2L6_dalpha2 = (gamma - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+
    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
    double dw_dbeta = -v_beta * ln_v;
-   double dL6_dbeta = (gamma - 1.0) * (dw_dbeta / w);
    // Second derivative w.r.t. β for L6:
    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
    double d2L6_dbeta2 = (gamma - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+
    // Mixed derivative L6 (α,β): d²/(dα dβ) ln(w) =
    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
-   // Approximate d/dβ dw_dalpha:
    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
    double d2L6_dalpha_dbeta = (gamma - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
-   // First derivative w.r.t. γ: dL6/dγ = ln(w)
-   double dL6_dgamma = ln_w;
+
    // Mixed derivatives with γ
    double d2L6_dalpha_dgamma = dw_dalpha / w;
    double d2L6_dbeta_dgamma = dw_dbeta / w;
@@ -4066,6 +4633,238 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  // Returns the analytic Hessian matrix of the negative log-likelihood
  return Rcpp::wrap(-H);
 }
+
+
+// //' @title Analytic Hessian Matrix for Beta-Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Computes the analytic Hessian matrix of the log-likelihood function for
+// //' the Beta-Kumaraswamy (BKw) distribution. This function provides
+// //' exact second derivatives needed for optimization and inference.
+// //'
+// //' @param par Numeric vector of length 4 containing the parameters
+// //'        (α, β, γ, δ) in that order. All parameters must be positive.
+// //' @param data Numeric vector of observations, where all values must be
+// //'        in the open interval (0,1).
+// //'
+// //' @return A 4×4 numeric matrix representing the Hessian of the negative
+// //'         log-likelihood function. If parameters or data are invalid
+// //'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
+// //'         NaN values.
+// //'
+// //' @details
+// //' The log-likelihood for the Beta-Kumaraswamy distribution is:
+// //'
+// //' \deqn{
+// //' \ell(\theta) = n \ln(\alpha) + n \ln(\beta) - n \ln B(\gamma, \delta+1)
+// //' + (\alpha-1) \sum \ln(x_i)
+// //' + (\beta(\delta+1)-1) \sum \ln(1 - x_i^\alpha)
+// //' + (\gamma-1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
+// //' }
+// //'
+// //' where λ is fixed at 1 for this distribution.
+// //'
+// //' The implementation computes all second derivatives analytically for each term.
+// //' For computational efficiency, the following transformations are used:
+// //' \itemize{
+// //'   \item \deqn{A = x^α} and derivatives
+// //'   \item \deqn{v = 1 - A}
+// //'   \item \deqn{w = 1 - v^β}
+// //' }
+// //'
+// //' The returned Hessian matrix has the following structure:
+// //' \itemize{
+// //'   \item Rows/columns 1-4 correspond to α, β, γ, δ respectively
+// //'   \item The matrix is symmetric (as expected for a Hessian)
+// //'   \item The matrix represents second derivatives of the negative log-likelihood
+// //' }
+// //'
+// //' This function is implemented in C++ for computational efficiency.
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Generate sample data from a BKw distribution
+// //' set.seed(123)
+// //' x <- rbkw(100, 2, 3, 1, 0.5)
+// //' hist(x, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
+// //'
+// //' # Use in optimization with Hessian-based methods
+// //' result <- optim(c(0.5, 0.5, 0.5, 0.5), llbkw, method = "BFGS",
+// //'                 hessian = TRUE, data = x)
+// //'
+// //' # Compare numerical and analytical derivatives
+// //' num_grad <- numDeriv::grad(llbkw, x = result$par, data = x)
+// //' num_hess <- numDeriv::hessian(llbkw, x = result$par, data = x)
+// //'
+// //' ana_grad <- grbkw(result$par, data = x)
+// //' ana_hess <- hsbkw(result$par, data = x)
+// //'
+// //' # Check differences (should be very small)
+// //' round(num_grad - ana_grad, 4)
+// //' round(num_hess - ana_hess, 4)
+// //'
+// //' }
+// //'
+// //' @references
+// //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
+// //' Journal of Hydrology, 46(1-2), 79-88.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
+// //' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double alpha  = par[0];   // θ[0] = α
+//  double beta   = par[1];   // θ[1] = β
+//  double gamma  = par[2];   // θ[2] = γ
+//  double delta  = par[3];   // θ[3] = δ
+//
+//  // Fixed parameter for BKw distribution
+//  const double lambda = 1.0;  // λ=1 for BKw
+//
+//  // Simple parameter validation (all > 0)
+//  if(alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0) {
+//    Rcpp::NumericMatrix nanH(4,4);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  // Data conversion and basic validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if(arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericMatrix nanH(4,4);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  int n = x.n_elem;  // sample size
+//
+//  // Initialize Hessian matrix H (of ℓ(θ)) as 4x4
+//  arma::mat H(4,4, arma::fill::zeros);
+//
+//  // --- CONSTANT TERMS (do not depend on x) ---
+//  // L1: n ln(α)  => d²/dα² = -n/α²
+//  H(0,0) += -n/(alpha*alpha);
+//  // L2: n ln(β)  => d²/dβ² = -n/β²
+//  H(1,1) += -n/(beta*beta);
+//  // L3: -n ln[B(γ, δ+1)]
+//  //   d²/dγ² = -n [ψ₁(γ) - ψ₁(γ+δ+1)]  where ψ₁ is the trigamma function
+//  H(2,2) += -n * (R::trigamma(gamma) - R::trigamma(gamma+delta+1));
+//  //   d²/dδ² = -n [ψ₁(δ+1) - ψ₁(γ+δ+1)]
+//  H(3,3) += -n * (R::trigamma(delta+1) - R::trigamma(gamma+delta+1));
+//  //   Mixed derivative (γ,δ): = n ψ₁(γ+δ+1)
+//  H(2,3) += n * R::trigamma(gamma+delta+1);
+//  H(3,2) = H(2,3);
+//
+//  // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
+//  // Loop over each observation to accumulate contributions from:
+//  // L4: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
+//  // L5: (β(δ+1)-1) Σ ln(v), where v = 1 - x^α
+//  // L6: (γ-1) Σ ln(w), where w = 1 - v^β
+//  for (int i = 0; i < n; i++) {
+//    double xi    = x(i);
+//    double ln_xi = std::log(xi);
+//
+//    // -- Compute A = x^α and its derivatives --
+//    double A = std::pow(xi, alpha);                  // A = x^α
+//    double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
+//    double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+//
+//    // -- v = 1 - A and its derivatives --
+//    double v = 1.0 - A;                              // v = 1 - x^α
+//    double ln_v = std::log(v);                       // ln(v)
+//    double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
+//    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+//
+//    // --- L5: (β(δ+1)-1) ln(v) ---
+//    double beta_delta_factor = beta * (delta + 1.0) - 1.0;
+//    // First derivative w.r.t. α: (β(δ+1)-1) * (1/v)*dv_dalpha
+//    double dL5_dalpha = beta_delta_factor * (dv_dalpha / v);
+//    // Second derivative w.r.t. α: (β(δ+1)-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
+//    double d2L5_dalpha2 = beta_delta_factor * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
+//    // First derivative w.r.t. β: dL5/dβ = (δ+1) * ln(v)
+//    double dL5_dbeta = (delta + 1.0) * ln_v;
+//    // First derivative w.r.t. δ: dL5/dδ = β * ln(v)
+//    double dL5_ddelta = beta * ln_v;
+//    // Mixed derivative: d²L5/(dα dβ) = d/dβ[(β(δ+1)-1)*(dv_dalpha/v)] = (δ+1)*(dv_dalpha/v)
+//    double d2L5_dalpha_dbeta = (delta + 1.0) * (dv_dalpha / v);
+//    // Mixed derivative: d²L5/(dα dδ) = d/dδ[(β(δ+1)-1)*(dv_dalpha/v)] = β*(dv_dalpha/v)
+//    double d2L5_dalpha_ddelta = beta * (dv_dalpha / v);
+//    // Mixed derivative: d²L5/(dβ dδ) = d/dδ[(δ+1)*ln(v)] = ln(v)
+//    double d2L5_dbeta_ddelta = ln_v;
+//
+//    // --- L6: (γ - 1) ln(w), where w = 1 - v^β ---
+//    double v_beta = std::pow(v, beta);              // v^β
+//    double w = 1.0 - v_beta;                        // w = 1 - v^β
+//    double ln_w = std::log(w);                      // ln(w)
+//    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
+//    double dw_dv = -beta * std::pow(v, beta - 1.0);
+//    // Chain rule: dw/dα = dw/dv * dv/dα
+//    double dw_dalpha = dw_dv * dv_dalpha;
+//    // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
+//    double dL6_dalpha = (gamma - 1.0) * (dw_dalpha / w);
+//    // Second derivative w.r.t. α for L6:
+//    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
+//    // Computing d²w/dα²:
+//    //   dw/dα = -β * v^(β-1)*dv_dalpha,
+//    //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
+//    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
+//                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
+//    double d2L6_dalpha2 = (gamma - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+//    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
+//    double dw_dbeta = -v_beta * ln_v;
+//    double dL6_dbeta = (gamma - 1.0) * (dw_dbeta / w);
+//    // Second derivative w.r.t. β for L6:
+//    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
+//    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+//    double d2L6_dbeta2 = (gamma - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+//    // Mixed derivative L6 (α,β): d²/(dα dβ) ln(w) =
+//    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
+//    // Approximate d/dβ dw_dalpha:
+//    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
+//    double d2L6_dalpha_dbeta = (gamma - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+//    // First derivative w.r.t. γ: dL6/dγ = ln(w)
+//    double dL6_dgamma = ln_w;
+//    // Mixed derivatives with γ
+//    double d2L6_dalpha_dgamma = dw_dalpha / w;
+//    double d2L6_dbeta_dgamma = dw_dbeta / w;
+//
+//    // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
+//    // Index: 0 = α, 1 = β, 2 = γ, 3 = δ
+//
+//    // H(α,α): sum of L1, L5, and L6 (constants already added)
+//    H(0,0) += d2L5_dalpha2 + d2L6_dalpha2;
+//
+//    // H(β,β): contributions from L2, L5, and L6
+//    H(1,1) += d2L6_dbeta2;
+//
+//    // H(α,β): mixed from L5 and L6
+//    H(0,1) += d2L5_dalpha_dbeta + d2L6_dalpha_dbeta;
+//    H(1,0) = H(0,1);
+//
+//    // H(α,γ): mixed from L6
+//    H(0,2) += d2L6_dalpha_dgamma;
+//    H(2,0) = H(0,2);
+//
+//    // H(α,δ): mixed from L5
+//    H(0,3) += d2L5_dalpha_ddelta;
+//    H(3,0) = H(0,3);
+//
+//    // H(β,γ): mixed from L6
+//    H(1,2) += d2L6_dbeta_dgamma;
+//    H(2,1) = H(1,2);
+//
+//    // H(β,δ): mixed from L5
+//    H(1,3) += d2L5_dbeta_ddelta;
+//    H(3,1) = H(1,3);
+//
+//  } // end of loop
+//
+//  // Returns the analytic Hessian matrix of the negative log-likelihood
+//  return Rcpp::wrap(-H);
+// }
 
 
 
@@ -4895,8 +5694,6 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
 
    // --- L5: (β-1) ln(v) ---
-   // First derivative w.r.t. α: (β-1) * (1/v)*dv_dalpha
-   double dL5_dalpha = (beta - 1.0) * (dv_dalpha / v);
    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
    double d2L5_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
    // Mixed derivative: d²L5/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
@@ -4910,8 +5707,6 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double dw_dv = -beta * std::pow(v, beta - 1.0);
    // Chain rule: dw/dα = dw/dv * dv/dα
    double dw_dalpha = dw_dv * dv_dalpha;
-   // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
-   double dL6_dalpha = (lambda - 1.0) * (dw_dalpha / w);
    // Second derivative w.r.t. α for L6:
    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
    // Computing d²w/dα²:
@@ -4922,7 +5717,6 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    double d2L6_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
    double dw_dbeta = -v_beta * ln_v;
-   double dL6_dbeta = (lambda - 1.0) * (dw_dbeta / w);
    // Second derivative w.r.t. β for L6:
    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
@@ -4966,6 +5760,213 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  // Returns the analytic Hessian matrix of the negative log-likelihood
  return Rcpp::wrap(-H);
 }
+
+
+
+// //' @title Analytic Hessian Matrix for Exponentiated Kumaraswamy Distribution
+// //'
+// //' @description
+// //' Computes the analytic Hessian matrix of the log-likelihood function for
+// //' the Exponentiated Kumaraswamy (EKw) distribution. This function provides
+// //' exact second derivatives needed for optimization and inference.
+// //'
+// //' @param par Numeric vector of length 3 containing the parameters
+// //'        (α, β, λ) in that order. All parameters must be positive.
+// //' @param data Numeric vector of observations, where all values must be
+// //'        in the open interval (0,1).
+// //'
+// //' @return A 3×3 numeric matrix representing the Hessian of the negative
+// //'         log-likelihood function. If parameters or data are invalid
+// //'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
+// //'         NaN values.
+// //'
+// //' @details
+// //' The log-likelihood for the Exponentiated Kumaraswamy distribution is:
+// //'
+// //' \deqn{
+// //' \ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta)
+// //' + (\alpha-1) \sum \ln(x_i)
+// //' + (\beta-1) \sum \ln(1 - x_i^\alpha)
+// //' + (\lambda-1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
+// //' }
+// //'
+// //' The implementation computes all second derivatives analytically for each term.
+// //' For computational efficiency, the following transformations are used:
+// //' \itemize{
+// //'   \item \deqn{A = x^α} and derivatives
+// //'   \item \deqn{v = 1 - A}
+// //'   \item \deqn{w = 1 - v^β}
+// //' }
+// //'
+// //' The returned Hessian matrix has the following structure:
+// //' \itemize{
+// //'   \item Rows/columns 1-3 correspond to α, β, λ respectively
+// //'   \item The matrix is symmetric (as expected for a Hessian)
+// //'   \item The matrix represents second derivatives of the negative log-likelihood
+// //' }
+// //'
+// //' This function is implemented in C++ for computational efficiency.
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Generate sample data from an EKw distribution
+// //' set.seed(123)
+// //' x <- rekw(100, 2, 3, 0.5)
+// //' hist(x, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+// //'
+// //' # Use in optimization with Hessian-based methods
+// //' result <- optim(c(0.5, 0.5, 0.5), llekw, method = "BFGS",
+// //'                 hessian = TRUE, data = x)
+// //'
+// //' # Compare numerical and analytical derivatives
+// //' num_grad <- numDeriv::grad(llekw, x = result$par, data = x)
+// //' num_hess <- numDeriv::hessian(llekw, x = result$par, data = x)
+// //'
+// //' ana_grad <- grekw(result$par, data = x)
+// //' ana_hess <- hsekw(result$par, data = x)
+// //'
+// //' # Check differences (should be very small)
+// //' round(num_grad - ana_grad, 4)
+// //' round(num_hess - ana_hess, 4)
+// //'
+// //' }
+// //'
+// //'
+// //' @references
+// //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
+// //' Journal of Hydrology, 46(1-2), 79-88.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
+// //' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction - EKw has only 3 parameters
+//  double alpha  = par[0];   // θ[0] = α
+//  double beta   = par[1];   // θ[1] = β
+//  double lambda = par[2];   // θ[2] = λ
+//
+//  // Simple parameter validation (all > 0)
+//  if(alpha <= 0 || beta <= 0 || lambda <= 0) {
+//    Rcpp::NumericMatrix nanH(3,3);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  // Data conversion and basic validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if(arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericMatrix nanH(3,3);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  int n = x.n_elem;  // sample size
+//
+//  // Initialize Hessian matrix H (of ℓ(θ)) as 3x3
+//  arma::mat H(3,3, arma::fill::zeros);
+//
+//  // --- CONSTANT TERMS (do not depend on x) ---
+//  // L1: n ln(λ)  => d²/dλ² = -n/λ²
+//  H(2,2) += - n/(lambda*lambda);
+//  // L2: n ln(α)  => d²/dα² = -n/α²
+//  H(0,0) += - n/(alpha*alpha);
+//  // L3: n ln(β)  => d²/dβ² = -n/β²
+//  H(1,1) += - n/(beta*beta);
+//
+//  // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
+//  // Loop over each observation to accumulate contributions from:
+//  // L4: (α-1) Σ ln(x_i) --> contributes only to first derivatives
+//  // L5: (β-1) Σ ln(v), where v = 1 - x^α
+//  // L6: (λ-1) Σ ln(w), where w = 1 - v^β
+//  for (int i = 0; i < n; i++) {
+//    double xi    = x(i);
+//    double ln_xi = std::log(xi);
+//
+//    // -- Compute A = x^α and its derivatives --
+//    double A = std::pow(xi, alpha);                  // A = x^α
+//    double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
+//    double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+//
+//    // -- v = 1 - A and its derivatives --
+//    double v = 1.0 - A;                              // v = 1 - x^α
+//    double ln_v = std::log(v);                       // ln(v)
+//    double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
+//    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+//
+//    // --- L5: (β-1) ln(v) ---
+//    // First derivative w.r.t. α: (β-1) * (1/v)*dv_dalpha
+//    double dL5_dalpha = (beta - 1.0) * (dv_dalpha / v);
+//    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
+//    double d2L5_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
+//    // Mixed derivative: d²L5/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
+//    double d2L5_dalpha_dbeta = dv_dalpha / v;
+//
+//    // --- L6: (λ - 1) ln(w), where w = 1 - v^β ---
+//    double v_beta = std::pow(v, beta);               // v^β
+//    double w = 1.0 - v_beta;                         // w = 1 - v^β
+//    double ln_w = std::log(w);                       // ln(w)
+//    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
+//    double dw_dv = -beta * std::pow(v, beta - 1.0);
+//    // Chain rule: dw/dα = dw/dv * dv/dα
+//    double dw_dalpha = dw_dv * dv_dalpha;
+//    // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
+//    double dL6_dalpha = (lambda - 1.0) * (dw_dalpha / w);
+//    // Second derivative w.r.t. α for L6:
+//    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
+//    // Computing d²w/dα²:
+//    //   dw/dα = -β * v^(β-1)*dv_dalpha,
+//    //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
+//    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
+//                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
+//    double d2L6_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+//    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
+//    double dw_dbeta = -v_beta * ln_v;
+//    double dL6_dbeta = (lambda - 1.0) * (dw_dbeta / w);
+//    // Second derivative w.r.t. β for L6:
+//    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
+//    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+//    double d2L6_dbeta2 = (lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+//    // Mixed derivative L6 (α,β): d²/(dα dβ) ln(w) =
+//    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
+//    // Approximate d/dβ dw_dalpha:
+//    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
+//    double d2L6_dalpha_dbeta = (lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+//
+//    // Mixed derivatives with λ
+//    // (α,λ): d²/(dα dλ) [λ ln(w)] = d/dλ[(λ-1)(dw_dalpha/w)] = dw_dalpha/w
+//    double d2L6_dalpha_dlambda = dw_dalpha / w;
+//
+//    // (β,λ): d²/(dβ dλ) [λ ln(w)] = d/dλ[(λ-1)(dw_dbeta/w)] = dw_dbeta/w
+//    double d2L6_dbeta_dlambda = dw_dbeta / w;
+//
+//    // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
+//    // Index: 0 = α, 1 = β, 2 = λ
+//
+//    // H(α,α): sum of L2, L5, and L6 (constants already added)
+//    H(0,0) += d2L5_dalpha2 + d2L6_dalpha2;
+//
+//    // H(α,β): mixed from L5 and L6
+//    H(0,1) += d2L5_dalpha_dbeta + d2L6_dalpha_dbeta;
+//    H(1,0) = H(0,1);
+//
+//    // H(β,β): contributions from L3 and L6
+//    H(1,1) += d2L6_dbeta2;
+//
+//    // H(α,λ): mixed derivative from L6
+//    H(0,2) += d2L6_dalpha_dlambda;
+//    H(2,0) = H(0,2);
+//
+//    // H(β,λ): mixed derivative from L6
+//    H(1,2) += d2L6_dbeta_dlambda;
+//    H(2,1) = H(1,2);
+//
+//  } // end of loop
+//
+//  // Returns the analytic Hessian matrix of the negative log-likelihood
+//  return Rcpp::wrap(-H);
+// }
 
 
 
@@ -7223,6 +8224,7 @@ return hessian;
 }
 
 
+
 //' @title Newton-Raphson Optimization for Kumaraswamy Family Distributions
 //'
 //' @description
@@ -7555,34 +8557,6 @@ List nrgkw(
    }
 
    return result;
- };
-
- // Function to update full params given updated params for specific family
- auto update_full_params = [&](NumericVector& full_params, const NumericVector& updated_params) {
-   if (family_lower == "gkw") {
-     for (int j = 0; j < 5; j++) full_params[j] = updated_params[j];
-   } else if (family_lower == "bkw") {
-     for (int j = 0; j < 4; j++) full_params[j] = updated_params[j];
-   } else if (family_lower == "kkw") {
-     full_params[0] = updated_params[0]; // α
-     full_params[1] = updated_params[1]; // β
-     full_params[3] = updated_params[2]; // δ
-     full_params[4] = updated_params[3]; // λ
-   } else if (family_lower == "ekw") {
-     full_params[0] = updated_params[0]; // α
-     full_params[1] = updated_params[1]; // β
-     full_params[4] = updated_params[2]; // λ
-   } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-     full_params[2] = updated_params[0]; // γ
-     full_params[3] = updated_params[1]; // δ
-     full_params[4] = updated_params[2]; // λ
-   } else if (family_lower == "kw") {
-     full_params[0] = updated_params[0]; // α
-     full_params[1] = updated_params[1]; // β
-   } else if (family_lower == "beta") {
-     full_params[2] = updated_params[0]; // γ
-     full_params[3] = updated_params[1]; // δ
-   }
  };
 
  // Create a custom numHess function to handle specific families
@@ -8274,3 +9248,1057 @@ List nrgkw(
  return result;
 }
 
+
+
+
+// //' @title Newton-Raphson Optimization for Kumaraswamy Family Distributions
+// //'
+// //' @description
+// //' Performs maximum likelihood estimation for the parameters of any distribution in the
+// //' Generalized Kumaraswamy (GKw) family using a robust implementation of the Newton-Raphson
+// //' algorithm. This function supports all 7 submodels: GKw, BKw, KKw, EKw, Mc (McDonald),
+// //' Kw, and Beta.
+// //'
+// //' @details
+// //' The Generalized Kumaraswamy family includes the following distributions, all defined on (0,1):
+// //' \itemize{
+// //'   \item \strong{GKw} (Generalized Kumaraswamy): 5 parameters (α, β, γ, δ, λ)
+// //'   \item \strong{BKw} (Beta-Kumaraswamy): 4 parameters (α, β, γ, δ), with λ = 1 fixed
+// //'   \item \strong{KKw} (Kumaraswamy-Kumaraswamy): 4 parameters (α, β, δ, λ), with γ = 1 fixed
+// //'   \item \strong{EKw} (Exponentiated Kumaraswamy): 3 parameters (α, β, λ), with γ = 1, δ = 0 fixed
+// //'   \item \strong{Mc} (McDonald/Beta Power): 3 parameters (γ, δ, λ), with α = 1, β = 1 fixed
+// //'   \item \strong{Kw} (Kumaraswamy): 2 parameters (α, β), with γ = 1, δ = 0, λ = 1 fixed
+// //'   \item \strong{Beta}: 2 parameters (γ, δ), with α = 1, β = 1, λ = 1 fixed
+// //' }
+// //'
+// //' This function implements a sophisticated optimization procedure to find the maximum likelihood
+// //' estimates with multiple fallback strategies to handle numerical challenges:
+// //' 1. Cholesky decomposition (fastest, requires positive-definite Hessian)
+// //' 2. Standard matrix solver
+// //' 3. Regularized Hessian with incremental adjustment
+// //' 4. Pseudo-inverse for highly ill-conditioned matrices
+// //' 5. Gradient descent as ultimate fallback
+// //'
+// //' The function also implements backtracking line search to ensure monotonic improvement in the
+// //' log-likelihood, with random parameter perturbation as a recovery strategy when backtracking fails.
+// //'
+// //' @param start A numeric vector containing initial values for parameters, with length
+// //'        corresponding to the selected family (see Details)
+// //' @param data A numeric vector containing observed data. All values must be in the interval (0,1)
+// //' @param family A character string specifying the distribution family. One of "gkw", "bkw", "kkw",
+// //'        "ekw", "mc", "kw", or "beta". Default: "gkw"
+// //' @param tol Convergence tolerance. The algorithm stops when the gradient norm or parameter/likelihood
+// //'        changes are below this value. Default: 1e-6
+// //' @param max_iter Maximum number of iterations. Default: 100
+// //' @param verbose Logical flag to print detailed progress information. Default: FALSE
+// //' @param use_hessian Logical flag to use Hessian information for parameter updates. If FALSE,
+// //'        the algorithm uses gradient descent instead. Default: TRUE
+// //' @param step_size Initial step size for parameter updates. Default: 1.0
+// //' @param enforce_bounds Logical flag to enforce parameter constraints. Default: TRUE
+// //' @param min_param_val Minimum allowed value for parameters (except delta). Default: 1e-5
+// //' @param max_param_val Maximum allowed value for parameters. Default: 1e5
+// //' @param get_num_hess Logical flag to calculate numerical Hessian in addition to analytical Hessian.
+// //'        Default: FALSE
+// //'
+// //' @return A list containing the following components:
+// //' \describe{
+// //'   \item{parameters}{A numeric vector with the estimated parameters}
+// //'   \item{loglik}{The maximized log-likelihood value}
+// //'   \item{iterations}{Number of iterations performed}
+// //'   \item{converged}{Logical flag indicating whether the algorithm converged}
+// //'   \item{param_history}{Matrix of parameter values at each iteration}
+// //'   \item{loglik_history}{Vector of log-likelihood values at each iteration}
+// //'   \item{gradient}{The gradient vector at the final parameter estimates}
+// //'   \item{hessian}{The Hessian matrix at the final parameter estimates}
+// //'   \item{std_errors}{Standard errors for the estimated parameters}
+// //'   \item{aic}{Akaike Information Criterion: AIC = 2k - 2ln(L)}
+// //'   \item{bic}{Bayesian Information Criterion: BIC = k ln(n) - 2ln(L)}
+// //'   \item{n}{Sample size}
+// //'   \item{status}{Character string indicating the termination status}
+// //'   \item{z_values}{Z-statistics for parameter significance tests}
+// //'   \item{p_values}{P-values for parameter significance tests}
+// //'   \item{param_names}{Character vector of parameter names}
+// //'   \item{family}{The distribution family used in the estimation}
+// //'   \item{numeric_hessian}{Numerical approximation of the Hessian (only if get_num_hess=TRUE)}
+// //' }
+// //'
+// //' @section Warning:
+// //' Convergence is not guaranteed for all datasets and initial values. It's recommended to:
+// //' \itemize{
+// //'   \item Try different initial values if convergence fails
+// //'   \item Check the gradient norm at the final solution to verify optimality
+// //'   \item Examine parameter history to identify potential issues
+// //'   \item Use the verbose option to get detailed progress information for troubleshooting
+// //' }
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Generate sample data from Beta(2,5) distribution for testing
+// //' set.seed(123)
+// //' sample_data <- rbeta(200, 2, 5)
+// //'
+// //' # Fit with full GKw model
+// //' gkw_result <- mle_fit(c(1.5, 4.5, 1.0, 0.0, 1.0), sample_data, family = "gkw")
+// //' gkw_result$parameters
+// //'
+// //' # Fit with simpler Kumaraswamy model
+// //' kw_result <- mle_fit(c(1.5, 4.5), sample_data, family = "kw")
+// //' kw_result$parameters
+// //'
+// //' # Fit with Beta model
+// //' beta_result <- mle_fit(c(2.0, 5.0), sample_data, family = "beta")
+// //' beta_result$parameters
+// //'
+// //' # Compare AIC/BIC values to select the best model
+// //' data.frame(
+// //'   family = c("gkw", "kw", "beta"),
+// //'   AIC = c(gkw_result$aic, kw_result$aic, beta_result$aic),
+// //'   BIC = c(gkw_result$bic, kw_result$bic, beta_result$bic)
+// //' )
+// //' }
+// //'
+// //' @references
+// //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
+// //' random processes. Journal of Hydrology, 46(1-2), 79-88.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
+// //' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+// //'
+// //' Fletcher, R. (1987). Practical Methods of Optimization. John Wiley & Sons.
+// //'
+// //' @author Lopes, J. E.
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// List nrgkw(
+//    NumericVector start,
+//    NumericVector data,
+//    std::string family = "gkw",
+//    double tol = 1e-6,
+//    int max_iter = 100,
+//    bool verbose = false,
+//    bool use_hessian = true,
+//    double step_size = 1.0,
+//    bool enforce_bounds = true,
+//    double min_param_val = 1e-5,
+//    double max_param_val = 1e5,
+//    bool get_num_hess = false
+// ) {
+//  // Final result will be a list with different components
+//  List result;
+//
+//  // Convert family to lowercase for case-insensitive comparison
+//  std::string family_lower = family;
+//  std::transform(family_lower.begin(), family_lower.end(), family_lower.begin(), ::tolower);
+//
+//  // Determine number of parameters based on family
+//  int n_params = 0;
+//  CharacterVector param_names;
+//
+//  if (family_lower == "gkw") {
+//    n_params = 5;
+//    param_names = CharacterVector::create("alpha", "beta", "gamma", "delta", "lambda");
+//  } else if (family_lower == "bkw") {
+//    n_params = 4;
+//    param_names = CharacterVector::create("alpha", "beta", "gamma", "delta");
+//  } else if (family_lower == "kkw") {
+//    n_params = 4;
+//    param_names = CharacterVector::create("alpha", "beta", "delta", "lambda");
+//  } else if (family_lower == "ekw") {
+//    n_params = 3;
+//    param_names = CharacterVector::create("alpha", "beta", "lambda");
+//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//    n_params = 3;
+//    param_names = CharacterVector::create("gamma", "delta", "lambda");
+//  } else if (family_lower == "kw") {
+//    n_params = 2;
+//    param_names = CharacterVector::create("alpha", "beta");
+//  } else if (family_lower == "beta") {
+//    n_params = 2;
+//    param_names = CharacterVector::create("gamma", "delta");
+//  } else {
+//    stop("Unknown family: '" + family + "'. Available options are 'gkw', 'bkw', 'kkw', 'ekw', 'mc', 'kw', 'beta'.");
+//  }
+//
+//  // Validate initial parameters size
+//  if (start.size() != n_params) {
+//    stop("Invalid number of parameters for '" + family + "'. Expected " +
+//      std::to_string(n_params) + ", got " + std::to_string(start.size()));
+//  }
+//
+//  // Check for valid data
+//  int n_data = data.size();
+//  if (n_data < n_params) {
+//    stop("At least " + std::to_string(n_params) + " data points are needed to estimate " +
+//      std::to_string(n_params) + " parameters");
+//  }
+//
+//  // Check if all data are in the interval (0,1)
+//  for (int i = 0; i < n_data; i++) {
+//    if (data[i] <= 0.0 || data[i] >= 1.0 || !R_finite(data[i])) {
+//      stop("All data must be in the interval (0,1)");
+//    }
+//  }
+//
+//  // Copy initial parameters and convert to standard GKw parameters where needed
+//  NumericVector params(5); // Always use 5 parameters internally (GKw format)
+//
+//  // Set default values based on fixed parameters in specific families
+//  params[0] = 1.0; // α = 1 default
+//  params[1] = 1.0; // β = 1 default
+//  params[2] = 1.0; // γ = 1 default
+//  params[3] = 0.0; // δ = 0 default
+//  params[4] = 1.0; // λ = 1 default
+//
+//  // Fill with provided parameters based on family
+//  if (family_lower == "gkw") {
+//    for (int j = 0; j < 5; j++) {
+//      params[j] = start[j];
+//    }
+//  } else if (family_lower == "bkw") {
+//    // α, β, γ, δ with λ = 1
+//    for (int j = 0; j < 4; j++) {
+//      params[j] = start[j];
+//    }
+//    params[4] = 1.0; // λ fixed at 1
+//  } else if (family_lower == "kkw") {
+//    // α, β, δ, λ with γ = 1
+//    params[0] = start[0]; // α
+//    params[1] = start[1]; // β
+//    params[2] = 1.0;             // γ fixed at 1
+//    params[3] = start[2]; // δ
+//    params[4] = start[3]; // λ
+//  } else if (family_lower == "ekw") {
+//    // α, β, λ with γ = 1, δ = 0
+//    params[0] = start[0]; // α
+//    params[1] = start[1]; // β
+//    params[2] = 1.0;             // γ fixed at 1
+//    params[3] = 0.0;             // δ fixed at 0
+//    params[4] = start[2]; // λ
+//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//    // γ, δ, λ with α = 1, β = 1
+//    params[0] = 1.0;             // α fixed at 1
+//    params[1] = 1.0;             // β fixed at 1
+//    params[2] = start[0]; // γ
+//    params[3] = start[1]; // δ
+//    params[4] = start[2]; // λ
+//  } else if (family_lower == "kw") {
+//    // α, β with γ = 1, δ = 0, λ = 1
+//    params[0] = start[0]; // α
+//    params[1] = start[1]; // β
+//    params[2] = 1.0;             // γ fixed at 1
+//    params[3] = 0.0;             // δ fixed at 0
+//    params[4] = 1.0;             // λ fixed at 1
+//  } else if (family_lower == "beta") {
+//    // γ, δ with α = 1, β = 1, λ = 1
+//    params[0] = 1.0;             // α fixed at 1
+//    params[1] = 1.0;             // β fixed at 1
+//    params[2] = start[0]; // γ
+//    params[3] = start[1]; // δ
+//    params[4] = 1.0;             // λ fixed at 1
+//  }
+//
+//  // Apply constraints to initial parameters if needed
+//  if (enforce_bounds) {
+//    for (int j = 0; j < 5; j++) {
+//      if (j == 3) { // delta
+//        params[j] = std::max(0.0, params[j]);
+//      } else { // other parameters must be > 0
+//        params[j] = std::max(min_param_val, params[j]);
+//      }
+//      params[j] = std::min(max_param_val, params[j]);
+//    }
+//  }
+//
+//  // Define function pointers based on family
+//  std::function<double(NumericVector, NumericVector)> ll_func;
+//  std::function<NumericVector(NumericVector, NumericVector)> gr_func;
+//  std::function<NumericMatrix(NumericVector, NumericVector)> hs_func;
+//
+//  // Assign appropriate functions based on family
+//  if (family_lower == "gkw") {
+//    ll_func = llgkw;
+//    gr_func = grgkw;
+//    hs_func = hsgkw;
+//  } else if (family_lower == "bkw") {
+//    ll_func = llbkw;
+//    gr_func = grbkw;
+//    hs_func = hsbkw;
+//  } else if (family_lower == "kkw") {
+//    ll_func = llkkw;
+//    gr_func = grkkw;
+//    hs_func = hskkw;
+//  } else if (family_lower == "ekw") {
+//    ll_func = llekw;
+//    gr_func = grekw;
+//    hs_func = hsekw;
+//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//    ll_func = llbp;
+//    gr_func = grbp;
+//    hs_func = hsbp;
+//  } else if (family_lower == "kw") {
+//    ll_func = llkw;
+//    gr_func = grkw;
+//    hs_func = hskw;
+//  } else if (family_lower == "beta") {
+//    ll_func = llbeta;
+//    gr_func = grbeta;
+//    hs_func = hsbeta;
+//  }
+//
+//  // Function to extract relevant parameters for specific family
+//  auto extract_params = [&](const NumericVector& full_params) -> NumericVector {
+//    NumericVector result;
+//
+//    if (family_lower == "gkw") {
+//      result = NumericVector(5);
+//      for (int j = 0; j < 5; j++) result[j] = full_params[j];
+//    } else if (family_lower == "bkw") {
+//      result = NumericVector(4);
+//      for (int j = 0; j < 4; j++) result[j] = full_params[j];
+//    } else if (family_lower == "kkw") {
+//      result = NumericVector(4);
+//      result[0] = full_params[0]; // α
+//      result[1] = full_params[1]; // β
+//      result[2] = full_params[3]; // δ
+//      result[3] = full_params[4]; // λ
+//    } else if (family_lower == "ekw") {
+//      result = NumericVector(3);
+//      result[0] = full_params[0]; // α
+//      result[1] = full_params[1]; // β
+//      result[2] = full_params[4]; // λ
+//    } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//      result = NumericVector(3);
+//      result[0] = full_params[2]; // γ
+//      result[1] = full_params[3]; // δ
+//      result[2] = full_params[4]; // λ
+//    } else if (family_lower == "kw") {
+//      result = NumericVector(2);
+//      result[0] = full_params[0]; // α
+//      result[1] = full_params[1]; // β
+//    } else if (family_lower == "beta") {
+//      result = NumericVector(2);
+//      result[0] = full_params[2]; // γ
+//      result[1] = full_params[3]; // δ
+//    }
+//
+//    return result;
+//  };
+//
+//  // Function to update full params given updated params for specific family
+//  auto update_full_params = [&](NumericVector& full_params, const NumericVector& updated_params) {
+//    if (family_lower == "gkw") {
+//      for (int j = 0; j < 5; j++) full_params[j] = updated_params[j];
+//    } else if (family_lower == "bkw") {
+//      for (int j = 0; j < 4; j++) full_params[j] = updated_params[j];
+//    } else if (family_lower == "kkw") {
+//      full_params[0] = updated_params[0]; // α
+//      full_params[1] = updated_params[1]; // β
+//      full_params[3] = updated_params[2]; // δ
+//      full_params[4] = updated_params[3]; // λ
+//    } else if (family_lower == "ekw") {
+//      full_params[0] = updated_params[0]; // α
+//      full_params[1] = updated_params[1]; // β
+//      full_params[4] = updated_params[2]; // λ
+//    } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//      full_params[2] = updated_params[0]; // γ
+//      full_params[3] = updated_params[1]; // δ
+//      full_params[4] = updated_params[2]; // λ
+//    } else if (family_lower == "kw") {
+//      full_params[0] = updated_params[0]; // α
+//      full_params[1] = updated_params[1]; // β
+//    } else if (family_lower == "beta") {
+//      full_params[2] = updated_params[0]; // γ
+//      full_params[3] = updated_params[1]; // δ
+//    }
+//  };
+//
+//  // Create a custom numHess function to handle specific families
+//  auto numHess_family = [&](NumericVector params_family, NumericVector data_family, double eps = 1e-6) {
+//    int n_params_family = params_family.size();
+//    arma::mat hessian(n_params_family, n_params_family, arma::fill::zeros);
+//
+//    // Value of the function at the current point
+//    double f0 = ll_func(params_family, data_family);
+//
+//    // For each pair of variables
+//    for (int i = 0; i < n_params_family; i++) {
+//      for (int j = 0; j <= i; j++) {
+//        // Calculate second derivative using finite differences
+//        if (i == j) {
+//          // Second derivative with respect to the same variable
+//          NumericVector params_p = clone(params_family);
+//          NumericVector params_m = clone(params_family);
+//
+//          params_p[i] += eps;
+//          params_m[i] -= eps;
+//
+//          double f_p = ll_func(params_p, data_family);
+//          double f_m = ll_func(params_m, data_family);
+//
+//          hessian(i, j) = (f_p - 2*f0 + f_m) / (eps * eps);
+//        } else {
+//          // Mixed derivative
+//          NumericVector params_pp = clone(params_family);
+//          NumericVector params_pm = clone(params_family);
+//          NumericVector params_mp = clone(params_family);
+//          NumericVector params_mm = clone(params_family);
+//
+//          params_pp[i] += eps;
+//          params_pp[j] += eps;
+//
+//          params_pm[i] += eps;
+//          params_pm[j] -= eps;
+//
+//          params_mp[i] -= eps;
+//          params_mp[j] += eps;
+//
+//          params_mm[i] -= eps;
+//          params_mm[j] -= eps;
+//
+//          double f_pp = ll_func(params_pp, data_family);
+//          double f_pm = ll_func(params_pm, data_family);
+//          double f_mp = ll_func(params_mp, data_family);
+//          double f_mm = ll_func(params_mm, data_family);
+//
+//          hessian(i, j) = hessian(j, i) = (f_pp - f_pm - f_mp + f_mm) / (4 * eps * eps);
+//        }
+//      }
+//    }
+//
+//    return hessian;
+//  };
+//
+//  // Get family-specific parameters
+//  NumericVector family_params = extract_params(params);
+//
+//  // Calculate initial log-likelihood
+//  double initial_loglik = ll_func(family_params, data);
+//  if (!R_finite(initial_loglik) || initial_loglik == R_PosInf) {
+//    stop("Initial log-likelihood is infinite or NaN. Check the initial parameters.");
+//  }
+//
+//  // Parameter and log-likelihood history for diagnostics
+//  NumericMatrix param_history(max_iter + 1, n_params);
+//  NumericVector loglik_history(max_iter + 1);
+//
+//  // Initialize history with initial values
+//  for (int j = 0; j < n_params; j++) {
+//    param_history(0, j) = family_params[j];
+//  }
+//  loglik_history[0] = initial_loglik;
+//
+//  // Variables for convergence control
+//  bool converged = false;
+//  int iter = 0;
+//  double prev_loglik = initial_loglik;
+//
+//  // Prepare to store the best result obtained
+//  double best_loglik = initial_loglik;
+//  NumericVector best_params = clone(family_params);
+//
+//  // Main Newton-Raphson loop
+//  while (!converged && iter < max_iter) {
+//    iter++;
+//
+//    // Calculate log-likelihood, gradient and hessian
+//    double current_loglik = ll_func(family_params, data);
+//    NumericVector gradient = gr_func(family_params, data);
+//
+//    // Check if gradient has valid values
+//    bool valid_gradient = true;
+//    for (int j = 0; j < n_params; j++) {
+//      if (!R_finite(gradient[j])) {
+//        valid_gradient = false;
+//        break;
+//      }
+//    }
+//
+//    if (!valid_gradient) {
+//      if (verbose) {
+//        Rcout << "Warning: Invalid gradient in iteration " << iter << std::endl;
+//      }
+//      result["converged"] = false;
+//      result["status"] = "gradient_failure";
+//      // Use the best parameters found so far
+//      family_params = best_params;
+//      break;
+//    }
+//
+//    // Calculate gradient norm for stopping criterion
+//    double grad_norm = 0.0;
+//    for (int j = 0; j < n_params; j++) {
+//      grad_norm += gradient[j] * gradient[j];
+//    }
+//    grad_norm = std::sqrt(grad_norm);
+//
+//    if (grad_norm < tol) {
+//      converged = true;
+//      if (verbose) {
+//        Rcout << "Convergence detected: gradient norm (" << grad_norm
+//              << ") < tolerance (" << tol << ")" << std::endl;
+//      }
+//      break;
+//    }
+//
+//    // Update direction
+//    NumericVector update(n_params);
+//
+//    if (use_hessian) {
+//      // Calculate the Hessian
+//      NumericMatrix rcpp_hessian = hs_func(family_params, data);
+//
+//      // Check if Hessian has valid values
+//      bool valid_hessian = true;
+//      for (int i = 0; i < n_params; i++) {
+//        for (int j = 0; j < n_params; j++) {
+//          if (!R_finite(rcpp_hessian(i, j))) {
+//            valid_hessian = false;
+//            break;
+//          }
+//        }
+//        if (!valid_hessian) break;
+//      }
+//
+//      if (!valid_hessian) {
+//        if (verbose) {
+//          Rcout << "Warning: Invalid Hessian in iteration " << iter
+//                << ", using only the gradient." << std::endl;
+//        }
+//        // Fallback to steepest descent if Hessian is invalid
+//        for (int j = 0; j < n_params; j++) {
+//          // Normalize gradient for step control
+//          update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
+//        }
+//      } else {
+//        // Convert to arma::mat for more robust matrix operations
+//        arma::mat hessian = as<arma::mat>(rcpp_hessian);
+//        arma::vec grad_vec = as<arma::vec>(gradient);
+//        arma::vec neg_grad = -grad_vec;
+//        arma::vec update_vec;
+//
+//        bool solve_success = false;
+//
+//        // Try 1: Cholesky for symmetric positive definite matrices (fastest)
+//        try {
+//          update_vec = arma::solve(hessian, neg_grad, arma::solve_opts::likely_sympd);
+//          solve_success = true;
+//
+//          if (verbose) {
+//            Rcout << "Cholesky decomposition successful for parameter update." << std::endl;
+//          }
+//        } catch (...) {
+//          if (verbose) {
+//            Rcout << "Warning: Cholesky decomposition failed, trying standard solver..." << std::endl;
+//          }
+//
+//          // Try 2: Standard Armadillo solver
+//          try {
+//            update_vec = arma::solve(hessian, neg_grad);
+//            solve_success = true;
+//
+//            if (verbose) {
+//              Rcout << "Standard solver successful for parameter update." << std::endl;
+//            }
+//          } catch (...) {
+//            if (verbose) {
+//              Rcout << "Warning: Standard solver failed, trying with regularization..." << std::endl;
+//            }
+//
+//            // Try 3: Regularize the Hessian matrix
+//            arma::mat reg_hessian = hessian;
+//            double reg_factor = 1e-6;
+//
+//            // Find reasonable magnitude for regularization
+//            double diag_max = arma::max(arma::abs(reg_hessian.diag()));
+//            reg_factor = std::max(reg_factor, 1e-6 * diag_max);
+//
+//            // Add small value to diagonal
+//            reg_hessian.diag() += reg_factor;
+//
+//            try {
+//              update_vec = arma::solve(reg_hessian, neg_grad);
+//              solve_success = true;
+//
+//              if (verbose) {
+//                Rcout << "Regularized solver successful with factor: " << reg_factor << std::endl;
+//              }
+//            } catch (...) {
+//              // Try 4: Stronger regularization
+//              reg_hessian = hessian;
+//              reg_factor = 1e-4 * (1.0 + diag_max);
+//              reg_hessian.diag() += reg_factor;
+//
+//              try {
+//                update_vec = arma::solve(reg_hessian, neg_grad);
+//                solve_success = true;
+//
+//                if (verbose) {
+//                  Rcout << "Stronger regularization successful with factor: " << reg_factor << std::endl;
+//                }
+//              } catch (...) {
+//                // Try 5: Pseudo-inverse (very robust method)
+//                try {
+//                  arma::mat hess_pinv = arma::pinv(hessian);
+//                  update_vec = hess_pinv * neg_grad;
+//                  solve_success = true;
+//
+//                  if (verbose) {
+//                    Rcout << "Pseudo-inverse solution successful for parameter update." << std::endl;
+//                  }
+//                } catch (...) {
+//                  if (verbose) {
+//                    Rcout << "Warning: All matrix inversion methods failed in iteration " << iter
+//                          << ", using only the gradient." << std::endl;
+//                  }
+//
+//                  // If all attempts fail, use gradient descent
+//                  for (int j = 0; j < n_params; j++) {
+//                    update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
+//                  }
+//
+//                  solve_success = false;
+//                }
+//              }
+//            }
+//          }
+//        }
+//
+//        if (solve_success) {
+//          // Convert solution from arma::vec to NumericVector
+//          update = wrap(update_vec);
+//
+//          // Limit step size to avoid too large steps
+//          double max_update = 0.0;
+//          for (int j = 0; j < n_params; j++) {
+//            max_update = std::max(max_update, std::abs(update[j]));
+//          }
+//
+//          // If step is too large, reduce proportionally
+//          const double max_step = 2.0;
+//          if (max_update > max_step) {
+//            double scale_factor = max_step / max_update;
+//            for (int j = 0; j < n_params; j++) {
+//              update[j] *= scale_factor;
+//            }
+//          }
+//
+//          // Apply step_size
+//          for (int j = 0; j < n_params; j++) {
+//            update[j] *= step_size;
+//          }
+//        }
+//      }
+//    } else {
+//      // Use only gradient (gradient descent method)
+//      for (int j = 0; j < n_params; j++) {
+//        update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
+//      }
+//    }
+//
+//    // Update parameters: theta_new = theta_old + update
+//    NumericVector new_params(n_params);
+//    for (int j = 0; j < n_params; j++) {
+//      new_params[j] = family_params[j] + update[j];
+//    }
+//
+//    // Enforce bounds if requested
+//    if (enforce_bounds) {
+//      for (int j = 0; j < n_params; j++) {
+//        bool is_delta = (family_lower == "gkw" && j == 3) ||
+//          (family_lower == "bkw" && j == 3) ||
+//          (family_lower == "kkw" && j == 2) ||
+//          (family_lower == "mc" && j == 1) ||
+//          (family_lower == "beta" && j == 1);
+//
+//        // Note: for delta, we allow values down to 0
+//        if (is_delta) {
+//          new_params[j] = std::max(0.0, new_params[j]);
+//        } else {
+//          new_params[j] = std::max(min_param_val, new_params[j]);
+//        }
+//        new_params[j] = std::min(max_param_val, new_params[j]);
+//      }
+//    }
+//
+//    // Calculate new objective function value
+//    double new_loglik = ll_func(new_params, data);
+//
+//    // Line search / Backtracking if new value is not better
+//    bool backtracking_success = true;
+//    double bt_step = 1.0;
+//    const double bt_factor = 0.5; // reduce step by half each backtracking
+//    const int max_bt = 10;        // maximum backtracking iterations
+//
+//    if (!R_finite(new_loglik) || new_loglik >= current_loglik) {
+//      backtracking_success = false;
+//
+//      if (verbose) {
+//        Rcout << "Starting backtracking at iteration " << iter
+//              << ", current value: " << current_loglik
+//              << ", new value: " << new_loglik << std::endl;
+//      }
+//
+//      for (int bt = 0; bt < max_bt; bt++) {
+//        bt_step *= bt_factor;
+//
+//        // Recalculate new parameters with reduced step
+//        for (int j = 0; j < n_params; j++) {
+//          new_params[j] = family_params[j] + bt_step * update[j];
+//        }
+//
+//        // Enforce bounds again
+//        if (enforce_bounds) {
+//          for (int j = 0; j < n_params; j++) {
+//            bool is_delta = (family_lower == "gkw" && j == 3) ||
+//              (family_lower == "bkw" && j == 3) ||
+//              (family_lower == "kkw" && j == 2) ||
+//              (family_lower == "mc" && j == 1) ||
+//              (family_lower == "beta" && j == 1);
+//
+//            if (is_delta) {
+//              new_params[j] = std::max(0.0, new_params[j]);
+//            } else {
+//              new_params[j] = std::max(min_param_val, new_params[j]);
+//            }
+//            new_params[j] = std::min(max_param_val, new_params[j]);
+//          }
+//        }
+//
+//        // Test new value
+//        new_loglik = ll_func(new_params, data);
+//
+//        if (R_finite(new_loglik) && new_loglik < current_loglik) {
+//          backtracking_success = true;
+//          if (verbose) {
+//            Rcout << "Backtracking successful after " << (bt + 1)
+//                  << " attempts, new value: " << new_loglik << std::endl;
+//          }
+//          break;
+//        }
+//      }
+//    }
+//
+//    // If we still cannot improve, evaluate the situation
+//    if (!backtracking_success) {
+//      if (verbose) {
+//        Rcout << "Warning: Backtracking failed at iteration " << iter << std::endl;
+//      }
+//
+//      // If gradient is small enough, consider converged
+//      if (grad_norm < tol * 10) {  // Relaxed tolerance for this case
+//        converged = true;
+//        if (verbose) {
+//          Rcout << "Convergence detected with small gradient after backtracking failure." << std::endl;
+//        }
+//      } else {
+//        // If backtracking fails and we're close to max iterations,
+//        // check if we're in a reasonable region
+//        if (iter > max_iter * 0.8 && current_loglik < best_loglik * 1.1) {
+//          converged = true;
+//          if (verbose) {
+//            Rcout << "Forced convergence after backtracking failure near maximum iterations." << std::endl;
+//          }
+//        } else {
+//          // Try a small random perturbation
+//          NumericVector perturb(n_params);
+//          for (int j = 0; j < n_params; j++) {
+//            // Perturbation of up to 5% of current value
+//            double range = 0.05 * std::abs(family_params[j]);
+//            perturb[j] = R::runif(-range, range);
+//            new_params[j] = family_params[j] + perturb[j];
+//          }
+//
+//          // Apply constraints
+//          if (enforce_bounds) {
+//            for (int j = 0; j < n_params; j++) {
+//              bool is_delta = (family_lower == "gkw" && j == 3) ||
+//                (family_lower == "bkw" && j == 3) ||
+//                (family_lower == "kkw" && j == 2) ||
+//                (family_lower == "mc" && j == 1) ||
+//                (family_lower == "beta" && j == 1);
+//
+//              if (is_delta) {
+//                new_params[j] = std::max(0.0, new_params[j]);
+//              } else {
+//                new_params[j] = std::max(min_param_val, new_params[j]);
+//              }
+//              new_params[j] = std::min(max_param_val, new_params[j]);
+//            }
+//          }
+//
+//          new_loglik = ll_func(new_params, data);
+//
+//          if (R_finite(new_loglik) && new_loglik < current_loglik) {
+//            backtracking_success = true;
+//            if (verbose) {
+//              Rcout << "Recovery by random perturbation, new value: " << new_loglik << std::endl;
+//            }
+//          } else {
+//            // If even perturbation doesn't work, use the best result so far
+//            new_params = best_params;
+//            new_loglik = best_loglik;
+//            if (verbose) {
+//              Rcout << "Returning to the previous best result: " << -best_loglik << std::endl;
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    // Update parameters and history
+//    for (int j = 0; j < n_params; j++) {
+//      family_params[j] = new_params[j];
+//      param_history(iter, j) = family_params[j];
+//    }
+//    loglik_history[iter] = new_loglik;
+//
+//    // Update the best result if this is better
+//    if (new_loglik < best_loglik) {
+//      best_loglik = new_loglik;
+//      for (int j = 0; j < n_params; j++) {
+//        best_params[j] = family_params[j];
+//      }
+//    }
+//
+//    // Check convergence by parameter change
+//    double param_change = 0.0;
+//    double param_rel_change = 0.0;
+//    for (int j = 0; j < n_params; j++) {
+//      param_change += std::pow(update[j], 2);
+//      if (std::abs(family_params[j]) > 1e-10) {
+//        param_rel_change += std::pow(update[j] / family_params[j], 2);
+//      } else {
+//        param_rel_change += std::pow(update[j], 2);
+//      }
+//    }
+//    param_change = std::sqrt(param_change);
+//    param_rel_change = std::sqrt(param_rel_change / n_params);
+//
+//    // Check convergence by log-likelihood change
+//    double loglik_change = std::abs(prev_loglik - new_loglik);
+//    double loglik_rel_change = loglik_change / (std::abs(prev_loglik) + 1e-10);
+//    prev_loglik = new_loglik;
+//
+//    if (verbose) {
+//      Rcout << "Iteration " << iter
+//            << ", Log-likelihood: " << -new_loglik
+//            << ", Change: " << loglik_change
+//            << ", Rel. Change: " << loglik_rel_change
+//            << ", Gradient Norm: " << grad_norm
+//            << std::endl;
+//
+//      Rcout << "Parameters:";
+//      for (int j = 0; j < n_params; j++) {
+//        Rcout << " " << family_params[j];
+//      }
+//      Rcout << std::endl;
+//    }
+//
+//    // Convergence criteria
+//    if (param_change < tol || param_rel_change < tol ||
+//        loglik_change < tol || loglik_rel_change < tol) {
+//      converged = true;
+//      if (verbose) {
+//        Rcout << "Convergence detected:" << std::endl;
+//        if (param_change < tol) Rcout << "- Absolute parameter change < tolerance" << std::endl;
+//        if (param_rel_change < tol) Rcout << "- Relative parameter change < tolerance" << std::endl;
+//        if (loglik_change < tol) Rcout << "- Absolute log-likelihood change < tolerance" << std::endl;
+//        if (loglik_rel_change < tol) Rcout << "- Relative log-likelihood change < tolerance" << std::endl;
+//      }
+//    }
+//  }
+//
+//  // If not converged, use the best parameters found
+//  if (!converged) {
+//    family_params = best_params;
+//    if (verbose) {
+//      Rcout << "Did not fully converge, using the best parameters found." << std::endl;
+//    }
+//  }
+//
+//  // Prepare final result
+//  NumericMatrix final_param_history(iter + 1, n_params);
+//  NumericVector final_loglik_history(iter + 1);
+//
+//  for (int i = 0; i <= iter; i++) {
+//    for (int j = 0; j < n_params; j++) {
+//      final_param_history(i, j) = param_history(i, j);
+//    }
+//    final_loglik_history[i] = loglik_history[i];
+//  }
+//
+//  // Calculate final gradient and hessian
+//  NumericVector final_gradient = gr_func(family_params, data);
+//  NumericMatrix rcpp_hessian = hs_func(family_params, data);
+//
+//  // Calculate numerical Hessian if requested
+//  NumericMatrix rcpp_numeric_hessian;
+//  if (get_num_hess) {
+//    arma::mat arma_numeric_hessian = numHess_family(family_params, data);
+//    rcpp_numeric_hessian = wrap(arma_numeric_hessian);
+//    result["numeric_hessian"] = rcpp_numeric_hessian;
+//  }
+//
+//  // Calculate standard errors using Armadillo for robust matrix inversion
+//  NumericVector std_errors(n_params, NA_REAL);
+//  bool valid_se = true;
+//
+//  // Convert Rcpp Hessian to Armadillo matrix
+//  arma::mat hessian = as<arma::mat>(rcpp_hessian);
+//  arma::mat cov_matrix;
+//
+//  // Layered approach to calculate covariance matrix (inverse of Hessian)
+//  try {
+//    // Step 1: Try to use Cholesky decomposition (fastest, requires positive definite)
+//    try {
+//      cov_matrix = arma::inv_sympd(hessian);
+//
+//      if (verbose) {
+//        Rcout << "Standard error calculation: Cholesky decomposition successful." << std::endl;
+//      }
+//    } catch (...) {
+//      // Step 2: Try standard inversion
+//      try {
+//        cov_matrix = arma::inv(hessian);
+//
+//        if (verbose) {
+//          Rcout << "Standard error calculation: Standard inverse successful." << std::endl;
+//        }
+//      } catch (...) {
+//        // Step 3: Apply regularization
+//        arma::mat reg_hessian = hessian;
+//        double reg_factor = 1e-6;
+//
+//        // Find reasonable magnitude for regularization
+//        double diag_max = arma::max(arma::abs(reg_hessian.diag()));
+//        reg_factor = std::max(reg_factor, 1e-6 * diag_max);
+//
+//        // Add small value to diagonal
+//        reg_hessian.diag() += reg_factor;
+//
+//        try {
+//          cov_matrix = arma::inv(reg_hessian);
+//
+//          if (verbose) {
+//            Rcout << "Standard error calculation: Regularized inverse successful." << std::endl;
+//          }
+//        } catch (...) {
+//          // Step 4: Stronger regularization
+//          reg_hessian = hessian;
+//          reg_factor = 1e-4 * (1.0 + diag_max);
+//          reg_hessian.diag() += reg_factor;
+//
+//          try {
+//            cov_matrix = arma::inv(reg_hessian);
+//
+//            if (verbose) {
+//              Rcout << "Standard error calculation: Stronger regularized inverse successful." << std::endl;
+//            }
+//          } catch (...) {
+//            // Step 5: Use pseudo-inverse (more robust)
+//            try {
+//              cov_matrix = arma::pinv(hessian);
+//
+//              if (verbose) {
+//                Rcout << "Standard error calculation: Pseudo-inverse successful." << std::endl;
+//              }
+//            } catch (...) {
+//              // Step 6: Try numerical Hessian if available
+//              if (get_num_hess) {
+//                arma::mat num_hessian = as<arma::mat>(rcpp_numeric_hessian);
+//
+//                try {
+//                  cov_matrix = arma::pinv(num_hessian);
+//
+//                  if (verbose) {
+//                    Rcout << "Standard error calculation: Numerical Hessian pseudo-inverse successful." << std::endl;
+//                  }
+//                } catch (...) {
+//                  valid_se = false;
+//                }
+//              } else {
+//                valid_se = false;
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    // Calculate standard errors if covariance matrix is available
+//    if (valid_se) {
+//      // Extract diagonal elements and calculate square root
+//      arma::vec diag_cov = cov_matrix.diag();
+//
+//      for (int j = 0; j < n_params; j++) {
+//        if (diag_cov(j) > 0) {
+//          std_errors[j] = std::sqrt(diag_cov(j));
+//        } else {
+//          if (verbose) {
+//            Rcout << "Warning: Non-positive variance detected for parameter " << j
+//                  << ". Standard error set to NA." << std::endl;
+//          }
+//          std_errors[j] = NA_REAL;
+//        }
+//      }
+//    }
+//  } catch (...) {
+//    valid_se = false;
+//  }
+//
+//  if (!valid_se && verbose) {
+//    Rcout << "Warning: Could not calculate standard errors. The Hessian matrix may not be positive definite." << std::endl;
+//  }
+//
+//  // Calculate AIC: AIC = 2k - 2ln(L) = 2k + 2*(-ln(L))
+//  double final_loglik = ll_func(family_params, data);
+//  double aic = 2 * n_params + 2 * final_loglik;
+//
+//  // Calculate BIC: BIC = k ln(n) - 2ln(L) = k ln(n) + 2*(-ln(L))
+//  double bic = n_params * std::log(n_data) + 2 * final_loglik;
+//
+//  // Fill the result
+//  result["parameters"] = family_params;
+//  result["loglik"] = -final_loglik;  // Negative because ll functions return -logL
+//  result["iterations"] = iter;
+//  result["converged"] = converged;
+//  result["param_history"] = final_param_history;
+//  result["loglik_history"] = -final_loglik_history;  // Negative for consistency
+//  result["gradient"] = final_gradient;
+//  result["hessian"] = rcpp_hessian;
+//  result["std_errors"] = std_errors;
+//  result["aic"] = aic;
+//  result["bic"] = bic;
+//  result["n"] = n_data;
+//  result["family"] = family;
+//
+//  if (!converged && !result.containsElementNamed("status")) {
+//    result["status"] = "max_iterations_reached";
+//  } else if (converged) {
+//    result["status"] = "success";
+//  }
+//
+//  // Calculate statistical significance (p-values) using normal approximation
+//  NumericVector z_values(n_params, NA_REAL);
+//  NumericVector p_values(n_params, NA_REAL);
+//
+//  if (valid_se) {
+//    for (int j = 0; j < n_params; j++) {
+//      if (std_errors[j] != NA_REAL && std_errors[j] > 0) {
+//        z_values[j] = family_params[j] / std_errors[j];
+//        // Two-tailed approximation
+//        p_values[j] = 2.0 * R::pnorm(-std::abs(z_values[j]), 0.0, 1.0, 1, 0);
+//      }
+//    }
+//    result["z_values"] = z_values;
+//    result["p_values"] = p_values;
+//  }
+//
+//  // Set parameter names for easier interpretation
+//  colnames(final_param_history) = param_names;
+//  result["param_names"] = param_names;
+//
+//  return result;
+// }
+//
