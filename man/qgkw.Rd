@@ -49,7 +49,7 @@ such that P(X ≤ x) = p, where X follows a GKw distribution with the specified 
 }
 \details{
 According to Carrasco et al. (2010), the quantile function for the GKw distribution is
-derived by inverting the CDF MFd6iLVujrCTUGQ8o1z888FyzpdwUflI-\deqn{
+derived by inverting the CDF h01a5FVmaZnJ8NiZJxh3sQjVXnVDhpaP-\deqn{
 Q(p) = \{1 - (1 - (I^{-1}_{p}(\gamma, \delta+1))^{1/\lambda})^{1/\beta}\}^{1/\alpha}
 }
 

@@ -19,12 +19,10 @@ Imports:
     ggplot2,
     ggpubr,
     gridExtra,
-    rappdirs,
-    patchwork
+    rappdirs
 LinkingTo: 
     Rcpp,
     RcppArmadillo
 Suggests: 
     knitr,
     rmarkdown
-VignetteBuilder: knitr
