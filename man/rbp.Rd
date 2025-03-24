@@ -9,7 +9,11 @@ rbp(n, gamma, delta, lambda)
 \arguments{
 \item{n}{Integer number of observations.}
 
-\item{gamma, }{delta, lambda Distribution parameters.}
+\item{gamma}{Shape parameter \eqn{γ > 0}.}
+
+\item{delta}{Shape parameter \eqn{δ \ge 0}.}
+
+\item{lambda}{Shape parameter \eqn{λ > 0}.}
 }
 \value{
 A numeric vector of length n with random draws in (0,1).

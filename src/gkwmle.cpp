@@ -956,7 +956,7 @@ arma::vec qgkw(
      qq = safe_pow(one_minus_tmp2, 1.0/a);
    }
 
-   // Final boundary check to ensure result is in [0,1]
+   // Final boundary check to ensure result is in (0,1)
    if (qq < 0.0) {
      qq = 0.0;
    } else if (qq > 1.0) {
@@ -1168,7 +1168,7 @@ arma::vec rgkw(
      xx = safe_pow(one_minus_tmp2, 1.0/a);
    }
 
-   // Final boundary check to ensure result is in [0,1]
+   // Final boundary check to ensure result is in (0,1)
    if (xx < 0.0) {
      xx = 0.0;
    } else if (xx > 1.0) {
@@ -2121,7 +2121,10 @@ arma::vec dkkw(
 //' Computes the CDF for KwKw(\eqn{\alpha, \beta, \delta, \lambda}), i.e. P(X≤x).
 //'
 //' @param q Vector of quantiles in \eqn{(0,1)}.
-//' @param alpha, beta, delta, lambda Parameters (see \code{\link{dkkw}}).
+//' @param alpha \eqn{\alpha > 0}.
+//' @param beta \eqn{\beta > 0}.
+//' @param delta \eqn{\delta \ge 0}.
+//' @param lambda \eqn{\lambda > 0}.
 //' @param lower_tail Logical; if TRUE (default), returns F(q)=P(X≤q), else 1-F(q).
 //' @param log_p Logical; if TRUE, returns log of the probability.
 //'
@@ -2249,7 +2252,10 @@ arma::vec pkkw(
 //' Computes the quantiles for KwKw(\eqn{\alpha, \beta, \delta, \lambda}).
 //'
 //' @param p Vector of probabilities in (0,1).
-//' @param alpha, beta, delta, lambda Distribution parameters (see \code{\link{dkkw}}).
+//' @param alpha \eqn{\alpha > 0}.
+//' @param beta \eqn{\beta > 0}.
+//' @param delta \eqn{\delta \ge 0}.
+//' @param lambda \eqn{\lambda > 0}.
 //' @param lower_tail Logical; if TRUE, p is F(x). If FALSE, p is 1-F(x).
 //' @param log_p Logical; if TRUE, p is given as log(p).
 //'
@@ -2375,7 +2381,10 @@ arma::vec qkkw(
 //' Generates \code{n} samples from the KwKw(\eqn{\alpha, \beta, \delta, \lambda}) distribution.
 //'
 //' @param n Integer number of samples.
-//' @param alpha, beta, delta, lambda Distribution parameters.
+//' @param alpha \eqn{\alpha > 0}.
+//' @param beta \eqn{\beta > 0}.
+//' @param delta \eqn{\delta \ge 0}.
+//' @param lambda \eqn{\lambda > 0}.
 //'
 //' @details
 //' The table suggests: if \eqn{V ~ Unif(0,1)}, define
@@ -2826,10 +2835,6 @@ Rcpp::NumericVector grkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' round(num_hess - ana_hess, 4)
 //' }
 //'
-//' @seealso
-//' \code{\link[gkwreg]{dkkw}} for the KKw density function,
-//' \code{\link[gkwreg]{kkwreg}} for fitting KKw regression models,
-//' \code{\link[gkwreg]{pkkw}} for the KKw cumulative distribution function
 //'
 //' @references
 //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
@@ -3371,7 +3376,10 @@ arma::vec pbkw(
 //' P(X ≤ x) = p under the BKw distribution.
 //'
 //' @param p Vector of probabilities in (0,1).
-//' @param alpha, beta, gamma, delta Distribution parameters (see dbkw).
+//' @param alpha Shape parameter α > 0.
+//' @param beta Shape parameter β > 0.
+//' @param gamma Shape parameter γ > 0.
+//' @param delta Shape parameter δ ≥ 0.
 //' @param lower_tail Logical; if TRUE (default), p is F(x)=P(X≤x), otherwise p=1-F(x).
 //' @param log_p Logical; if TRUE, p is given as log(p).
 //'
@@ -3490,7 +3498,10 @@ arma::vec qbkw(
 //'   \eqn{V ~ Beta(γ, δ+1) => X = {1 - (1 - V)^(1/β)}^(1/α)}.
 //'
 //' @param n Integer number of observations to generate.
-//' @param alpha, beta, gamma, delta Distribution parameters (see dbkw).
+//' @param alpha Shape parameter α > 0.
+//' @param beta Shape parameter β > 0.
+//' @param gamma Shape parameter γ > 0.
+//' @param delta Shape parameter δ ≥ 0.
 //'
 //' @return A numeric vector of length n with random draws from the BKw distribution.
 //'
@@ -3731,11 +3742,6 @@ double llbkw(const Rcpp::NumericVector& par,
 //'
 //' }
 //'
-//' @seealso
-//' \code{\link[gkwreg]{llbkw}} for the negative log-likelihood function,
-//' \code{\link[gkwreg]{hsbkw}} for the Hessian matrix of the BKw log-likelihood,
-//' \code{\link[gkwreg]{dbkw}} for the BKw density function,
-//'
 //' @references
 //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
 //' Journal of Hydrology, 46(1-2), 79-88.
@@ -3899,11 +3905,6 @@ Rcpp::NumericVector grbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' round(num_hess - ana_hess, 4)
 //'
 //' }
-//'
-//' @seealso
-//' \code{\link[gkwreg]{dbkw}} for the BKw density function,
-//' \code{\link[gkwreg]{bkwreg}} for fitting BKw regression models,
-//' \code{\link[gkwreg]{pbkw}} for the BKw cumulative distribution function
 //'
 //' @references
 //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
@@ -4247,7 +4248,9 @@ arma::vec dekw(
 //' Computes F(x)= P(X ≤ x) for EKw(α, β, λ).
 //'
 //' @param q Vector of quantiles in (0,1).
-//' @param alpha, beta, lambda Distribution parameters (see dekw).
+//' @param alpha Shape parameter \eqn{\alpha > 0}.
+//' @param beta Shape parameter \eqn{\beta > 0}.
+//' @param lambda Shape parameter \eqn{\lambda > 0}.
 //' @param lower_tail Logical; if TRUE, returns F(q); else 1-F(q).
 //' @param log_p Logical; if TRUE, returns log(F(q)) or log(1-F(q)).
 //'
@@ -4346,13 +4349,15 @@ arma::vec pekw(
 //' @description
 //' Computes the quantiles x = Q(p) for EKw(α, β, λ).
 //'
-//' @param p Vector of probabilities in [0,1].
-//' @param alpha, beta, lambda Distribution parameters.
+//' @param p Vector of probabilities in (0,1).
+//' @param alpha Shape parameter \eqn{\alpha > 0}.
+//' @param beta Shape parameter \eqn{\beta > 0}.
+//' @param lambda Shape parameter \eqn{\lambda > 0}.
 //' @param lower_tail Logical; if TRUE, p is F(x). If FALSE, p=1-F(x).
 //' @param log_p Logical; if TRUE, p is given as log(p).
 //'
 //' @details
-//' The inverse of F(x)= [1 - (1 - x^α)^β ]^λ is
+//' The inverse of \eqn{F(x)= [1 - (1 - x^\alpha)^\beta ]^\lambda} is
 //' \deqn{
 //'   Q(p)= \Bigl\{1 - \bigl[1 - p^{1/\lambda}\bigr]^{1/\beta}\Bigr\}^{1/\alpha}.
 //' }
@@ -4444,7 +4449,9 @@ arma::vec qekw(
 //' Generates n samples from EKw(α, β, λ).
 //'
 //' @param n Integer number of observations.
-//' @param alpha, beta, lambda Distribution parameters (see dekw).
+//' @param alpha Shape parameter \eqn{\alpha > 0}.
+//' @param beta Shape parameter \eqn{\beta > 0}.
+//' @param lambda Shape parameter \eqn{\lambda > 0}.
 //'
 //' @details
 //' Implementation via the quantile method:  X = Q(U),  U ~ Uniform(0,1).
@@ -4823,10 +4830,6 @@ Rcpp::NumericVector grekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //'
 //' }
 //'
-//' @seealso
-//' \code{\link[gkwreg]{dekw}} for the EKw density function,
-//' \code{\link[gkwreg]{ekwreg}} for fitting EKw regression models,
-//' \code{\link[gkwreg]{pekw}} for the EKw cumulative distribution function
 //'
 //' @references
 //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
@@ -5131,10 +5134,12 @@ arma::vec dbp(
 //' @title CDF of the Beta Power Distribution
 //'
 //' @description
-//' Computes F(q)= P(X ≤ q) for BP(γ, δ, λ).
+//' Computes \eqn{F(q)= P(X ≤ q) for BP(γ, δ, λ)}.
 //'
 //' @param q Vector of quantiles in (0,1).
-//' @param gamma, delta, lambda Distribution parameters.
+//' @param gamma Shape parameter \eqn{γ > 0}.
+//' @param delta Shape parameter \eqn{δ \ge 0}.
+//' @param lambda Shape parameter \eqn{λ > 0}.
 //' @param lower_tail Logical; if TRUE, returns F(q), else 1-F(q).
 //' @param log_p Logical; if TRUE, returns log-probabilities.
 //'
@@ -5207,10 +5212,12 @@ arma::vec pbp(
 //' @title Quantile Function of the Beta Power Distribution
 //'
 //' @description
-//' Computes x = Q(p), the quantile function for BP(γ, δ, λ).
+//' Computes \eqn{x = Q(p)}, the quantile function for \eqn{BP(γ, δ, λ)}.
 //'
-//' @param p Vector of probabilities in [0,1] (or in log scale if log_p=TRUE).
-//' @param gamma, delta, lambda Distribution parameters.
+//' @param p Vector of probabilities in (0,1) (or in log scale if log_p=TRUE).
+//' @param gamma Shape parameter \eqn{γ > 0}.
+//' @param delta Shape parameter \eqn{δ \ge 0}.
+//' @param lambda Shape parameter \eqn{λ > 0}.
 //' @param lower_tail Logical; if TRUE, p=F(x). If FALSE, p=1-F(x).
 //' @param log_p Logical; if TRUE, p is log(p).
 //'
@@ -5301,7 +5308,9 @@ arma::vec qbp(
 //' Generates n samples from BP(γ, δ, λ) by drawing U ~ Beta(γ, δ+1) then X= U^(1/λ).
 //'
 //' @param n Integer number of observations.
-//' @param gamma, delta, lambda Distribution parameters.
+//' @param gamma Shape parameter \eqn{γ > 0}.
+//' @param delta Shape parameter \eqn{δ \ge 0}.
+//' @param lambda Shape parameter \eqn{λ > 0}.
 //'
 //' @return A numeric vector of length n with random draws in (0,1).
 //'
@@ -5915,7 +5924,8 @@ arma::vec dkw(
 //' Computes \eqn{F(q)= P(X ≤ q)} for Kw(\eqn{\alpha,\beta}).
 //'
 //' @param q Vector of quantiles in (0,1).
-//' @param alpha, beta Shape parameters >0.
+//' @param alpha Shape parameter \eqn{\alpha>0}.
+//' @param beta Shape parameter \eqn{\beta>0}.
 //' @param lower_tail If TRUE (default), returns \eqn{F(q)=P(X≤q)}. If FALSE, 1-F(q).
 //' @param log_p If TRUE, returns log probabilities.
 //'
@@ -5996,8 +6006,9 @@ arma::vec pkw(
 //' @description
 //' For p in (0,1), returns x=Q(p) such that F(x)=p, where F is Kw(\eqn{\alpha,\beta}).
 //'
-//' @param p Vector of probabilities in [0,1] (or log scale if log_p=TRUE).
-//' @param alpha, beta Shape parameters >0.
+//' @param p Vector of probabilities in (0,1) (or log scale if log_p=TRUE).
+//' @param alpha Shape parameter \eqn{\alpha>0}.
+//' @param beta Shape parameter \eqn{\beta>0}.
 //' @param lower_tail If TRUE, p=F(x); if FALSE, p=1-F(x).
 //' @param log_p If TRUE, p is log(p).
 //'
@@ -6084,7 +6095,8 @@ arma::vec qkw(
 //' Generates n samples from Kw(\eqn{\alpha,\beta}), using the transformation from Uniform(0,1).
 //'
 //' @param n Integer number of observations.
-//' @param alpha, beta Shape parameters > 0.
+//' @param alpha Shape parameter \eqn{\alpha>0}.
+//' @param beta Shape parameter \eqn{\beta>0}.
 //'
 //' @return A vector of length n with samples in (0,1).
 //'
@@ -6642,7 +6654,7 @@ arma::vec dbeta_(
 //' @description
 //' Computes F(q) = pbeta(q, gamma, delta+1) in (0,1).
 //'
-//' @param q Vector of quantiles in [0,1].
+//' @param q Vector of quantiles in (0,1).
 //' @param gamma First shape parameter > 0.
 //' @param delta Second shape parameter > 0.
 //' @param lower_tail If TRUE, returns F(q)=P(X≤q). If FALSE, 1-F(q).
@@ -6711,9 +6723,9 @@ arma::vec pbeta_(
 //' @title Quantile Function of the Beta Distribution
 //'
 //' @description
-//' For p in [0,1], returns x = Q(p) = qbeta(p, gamma, delta+1).
+//' For p in (0,1), returns x = Q(p) = qbeta(p, gamma, delta+1).
 //'
-//' @param p Vector of probabilities in [0,1] or log scale if log_p=TRUE.
+//' @param p Vector of probabilities in (0,1) or log scale if log_p=TRUE.
 //' @param gamma First shape parameter > 0.
 //' @param delta Second shape parameter > 0.
 //' @param lower_tail If TRUE, p=F(x). If FALSE, p=1-F(x).

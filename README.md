@@ -4,11 +4,8 @@
 # gkwreg: Generalized Kumaraswamy Regression Models
 
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/gkwreg)](https://cran.r-project.org/package=gkwreg)
-<!-- [![R-CMD-check](https://github.com/evandeilton/gkwreg/workflows/R-CMD-check/badge.svg)](https://github.com/evandeilton/gkwreg/actions) -->
 [![R-CMD-check](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml)
-[![License:
-MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
+[![License:MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://cranlogs.r-pkg.org/badges/gkwreg)](https://cran.r-project.org/package=gkwreg)
 
 ## Overview

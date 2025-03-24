@@ -7,7 +7,7 @@
 pbeta_(q, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
-\item{q}{Vector of quantiles in \link{0,1}.}
+\item{q}{Vector of quantiles in (0,1).}
 
 \item{gamma}{First shape parameter > 0.}
 

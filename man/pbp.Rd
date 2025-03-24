@@ -9,14 +9,18 @@ pbp(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 \arguments{
 \item{q}{Vector of quantiles in (0,1).}
 
-\item{gamma, }{delta, lambda Distribution parameters.}
+\item{gamma}{Shape parameter \eqn{γ > 0}.}
+
+\item{delta}{Shape parameter \eqn{δ \ge 0}.}
+
+\item{lambda}{Shape parameter \eqn{λ > 0}.}
 
 \item{lower_tail}{Logical; if TRUE, returns F(q), else 1-F(q).}
 
 \item{log_p}{Logical; if TRUE, returns log-probabilities.}
 }
 \description{
-Computes F(q)= P(X ≤ q) for BP(γ, δ, λ).
+Computes \eqn{F(q)= P(X ≤ q) for BP(γ, δ, λ)}.
 }
 \details{
 \deqn{

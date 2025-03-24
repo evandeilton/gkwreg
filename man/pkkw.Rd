@@ -9,7 +9,13 @@ pkkw(q, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 \arguments{
 \item{q}{Vector of quantiles in \eqn{(0,1)}.}
 
-\item{alpha, }{beta, delta, lambda Parameters (see \code{\link{dkkw}}).}
+\item{alpha}{\eqn{\alpha > 0}.}
+
+\item{beta}{\eqn{\beta > 0}.}
+
+\item{delta}{\eqn{\delta \ge 0}.}
+
+\item{lambda}{\eqn{\lambda > 0}.}
 
 \item{lower_tail}{Logical; if TRUE (default), returns F(q)=P(X≤q), else 1-F(q).}
 

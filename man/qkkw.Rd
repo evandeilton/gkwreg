@@ -9,7 +9,13 @@ qkkw(p, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 \arguments{
 \item{p}{Vector of probabilities in (0,1).}
 
-\item{alpha, }{beta, delta, lambda Distribution parameters (see \code{\link{dkkw}}).}
+\item{alpha}{\eqn{\alpha > 0}.}
+
+\item{beta}{\eqn{\beta > 0}.}
+
+\item{delta}{\eqn{\delta \ge 0}.}
+
+\item{lambda}{\eqn{\lambda > 0}.}
 
 \item{lower_tail}{Logical; if TRUE, p is F(x). If FALSE, p is 1-F(x).}
 

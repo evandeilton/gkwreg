@@ -7,9 +7,13 @@
 qekw(p, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
-\item{p}{Vector of probabilities in \link{0,1}.}
+\item{p}{Vector of probabilities in (0,1).}
 
-\item{alpha, }{beta, lambda Distribution parameters.}
+\item{alpha}{Shape parameter \eqn{\alpha > 0}.}
+
+\item{beta}{Shape parameter \eqn{\beta > 0}.}
+
+\item{lambda}{Shape parameter \eqn{\lambda > 0}.}
 
 \item{lower_tail}{Logical; if TRUE, p is F(x). If FALSE, p=1-F(x).}
 
@@ -19,7 +23,7 @@ qekw(p, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE)
 Computes the quantiles x = Q(p) for EKw(α, β, λ).
 }
 \details{
-The inverse of F(x)= \link{1 - (1 - x^α)^β }^λ is
+The inverse of \eqn{F(x)= [1 - (1 - x^\alpha)^\beta ]^\lambda} is
 \deqn{
   Q(p)= \Bigl\{1 - \bigl[1 - p^{1/\lambda}\bigr]^{1/\beta}\Bigr\}^{1/\alpha}.
 }

@@ -9,7 +9,13 @@ rbkw(n, alpha, beta, gamma, delta)
 \arguments{
 \item{n}{Integer number of observations to generate.}
 
-\item{alpha, }{beta, gamma, delta Distribution parameters (see dbkw).}
+\item{alpha}{Shape parameter α > 0.}
+
+\item{beta}{Shape parameter β > 0.}
+
+\item{gamma}{Shape parameter γ > 0.}
+
+\item{delta}{Shape parameter δ ≥ 0.}
 }
 \value{
 A numeric vector of length n with random draws from the BKw distribution.

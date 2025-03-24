@@ -7,16 +7,20 @@
 qbp(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
-\item{p}{Vector of probabilities in \link{0,1} (or in log scale if log_p=TRUE).}
+\item{p}{Vector of probabilities in (0,1) (or in log scale if log_p=TRUE).}
 
-\item{gamma, }{delta, lambda Distribution parameters.}
+\item{gamma}{Shape parameter \eqn{γ > 0}.}
+
+\item{delta}{Shape parameter \eqn{δ \ge 0}.}
+
+\item{lambda}{Shape parameter \eqn{λ > 0}.}
 
 \item{lower_tail}{Logical; if TRUE, p=F(x). If FALSE, p=1-F(x).}
 
 \item{log_p}{Logical; if TRUE, p is log(p).}
 }
 \description{
-Computes x = Q(p), the quantile function for BP(γ, δ, λ).
+Computes \eqn{x = Q(p)}, the quantile function for \eqn{BP(γ, δ, λ)}.
 }
 \details{
 The quantile function is

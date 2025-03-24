@@ -7,9 +7,11 @@
 qkw(p, alpha, beta, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
-\item{p}{Vector of probabilities in \link{0,1} (or log scale if log_p=TRUE).}
+\item{p}{Vector of probabilities in (0,1) (or log scale if log_p=TRUE).}
 
-\item{alpha, }{beta Shape parameters >0.}
+\item{alpha}{Shape parameter \eqn{\alpha>0}.}
+
+\item{beta}{Shape parameter \eqn{\beta>0}.}
 
 \item{lower_tail}{If TRUE, p=F(x); if FALSE, p=1-F(x).}
 

@@ -9,7 +9,11 @@ rekw(n, alpha, beta, lambda)
 \arguments{
 \item{n}{Integer number of observations.}
 
-\item{alpha, }{beta, lambda Distribution parameters (see dekw).}
+\item{alpha}{Shape parameter \eqn{\alpha > 0}.}
+
+\item{beta}{Shape parameter \eqn{\beta > 0}.}
+
+\item{lambda}{Shape parameter \eqn{\lambda > 0}.}
 }
 \description{
 Generates n samples from EKw(α, β, λ).

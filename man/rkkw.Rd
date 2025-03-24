@@ -9,7 +9,13 @@ rkkw(n, alpha, beta, delta, lambda)
 \arguments{
 \item{n}{Integer number of samples.}
 
-\item{alpha, }{beta, delta, lambda Distribution parameters.}
+\item{alpha}{\eqn{\alpha > 0}.}
+
+\item{beta}{\eqn{\beta > 0}.}
+
+\item{delta}{\eqn{\delta \ge 0}.}
+
+\item{lambda}{\eqn{\lambda > 0}.}
 }
 \description{
 Generates \code{n} samples from the KwKw(\eqn{\alpha, \beta, \delta, \lambda}) distribution.

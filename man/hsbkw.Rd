@@ -85,8 +85,3 @@ Journal of Hydrology, 46(1-2), 79-88.
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
 Journal of Statistical Computation and Simulation, 81(7), 883-898.
 }
-\seealso{
-\code{\link[gkwreg]{dbkw}} for the BKw density function,
-\code{\link[gkwreg]{bkwreg}} for fitting BKw regression models,
-\code{\link[gkwreg]{pbkw}} for the BKw cumulative distribution function
-}

@@ -9,7 +9,9 @@ pkw(q, alpha, beta, lower_tail = TRUE, log_p = FALSE)
 \arguments{
 \item{q}{Vector of quantiles in (0,1).}
 
-\item{alpha, }{beta Shape parameters >0.}
+\item{alpha}{Shape parameter \eqn{\alpha>0}.}
+
+\item{beta}{Shape parameter \eqn{\beta>0}.}
 
 \item{lower_tail}{If TRUE (default), returns \eqn{F(q)=P(X≤q)}. If FALSE, 1-F(q).}
 

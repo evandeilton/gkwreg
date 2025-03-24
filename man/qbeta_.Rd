@@ -7,7 +7,7 @@
 qbeta_(p, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
-\item{p}{Vector of probabilities in \link{0,1} or log scale if log_p=TRUE.}
+\item{p}{Vector of probabilities in (0,1) or log scale if log_p=TRUE.}
 
 \item{gamma}{First shape parameter > 0.}
 
@@ -21,7 +21,7 @@ qbeta_(p, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 A vector of quantiles, same length as broadcast.
 }
 \description{
-For p in \link{0,1}, returns x = Q(p) = qbeta(p, gamma, delta+1).
+For p in (0,1), returns x = Q(p) = qbeta(p, gamma, delta+1).
 }
 \details{
 Wrapper around R's \code{qbeta} with parameter adjustment for GKw-style Beta.

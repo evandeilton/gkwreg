@@ -25,6 +25,7 @@ knitr::opts_chunk$set(
 )
 library(gkwreg)
 library(TMB)
+library(patchwork)
 ```
 
 # Introduction

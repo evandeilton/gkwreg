@@ -5,12 +5,12 @@
 # usethis::use_namespace()
 # usethis::use_readme_rmd()
 # usethis::use_vignette("gkwreg-package", "Generalized Kumaraswamy Regression Models for Bounded Data")
-usethis::use_github_action_check_standard()
-
+# ?usethis::use_github_action_check_standard()
 
 # Defina a flag de roxygen2 antes de documentar
 # usethis::use_version()
 options(roxygen2.running = TRUE)
+
 
 ## -------------------------------------------------------------------------- ##
 # usethis::use_version(which = "dev")
@@ -20,7 +20,8 @@ devtools::load_all(recompile = TRUE, quiet = FALSE)
 Rcpp::compileAttributes()
 roxygen2::roxygenize()
 devtools::document()
-# devtools::check()
+devtools::check()
+
 
 # usethis::use_version()
 devtools::install(force = TRUE)

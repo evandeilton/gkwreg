@@ -965,262 +965,278 @@
   return(list(submodels = submodel_results, lrt = lrt_results))
 }
 
-#' Generate diagnostic plots
+
+
+#' Generate diagnostic plots for distribution models
 #'
-#' @param result Fit result from TMB or Newton-Raphson.
+#' This internal function creates a set of diagnostic plots for evaluating
+#' the fit of various distribution families to bounded data in the (0, 1) interval.
+#' It generates histograms with fitted density overlays, P-P plots, Q-Q plots,
+#' and profile likelihood plots when available.
+#'
+#' @param result A list containing model fit results from TMB or Newton-Raphson,
+#'        must include a 'coefficients' element with named parameters.
 #' @param data Numeric vector with values in the (0, 1) interval.
 #' @param family Character string specifying the distribution family.
-#' @param silent Logical; if TRUE, suppresses messages.
-#' @return List of ggplot objects.
+#'        Supported values: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".
+#' @param silent Logical; if TRUE, suppresses messages. Default is FALSE.
+#'
+#' @return A list of ggplot2 objects:
+#'   \item{histogram}{Histogram with fitted density overlay}
+#'   \item{pp_plot}{Probability-Probability plot}
+#'   \item{qq_plot}{Quantile-Quantile plot}
+#'   \item{profile_*}{Profile likelihood plots for each parameter (if available)}
+#'
+#' @importFrom stats ecdf ppoints qchisq
+#' @importFrom stats ecdf ppoints qchisq
+#'
 #' @keywords internal
-.generate_plots <- function(result, data, family, silent) {
+.generate_plots <- function(result, data, family, silent = FALSE) {
   plots <- list()
 
   # Check if ggplot2 is available
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     warning("Package 'ggplot2' is required for plotting but not installed. Plotting will be disabled.")
     return(NULL)
-  } else {
-    # Load ggplot2
-    require(ggplot2)
-
-    if (!silent) {
-      message("Generating diagnostic plots...")
-    }
-
-    # Calculate density values on a grid
-    x_grid <- seq(0.001, 0.999, length.out = 200)
-
-    # Use the appropriate density function based on family
-    density_func <- switch(family,
-      "gkw" = function(x) {
-        dgkw(
-          x, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["gamma"], result$coefficients["delta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "bkw" = function(x) {
-        dbkw(
-          x, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["gamma"], result$coefficients["delta"]
-        )
-      },
-      "kkw" = function(x) {
-        dkkw(
-          x, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["delta"], result$coefficients["lambda"]
-        )
-      },
-      "ekw" = function(x) {
-        dekw(
-          x, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "mc" = function(x) {
-        dbp(
-          x, result$coefficients["gamma"], result$coefficients["delta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "kw" = function(x) dkw(x, result$coefficients["alpha"], result$coefficients["beta"]),
-      "beta" = function(x) dbeta_(x, result$coefficients["gamma"], result$coefficients["delta"])
-    )
-
-    density_values <- tryCatch(
-      {
-        sapply(x_grid, density_func)
-      },
-      error = function(e) {
-        warning("Error calculating density values for plot: ", e$message)
-        rep(NA, length(x_grid))
-      }
-    )
-
-    # Histogram with fitted density overlay
-    plot_data <- data.frame(x = x_grid, density = density_values)
-
-    # Create histogram with density curve
-    p1 <- ggplot() +
-      geom_histogram(aes(x = data, y = after_stat(density)),
-        bins = min(30, ceiling(sqrt(length(data)))),
-        fill = "lightblue", color = "black", alpha = 0.7
-      ) +
-      geom_line(
-        data = plot_data, aes(x = x, y = density),
-        color = "red", size = 1
-      ) +
-      labs(
-        title = paste("Fitted", toupper(family), "Distribution"),
-        x = "Data", y = "Density"
-      ) +
-      theme_minimal()
-
-    plots$histogram <- p1
-
-    # P-P plot (Probability-Probability plot)
-    ecdf_vals <- ecdf(data)(sort(data))
-
-    # Use the appropriate CDF function based on family
-    cdf_func <- switch(family,
-      "gkw" = function(x) {
-        pgkw(
-          x, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["gamma"], result$coefficients["delta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "bkw" = function(x) {
-        pbkw(
-          x, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["gamma"], result$coefficients["delta"]
-        )
-      },
-      "kkw" = function(x) {
-        pkkw(
-          x, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["delta"], result$coefficients["lambda"]
-        )
-      },
-      "ekw" = function(x) {
-        pekw(
-          x, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "mc" = function(x) {
-        pbp(
-          x, result$coefficients["gamma"], result$coefficients["delta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "kw" = function(x) pkw(x, result$coefficients["alpha"], result$coefficients["beta"]),
-      "beta" = function(x) pbeta_(x, result$coefficients["gamma"], result$coefficients["delta"])
-    )
-
-    # Calculate theoretical CDF values
-    theor_cdf <- tryCatch(
-      {
-        sapply(sort(data), cdf_func)
-      },
-      error = function(e) {
-        warning("Error calculating theoretical CDF for P-P plot: ", e$message)
-        rep(NA, length(data))
-      }
-    )
-
-    # Create P-P plot data frame
-    pp_data <- data.frame(Empirical = ecdf_vals, Theoretical = theor_cdf)
-
-    # Create P-P plot
-    p2 <- ggplot(pp_data, aes(x = Theoretical, y = Empirical)) +
-      geom_point() +
-      geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
-      labs(
-        title = "P-P Plot",
-        x = "Theoretical Probability", y = "Empirical Probability"
-      ) +
-      theme_minimal()
-
-    plots$pp_plot <- p2
-
-    # Q-Q plot (Quantile-Quantile plot)
-    # Use the appropriate quantile function based on family
-    quant_func <- switch(family,
-      "gkw" = function(p) {
-        qgkw(
-          p, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["gamma"], result$coefficients["delta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "bkw" = function(p) {
-        qbkw(
-          p, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["gamma"], result$coefficients["delta"]
-        )
-      },
-      "kkw" = function(p) {
-        qkkw(
-          p, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["delta"], result$coefficients["lambda"]
-        )
-      },
-      "ekw" = function(p) {
-        qekw(
-          p, result$coefficients["alpha"], result$coefficients["beta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "mc" = function(p) {
-        qbp(
-          p, result$coefficients["gamma"], result$coefficients["delta"],
-          result$coefficients["lambda"]
-        )
-      },
-      "kw" = function(p) qkw(p, result$coefficients["alpha"], result$coefficients["beta"]),
-      "beta" = function(p) qbeta_(p, result$coefficients["gamma"], result$coefficients["delta"])
-    )
-
-    # Calculate theoretical quantiles
-    theor_quant <- tryCatch(
-      {
-        sapply(ppoints(length(data)), quant_func)
-      },
-      error = function(e) {
-        warning("Error calculating theoretical quantiles for Q-Q plot: ", e$message)
-        rep(NA, length(data))
-      }
-    )
-
-    # Create Q-Q plot data frame
-    qq_data <- data.frame(Theoretical = theor_quant, Empirical = sort(data))
-
-    # Create Q-Q plot
-    p3 <- ggplot(qq_data, aes(x = Theoretical, y = Empirical)) +
-      geom_point() +
-      geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
-      labs(
-        title = "Q-Q Plot",
-        x = "Theoretical Quantiles", y = "Empirical Quantiles"
-      ) +
-      theme_minimal()
-
-    plots$qq_plot <- p3
-
-    # Add profile likelihood plots if available
-    if (!is.null(result$profile) && length(result$profile) > 0) {
-      for (param in names(result$profile)) {
-        prof_data <- result$profile[[param]]
-
-        # Calculate reference line at max - qchisq(0.95, 1)/2 for 95% confidence
-        ref_level <- max(prof_data$loglik, na.rm = TRUE) - qchisq(0.95, 1) / 2
-
-        # Create profile likelihood plot
-        p <- ggplot(prof_data, aes(x = value, y = loglik)) +
-          geom_line(size = 1) +
-          geom_vline(
-            xintercept = result$coefficients[param],
-            linetype = "dashed", color = "red"
-          ) +
-          geom_hline(
-            yintercept = ref_level,
-            linetype = "dotted", color = "blue"
-          ) +
-          labs(
-            title = paste("Profile Likelihood for", param),
-            x = param, y = "Log-likelihood"
-          ) +
-          theme_minimal()
-
-        plots[[paste0("profile_", param)]] <- p
-      }
-    }
   }
 
+  if (!silent) {
+    message("Generating diagnostic plots...")
+  }
+
+  # Calculate density values on a grid
+  x_grid <- seq(0.001, 0.999, length.out = 200)
+
+  # Use the appropriate density function based on family
+  density_func <- switch(family,
+    "gkw" = function(x) {
+      dgkw(
+        x, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["gamma"], result$coefficients["delta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "bkw" = function(x) {
+      dbkw(
+        x, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["gamma"], result$coefficients["delta"]
+      )
+    },
+    "kkw" = function(x) {
+      dkkw(
+        x, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["delta"], result$coefficients["lambda"]
+      )
+    },
+    "ekw" = function(x) {
+      dekw(
+        x, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "mc" = function(x) {
+      dbp(
+        x, result$coefficients["gamma"], result$coefficients["delta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "kw" = function(x) dkw(x, result$coefficients["alpha"], result$coefficients["beta"]),
+    "beta" = function(x) dbeta_(x, result$coefficients["gamma"], result$coefficients["delta"])
+  )
+
+  density_values <- tryCatch(
+    {
+      sapply(x_grid, density_func)
+    },
+    error = function(e) {
+      warning("Error calculating density values for plot: ", e$message)
+      rep(NA, length(x_grid))
+    }
+  )
+
+  # Create data frame for plotting
+  plot_data <- data.frame(x = x_grid, density = density_values)
+
+  # Create histogram with density curve
+  p1 <- ggplot2::ggplot() +
+    ggplot2::geom_histogram(ggplot2::aes(x = data, y = ggplot2::after_stat(density)),
+      bins = min(30, ceiling(sqrt(length(data)))),
+      fill = "lightblue", color = "black", alpha = 0.7
+    ) +
+    ggplot2::geom_line(
+      data = plot_data, ggplot2::aes(x = x, y = density),
+      color = "red", size = 1
+    ) +
+    ggplot2::labs(
+      title = paste("Fitted", toupper(family), "Distribution"),
+      x = "Data", y = "Density"
+    ) +
+    ggplot2::theme_minimal()
+
+  plots$histogram <- p1
+
+  # P-P plot (Probability-Probability plot)
+  ecdf_vals <- ecdf(data)(sort(data))
+
+  # Use the appropriate CDF function based on family
+  cdf_func <- switch(family,
+    "gkw" = function(x) {
+      pgkw(
+        x, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["gamma"], result$coefficients["delta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "bkw" = function(x) {
+      pbkw(
+        x, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["gamma"], result$coefficients["delta"]
+      )
+    },
+    "kkw" = function(x) {
+      pkkw(
+        x, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["delta"], result$coefficients["lambda"]
+      )
+    },
+    "ekw" = function(x) {
+      pekw(
+        x, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "mc" = function(x) {
+      pbp(
+        x, result$coefficients["gamma"], result$coefficients["delta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "kw" = function(x) pkw(x, result$coefficients["alpha"], result$coefficients["beta"]),
+    "beta" = function(x) pbeta_(x, result$coefficients["gamma"], result$coefficients["delta"])
+  )
+
+  # Calculate theoretical CDF values
+  theor_cdf <- tryCatch(
+    {
+      sapply(sort(data), cdf_func)
+    },
+    error = function(e) {
+      warning("Error calculating theoretical CDF for P-P plot: ", e$message)
+      rep(NA, length(data))
+    }
+  )
+
+  # Create P-P plot data frame
+  pp_data <- data.frame(Empirical = ecdf_vals, Theoretical = theor_cdf)
+
+  # Create P-P plot
+  p2 <- ggplot2::ggplot(pp_data, ggplot2::aes(x = Theoretical, y = Empirical)) +
+    ggplot2::geom_point() +
+    ggplot2::geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+    ggplot2::labs(
+      title = "P-P Plot",
+      x = "Theoretical Probability", y = "Empirical Probability"
+    ) +
+    ggplot2::theme_minimal()
+
+  plots$pp_plot <- p2
+
+  # Q-Q plot (Quantile-Quantile plot)
+  # Use the appropriate quantile function based on family
+  quant_func <- switch(family,
+    "gkw" = function(p) {
+      qgkw(
+        p, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["gamma"], result$coefficients["delta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "bkw" = function(p) {
+      qbkw(
+        p, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["gamma"], result$coefficients["delta"]
+      )
+    },
+    "kkw" = function(p) {
+      qkkw(
+        p, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["delta"], result$coefficients["lambda"]
+      )
+    },
+    "ekw" = function(p) {
+      qekw(
+        p, result$coefficients["alpha"], result$coefficients["beta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "mc" = function(p) {
+      qbp(
+        p, result$coefficients["gamma"], result$coefficients["delta"],
+        result$coefficients["lambda"]
+      )
+    },
+    "kw" = function(p) qkw(p, result$coefficients["alpha"], result$coefficients["beta"]),
+    "beta" = function(p) qbeta_(p, result$coefficients["gamma"], result$coefficients["delta"])
+  )
+
+  # Calculate theoretical quantiles
+  theor_quant <- tryCatch(
+    {
+      sapply(ppoints(length(data)), quant_func)
+    },
+    error = function(e) {
+      warning("Error calculating theoretical quantiles for Q-Q plot: ", e$message)
+      rep(NA, length(data))
+    }
+  )
+
+  # Create Q-Q plot data frame
+  qq_data <- data.frame(Theoretical = theor_quant, Empirical = sort(data))
+
+  # Create Q-Q plot
+  p3 <- ggplot2::ggplot(qq_data, ggplot2::aes(x = Theoretical, y = Empirical)) +
+    ggplot2::geom_point() +
+    ggplot2::geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+    ggplot2::labs(
+      title = "Q-Q Plot",
+      x = "Theoretical Quantiles", y = "Empirical Quantiles"
+    ) +
+    ggplot2::theme_minimal()
+
+  plots$qq_plot <- p3
+
+  # Add profile likelihood plots if available
+  if (!is.null(result$profile) && length(result$profile) > 0) {
+    for (param in names(result$profile)) {
+      prof_data <- result$profile[[param]]
+
+      # Calculate reference line at max - qchisq(0.95, 1)/2 for 95% confidence
+      ref_level <- max(prof_data$loglik, na.rm = TRUE) - qchisq(0.95, 1) / 2
+
+      # Create profile likelihood plot
+      p <- ggplot2::ggplot(prof_data, ggplot2::aes(x = value, y = loglik)) +
+        ggplot2::geom_line(size = 1) +
+        ggplot2::geom_vline(
+          xintercept = result$coefficients[param],
+          linetype = "dashed", color = "red"
+        ) +
+        ggplot2::geom_hline(
+          yintercept = ref_level,
+          linetype = "dotted", color = "blue"
+        ) +
+        ggplot2::labs(
+          title = paste("Profile Likelihood for", param),
+          x = param, y = "Log-likelihood"
+        ) +
+        ggplot2::theme_minimal()
+
+      plots[[paste0("profile_", param)]] <- p
+    }
+  }
   return(plots)
 }
+
+
 
 #' Calculate goodness-of-fit statistics
 #'

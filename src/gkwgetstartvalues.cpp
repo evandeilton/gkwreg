@@ -417,12 +417,12 @@ arma::vec optimize_nelder_mead(const arma::vec &initial,
   return simplex.col(best_idx(0));
 }
 
-//'Main function to estimate GKw distribution parameters using the method of moments.
+//' Main function to estimate GKw distribution parameters using the method of moments.
 //' This implementation is optimized for numerical stability and computational efficiency.
 //'
 //' @param x Data vector (must be in (0,1))
 //' @param n_starts Number of starting points for optimization
-//' @return Vector of estimated parameters [alpha, beta, gamma, delta, lambda]
+//' @return Vector of estimated parameters \eqn{\alpha, \beta, \gamma, \delta, \lambda}
 //'
 //' @export
 // [[Rcpp::export]]

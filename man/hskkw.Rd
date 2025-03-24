@@ -78,6 +78,7 @@ round(num_grad - ana_grad, 4)
 round(num_hess - ana_hess, 4)
 }
 
+
 }
 \references{
 Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
@@ -85,9 +86,4 @@ Journal of Hydrology, 46(1-2), 79-88.
 
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
 Journal of Statistical Computation and Simulation, 81(7), 883-898.
-}
-\seealso{
-\code{\link[gkwreg]{dkkw}} for the KKw density function,
-\code{\link[gkwreg]{kkwreg}} for fitting KKw regression models,
-\code{\link[gkwreg]{pkkw}} for the KKw cumulative distribution function
 }

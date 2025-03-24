@@ -9,7 +9,11 @@ pekw(q, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE)
 \arguments{
 \item{q}{Vector of quantiles in (0,1).}
 
-\item{alpha, }{beta, lambda Distribution parameters (see dekw).}
+\item{alpha}{Shape parameter \eqn{\alpha > 0}.}
+
+\item{beta}{Shape parameter \eqn{\beta > 0}.}
+
+\item{lambda}{Shape parameter \eqn{\lambda > 0}.}
 
 \item{lower_tail}{Logical; if TRUE, returns F(q); else 1-F(q).}
 

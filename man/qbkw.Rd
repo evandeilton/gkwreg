@@ -9,7 +9,13 @@ qbkw(p, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 \arguments{
 \item{p}{Vector of probabilities in (0,1).}
 
-\item{alpha, }{beta, gamma, delta Distribution parameters (see dbkw).}
+\item{alpha}{Shape parameter α > 0.}
+
+\item{beta}{Shape parameter β > 0.}
+
+\item{gamma}{Shape parameter γ > 0.}
+
+\item{delta}{Shape parameter δ ≥ 0.}
 
 \item{lower_tail}{Logical; if TRUE (default), p is F(x)=P(X≤x), otherwise p=1-F(x).}
 

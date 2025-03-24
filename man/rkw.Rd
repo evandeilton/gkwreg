@@ -9,7 +9,9 @@ rkw(n, alpha, beta)
 \arguments{
 \item{n}{Integer number of observations.}
 
-\item{alpha, }{beta Shape parameters > 0.}
+\item{alpha}{Shape parameter \eqn{\alpha>0}.}
+
+\item{beta}{Shape parameter \eqn{\beta>0}.}
 }
 \value{
 A vector of length n with samples in (0,1).

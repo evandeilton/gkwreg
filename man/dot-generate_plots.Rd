@@ -2,23 +2,32 @@
 % Please edit documentation in R/gkwfit.R
 \name{.generate_plots}
 \alias{.generate_plots}
-\title{Generate diagnostic plots}
+\title{Generate diagnostic plots for distribution models}
 \usage{
-.generate_plots(result, data, family, silent)
+.generate_plots(result, data, family, silent = FALSE)
 }
 \arguments{
-\item{result}{Fit result from TMB or Newton-Raphson.}
+\item{result}{A list containing model fit results from TMB or Newton-Raphson,
+must include a 'coefficients' element with named parameters.}
 
 \item{data}{Numeric vector with values in the (0, 1) interval.}
 
-\item{family}{Character string specifying the distribution family.}
+\item{family}{Character string specifying the distribution family.
+Supported values: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".}
 
-\item{silent}{Logical; if TRUE, suppresses messages.}
+\item{silent}{Logical; if TRUE, suppresses messages. Default is FALSE.}
 }
 \value{
-List of ggplot objects.
+A list of ggplot2 objects:
+\item{histogram}{Histogram with fitted density overlay}
+\item{pp_plot}{Probability-Probability plot}
+\item{qq_plot}{Quantile-Quantile plot}
+\item{profile_*}{Profile likelihood plots for each parameter (if available)}
 }
 \description{
-Generate diagnostic plots
+This internal function creates a set of diagnostic plots for evaluating
+the fit of various distribution families to bounded data in the (0, 1) interval.
+It generates histograms with fitted density overlays, P-P plots, Q-Q plots,
+and profile likelihood plots when available.
 }
 \keyword{internal}

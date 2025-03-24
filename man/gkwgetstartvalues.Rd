@@ -13,7 +13,7 @@ gkwgetstartvalues(x, n_starts = 5L)
 \item{n_starts}{Number of starting points for optimization}
 }
 \value{
-Vector of estimated parameters \link{alpha, beta, gamma, delta, lambda}
+Vector of estimated parameters \eqn{\alpha, \beta, \gamma, \delta, \lambda}
 }
 \description{
 Main function to estimate GKw distribution parameters using the method of moments.
