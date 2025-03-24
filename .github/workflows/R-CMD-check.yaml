@@ -39,7 +39,7 @@ jobs:
           use-public-rspm: true
 
       - name: Install pak
-        run: R -e 'install.packages("pak", repos = "https://cran.rstudio.com")'
+        run: Rscript -e 'install.packages("pak", repos = "https://cran.rstudio.com")'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
