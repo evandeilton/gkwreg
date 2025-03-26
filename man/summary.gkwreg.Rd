@@ -4,80 +4,72 @@
 \alias{summary.gkwreg}
 \title{Summary Method for Generalized Kumaraswamy Regression Models}
 \usage{
-\method{summary}{gkwreg}(object, ...)
+\method{summary}{gkwreg}(object, conf.level = 0.95, ...)
 }
 \arguments{
 \item{object}{An object of class \code{"gkwreg"}, typically the result of a call to \code{\link{gkwreg}}.}
 
-\item{...}{Additional arguments (not used currently).}
+\item{conf.level}{Confidence level for the confidence intervals. Default is 0.95.}
+
+\item{...}{Additional arguments (not used).}
 }
 \value{
-An object of class \code{"summary.gkwreg"} containing:
-\itemize{
-\item \code{call}: The original function call
-\item \code{formula}: The model formula
-\item \code{link_functions}: Link functions used for each parameter
-\item \code{scale_factors}: Scale factors for each parameter
-\item \code{coefficients}: List of data frames with coefficient statistics for each parameter
-\item \code{residuals_summary}: Quantile summary of residuals
-\item \code{loglik}, \code{aic}, \code{bic}: Log-likelihood and information criteria
-\item \code{deviance}, \code{null.deviance}: Model deviances
-\item \code{df.residual}, \code{df.null}: Degrees of freedom
-\item \code{nobs}, \code{npar}: Number of observations and parameters
-\item \code{rmse}, \code{efron_r2}, \code{mean_absolute_error}: Performance metrics
-\item \code{converged}, \code{iterations}: Convergence information
-\item \code{cache_performance}: Cache statistics if available
-}
+An object of class \code{"summary.gkwreg"} with the following components:
+\item{call}{The original function call that created the model.}
+\item{family}{Distribution family used in the model.}
+\item{coefficients}{Table of coefficient estimates, standard errors, z-values, and p-values.}
+\item{conf.int}{Matrix of confidence intervals for the coefficients.}
+\item{link}{List of link functions used for each parameter.}
+\item{fitted_parameters}{List of fitted parameter means.}
+\item{residuals}{Summary statistics of the model residuals.}
+\item{nobs}{Number of observations used in the model.}
+\item{npar}{Number of parameters in the model.}
+\item{df.residual}{Residual degrees of freedom.}
+\item{loglik}{Log-likelihood of the fitted model.}
+\item{aic}{Akaike Information Criterion.}
+\item{bic}{Bayesian Information Criterion.}
+\item{rmse}{Root Mean Square Error.}
+\item{efron_r2}{Efron's pseudo-R-squared.}
+\item{mean_absolute_error}{Mean absolute error, if available.}
+\item{convergence}{Convergence status.}
+\item{iterations}{Number of iterations performed by the optimizer.}
 }
 \description{
-Produces a comprehensive summary of a fitted Generalized Kumaraswamy (GKw) regression model,
-including coefficient tables with statistical significance, residual statistics,
-and goodness-of-fit measures.
+Computes and returns a detailed statistical summary of a fitted Generalized Kumaraswamy (GKw)
+regression model. The summary provides extensive information about parameter estimates,
+their standard errors, confidence intervals, and model fit statistics.
 }
 \details{
-This method extracts and computes various summaries from a fitted GKw regression model object.
-For each of the five model parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, \eqn{\delta}, \eqn{\lambda}),
-it creates coefficient tables that include:
+This method creates a comprehensive summary of the fitted GKw regression model. It provides:
 \itemize{
-\item Coefficient estimates
-\item Standard errors (if available from the model's variance-covariance matrix)
-\item z-statistics for testing statistical significance
-\item Corresponding p-values
+\item Model call and family information
+\item A detailed coefficient table with estimates, standard errors, z-values, p-values, and confidence intervals
+\item Link functions for each parameter
+\item Fitted parameter means and their distributions
+\item Extensive model fit statistics
+\item Residual analysis summary
+\item Convergence information
 }
 
-The summary also includes:
-\itemize{
-\item Residual quantiles (min, 1st quartile, median, 3rd quartile, max)
-\item Log-likelihood, AIC, and BIC values
-\item Deviance and null deviance
-\item Degrees of freedom (residual and null)
-\item Model performance metrics (RMSE, Efron's R2, mean absolute error)
-\item Convergence status and number of iterations
-\item Cache performance information (if available)
-}
-
-If the model's standard errors are not available (e.g., if the Hessian calculation failed),
-the coefficient tables will show NA values for standard errors, z-statistics, and p-values.
+For the coefficient table, significant p-values are marked with stars based on common
+significance levels (0.001, 0.01, 0.05, 0.1).
 }
 \examples{
 \dontrun{
-# Fit a GKw regression model
-fit <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = my_data)
+# Fit a Kumaraswamy regression model
+kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
 
-# Generate a summary
-summary_fit <- summary(fit)
+# Generate detailed summary
+summary_kw <- summary(kw_reg)
 
-# View the summary
-summary_fit
+# Print summary
+print(summary_kw)
 
-# Extract coefficient table for parameter alpha
-summary_fit$coefficients$alpha
-
-# Check if the model converged
-summary_fit$converged
+# Extract coefficient table
+coef(summary_kw)
 }
 
 }
 \seealso{
-\code{\link{gkwreg}} for fitting Generalized Kumaraswamy regression models.
+\code{\link{gkwreg}}
 }

@@ -427,9 +427,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dbp
-arma::vec dbp(const arma::vec& x, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool log_prob);
-RcppExport SEXP _gkwreg_dbp(SEXP xSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP log_probSEXP) {
+// dmc
+arma::vec dmc(const arma::vec& x, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool log_prob);
+RcppExport SEXP _gkwreg_dmc(SEXP xSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -438,13 +438,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type delta(deltaSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< bool >::type log_prob(log_probSEXP);
-    rcpp_result_gen = Rcpp::wrap(dbp(x, gamma, delta, lambda, log_prob));
+    rcpp_result_gen = Rcpp::wrap(dmc(x, gamma, delta, lambda, log_prob));
     return rcpp_result_gen;
 END_RCPP
 }
-// pbp
-arma::vec pbp(const arma::vec& q, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
-RcppExport SEXP _gkwreg_pbp(SEXP qSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
+// pmc
+arma::vec pmc(const arma::vec& q, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+RcppExport SEXP _gkwreg_pmc(SEXP qSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -454,13 +454,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< bool >::type lower_tail(lower_tailSEXP);
     Rcpp::traits::input_parameter< bool >::type log_p(log_pSEXP);
-    rcpp_result_gen = Rcpp::wrap(pbp(q, gamma, delta, lambda, lower_tail, log_p));
+    rcpp_result_gen = Rcpp::wrap(pmc(q, gamma, delta, lambda, lower_tail, log_p));
     return rcpp_result_gen;
 END_RCPP
 }
-// qbp
-arma::vec qbp(const arma::vec& p, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
-RcppExport SEXP _gkwreg_qbp(SEXP pSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
+// qmc
+arma::vec qmc(const arma::vec& p, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+RcppExport SEXP _gkwreg_qmc(SEXP pSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -470,13 +470,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< bool >::type lower_tail(lower_tailSEXP);
     Rcpp::traits::input_parameter< bool >::type log_p(log_pSEXP);
-    rcpp_result_gen = Rcpp::wrap(qbp(p, gamma, delta, lambda, lower_tail, log_p));
+    rcpp_result_gen = Rcpp::wrap(qmc(p, gamma, delta, lambda, lower_tail, log_p));
     return rcpp_result_gen;
 END_RCPP
 }
-// rbp
-arma::vec rbp(int n, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda);
-RcppExport SEXP _gkwreg_rbp(SEXP nSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
+// rmc
+arma::vec rmc(int n, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda);
+RcppExport SEXP _gkwreg_rmc(SEXP nSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -484,43 +484,43 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type delta(deltaSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(rbp(n, gamma, delta, lambda));
+    rcpp_result_gen = Rcpp::wrap(rmc(n, gamma, delta, lambda));
     return rcpp_result_gen;
 END_RCPP
 }
-// llbp
-double llbp(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
-RcppExport SEXP _gkwreg_llbp(SEXP parSEXP, SEXP dataSEXP) {
+// llmc
+double llmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+RcppExport SEXP _gkwreg_llmc(SEXP parSEXP, SEXP dataSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type par(parSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type data(dataSEXP);
-    rcpp_result_gen = Rcpp::wrap(llbp(par, data));
+    rcpp_result_gen = Rcpp::wrap(llmc(par, data));
     return rcpp_result_gen;
 END_RCPP
 }
-// grbp
-Rcpp::NumericVector grbp(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
-RcppExport SEXP _gkwreg_grbp(SEXP parSEXP, SEXP dataSEXP) {
+// grmc
+Rcpp::NumericVector grmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+RcppExport SEXP _gkwreg_grmc(SEXP parSEXP, SEXP dataSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type par(parSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type data(dataSEXP);
-    rcpp_result_gen = Rcpp::wrap(grbp(par, data));
+    rcpp_result_gen = Rcpp::wrap(grmc(par, data));
     return rcpp_result_gen;
 END_RCPP
 }
-// hsbp
-Rcpp::NumericMatrix hsbp(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
-RcppExport SEXP _gkwreg_hsbp(SEXP parSEXP, SEXP dataSEXP) {
+// hsmc
+Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+RcppExport SEXP _gkwreg_hsmc(SEXP parSEXP, SEXP dataSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type par(parSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type data(dataSEXP);
-    rcpp_result_gen = Rcpp::wrap(hsbp(par, data));
+    rcpp_result_gen = Rcpp::wrap(hsmc(par, data));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -733,8 +733,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // calculateParameters
-NumericMatrix calculateParameters(const NumericMatrix& X1, const NumericMatrix& X2, const NumericMatrix& X3, const NumericMatrix& X4, const NumericMatrix& X5, const NumericVector& beta1, const NumericVector& beta2, const NumericVector& beta3, const NumericVector& beta4, const NumericVector& beta5, const IntegerVector& link_types, const NumericVector& scale_factors);
-RcppExport SEXP _gkwreg_calculateParameters(SEXP X1SEXP, SEXP X2SEXP, SEXP X3SEXP, SEXP X4SEXP, SEXP X5SEXP, SEXP beta1SEXP, SEXP beta2SEXP, SEXP beta3SEXP, SEXP beta4SEXP, SEXP beta5SEXP, SEXP link_typesSEXP, SEXP scale_factorsSEXP) {
+NumericMatrix calculateParameters(const NumericMatrix& X1, const NumericMatrix& X2, const NumericMatrix& X3, const NumericMatrix& X4, const NumericMatrix& X5, const NumericVector& beta1, const NumericVector& beta2, const NumericVector& beta3, const NumericVector& beta4, const NumericVector& beta5, const IntegerVector& link_types, const NumericVector& scale_factors, const std::string& family);
+RcppExport SEXP _gkwreg_calculateParameters(SEXP X1SEXP, SEXP X2SEXP, SEXP X3SEXP, SEXP X4SEXP, SEXP X5SEXP, SEXP beta1SEXP, SEXP beta2SEXP, SEXP beta3SEXP, SEXP beta4SEXP, SEXP beta5SEXP, SEXP link_typesSEXP, SEXP scale_factorsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -750,55 +750,60 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type beta5(beta5SEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type link_types(link_typesSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type scale_factors(scale_factorsSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateParameters(X1, X2, X3, X4, X5, beta1, beta2, beta3, beta4, beta5, link_types, scale_factors));
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateParameters(X1, X2, X3, X4, X5, beta1, beta2, beta3, beta4, beta5, link_types, scale_factors, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateMeans
-NumericVector calculateMeans(const NumericMatrix& params);
-RcppExport SEXP _gkwreg_calculateMeans(SEXP paramsSEXP) {
+NumericVector calculateMeans(const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculateMeans(SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateMeans(params));
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateMeans(params, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateDensities
-NumericVector calculateDensities(const NumericVector& y, const NumericMatrix& params, bool log);
-RcppExport SEXP _gkwreg_calculateDensities(SEXP ySEXP, SEXP paramsSEXP, SEXP logSEXP) {
+NumericVector calculateDensities(const NumericVector& y, const NumericMatrix& params, const std::string& family, bool log);
+RcppExport SEXP _gkwreg_calculateDensities(SEXP ySEXP, SEXP paramsSEXP, SEXP familySEXP, SEXP logSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
     Rcpp::traits::input_parameter< bool >::type log(logSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateDensities(y, params, log));
+    rcpp_result_gen = Rcpp::wrap(calculateDensities(y, params, family, log));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateProbabilities
-NumericVector calculateProbabilities(const NumericVector& y, const NumericMatrix& params);
-RcppExport SEXP _gkwreg_calculateProbabilities(SEXP ySEXP, SEXP paramsSEXP) {
+NumericVector calculateProbabilities(const NumericVector& y, const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculateProbabilities(SEXP ySEXP, SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateProbabilities(y, params));
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateProbabilities(y, params, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateQuantiles
-NumericVector calculateQuantiles(const NumericVector& probs, const NumericMatrix& params);
-RcppExport SEXP _gkwreg_calculateQuantiles(SEXP probsSEXP, SEXP paramsSEXP) {
+NumericVector calculateQuantiles(const NumericVector& probs, const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculateQuantiles(SEXP probsSEXP, SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type probs(probsSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateQuantiles(probs, params));
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateQuantiles(probs, params, family));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -815,102 +820,84 @@ BEGIN_RCPP
 END_RCPP
 }
 // calculatePearsonResiduals
-NumericVector calculatePearsonResiduals(const NumericVector& y, const NumericVector& fitted, const NumericVector& alpha, const NumericVector& beta, const NumericVector& gamma, const NumericVector& delta, const NumericVector& lambda);
-RcppExport SEXP _gkwreg_calculatePearsonResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
+NumericVector calculatePearsonResiduals(const NumericVector& y, const NumericVector& fitted, const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculatePearsonResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type fitted(fittedSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type delta(deltaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculatePearsonResiduals(y, fitted, alpha, beta, gamma, delta, lambda));
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculatePearsonResiduals(y, fitted, params, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateDevianceResiduals
-NumericVector calculateDevianceResiduals(const NumericVector& y, const NumericVector& fitted, const NumericVector& alpha, const NumericVector& beta, const NumericVector& gamma, const NumericVector& delta, const NumericVector& lambda);
-RcppExport SEXP _gkwreg_calculateDevianceResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
+NumericVector calculateDevianceResiduals(const NumericVector& y, const NumericVector& fitted, const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculateDevianceResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type fitted(fittedSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type delta(deltaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateDevianceResiduals(y, fitted, alpha, beta, gamma, delta, lambda));
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateDevianceResiduals(y, fitted, params, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateQuantileResiduals
-NumericVector calculateQuantileResiduals(const NumericVector& y, const NumericVector& alpha, const NumericVector& beta, const NumericVector& gamma, const NumericVector& delta, const NumericVector& lambda);
-RcppExport SEXP _gkwreg_calculateQuantileResiduals(SEXP ySEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
+NumericVector calculateQuantileResiduals(const NumericVector& y, const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculateQuantileResiduals(SEXP ySEXP, SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type delta(deltaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateQuantileResiduals(y, alpha, beta, gamma, delta, lambda));
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateQuantileResiduals(y, params, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateCoxSnellResiduals
-NumericVector calculateCoxSnellResiduals(const NumericVector& y, const NumericVector& alpha, const NumericVector& beta, const NumericVector& gamma, const NumericVector& delta, const NumericVector& lambda);
-RcppExport SEXP _gkwreg_calculateCoxSnellResiduals(SEXP ySEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
+NumericVector calculateCoxSnellResiduals(const NumericVector& y, const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculateCoxSnellResiduals(SEXP ySEXP, SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type delta(deltaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateCoxSnellResiduals(y, alpha, beta, gamma, delta, lambda));
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateCoxSnellResiduals(y, params, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateScoreResiduals
-NumericVector calculateScoreResiduals(const NumericVector& y, const NumericVector& fitted, const NumericVector& alpha, const NumericVector& beta, const NumericVector& gamma, const NumericVector& delta, const NumericVector& lambda);
-RcppExport SEXP _gkwreg_calculateScoreResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
+NumericVector calculateScoreResiduals(const NumericVector& y, const NumericVector& fitted, const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculateScoreResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type fitted(fittedSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type delta(deltaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateScoreResiduals(y, fitted, alpha, beta, gamma, delta, lambda));
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateScoreResiduals(y, fitted, params, family));
     return rcpp_result_gen;
 END_RCPP
 }
 // calculateModifiedDevianceResiduals
-NumericVector calculateModifiedDevianceResiduals(const NumericVector& y, const NumericVector& fitted, const NumericVector& alpha, const NumericVector& beta, const NumericVector& gamma, const NumericVector& delta, const NumericVector& lambda);
-RcppExport SEXP _gkwreg_calculateModifiedDevianceResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
+NumericVector calculateModifiedDevianceResiduals(const NumericVector& y, const NumericVector& fitted, const NumericMatrix& params, const std::string& family);
+RcppExport SEXP _gkwreg_calculateModifiedDevianceResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP paramsSEXP, SEXP familySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type fitted(fittedSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type delta(deltaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateModifiedDevianceResiduals(y, fitted, alpha, beta, gamma, delta, lambda));
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateModifiedDevianceResiduals(y, fitted, params, family));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -960,13 +947,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gkwreg_llekw", (DL_FUNC) &_gkwreg_llekw, 2},
     {"_gkwreg_grekw", (DL_FUNC) &_gkwreg_grekw, 2},
     {"_gkwreg_hsekw", (DL_FUNC) &_gkwreg_hsekw, 2},
-    {"_gkwreg_dbp", (DL_FUNC) &_gkwreg_dbp, 5},
-    {"_gkwreg_pbp", (DL_FUNC) &_gkwreg_pbp, 6},
-    {"_gkwreg_qbp", (DL_FUNC) &_gkwreg_qbp, 6},
-    {"_gkwreg_rbp", (DL_FUNC) &_gkwreg_rbp, 4},
-    {"_gkwreg_llbp", (DL_FUNC) &_gkwreg_llbp, 2},
-    {"_gkwreg_grbp", (DL_FUNC) &_gkwreg_grbp, 2},
-    {"_gkwreg_hsbp", (DL_FUNC) &_gkwreg_hsbp, 2},
+    {"_gkwreg_dmc", (DL_FUNC) &_gkwreg_dmc, 5},
+    {"_gkwreg_pmc", (DL_FUNC) &_gkwreg_pmc, 6},
+    {"_gkwreg_qmc", (DL_FUNC) &_gkwreg_qmc, 6},
+    {"_gkwreg_rmc", (DL_FUNC) &_gkwreg_rmc, 4},
+    {"_gkwreg_llmc", (DL_FUNC) &_gkwreg_llmc, 2},
+    {"_gkwreg_grmc", (DL_FUNC) &_gkwreg_grmc, 2},
+    {"_gkwreg_hsmc", (DL_FUNC) &_gkwreg_hsmc, 2},
     {"_gkwreg_dkw", (DL_FUNC) &_gkwreg_dkw, 4},
     {"_gkwreg_pkw", (DL_FUNC) &_gkwreg_pkw, 5},
     {"_gkwreg_qkw", (DL_FUNC) &_gkwreg_qkw, 5},
@@ -982,18 +969,18 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gkwreg_grbeta", (DL_FUNC) &_gkwreg_grbeta, 2},
     {"_gkwreg_hsbeta", (DL_FUNC) &_gkwreg_hsbeta, 2},
     {"_gkwreg_nrgkw", (DL_FUNC) &_gkwreg_nrgkw, 12},
-    {"_gkwreg_calculateParameters", (DL_FUNC) &_gkwreg_calculateParameters, 12},
-    {"_gkwreg_calculateMeans", (DL_FUNC) &_gkwreg_calculateMeans, 1},
-    {"_gkwreg_calculateDensities", (DL_FUNC) &_gkwreg_calculateDensities, 3},
-    {"_gkwreg_calculateProbabilities", (DL_FUNC) &_gkwreg_calculateProbabilities, 2},
-    {"_gkwreg_calculateQuantiles", (DL_FUNC) &_gkwreg_calculateQuantiles, 2},
+    {"_gkwreg_calculateParameters", (DL_FUNC) &_gkwreg_calculateParameters, 13},
+    {"_gkwreg_calculateMeans", (DL_FUNC) &_gkwreg_calculateMeans, 2},
+    {"_gkwreg_calculateDensities", (DL_FUNC) &_gkwreg_calculateDensities, 4},
+    {"_gkwreg_calculateProbabilities", (DL_FUNC) &_gkwreg_calculateProbabilities, 3},
+    {"_gkwreg_calculateQuantiles", (DL_FUNC) &_gkwreg_calculateQuantiles, 3},
     {"_gkwreg_calculateResponseResiduals", (DL_FUNC) &_gkwreg_calculateResponseResiduals, 2},
-    {"_gkwreg_calculatePearsonResiduals", (DL_FUNC) &_gkwreg_calculatePearsonResiduals, 7},
-    {"_gkwreg_calculateDevianceResiduals", (DL_FUNC) &_gkwreg_calculateDevianceResiduals, 7},
-    {"_gkwreg_calculateQuantileResiduals", (DL_FUNC) &_gkwreg_calculateQuantileResiduals, 6},
-    {"_gkwreg_calculateCoxSnellResiduals", (DL_FUNC) &_gkwreg_calculateCoxSnellResiduals, 6},
-    {"_gkwreg_calculateScoreResiduals", (DL_FUNC) &_gkwreg_calculateScoreResiduals, 7},
-    {"_gkwreg_calculateModifiedDevianceResiduals", (DL_FUNC) &_gkwreg_calculateModifiedDevianceResiduals, 7},
+    {"_gkwreg_calculatePearsonResiduals", (DL_FUNC) &_gkwreg_calculatePearsonResiduals, 4},
+    {"_gkwreg_calculateDevianceResiduals", (DL_FUNC) &_gkwreg_calculateDevianceResiduals, 4},
+    {"_gkwreg_calculateQuantileResiduals", (DL_FUNC) &_gkwreg_calculateQuantileResiduals, 3},
+    {"_gkwreg_calculateCoxSnellResiduals", (DL_FUNC) &_gkwreg_calculateCoxSnellResiduals, 3},
+    {"_gkwreg_calculateScoreResiduals", (DL_FUNC) &_gkwreg_calculateScoreResiduals, 4},
+    {"_gkwreg_calculateModifiedDevianceResiduals", (DL_FUNC) &_gkwreg_calculateModifiedDevianceResiduals, 4},
     {"_gkwreg_calculatePartialResiduals", (DL_FUNC) &_gkwreg_calculatePartialResiduals, 5},
     {NULL, NULL, 0}
 };

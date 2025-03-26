@@ -10,6 +10,7 @@
     "cox-snell", "score", "partial"),
   covariate_idx = 1,
   parameter = "alpha",
+  family = NULL,
   ...
 )
 }
@@ -34,6 +35,10 @@
 \item{parameter}{Parameter name for partial residuals. One of "alpha", "beta", "gamma",
 "delta", or "lambda". Only used if type="partial".}
 
+\item{family}{Character string specifying the distribution family to use.
+If NULL (default), uses the family from the fitted model.
+Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".}
+
 \item{...}{Additional arguments. Currently not used.}
 }
 \value{
@@ -50,39 +55,45 @@ The different types of residuals offer various diagnostic tools for the GKw regr
 \item Response residuals: The raw difference between observed and fitted values.
 
 \item Pearson residuals: Response residuals standardized by the estimated standard
-deviation from the GKw model. Useful for checking heteroscedasticity.
+deviation from the model. Useful for checking heteroscedasticity.
 
 \item Deviance residuals: Signed square root of deviance contributions.
 Useful for assessing model fit.
 
-\item Quantile residuals: Normal quantiles of the GKw CDF evaluated at observed values.
+\item Quantile residuals: Normal quantiles of the model's CDF evaluated at observed values.
 These should follow a standard normal distribution if the model is correct.
 
 \item Modified deviance residuals: Standardized deviance residuals that should
 better approximate a normal distribution.
 
 \item Cox-Snell residuals: Based on -log(1-F(y)), should follow exponential(1)
-distribution if the model is correct. Uses the GKw CDF.
+distribution if the model is correct. Uses the model's CDF.
 
-\item Score residuals: Based on the score function from the GKw log-likelihood.
+\item Score residuals: Based on the score function from the model's log-likelihood.
 Useful for assessing influence.
 
 \item Partial residuals: For examining individual covariate effects in the context
-of the GKw model.
+of the specified distribution family.
 }
 
-All calculations use the specific properties of the Generalized Kumaraswamy distribution
+All calculations use the specific properties of the selected distribution family
 and are performed efficiently in C++ to ensure good performance even with large datasets.
+
+Specifying a different family than what was used to fit the model can be useful for
+diagnostic comparisons between different distribution assumptions.
 }
 \examples{
 \dontrun{
 # Fit a GKw model
-model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata)
+model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata, family = "gkw")
 
 # Extract different types of residuals
 resp_res <- residuals(model, type = "response")
 pearson_res <- residuals(model, type = "pearson")
 quant_res <- residuals(model, type = "quantile")
+
+# Using a different family for diagnostic comparison
+quant_res_beta <- residuals(model, type = "quantile", family = "beta")
 
 # QQ-plot for quantile residuals
 qqnorm(quant_res)
@@ -94,6 +105,13 @@ plot(qexp(ppoints(length(cs_res))), sort(cs_res),
   xlab = "Theoretical Quantiles", ylab = "Cox-Snell Residuals"
 )
 abline(0, 1, col = "red")
+
+# Comparing residuals from different distribution families
+par(mfrow = c(1, 2))
+qqnorm(quant_res, main = "GKw Quantile Residuals")
+qqline(quant_res)
+qqnorm(quant_res_beta, main = "Beta Quantile Residuals")
+qqline(quant_res_beta)
 
 # Partial residuals for examining covariate effect
 part_res <- residuals(model,

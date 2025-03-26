@@ -52,13 +52,13 @@
 .check_and_compile_TMB_code <- function(dll_name,
                                         pkg_name = "gkwreg",
                                         force_recompile = FALSE,
-                                        verbose = TRUE) {
+                                        verbose = FALSE) {
   # Helper function for logging
   log_msg <- function(...) {
     if (verbose) cat(...)
   }
 
-  log_msg("Checking TMB model status for ", dll_name, "...\n")
+  if (verbose) log_msg("Checking TMB model status for ", dll_name, "...\n")
 
   # Ensure .gkwreg_env exists
   if (!exists(".gkwreg_env")) {
@@ -76,7 +76,7 @@
 
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE)
-    log_msg("Created persistent cache directory: ", cache_dir, "\n")
+    if (verbose) log_msg("Created persistent cache directory: ", cache_dir, "\n")
   }
 
   # 2. Create a subdirectory for this specific R version and package version
@@ -94,7 +94,7 @@
   version_dir <- file.path(cache_dir, r_version, pkg_version)
   if (!dir.exists(version_dir)) {
     dir.create(version_dir, recursive = TRUE)
-    log_msg("Created version-specific cache directory: ", version_dir, "\n")
+    if (verbose) log_msg("Created version-specific cache directory: ", version_dir, "\n")
   }
 
   # 3. Define the full path for the shared object based on platform
@@ -141,17 +141,17 @@
     )
   }
 
-  log_msg("Found TMB source file: ", cpp_file, "\n")
+  if (verbose) log_msg("Found TMB source file: ", cpp_file, "\n")
 
   # 5. Check if the cached shared object exists and is up-to-date
   need_compile <- force_recompile
 
   if (file.exists(cached_dll_path) && !force_recompile) {
-    log_msg("Found cached TMB model: ", cached_dll_path, "\n")
+    if (verbose) log_msg("Found cached TMB model: ", cached_dll_path, "\n")
 
     # Check if source code is newer than compiled version
     if (file.info(cpp_file)$mtime > file.info(cached_dll_path)$mtime) {
-      log_msg("Source code is newer than compiled version. Recompiling...\n")
+      if (verbose) log_msg("Source code is newer than compiled version. Recompiling...\n")
       need_compile <- TRUE
     } else {
       # Try to load the existing library
@@ -182,12 +182,12 @@
       )
 
       if (!inherits(load_result, "try-error")) {
-        log_msg("Successfully loaded cached TMB model.\n")
+        if (verbose) log_msg("Successfully loaded cached TMB model.\n")
 
         if (verbose) {
           # List registered symbols only in verbose mode
           symbols <- getDLLRegisteredRoutines(cached_dll_path)
-          log_msg("Symbols registered: ", paste(names(symbols$.C), collapse = ", "), "\n")
+          if (verbose) log_msg("Symbols registered: ", paste(names(symbols$.C), collapse = ", "), "\n")
         }
 
         # Create dll_info to return
@@ -203,13 +203,13 @@
 
         return(invisible(dll_info))
       } else {
-        log_msg("Cached model exists but could not be loaded. Recompiling...\n")
+        if (verbose) log_msg("Cached model exists but could not be loaded. Recompiling...\n")
         try(dyn.unload(cached_dll_path), silent = TRUE)
         need_compile <- TRUE
       }
     }
   } else if (!file.exists(cached_dll_path)) {
-    log_msg("No cached model found. Compiling...\n")
+    if (verbose) log_msg("No cached model found. Compiling...\n")
     need_compile <- TRUE
   }
 
@@ -227,7 +227,7 @@
     setwd(temp_compile_dir)
     on.exit(setwd(old_dir), add = TRUE)
 
-    log_msg("Compiling TMB model from ", temp_cpp_file, "...\n")
+    if (verbose) log_msg("Compiling TMB model from ", temp_cpp_file, "...\n")
 
     # O TMB::compile requer o caminho completo ou o nome do arquivo no diretório atual
     # Vamos garantir que estamos usando o arquivo corretamente
@@ -255,7 +255,7 @@
 
     # Copy the compiled file to the cache directory
     file.copy(temp_dll_path, cached_dll_path, overwrite = TRUE)
-    log_msg("Copied compiled model to cache: ", cached_dll_path, "\n")
+    if (verbose) log_msg("Copied compiled model to cache: ", cached_dll_path, "\n")
 
     # Clean up temporary files
     unlink(temp_compile_dir, recursive = TRUE)
@@ -279,12 +279,12 @@
       )
     }
 
-    log_msg("Successfully compiled and loaded TMB model.\n")
+    if (verbose) log_msg("Successfully compiled and loaded TMB model.\n")
 
     if (verbose) {
       # List the registered symbols
       symbols <- getDLLRegisteredRoutines(cached_dll_path)
-      log_msg("Symbols registered: ", paste(names(symbols$.C), collapse = ", "), "\n")
+      if (verbose) log_msg("Symbols registered: ", paste(names(symbols$.C), collapse = ", "), "\n")
     }
   }
 
@@ -302,111 +302,112 @@
   invisible(dll_info)
 }
 
-#' Get TMB model path
 #'
-#' @param dll_name The name of the TMB model
-#' @return The path to the compiled TMB model
-#' @keywords internal
-get_tmb_path <- function(dll_name) {
-  if (!exists(".gkwreg_env")) {
-    return(NULL)
-  }
-  get0(paste0("TMB_", dll_name, "_PATH"), envir = .gkwreg_env)
-}
-
-#' Get TMB model information
+#' #' Get TMB model path
+#' #'
+#' #' @param dll_name The name of the TMB model
+#' #' @return The path to the compiled TMB model
+#' #' @keywords internal
+#' get_tmb_path <- function(dll_name) {
+#'   if (!exists(".gkwreg_env")) {
+#'     return(NULL)
+#'   }
+#'   get0(paste0("TMB_", dll_name, "_PATH"), envir = .gkwreg_env)
+#' }
 #'
-#' @param dll_name The name of the TMB model
-#' @return A list with information about the compiled TMB model
-#' @keywords internal
-get_tmb_info <- function(dll_name) {
-  if (!exists(".gkwreg_env")) {
-    return(NULL)
-  }
-  get0(paste0("TMB_", dll_name, "_INFO"), envir = .gkwreg_env)
-}
-
-#' List all available TMB model files
+#' #' Get TMB model information
+#' #'
+#' #' @param dll_name The name of the TMB model
+#' #' @return A list with information about the compiled TMB model
+#' #' @keywords internal
+#' get_tmb_info <- function(dll_name) {
+#'   if (!exists(".gkwreg_env")) {
+#'     return(NULL)
+#'   }
+#'   get0(paste0("TMB_", dll_name, "_INFO"), envir = .gkwreg_env)
+#' }
 #'
-#' @param pkg_name The package name (default: "gkwreg")
-#' @return A character vector with the names of available TMB model files (without extension)
-#' @export
-list_tmb_models <- function(pkg_name = "gkwreg") {
-  # Look for TMB models in the standard directories
-  tmb_dir <- system.file("tmb", package = pkg_name)
-  src_tmb_dir <- system.file("src/tmb", package = pkg_name)
-  src_dir <- system.file("src", package = pkg_name)
-
-  # Find all .cpp files
-  cpp_files <- c(
-    list.files(tmb_dir, pattern = "\\.cpp$", full.names = TRUE),
-    list.files(src_tmb_dir, pattern = "\\.cpp$", full.names = TRUE),
-    list.files(src_dir, pattern = "\\.cpp$", full.names = TRUE)
-  )
-
-  # Extract base names without extension
-  model_names <- unique(tools::file_path_sans_ext(basename(cpp_files)))
-
-  return(model_names)
-}
-
-#' Compile all available TMB models
+#' #' List all available TMB model files
+#' #'
+#' #' @param pkg_name The package name (default: "gkwreg")
+#' #' @return A character vector with the names of available TMB model files (without extension)
+#' #' @export
+#' list_tmb_models <- function(pkg_name = "gkwreg") {
+#'   # Look for TMB models in the standard directories
+#'   tmb_dir <- system.file("tmb", package = pkg_name)
+#'   src_tmb_dir <- system.file("src/tmb", package = pkg_name)
+#'   src_dir <- system.file("src", package = pkg_name)
 #'
-#' @param pkg_name The package name (default: "gkwreg")
-#' @param force_recompile Logical; if TRUE, forces recompilation (default: FALSE)
-#' @param verbose Logical; if TRUE, prints status messages (default: TRUE)
-#' @return Invisibly returns a list with information about all compiled models
-#' @export
-compile_all_tmb_models <- function(pkg_name = "gkwreg",
-                                   force_recompile = FALSE,
-                                   verbose = TRUE) {
-  # Get all available models
-  models <- list_tmb_models(pkg_name)
-
-  if (length(models) == 0) {
-    warning("No TMB model files found in package ", pkg_name)
-    return(invisible(list()))
-  }
-
-  if (verbose) {
-    cat("Found", length(models), "TMB model(s):", paste(models, collapse = ", "), "\n")
-  }
-
-  # Compile each model
-  results <- list()
-  for (model in models) {
-    if (verbose) {
-      cat("\nProcessing model:", model, "\n")
-      cat(paste(rep("-", nchar(model) + 16), collapse = ""), "\n")
-    }
-
-    results[[model]] <- try(
-      .check_and_compile_TMB_code(
-        dll_name = model,
-        pkg_name = pkg_name,
-        force_recompile = force_recompile,
-        verbose = verbose
-      ),
-      silent = !verbose
-    )
-
-    if (inherits(results[[model]], "try-error")) {
-      warning("Failed to compile model: ", model)
-    }
-  }
-
-  if (verbose) {
-    cat("\nSummary:\n")
-    for (model in names(results)) {
-      if (inherits(results[[model]], "try-error")) {
-        cat("  ", model, ": FAILED\n")
-      } else if (results[[model]]$compiled) {
-        cat("  ", model, ": Compiled and loaded\n")
-      } else {
-        cat("  ", model, ": Loaded from cache\n")
-      }
-    }
-  }
-
-  invisible(results)
-}
+#'   # Find all .cpp files
+#'   cpp_files <- c(
+#'     list.files(tmb_dir, pattern = "\\.cpp$", full.names = TRUE),
+#'     list.files(src_tmb_dir, pattern = "\\.cpp$", full.names = TRUE),
+#'     list.files(src_dir, pattern = "\\.cpp$", full.names = TRUE)
+#'   )
+#'
+#'   # Extract base names without extension
+#'   model_names <- unique(tools::file_path_sans_ext(basename(cpp_files)))
+#'
+#'   return(model_names)
+#' }
+#'
+#' #' Compile all available TMB models
+#' #'
+#' #' @param pkg_name The package name (default: "gkwreg")
+#' #' @param force_recompile Logical; if TRUE, forces recompilation (default: FALSE)
+#' #' @param verbose Logical; if TRUE, prints status messages (default: TRUE)
+#' #' @return Invisibly returns a list with information about all compiled models
+#' #' @export
+#' compile_all_tmb_models <- function(pkg_name = "gkwreg",
+#'                                    force_recompile = FALSE,
+#'                                    verbose = TRUE) {
+#'   # Get all available models
+#'   models <- list_tmb_models(pkg_name)
+#'
+#'   if (length(models) == 0) {
+#'     warning("No TMB model files found in package ", pkg_name)
+#'     return(invisible(list()))
+#'   }
+#'
+#'   if (verbose) {
+#'     cat("Found", length(models), "TMB model(s):", paste(models, collapse = ", "), "\n")
+#'   }
+#'
+#'   # Compile each model
+#'   results <- list()
+#'   for (model in models) {
+#'     if (verbose) {
+#'       cat("\nProcessing model:", model, "\n")
+#'       cat(paste(rep("-", nchar(model) + 16), collapse = ""), "\n")
+#'     }
+#'
+#'     results[[model]] <- try(
+#'       .check_and_compile_TMB_code(
+#'         dll_name = model,
+#'         pkg_name = pkg_name,
+#'         force_recompile = force_recompile,
+#'         verbose = verbose
+#'       ),
+#'       silent = !verbose
+#'     )
+#'
+#'     if (inherits(results[[model]], "try-error")) {
+#'       warning("Failed to compile model: ", model)
+#'     }
+#'   }
+#'
+#'   if (verbose) {
+#'     cat("\nSummary:\n")
+#'     for (model in names(results)) {
+#'       if (inherits(results[[model]], "try-error")) {
+#'         cat("  ", model, ": FAILED\n")
+#'       } else if (results[[model]]$compiled) {
+#'         cat("  ", model, ": Compiled and loaded\n")
+#'       } else {
+#'         cat("  ", model, ": Loaded from cache\n")
+#'       }
+#'     }
+#'   }
+#'
+#'   invisible(results)
+#' }

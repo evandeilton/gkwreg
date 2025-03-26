@@ -16,7 +16,8 @@ calculateParameters(
   beta4,
   beta5,
   link_types,
-  scale_factors
+  scale_factors,
+  family = "gkw"
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ calculateParameters(
 \item{link_types}{IntegerVector containing the link function type for each parameter.}
 
 \item{scale_factors}{NumericVector with scale factors for each parameter.}
+
+\item{family}{String specifying the distribution family (default: "gkw").}
 }
 \value{
 NumericMatrix with n rows and 5 columns corresponding to the calculated parameters.

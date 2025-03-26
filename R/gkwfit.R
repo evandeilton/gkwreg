@@ -272,6 +272,9 @@
 #' @param conf.level Confidence level for intervals.
 #' @param optimizer.control List of control parameters for the optimizer.
 #' @param silent Logical; if TRUE, suppresses messages.
+#'
+#' @importFrom utils modifyList
+#'
 #' @return List containing fit results.
 #' @keywords internal
 .fit_nr <- function(data, family, start, fixed, hessian, conf.level, optimizer.control, silent) {
@@ -466,6 +469,10 @@
 #' @param conf.level Confidence level for intervals.
 #' @param optimizer.control List of control parameters for the optimizer.
 #' @param silent Logical; if TRUE, suppresses messages.
+#'
+#' @importFrom stats nlminb optim pnorm
+#' @importFrom utils modifyList
+#'
 #' @return List containing fit results.
 #' @keywords internal
 .fit_tmb <- function(data, family, start, fixed, method, hessian, conf.level, optimizer.control, silent) {
@@ -860,7 +867,7 @@
           "bkw" = llbkw,
           "kkw" = llkkw,
           "ekw" = llekw,
-          "mc" = llbp,
+          "mc" = llmc,
           "kw" = llkw,
           "beta" = llbeta
         )
@@ -890,6 +897,9 @@
 #' @param hessian Logical; if TRUE, computes standard errors and covariance matrix.
 #' @param optimizer.control List of control parameters for the optimizer.
 #' @param silent Logical; if TRUE, suppresses messages.
+#'
+#' @importFrom stats pchisq
+#'
 #' @return List containing submodel fits and LRT results.
 #' @keywords internal
 .fit_submodels <- function(data, result, fit, method, hessian, optimizer.control, silent) {
@@ -987,8 +997,7 @@
 #'   \item{qq_plot}{Quantile-Quantile plot}
 #'   \item{profile_*}{Profile likelihood plots for each parameter (if available)}
 #'
-#' @importFrom stats ecdf ppoints qchisq
-#' @importFrom stats ecdf ppoints qchisq
+#' @importFrom stats ecdf ppoints qchisq density
 #'
 #' @keywords internal
 .generate_plots <- function(result, data, family, silent = FALSE) {
@@ -1035,7 +1044,7 @@
       )
     },
     "mc" = function(x) {
-      dbp(
+      dmc(
         x, result$coefficients["gamma"], result$coefficients["delta"],
         result$coefficients["lambda"]
       )
@@ -1106,7 +1115,7 @@
       )
     },
     "mc" = function(x) {
-      pbp(
+      pmc(
         x, result$coefficients["gamma"], result$coefficients["delta"],
         result$coefficients["lambda"]
       )
@@ -1170,7 +1179,7 @@
       )
     },
     "mc" = function(p) {
-      qbp(
+      qmc(
         p, result$coefficients["gamma"], result$coefficients["delta"],
         result$coefficients["lambda"]
       )
@@ -1245,6 +1254,7 @@
 #' @param family Character string specifying the distribution family.
 #' @param silent Logical; if TRUE, suppresses messages.
 #' @return List of goodness-of-fit statistics.
+#' @importFrom stats ks.test var integrate
 #' @keywords internal
 .calculate_gof <- function(result, data, family, silent) {
   if (!silent) {
@@ -1281,7 +1291,7 @@
       )
     },
     "mc" = function(x) {
-      pbp(
+      pmc(
         x, result$coefficients["gamma"], result$coefficients["delta"],
         result$coefficients["lambda"]
       )
@@ -1324,7 +1334,7 @@
       )
     },
     "mc" = function(x) {
-      dbp(
+      dmc(
         x, result$coefficients["gamma"], result$coefficients["delta"],
         result$coefficients["lambda"]
       )
@@ -1415,6 +1425,173 @@
 #'         enforce_bounds = TRUE, min_param_val = 1e-5, max_param_val = 1e5)}.
 #' }
 #'
+#' @examples
+#' \dontrun{
+#'
+#' require(gkwreg)
+#' ## Example 1: Basic Kumaraswamy distribution fitting
+#' # Generate sample data from a Kumaraswamy distribution
+#' set.seed(123)
+#' n <- 2000
+#' kw_data <- rkw(n, alpha = 2.5, beta = 1.5)
+#'
+#' # Fit the Kumaraswamy distribution to the data
+#' kw_fit <- gkwfit(data = kw_data, family = "kw")
+#'
+#' # Display summary of the fitted model
+#' summary(kw_fit)
+#'
+#' # Plot the fitted distribution against the data
+#' kw_fit$plots
+#'
+#' ## Example 2: Fitting a Generalized Kumaraswamy distribution
+#' # Generate sample data from a GKw distribution
+#' set.seed(456)
+#' gkw_data <- rgkw(n,
+#'   alpha = 2.0, beta = 3.0,
+#'   gamma = 1.5, delta = 2.5, lambda = 0.8
+#' )
+#'
+#' # Fit the GKw distribution using TMB
+#' gkw_fit <- gkwfit(data = gkw_data, family = "gkw", fit = "tmb")
+#'
+#' # Display parameter estimates with confidence intervals
+#' confint(gkw_fit)
+#'
+#' ## Example 3: Comparing different estimation methods
+#' # Generate sample data from a Beta-Kumaraswamy distribution
+#' set.seed(7809)
+#' bkw_data <- rbkw(n, alpha = 1.8, beta = 2.2, gamma = 0.9, delta = 1.2)
+#'
+#' # Fit using TMB with nlminb optimizer
+#' bkw_fit_tmb <- gkwfit(
+#'   data = bkw_data, family = "bkw",
+#'   fit = "tmb", method = "nlminb"
+#' )
+#'
+#' # Fit using Newton-Raphson method
+#' bkw_fit_nr <- gkwfit(data = bkw_data, family = "bkw", fit = "nr")
+#'
+#' # Compare parameter estimates
+#' cbind(TMB = coef(bkw_fit_tmb), NR = coef(bkw_fit_nr))
+#'
+#' ## Example 4: Fixing parameters during estimation
+#' # Generate data from a Kumaraswamy-Kumaraswamy distribution
+#' set.seed(101)
+#' kkw_data <- rkkw(n, alpha = 2.5, beta = 1.8, delta = 1.5, lambda = 0.7)
+#'
+#' # Fit the model with lambda fixed at 0.7
+#' kkw_fit <- gkwfit(
+#'   data = kkw_data, family = "kkw",
+#'   fixed = list(lambda = 0.7)
+#' )
+#'
+#' # Display results
+#' coef(kkw_fit)
+#'
+#' ## Example 5: Profile likelihoods
+#' # Generate data from McDonald distribution
+#' set.seed(202)
+#' mc_data <- rbp(n, gamma = 2.0, delta = 1.5, lambda = 0.9)
+#'
+#' # Fit the model with profile likelihoods
+#' mc_fit <- gkwfit(
+#'   data = mc_data, family = "mc",
+#'   profile = TRUE, npoints = 15
+#' )
+#'
+#' # Plot profile likelihoods
+#' mc_fit$plots
+#'
+#' ## Example 6: Fitting and comparing submodels
+#' # Generate data from Exponentiated Kumaraswamy distribution
+#' set.seed(303)
+#' ekw_data <- rekw(n, alpha = 1.7, beta = 2.3, lambda = 1.2)
+#'
+#' # Fit the model and all its submodels
+#' ekw_fit <- gkwfit(data = ekw_data, family = "gkw", fit = "tmb", submodels = TRUE)
+#'
+#' # Display likelihood ratio tests
+#' do.call(rbind, ekw_fit$lrt)
+#'
+#' ## Example 7: Using method of moments for initialization
+#' # Generate data from Beta distribution
+#' set.seed(404)
+#' beta_data <- rbeta(n, shape1 = 2.0, shape2 = 3.0)
+#'
+#' # Fit using method of moments for starting values
+#' beta_fit <- gkwfit(data = beta_data, family = "beta", use_moments = TRUE)
+#'
+#' # Check starting values vs final estimates
+#' beta_fit$plots
+#' coef(beta_fit)
+#'
+#' ## Example 8: Custom optimizer control
+#' # Generate data from Kumaraswamy distribution
+#' set.seed(505)
+#' kw_data2 <- rkw(n, alpha = 0.8, beta = 1.2)
+#'
+#' # Fit with custom optimizer settings for more iterations
+#' kw_fit2 <- gkwfit(
+#'   data = kw_data2, family = "kw",
+#'   optimizer.control = list(eval.max = 1000, iter.max = 600)
+#' )
+#'
+#' # Check convergence
+#' kw_fit2$convergence
+#'
+#' ## Example 9: Goodness-of-fit assessment
+#' # Generate data from GKw distribution
+#' set.seed(606)
+#' gkw_data2 <- rgkw(n,
+#'   alpha = 1.5, beta = 2.0,
+#'   gamma = 1.2, delta = 0.8, lambda = 1.1
+#' )
+#'
+#' # Fit the model
+#' gkw_fit2 <- gkwfit(data = gkw_data2, family = "gkw")
+#'
+#' # Check goodness-of-fit measures
+#' gkw_fit2$gof
+#'
+#' # Perform a Kolmogorov-Smirnov test
+#' ks.test(gkw_data2, function(x) {
+#'   pgkw(x,
+#'     alpha = coef(gkw_fit2)[1],
+#'     beta = coef(gkw_fit2)[2],
+#'     gamma = coef(gkw_fit2)[3],
+#'     delta = coef(gkw_fit2)[4],
+#'     lambda = coef(gkw_fit2)[5]
+#'   )
+#' })
+#'
+#' ## Example 10: Dealing with bounded data
+#' # Transform data to (0,1) interval if needed
+#' set.seed(707)
+#' original_data <- rnorm(n, mean = 10, sd = 2)
+#'
+#' # Transform data to (0,1) interval
+#' transformed_data <- (original_data - min(original_data)) /
+#'   (max(original_data) - min(original_data))
+#'
+#' # Fit a suitable model
+#' trans_fit <- gkwfit(data = transformed_data, family = "gkw")
+#'
+#' # Back-transform results for prediction in original scale
+#' # Example of predicting quantiles in original scale
+#' orig_min <- min(original_data)
+#' orig_max <- max(original_data)
+#' quantiles <- qgkw(
+#'   p = c(0.1, 0.25, 0.5, 0.75, 0.9),
+#'   alpha = coef(trans_fit)[1],
+#'   beta = coef(trans_fit)[2],
+#'   gamma = coef(trans_fit)[3],
+#'   delta = coef(trans_fit)[4],
+#'   lambda = coef(trans_fit)[5]
+#' )
+#' original_quantiles <- quantiles * (orig_max - orig_min) + orig_min
+#' print(original_quantiles)
+#' }
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
 #' random processes. Journal of Hydrology, 46(1-2), 79-88.
@@ -1577,7 +1754,7 @@ print.summary.gkwfit <- function(x, digits = max(3, getOption("digits") - 3), ..
   print(x$call)
 
   cat("\nCoefficients:\n")
-  printCoefmat(x$coef_summary,
+  stats::printCoefmat(x$coef_summary,
     digits = digits, P.values = TRUE,
     has.Pvalue = TRUE
   )
@@ -1675,8 +1852,8 @@ plot.gkwfit <- function(x,
 
   # Set up plot paging
   if (ask) {
-    oask <- devAskNewPage(TRUE)
-    on.exit(devAskNewPage(oask))
+    oask <- grDevices::devAskNewPage(TRUE)
+    on.exit(grDevices::devAskNewPage(oask))
   }
 
   # Display the plots

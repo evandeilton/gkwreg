@@ -2,14 +2,16 @@
 % Please edit documentation in R/RcppExports.R
 \name{calculateDensities}
 \alias{calculateDensities}
-\title{Calculate Densities for the Generalized Kumaraswamy Distribution}
+\title{Calculate Densities for Distribution}
 \usage{
-calculateDensities(y, params, log = FALSE)
+calculateDensities(y, params, family = "gkw", log = FALSE)
 }
 \arguments{
 \item{y}{NumericVector of observations.}
 
 \item{params}{NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).}
+
+\item{family}{String specifying the distribution family (default: "gkw").}
 
 \item{log}{Logical indicating whether to return the log-density (default FALSE).}
 }

@@ -9,9 +9,10 @@
   newdata = NULL,
   type = c("response", "link", "parameter", "alpha", "beta", "gamma", "delta", "lambda",
     "variance", "density", "pdf", "probability", "cdf", "quantile"),
-  na.action = na.pass,
+  na.action = stats::na.pass,
   at = 0.5,
   elementwise = NULL,
+  family = NULL,
   ...
 )
 }
@@ -42,6 +43,10 @@ types "density", "probability", or "quantile".}
 evaluated at the corresponding element of 'at' (TRUE) or at all elements
 in 'at' (FALSE).}
 
+\item{family}{Character string specifying the distribution family to use.
+If NULL (default), uses the family from the fitted model.
+Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".}
+
 \item{...}{Further arguments passed to methods.}
 }
 \value{
@@ -54,7 +59,7 @@ Generalized Kumaraswamy regression model.
 \examples{
 \dontrun{
 # Fit a GKw model
-model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata)
+model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata, family = "gkw")
 
 # Predictions on new data
 newdata <- data.frame(x1 = seq(0, 1, by = 0.1), x2 = rep(0, 11))
@@ -67,6 +72,9 @@ predict(model, newdata, type = "parameter")
 
 # Predict densities at specific points
 predict(model, newdata, type = "density", at = c(0.2, 0.5, 0.8))
+
+# Predict using a different family than what was fitted
+predict(model, newdata, type = "response", family = "beta")
 }
 
 }

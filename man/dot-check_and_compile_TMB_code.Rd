@@ -8,7 +8,7 @@
   dll_name,
   pkg_name = "gkwreg",
   force_recompile = FALSE,
-  verbose = TRUE
+  verbose = FALSE
 )
 }
 \arguments{

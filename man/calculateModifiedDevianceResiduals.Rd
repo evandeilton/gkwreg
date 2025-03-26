@@ -4,30 +4,16 @@
 \alias{calculateModifiedDevianceResiduals}
 \title{Calculate Modified Deviance Residuals}
 \usage{
-calculateModifiedDevianceResiduals(
-  y,
-  fitted,
-  alpha,
-  beta,
-  gamma,
-  delta,
-  lambda
-)
+calculateModifiedDevianceResiduals(y, fitted, params, family = "gkw")
 }
 \arguments{
 \item{y}{NumericVector of observations.}
 
 \item{fitted}{NumericVector of fitted values (means).}
 
-\item{alpha}{NumericVector of alpha parameters.}
+\item{params}{NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).}
 
-\item{beta}{NumericVector of beta parameters.}
-
-\item{gamma}{NumericVector of gamma parameters.}
-
-\item{delta}{NumericVector of delta parameters.}
-
-\item{lambda}{NumericVector of lambda parameters.}
+\item{family}{String specifying the distribution family (default: "gkw").}
 }
 \value{
 NumericVector of modified deviance residuals.

@@ -2,12 +2,14 @@
 % Please edit documentation in R/RcppExports.R
 \name{calculateMeans}
 \alias{calculateMeans}
-\title{Calculate Means for the Generalized Kumaraswamy Distribution}
+\title{Calculate Means for Distribution}
 \usage{
-calculateMeans(params)
+calculateMeans(params, family = "gkw")
 }
 \arguments{
 \item{params}{NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).}
+
+\item{family}{String specifying the distribution family (default: "gkw").}
 }
 \value{
 NumericVector containing the calculated means for each observation.

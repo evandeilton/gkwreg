@@ -4,10 +4,14 @@
 \alias{fitted.gkwreg}
 \title{Extract Fitted Values from a Generalized Kumaraswamy Regression Model}
 \usage{
-\method{fitted}{gkwreg}(object, ...)
+\method{fitted}{gkwreg}(object, family = NULL, ...)
 }
 \arguments{
 \item{object}{A fitted model object of class "gkwreg".}
+
+\item{family}{Character string specifying the distribution family to use.
+If NULL (default), uses the family from the fitted model.
+Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".}
 
 \item{...}{Additional arguments. Currently not used.}
 }
@@ -22,16 +26,23 @@ regression model.
 \details{
 The fitted values are extracted directly from the model object if available.
 If not available (which may happen in rare cases), they are recalculated using
-the model parameters. The values represent the predicted means of the response
-variable conditional on the observed covariates.
+the model parameters and the specified family. The values represent the predicted
+means of the response variable conditional on the observed covariates.
+
+When using a different family than what was used to fit the model (by specifying
+the 'family' parameter), the function will always recalculate the fitted values
+using the predict method instead of using stored values.
 }
 \examples{
 \dontrun{
 # Fit a GKw model
-model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata)
+model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata, family = "gkw")
 
 # Extract fitted values
 fitted_values <- fitted(model)
+
+# Extract fitted values using a different family
+fitted_values_beta <- fitted(model, family = "beta")
 
 # Plot observed vs. fitted
 plot(model$y, fitted_values,

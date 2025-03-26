@@ -1,7 +1,8 @@
 utils::globalVariables(c(
   "packageVersion", "dev.interactive", "calculateMean", "index", "theoretical", "observed", "lower",
   "upper", "log", "log_scale", "calculateResponseResiduals", "::", ":::", ".gkwreg_env", "get_tmb_info",
-  "x", "Theoretical", "Empirical", "value", "loglik"
+  "x", "Theoretical", "Empirical", "value", "loglik", "cook_dist", "fitted", "abs_resid", "leverage", "y_obs",
+  "linpred", "resid"
 ))
 
 

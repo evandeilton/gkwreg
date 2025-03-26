@@ -2,14 +2,16 @@
 % Please edit documentation in R/RcppExports.R
 \name{calculateQuantiles}
 \alias{calculateQuantiles}
-\title{Calculate Quantiles for the Generalized Kumaraswamy Distribution}
+\title{Calculate Quantiles for Distribution}
 \usage{
-calculateQuantiles(probs, params)
+calculateQuantiles(probs, params, family = "gkw")
 }
 \arguments{
 \item{probs}{NumericVector of probabilities (values in (0,1)).}
 
 \item{params}{NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).}
+
+\item{family}{String specifying the distribution family (default: "gkw").}
 }
 \value{
 NumericVector containing the calculated quantiles.

@@ -4569,7 +4569,7 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    // --- L6: (γ - 1) ln(w), where w = 1 - v^β ---
    double v_beta = std::pow(v, beta);              // v^β
    double w = 1.0 - v_beta;                        // w = 1 - v^β
-   double ln_w = std::log(w);                      // ln(w)
+
    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
    double dw_dv = -beta * std::pow(v, beta - 1.0);
    // Chain rule: dw/dα = dw/dv * dv/dα
@@ -5702,7 +5702,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    // --- L6: (λ - 1) ln(w), where w = 1 - v^β ---
    double v_beta = std::pow(v, beta);               // v^β
    double w = 1.0 - v_beta;                         // w = 1 - v^β
-   double ln_w = std::log(w);                       // ln(w)
+
    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
    double dw_dv = -beta * std::pow(v, beta - 1.0);
    // Chain rule: dw/dα = dw/dv * dv/dα
@@ -6011,11 +6011,11 @@ log f(x) = log(λ) - log B(γ, δ+1)
 + δ * log(1 - x^λ).
 
 We'll define five functions:
-- dbp() : PDF
-- pbp() : CDF
-- qbp() : quantile
-- rbp() : random generator
-- llbp(): negative log-likelihood
+- dmc() : PDF
+- pmc() : CDF
+- qmc() : quantile
+- rmc() : random generator
+- llmc(): negative log-likelihood
 
 We'll also define a param-checker for (γ, δ, λ).
 */
@@ -6038,13 +6038,13 @@ return true;
 }
 
 // -----------------------------------------------------------------------------
-// 1) dbp: PDF of Beta Power
+// 1) dmc: PDF of Beta Power McDonald
 // -----------------------------------------------------------------------------
 
 //' @title Density of the Beta Power Distribution
 //'
 //' @description
-//' Computes the PDF of the Beta Power (BP) distribution with parameters \eqn{γ, δ, λ}.
+//' Computes the PDF of the Beta Power (BP or MC) distribution with parameters \eqn{γ, δ, λ}.
 //'
 //' @param x Vector of quantiles in (0,1).
 //' @param gamma Shape parameter \eqn{γ > 0}.
@@ -6064,7 +6064,7 @@ return true;
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec dbp(
+arma::vec dmc(
    const arma::vec& x,
    const Rcpp::NumericVector& gamma,
    const Rcpp::NumericVector& delta,
@@ -6129,7 +6129,7 @@ arma::vec dbp(
 
 
 // -----------------------------------------------------------------------------
-// 2) pbp: CDF of Beta Power
+// 2) pmc: CDF of Beta Power
 // -----------------------------------------------------------------------------
 
 //' @title CDF of the Beta Power Distribution
@@ -6152,7 +6152,7 @@ arma::vec dbp(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec pbp(
+arma::vec pmc(
    const arma::vec& q,
    const Rcpp::NumericVector& gamma,
    const Rcpp::NumericVector& delta,
@@ -6207,7 +6207,7 @@ arma::vec pbp(
 
 
 // -----------------------------------------------------------------------------
-// 3) qbp: Quantile of Beta Power
+// 3) qmc: Quantile of Beta Power
 // -----------------------------------------------------------------------------
 
 //' @title Quantile Function of the Beta Power Distribution
@@ -6231,7 +6231,7 @@ arma::vec pbp(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec qbp(
+arma::vec qmc(
    const arma::vec& p,
    const Rcpp::NumericVector& gamma,
    const Rcpp::NumericVector& delta,
@@ -6300,7 +6300,7 @@ arma::vec qbp(
 
 
 // -----------------------------------------------------------------------------
-// 4) rbp: RNG for Beta Power
+// 4) rmc: RNG for Beta Power
 // -----------------------------------------------------------------------------
 
 //' @title Random Generation from Beta Power Distribution
@@ -6321,14 +6321,14 @@ arma::vec qbp(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec rbp(
+arma::vec rmc(
    int n,
    const Rcpp::NumericVector& gamma,
    const Rcpp::NumericVector& delta,
    const Rcpp::NumericVector& lambda
 ) {
  if (n<=0) {
-   Rcpp::stop("rbp: n must be positive");
+   Rcpp::stop("rmc: n must be positive");
  }
 
  arma::vec g_vec(gamma.begin(), gamma.size());
@@ -6346,7 +6346,7 @@ arma::vec rbp(
 
    if(!check_bp_pars(gg,dd,ll)) {
      out(i)= NA_REAL;
-     Rcpp::warning("rbp: invalid parameters at index %d", i+1);
+     Rcpp::warning("rmc: invalid parameters at index %d", i+1);
      continue;
    }
 
@@ -6367,7 +6367,7 @@ arma::vec rbp(
 
 
 // -----------------------------------------------------------------------------
-// 5) llbp: Negative Log-Likelihood for Beta Power
+// 5) llmc: Negative Log-Likelihood for Beta Power
 // -----------------------------------------------------------------------------
 
 //' @title Negative Log-Likelihood for Beta Power Distribution
@@ -6391,19 +6391,19 @@ arma::vec rbp(
 //' \dontrun{
 //' # Generate sample data from a BP distribution
 //' set.seed(123)
-//' x <- rbp(100, 2, 3, 0.5)
+//' x <- rmc(100, 2, 3, 0.5)
 //' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
 //'
 //' # Use in optimization with Hessian-based methods
-//' result <- optim(c(0.5, 0.5, 0.5), llbp, method = "BFGS",
+//' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
 //'                 hessian = TRUE, data = x)
 //'
 //' # Compare numerical and analytical derivatives
-//' num_grad <- numDeriv::grad(llbp, x = result$par, data = x)
-//' num_hess <- numDeriv::hessian(llbp, x = result$par, data = x)
+//' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
+//' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
 //'
-//' ana_grad <- grbp(result$par, data = x)
-//' ana_hess <- hsbp(result$par, data = x)
+//' ana_grad <- grmc(result$par, data = x)
+//' ana_hess <- hsmc(result$par, data = x)
 //'
 //' # Check differences (should be very small)
 //' round(num_grad - ana_grad, 4)
@@ -6412,7 +6412,7 @@ arma::vec rbp(
 //'
 //' @export
 // [[Rcpp::export]]
-double llbp(const Rcpp::NumericVector& par,
+double llmc(const Rcpp::NumericVector& par,
            const Rcpp::NumericVector& data) {
  if (par.size()<3) {
    return R_PosInf;
@@ -6509,19 +6509,19 @@ double llbp(const Rcpp::NumericVector& par,
 //' \dontrun{
 //' # Generate sample data from a BP distribution
 //' set.seed(123)
-//' x <- rbp(100, 2, 3, 0.5)
+//' x <- rmc(100, 2, 3, 0.5)
 //' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
 //'
 //' # Use in optimization with Hessian-based methods
-//' result <- optim(c(0.5, 0.5, 0.5), llbp, method = "BFGS",
+//' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
 //'                 hessian = TRUE, data = x)
 //'
 //' # Compare numerical and analytical derivatives
-//' num_grad <- numDeriv::grad(llbp, x = result$par, data = x)
-//' num_hess <- numDeriv::hessian(llbp, x = result$par, data = x)
+//' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
+//' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
 //'
-//' ana_grad <- grbp(result$par, data = x)
-//' ana_hess <- hsbp(result$par, data = x)
+//' ana_grad <- grmc(result$par, data = x)
+//' ana_hess <- hsmc(result$par, data = x)
 //'
 //' # Check differences (should be very small)
 //' round(num_grad - ana_grad, 4)
@@ -6529,9 +6529,9 @@ double llbp(const Rcpp::NumericVector& par,
 //' }
 //'
 //' @seealso
-//' \code{\link[gkwreg]{llbp}} for the negative log-likelihood function,
-//' \code{\link[gkwreg]{hsbp}} for the Hessian matrix of the BP log-likelihood,
-//' \code{\link[gkwreg]{dbp}} for the BP density function,
+//' \code{\link[gkwreg]{llmc}} for the negative log-likelihood function,
+//' \code{\link[gkwreg]{hsmc}} for the Hessian matrix of the BP log-likelihood,
+//' \code{\link[gkwreg]{dmc}} for the BP density function,
 //'
 //' @references
 //' McDonald, J. B. (1984). Some generalized functions for the size distribution of income.
@@ -6542,7 +6542,7 @@ double llbp(const Rcpp::NumericVector& par,
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericVector grbp(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+Rcpp::NumericVector grmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
  // Parameter extraction
  double gamma = par[0];   // Shape parameter γ > 0
  double delta = par[1];   // Shape parameter δ > 0
@@ -6670,19 +6670,19 @@ Rcpp::NumericVector grbp(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 //' \dontrun{
 //' # Generate sample data from a BP distribution
 //' set.seed(123)
-//' x <- rbp(100, 2, 3, 0.5)
+//' x <- rmc(100, 2, 3, 0.5)
 //' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
 //'
 //' # Use in optimization with Hessian-based methods
-//' result <- optim(c(0.5, 0.5, 0.5), llbp, method = "BFGS",
+//' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
 //'                 hessian = TRUE, data = x)
 //'
 //' # Compare numerical and analytical derivatives
-//' num_grad <- numDeriv::grad(llbp, x = result$par, data = x)
-//' num_hess <- numDeriv::hessian(llbp, x = result$par, data = x)
+//' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
+//' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
 //'
-//' ana_grad <- grbp(result$par, data = x)
-//' ana_hess <- hsbp(result$par, data = x)
+//' ana_grad <- grmc(result$par, data = x)
+//' ana_hess <- hsmc(result$par, data = x)
 //'
 //' # Check differences (should be very small)
 //' round(num_grad - ana_grad, 4)
@@ -6690,9 +6690,9 @@ Rcpp::NumericVector grbp(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 //' }
 //'
 //' @seealso
-//' \code{\link[gkwreg]{llbp}} for the negative log-likelihood function,
-//' \code{\link[gkwreg]{grbp}} for the gradient of the BP log-likelihood,
-//' \code{\link[gkwreg]{dbp}} for the BP density function,
+//' \code{\link[gkwreg]{llmc}} for the negative log-likelihood function,
+//' \code{\link[gkwreg]{grmc}} for the gradient of the BP log-likelihood,
+//' \code{\link[gkwreg]{dmc}} for the BP density function,
 //'
 //' @references
 //' McDonald, J. B. (1984). Some generalized functions for the size distribution of income.
@@ -6703,7 +6703,7 @@ Rcpp::NumericVector grbp(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::NumericMatrix hsbp(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
  // Parameter extraction
  double gamma = par[0];   // Shape parameter γ > 0
  double delta = par[1];   // Shape parameter δ > 0
@@ -8507,9 +8507,9 @@ List nrgkw(
    gr_func = grekw;
    hs_func = hsekw;
  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-   ll_func = llbp;
-   gr_func = grbp;
-   hs_func = hsbp;
+   ll_func = llmc;
+   gr_func = grmc;
+   hs_func = hsmc;
  } else if (family_lower == "kw") {
    ll_func = llkw;
    gr_func = grkw;
@@ -9533,9 +9533,9 @@ List nrgkw(
 //    gr_func = grekw;
 //    hs_func = hsekw;
 //  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-//    ll_func = llbp;
-//    gr_func = grbp;
-//    hs_func = hsbp;
+//    ll_func = llmc;
+//    gr_func = grmc;
+//    hs_func = hsmc;
 //  } else if (family_lower == "kw") {
 //    ll_func = llkw;
 //    gr_func = grkw;

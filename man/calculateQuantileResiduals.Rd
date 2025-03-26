@@ -4,20 +4,14 @@
 \alias{calculateQuantileResiduals}
 \title{Calculate Quantile Residuals}
 \usage{
-calculateQuantileResiduals(y, alpha, beta, gamma, delta, lambda)
+calculateQuantileResiduals(y, params, family = "gkw")
 }
 \arguments{
 \item{y}{NumericVector of observations.}
 
-\item{alpha}{NumericVector of alpha parameters.}
+\item{params}{NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).}
 
-\item{beta}{NumericVector of beta parameters.}
-
-\item{gamma}{NumericVector of gamma parameters.}
-
-\item{delta}{NumericVector of delta parameters.}
-
-\item{lambda}{NumericVector of lambda parameters.}
+\item{family}{String specifying the distribution family (default: "gkw").}
 }
 \value{
 NumericVector of quantile residuals.

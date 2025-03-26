@@ -2,14 +2,16 @@
 % Please edit documentation in R/RcppExports.R
 \name{calculateProbabilities}
 \alias{calculateProbabilities}
-\title{Calculate Cumulative Probabilities for the Generalized Kumaraswamy Distribution}
+\title{Calculate Cumulative Probabilities for Distribution}
 \usage{
-calculateProbabilities(y, params)
+calculateProbabilities(y, params, family = "gkw")
 }
 \arguments{
 \item{y}{NumericVector of observations.}
 
 \item{params}{NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).}
+
+\item{family}{String specifying the distribution family (default: "gkw").}
 }
 \value{
 NumericVector containing the evaluated cumulative probabilities.

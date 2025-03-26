@@ -1579,7 +1579,7 @@ hsekw <- function(par, data) {
 #' @title Density of the Beta Power Distribution
 #'
 #' @description
-#' Computes the PDF of the Beta Power (BP) distribution with parameters \eqn{γ, δ, λ}.
+#' Computes the PDF of the Beta Power (BP or MC) distribution with parameters \eqn{γ, δ, λ}.
 #'
 #' @param x Vector of quantiles in (0,1).
 #' @param gamma Shape parameter \eqn{γ > 0}.
@@ -1598,8 +1598,8 @@ hsekw <- function(par, data) {
 #' @return A vector of densities or log-densities, the same length as the broadcast of inputs.
 #'
 #' @export
-dbp <- function(x, gamma, delta, lambda, log_prob = FALSE) {
-    .Call(`_gkwreg_dbp`, x, gamma, delta, lambda, log_prob)
+dmc <- function(x, gamma, delta, lambda, log_prob = FALSE) {
+    .Call(`_gkwreg_dmc`, x, gamma, delta, lambda, log_prob)
 }
 
 #' @title CDF of the Beta Power Distribution
@@ -1621,8 +1621,8 @@ dbp <- function(x, gamma, delta, lambda, log_prob = FALSE) {
 #' The incomplete Beta approach is used for stable evaluation.
 #'
 #' @export
-pbp <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
-    .Call(`_gkwreg_pbp`, q, gamma, delta, lambda, lower_tail, log_p)
+pmc <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
+    .Call(`_gkwreg_pmc`, q, gamma, delta, lambda, lower_tail, log_p)
 }
 
 #' @title Quantile Function of the Beta Power Distribution
@@ -1645,8 +1645,8 @@ pbp <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' if lower_tail=TRUE and log_p=FALSE. Adjust for tails or logs accordingly.
 #'
 #' @export
-qbp <- function(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
-    .Call(`_gkwreg_qbp`, p, gamma, delta, lambda, lower_tail, log_p)
+qmc <- function(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
+    .Call(`_gkwreg_qmc`, p, gamma, delta, lambda, lower_tail, log_p)
 }
 
 #' @title Random Generation from Beta Power Distribution
@@ -1666,8 +1666,8 @@ qbp <- function(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' also called the Beta-Power distribution in the literature.
 #'
 #' @export
-rbp <- function(n, gamma, delta, lambda) {
-    .Call(`_gkwreg_rbp`, n, gamma, delta, lambda)
+rmc <- function(n, gamma, delta, lambda) {
+    .Call(`_gkwreg_rmc`, n, gamma, delta, lambda)
 }
 
 #' @title Negative Log-Likelihood for Beta Power Distribution
@@ -1691,19 +1691,19 @@ rbp <- function(n, gamma, delta, lambda) {
 #' \dontrun{
 #' # Generate sample data from a BP distribution
 #' set.seed(123)
-#' x <- rbp(100, 2, 3, 0.5)
+#' x <- rmc(100, 2, 3, 0.5)
 #' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
 #'
 #' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llbp, method = "BFGS",
+#' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
 #'                 hessian = TRUE, data = x)
 #'
 #' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llbp, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llbp, x = result$par, data = x)
+#' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
+#' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
 #'
-#' ana_grad <- grbp(result$par, data = x)
-#' ana_hess <- hsbp(result$par, data = x)
+#' ana_grad <- grmc(result$par, data = x)
+#' ana_hess <- hsmc(result$par, data = x)
 #'
 #' # Check differences (should be very small)
 #' round(num_grad - ana_grad, 4)
@@ -1711,8 +1711,8 @@ rbp <- function(n, gamma, delta, lambda) {
 #' }
 #'
 #' @export
-llbp <- function(par, data) {
-    .Call(`_gkwreg_llbp`, par, data)
+llmc <- function(par, data) {
+    .Call(`_gkwreg_llmc`, par, data)
 }
 
 #' @title Gradient Function for Beta Power Log-Likelihood
@@ -1768,19 +1768,19 @@ llbp <- function(par, data) {
 #' \dontrun{
 #' # Generate sample data from a BP distribution
 #' set.seed(123)
-#' x <- rbp(100, 2, 3, 0.5)
+#' x <- rmc(100, 2, 3, 0.5)
 #' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
 #'
 #' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llbp, method = "BFGS",
+#' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
 #'                 hessian = TRUE, data = x)
 #'
 #' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llbp, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llbp, x = result$par, data = x)
+#' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
+#' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
 #'
-#' ana_grad <- grbp(result$par, data = x)
-#' ana_hess <- hsbp(result$par, data = x)
+#' ana_grad <- grmc(result$par, data = x)
+#' ana_hess <- hsmc(result$par, data = x)
 #'
 #' # Check differences (should be very small)
 #' round(num_grad - ana_grad, 4)
@@ -1788,9 +1788,9 @@ llbp <- function(par, data) {
 #' }
 #'
 #' @seealso
-#' \code{\link[gkwreg]{llbp}} for the negative log-likelihood function,
-#' \code{\link[gkwreg]{hsbp}} for the Hessian matrix of the BP log-likelihood,
-#' \code{\link[gkwreg]{dbp}} for the BP density function,
+#' \code{\link[gkwreg]{llmc}} for the negative log-likelihood function,
+#' \code{\link[gkwreg]{hsmc}} for the Hessian matrix of the BP log-likelihood,
+#' \code{\link[gkwreg]{dmc}} for the BP density function,
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution of income.
@@ -1800,8 +1800,8 @@ llbp <- function(par, data) {
 #' Journal of Statistical Computation and Simulation, 81(7), 883-898.
 #'
 #' @export
-grbp <- function(par, data) {
-    .Call(`_gkwreg_grbp`, par, data)
+grmc <- function(par, data) {
+    .Call(`_gkwreg_grmc`, par, data)
 }
 
 #' @title Hessian Matrix Function for Beta Power (McDonald) Log-Likelihood
@@ -1868,19 +1868,19 @@ grbp <- function(par, data) {
 #' \dontrun{
 #' # Generate sample data from a BP distribution
 #' set.seed(123)
-#' x <- rbp(100, 2, 3, 0.5)
+#' x <- rmc(100, 2, 3, 0.5)
 #' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
 #'
 #' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llbp, method = "BFGS",
+#' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
 #'                 hessian = TRUE, data = x)
 #'
 #' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llbp, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llbp, x = result$par, data = x)
+#' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
+#' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
 #'
-#' ana_grad <- grbp(result$par, data = x)
-#' ana_hess <- hsbp(result$par, data = x)
+#' ana_grad <- grmc(result$par, data = x)
+#' ana_hess <- hsmc(result$par, data = x)
 #'
 #' # Check differences (should be very small)
 #' round(num_grad - ana_grad, 4)
@@ -1888,9 +1888,9 @@ grbp <- function(par, data) {
 #' }
 #'
 #' @seealso
-#' \code{\link[gkwreg]{llbp}} for the negative log-likelihood function,
-#' \code{\link[gkwreg]{grbp}} for the gradient of the BP log-likelihood,
-#' \code{\link[gkwreg]{dbp}} for the BP density function,
+#' \code{\link[gkwreg]{llmc}} for the negative log-likelihood function,
+#' \code{\link[gkwreg]{grmc}} for the gradient of the BP log-likelihood,
+#' \code{\link[gkwreg]{dmc}} for the BP density function,
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution of income.
@@ -1900,8 +1900,8 @@ grbp <- function(par, data) {
 #' Journal of Statistical Computation and Simulation, 81(7), 883-898.
 #'
 #' @export
-hsbp <- function(par, data) {
-    .Call(`_gkwreg_hsbp`, par, data)
+hsmc <- function(par, data) {
+    .Call(`_gkwreg_hsmc`, par, data)
 }
 
 #' @title PDF of the Kumaraswamy Distribution
@@ -2601,57 +2601,61 @@ nrgkw <- function(start, data, family = "gkw", tol = 1e-6, max_iter = 100L, verb
 #' @param beta5 NumericVector regression coefficients for X5.
 #' @param link_types IntegerVector containing the link function type for each parameter.
 #' @param scale_factors NumericVector with scale factors for each parameter.
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericMatrix with n rows and 5 columns corresponding to the calculated parameters.
 #' @export
-calculateParameters <- function(X1, X2, X3, X4, X5, beta1, beta2, beta3, beta4, beta5, link_types, scale_factors) {
-    .Call(`_gkwreg_calculateParameters`, X1, X2, X3, X4, X5, beta1, beta2, beta3, beta4, beta5, link_types, scale_factors)
+calculateParameters <- function(X1, X2, X3, X4, X5, beta1, beta2, beta3, beta4, beta5, link_types, scale_factors, family = "gkw") {
+    .Call(`_gkwreg_calculateParameters`, X1, X2, X3, X4, X5, beta1, beta2, beta3, beta4, beta5, link_types, scale_factors, family)
 }
 
-#' @title Calculate Means for the Generalized Kumaraswamy Distribution
+#' @title Calculate Means for Distribution
 #'
 #' @description
 #' Computes the mean of the distribution for each observation using numerical integration
 #' (quadrature) with caching to avoid redundant calculations.
 #'
 #' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector containing the calculated means for each observation.
 #' @export
-calculateMeans <- function(params) {
-    .Call(`_gkwreg_calculateMeans`, params)
+calculateMeans <- function(params, family = "gkw") {
+    .Call(`_gkwreg_calculateMeans`, params, family)
 }
 
-#' @title Calculate Densities for the Generalized Kumaraswamy Distribution
+#' @title Calculate Densities for Distribution
 #'
 #' @description
 #' Evaluates the density (or its logarithm) for each observation given the parameters.
 #'
 #' @param y NumericVector of observations.
 #' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #' @param log Logical indicating whether to return the log-density (default FALSE).
 #'
 #' @return NumericVector containing the evaluated densities.
 #' @export
-calculateDensities <- function(y, params, log = FALSE) {
-    .Call(`_gkwreg_calculateDensities`, y, params, log)
+calculateDensities <- function(y, params, family = "gkw", log = FALSE) {
+    .Call(`_gkwreg_calculateDensities`, y, params, family, log)
 }
 
-#' @title Calculate Cumulative Probabilities for the Generalized Kumaraswamy Distribution
+#' @title Calculate Cumulative Probabilities for Distribution
 #'
 #' @description
 #' Computes the cumulative probabilities (CDF) for each observation given the parameters.
 #'
 #' @param y NumericVector of observations.
 #' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector containing the evaluated cumulative probabilities.
 #' @export
-calculateProbabilities <- function(y, params) {
-    .Call(`_gkwreg_calculateProbabilities`, y, params)
+calculateProbabilities <- function(y, params, family = "gkw") {
+    .Call(`_gkwreg_calculateProbabilities`, y, params, family)
 }
 
-#' @title Calculate Quantiles for the Generalized Kumaraswamy Distribution
+#' @title Calculate Quantiles for Distribution
 #'
 #' @description
 #' Computes quantiles for the given probability levels using a bisection method for the first set
@@ -2659,11 +2663,12 @@ calculateProbabilities <- function(y, params) {
 #'
 #' @param probs NumericVector of probabilities (values in (0,1)).
 #' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector containing the calculated quantiles.
 #' @export
-calculateQuantiles <- function(probs, params) {
-    .Call(`_gkwreg_calculateQuantiles`, probs, params)
+calculateQuantiles <- function(probs, params, family = "gkw") {
+    .Call(`_gkwreg_calculateQuantiles`, probs, params, family)
 }
 
 #' @title Calculate Response Residuals
@@ -2687,16 +2692,13 @@ calculateResponseResiduals <- function(y, fitted) {
 #'
 #' @param y NumericVector of observations.
 #' @param fitted NumericVector of fitted values (means).
-#' @param alpha NumericVector of alpha parameters.
-#' @param beta NumericVector of beta parameters.
-#' @param gamma NumericVector of gamma parameters.
-#' @param delta NumericVector of delta parameters.
-#' @param lambda NumericVector of lambda parameters.
+#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector of Pearson residuals.
 #' @export
-calculatePearsonResiduals <- function(y, fitted, alpha, beta, gamma, delta, lambda) {
-    .Call(`_gkwreg_calculatePearsonResiduals`, y, fitted, alpha, beta, gamma, delta, lambda)
+calculatePearsonResiduals <- function(y, fitted, params, family = "gkw") {
+    .Call(`_gkwreg_calculatePearsonResiduals`, y, fitted, params, family)
 }
 
 #' @title Calculate Deviance Residuals
@@ -2706,16 +2708,13 @@ calculatePearsonResiduals <- function(y, fitted, alpha, beta, gamma, delta, lamb
 #'
 #' @param y NumericVector of observations.
 #' @param fitted NumericVector of fitted values (means).
-#' @param alpha NumericVector of alpha parameters.
-#' @param beta NumericVector of beta parameters.
-#' @param gamma NumericVector of gamma parameters.
-#' @param delta NumericVector of delta parameters.
-#' @param lambda NumericVector of lambda parameters.
+#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector of deviance residuals.
 #' @export
-calculateDevianceResiduals <- function(y, fitted, alpha, beta, gamma, delta, lambda) {
-    .Call(`_gkwreg_calculateDevianceResiduals`, y, fitted, alpha, beta, gamma, delta, lambda)
+calculateDevianceResiduals <- function(y, fitted, params, family = "gkw") {
+    .Call(`_gkwreg_calculateDevianceResiduals`, y, fitted, params, family)
 }
 
 #' @title Calculate Quantile Residuals
@@ -2724,16 +2723,13 @@ calculateDevianceResiduals <- function(y, fitted, alpha, beta, gamma, delta, lam
 #' Computes quantile residuals by transforming the cumulative distribution function (CDF) values to the standard normal quantiles.
 #'
 #' @param y NumericVector of observations.
-#' @param alpha NumericVector of alpha parameters.
-#' @param beta NumericVector of beta parameters.
-#' @param gamma NumericVector of gamma parameters.
-#' @param delta NumericVector of delta parameters.
-#' @param lambda NumericVector of lambda parameters.
+#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector of quantile residuals.
 #' @export
-calculateQuantileResiduals <- function(y, alpha, beta, gamma, delta, lambda) {
-    .Call(`_gkwreg_calculateQuantileResiduals`, y, alpha, beta, gamma, delta, lambda)
+calculateQuantileResiduals <- function(y, params, family = "gkw") {
+    .Call(`_gkwreg_calculateQuantileResiduals`, y, params, family)
 }
 
 #' @title Calculate Cox-Snell Residuals
@@ -2742,16 +2738,13 @@ calculateQuantileResiduals <- function(y, alpha, beta, gamma, delta, lambda) {
 #' Computes Cox-Snell residuals defined as -log(1 - F(y)), where F is the cumulative distribution function.
 #'
 #' @param y NumericVector of observations.
-#' @param alpha NumericVector of alpha parameters.
-#' @param beta NumericVector of beta parameters.
-#' @param gamma NumericVector of gamma parameters.
-#' @param delta NumericVector of delta parameters.
-#' @param lambda NumericVector of lambda parameters.
+#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector of Cox-Snell residuals.
 #' @export
-calculateCoxSnellResiduals <- function(y, alpha, beta, gamma, delta, lambda) {
-    .Call(`_gkwreg_calculateCoxSnellResiduals`, y, alpha, beta, gamma, delta, lambda)
+calculateCoxSnellResiduals <- function(y, params, family = "gkw") {
+    .Call(`_gkwreg_calculateCoxSnellResiduals`, y, params, family)
 }
 
 #' @title Calculate Score Residuals
@@ -2761,16 +2754,13 @@ calculateCoxSnellResiduals <- function(y, alpha, beta, gamma, delta, lambda) {
 #'
 #' @param y NumericVector of observations.
 #' @param fitted NumericVector of fitted values (means).
-#' @param alpha NumericVector of alpha parameters.
-#' @param beta NumericVector of beta parameters.
-#' @param gamma NumericVector of gamma parameters.
-#' @param delta NumericVector of delta parameters.
-#' @param lambda NumericVector of lambda parameters.
+#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector of score residuals.
 #' @export
-calculateScoreResiduals <- function(y, fitted, alpha, beta, gamma, delta, lambda) {
-    .Call(`_gkwreg_calculateScoreResiduals`, y, fitted, alpha, beta, gamma, delta, lambda)
+calculateScoreResiduals <- function(y, fitted, params, family = "gkw") {
+    .Call(`_gkwreg_calculateScoreResiduals`, y, fitted, params, family)
 }
 
 #' @title Calculate Modified Deviance Residuals
@@ -2780,16 +2770,13 @@ calculateScoreResiduals <- function(y, fitted, alpha, beta, gamma, delta, lambda
 #'
 #' @param y NumericVector of observations.
 #' @param fitted NumericVector of fitted values (means).
-#' @param alpha NumericVector of alpha parameters.
-#' @param beta NumericVector of beta parameters.
-#' @param gamma NumericVector of gamma parameters.
-#' @param delta NumericVector of delta parameters.
-#' @param lambda NumericVector of lambda parameters.
+#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
+#' @param family String specifying the distribution family (default: "gkw").
 #'
 #' @return NumericVector of modified deviance residuals.
 #' @export
-calculateModifiedDevianceResiduals <- function(y, fitted, alpha, beta, gamma, delta, lambda) {
-    .Call(`_gkwreg_calculateModifiedDevianceResiduals`, y, fitted, alpha, beta, gamma, delta, lambda)
+calculateModifiedDevianceResiduals <- function(y, fitted, params, family = "gkw") {
+    .Call(`_gkwreg_calculateModifiedDevianceResiduals`, y, fitted, params, family)
 }
 
 #' @title Calculate Partial Residuals
