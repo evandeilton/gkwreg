@@ -18,7 +18,7 @@ applying a positive link function as specified by link types and scale factors."
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gkwreg</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.1.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -26,16 +26,6 @@ applying a positive link function as specified by link types and scale factors."
       <ul class="nav navbar-nav"><li>
   <a href="../reference/index.html">Reference</a>
 </li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Articles
-
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu"><li>
-      <a href="../articles/gkwreg-package.html">Generalized Kumaraswamy Regression Models</a>
-    </li>
-  </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"></ul></div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -68,7 +58,8 @@ applying a positive link function as specified by link types and scale factors.<
 <span>  <span class="va">beta4</span>,</span>
 <span>  <span class="va">beta5</span>,</span>
 <span>  <span class="va">link_types</span>,</span>
-<span>  <span class="va">scale_factors</span></span>
+<span>  <span class="va">scale_factors</span>,</span>
+<span>  family <span class="op">=</span> <span class="st">"gkw"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -122,6 +113,10 @@ applying a positive link function as specified by link types and scale factors.<
 
 <dt id="arg-scale-factors">scale_factors<a class="anchor" aria-label="anchor" href="#arg-scale-factors"></a></dt>
 <dd><p>NumericVector with scale factors for each parameter.</p></dd>
+
+
+<dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
+<dd><p>String specifying the distribution family (default: "gkw").</p></dd>
 
 </dl></div>
     <div id="value">

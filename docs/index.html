@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">gkwreg</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.1.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -41,18 +41,6 @@
       <ul class="nav navbar-nav">
 <li>
   <a href="reference/index.html">Reference</a>
-</li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Articles
-
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu">
-<li>
-      <a href="articles/gkwreg-package.html">Generalized Kumaraswamy Regression Models</a>
-    </li>
-  </ul>
 </li>
       </ul>
 <ul class="nav navbar-nav navbar-right"></ul>
@@ -70,7 +58,7 @@
 <div class="section level1">
 <div class="page-header"><h1 id="gkwreg-generalized-kumaraswamy-regression-models">gkwreg: Generalized Kumaraswamy Regression Models<a class="anchor" aria-label="anchor" href="#gkwreg-generalized-kumaraswamy-regression-models"></a>
 </h1></div>
-<p><a href="https://cran.r-project.org/package=gkwreg" class="external-link"><img src="https://www.r-pkg.org/badges/version/gkwreg" alt="CRAN_Status_Badge"></a> <a href="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License:MIT"></a> <a href="https://cran.r-project.org/package=gkwreg" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/gkwreg" alt="Downloads"></a></p>
+<p><a href="https://cran.r-project.org/package=gkwreg" class="external-link"><img src="https://www.r-pkg.org/badges/version/gkwreg" alt="CRAN_Status_Badge"></a> <!-- [![R-CMD-check](https://github.com/evandeilton/gkwreg/workflows/R-CMD-check/badge.svg)](https://github.com/evandeilton/gkwreg/actions) --> <a href="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a> <a href="https://cran.r-project.org/package=gkwreg" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/gkwreg" alt="Downloads"></a></p>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
@@ -89,7 +77,7 @@
 <h3 id="the-generalized-kumaraswamy-distribution">The Generalized Kumaraswamy Distribution<a class="anchor" aria-label="anchor" href="#the-generalized-kumaraswamy-distribution"></a>
 </h3>
 <p>The GKw distribution is a highly flexible five-parameter family applicable to bounded continuous random variables. For <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">y \in (0,1)</annotation></semantics></math>, the probability density function is:</p>
-<p><span class="math display">$$f(y; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta y^{\alpha-1} (1-y^\alpha)^{\beta-1}}{B(\gamma, \delta+1)} \Bigl[1-(1-y^\alpha)^\beta\Bigr]^{\gamma\lambda-1} \Bigl\{1-\Bigl[1-(1-y^\alpha)^\beta\Bigr]^\lambda\Bigr\}^{\delta}$$</span></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>y</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><mi>λ</mi><mi>α</mi><mi>β</mi><msup><mi>y</mi><mrow><mi>α</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>y</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>+</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>y</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mi>γ</mi><mi>λ</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">{</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>y</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mi>λ</mi></msup><mo stretchy="true" form="postfix">}</mo></mrow><mi>δ</mi></msup></mrow><annotation encoding="application/x-tex">f(y; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta y^{\alpha-1} (1-y^\alpha)^{\beta-1}}{B(\gamma, \delta+1)} \left[1-(1-y^\alpha)^\beta\right]^{\gamma\lambda-1} \left\{1-\left[1-(1-y^\alpha)^\beta\right]^\lambda\right\}^{\delta}</annotation></semantics></math></p>
 <p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha, \beta, \gamma, \delta, \lambda &gt; 0</annotation></semantics></math> and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>+</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">B(\gamma, \delta+1)</annotation></semantics></math> is the complete Beta function.</p>
 <p>The associated cumulative distribution function is:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>y</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>I</mi><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>y</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mi>λ</mi></msup></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>+</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">F(y; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-y^\alpha)^\beta]^\lambda}(\gamma, \delta+1)</annotation></semantics></math></p>
@@ -349,11 +337,11 @@
 <span><span class="va">model_reduced</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">|</span> <span class="va">x1</span> <span class="op">|</span> <span class="fl">1</span> <span class="op">|</span> <span class="va">x1</span> <span class="op">|</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Compare with AIC/BIC</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">model_full</span>, <span class="va">model_reduced</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">model_full</span>, <span class="va">model_reduced</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/AIC.html">AIC</a></span><span class="op">(</span><span class="va">model_full</span>, <span class="va">model_reduced</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/BIC.html">BIC</a></span><span class="op">(</span><span class="va">model_full</span>, <span class="va">model_reduced</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Likelihood ratio test (requires manual calculation for gkwreg)</span></span>
-<span><span class="va">lr_stat</span> <span class="op">&lt;-</span> <span class="fl">2</span> <span class="op">*</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">model_full</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">model_reduced</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">lr_stat</span> <span class="op">&lt;-</span> <span class="fl">2</span> <span class="op">*</span> <span class="op">(</span><span class="fu"><a href="reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">model_full</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="reference/logLik.html">logLik</a></span><span class="op">(</span><span class="va">model_reduced</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">p_value</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Chisquare.html" class="external-link">pchisq</a></span><span class="op">(</span><span class="va">lr_stat</span>, df <span class="op">=</span> <span class="va">model_full</span><span class="op">$</span><span class="va">npar</span> <span class="op">-</span> <span class="va">model_reduced</span><span class="op">$</span><span class="va">npar</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"LR statistic:"</span>, <span class="va">lr_stat</span>, <span class="st">"p-value:"</span>, <span class="va">p_value</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 </div>

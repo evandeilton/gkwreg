@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gkwreg</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.1.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -25,16 +25,6 @@
       <ul class="nav navbar-nav"><li>
   <a href="../reference/index.html">Reference</a>
 </li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Articles
-
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu"><li>
-      <a href="../articles/gkwreg-package.html">Generalized Kumaraswamy Regression Models</a>
-    </li>
-  </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"></ul></div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -54,7 +44,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculateCoxSnellResiduals</span><span class="op">(</span><span class="va">y</span>, <span class="va">alpha</span>, <span class="va">beta</span>, <span class="va">gamma</span>, <span class="va">delta</span>, <span class="va">lambda</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculateCoxSnellResiduals</span><span class="op">(</span><span class="va">y</span>, <span class="va">params</span>, family <span class="op">=</span> <span class="st">"gkw"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -65,24 +55,12 @@
 <dd><p>NumericVector of observations.</p></dd>
 
 
-<dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>NumericVector of alpha parameters.</p></dd>
+<dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>
+<dd><p>NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).</p></dd>
 
 
-<dt id="arg-beta">beta<a class="anchor" aria-label="anchor" href="#arg-beta"></a></dt>
-<dd><p>NumericVector of beta parameters.</p></dd>
-
-
-<dt id="arg-gamma">gamma<a class="anchor" aria-label="anchor" href="#arg-gamma"></a></dt>
-<dd><p>NumericVector of gamma parameters.</p></dd>
-
-
-<dt id="arg-delta">delta<a class="anchor" aria-label="anchor" href="#arg-delta"></a></dt>
-<dd><p>NumericVector of delta parameters.</p></dd>
-
-
-<dt id="arg-lambda">lambda<a class="anchor" aria-label="anchor" href="#arg-lambda"></a></dt>
-<dd><p>NumericVector of lambda parameters.</p></dd>
+<dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
+<dd><p>String specifying the distribution family (default: "gkw").</p></dd>
 
 </dl></div>
     <div id="value">
