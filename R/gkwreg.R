@@ -4613,7 +4613,6 @@ confint.gkwreg <- function(object, parm, level = 0.95,
 #'
 #' @seealso \code{\link{gkwreg}}, \code{\link{AIC.gkwreg}}, \code{\link{BIC.gkwreg}}
 #'
-#' @export
 logLik.gkwreg <- function(object, ...) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {
@@ -4724,7 +4723,6 @@ logLik.gkwreg <- function(object, ...) {
 #' Akaike, H. (1974). A new look at the statistical model identification.
 #' \emph{IEEE Transactions on Automatic Control}, 19(6), 716-723.
 #'
-#' @export
 AIC.gkwreg <- function(object, ..., k = 2) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {
@@ -4806,8 +4804,6 @@ AIC.gkwreg <- function(object, ..., k = 2) {
 #' @references
 #' Schwarz, G. (1978). Estimating the dimension of a model.
 #' \emph{The Annals of Statistics}, 6(2), 461-464.
-#'
-#' @export
 BIC.gkwreg <- function(object, ...) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {
@@ -4862,7 +4858,7 @@ BIC.gkwreg <- function(object, ...) {
 
 
 #' Register the S3 method
-#' @param object obrl class fit
+#' @param object gkwreg class fit
 #' @param ... Additional arguments passed to or from other methods.
 #' @export
 logLik <- function(object, ...) {
@@ -4870,7 +4866,7 @@ logLik <- function(object, ...) {
 }
 
 #' Register the S3 method
-#' @param object obrl class fit
+#' @param object gkwreg class fit
 #' @param ... Additional arguments passed to or from other methods.
 #' @export
 AIC <- function(object, ...) {
@@ -4878,7 +4874,7 @@ AIC <- function(object, ...) {
 }
 
 #' Register the S3 method
-#' @param object obrl class fit
+#' @param object gkwreg class fit
 #' @param ... Additional arguments passed to or from other methods.
 #' @export
 BIC <- function(object, ...) {
