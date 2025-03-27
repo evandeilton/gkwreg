@@ -466,7 +466,7 @@ gkwreg <- function(formula,
   result$tmb_object <- obj
 
   # Set class for S3 methods
-  class(result) <- c("gkwreg", "list")
+  class(result) <- "gkwreg"
 
   # Return the final result
   return(result)
@@ -565,7 +565,7 @@ gkwreg <- function(formula,
 
     if (i <= n_parts) {
       # Extract the ith part of the formula
-      rhs_part <- Formula::Formula(formula_obj, rhs = i, lhs = 1)[[3]]
+      rhs_part <- stats::formula(formula_obj, rhs = i, lhs = 1)[[3]]
 
       # Check if this part is just a dot
       if (identical(as.character(rhs_part), ".") || identical(as.character(rhs_part), "1")) {

@@ -7,7 +7,7 @@
 BIC(object, ...)
 }
 \arguments{
-\item{object}{obrl class fit}
+\item{object}{gkwreg class fit}
 
 \item{...}{Additional arguments passed to or from other methods.}
 }
