@@ -8,14 +8,14 @@ nrgkw(
   start,
   data,
   family = "gkw",
-  tol = 1e-06,
+  tol = 0.000001,
   max_iter = 100L,
   verbose = FALSE,
   use_hessian = TRUE,
   step_size = 1,
   enforce_bounds = TRUE,
-  min_param_val = 1e-05,
-  max_param_val = 1e+05,
+  min_param_val = 0.00001,
+  max_param_val = 100000,
   get_num_hess = FALSE
 )
 }

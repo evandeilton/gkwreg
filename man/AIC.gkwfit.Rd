@@ -2,17 +2,82 @@
 % Please edit documentation in R/gkwfit.R
 \name{AIC.gkwfit}
 \alias{AIC.gkwfit}
-\title{Calculate AIC for a gkwfit object}
+\title{Calculate AIC or BIC for gkwfit Objects}
 \usage{
 \method{AIC}{gkwfit}(object, ..., k = 2)
 }
 \arguments{
-\item{object}{A gkwfit object}
+\item{object}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
 
-\item{...}{Additional models}
+\item{...}{Optionally, more fitted model objects of class \code{"gkwfit"}.}
 
-\item{k}{Penalty per parameter}
+\item{k}{Numeric scalar specifying the penalty per parameter. The default \code{k = 2}
+corresponds to the traditional AIC. Use \code{k = log(n)} (where n is the number
+of observations) for the BIC (Bayesian Information Criterion).}
+}
+\value{
+\itemize{
+\item If only one \code{object} is provided: A single numeric value representing the calculated criterion (AIC or BIC).
+\item If multiple objects are provided: A \code{data.frame} with rows corresponding
+to the models and columns for the degrees of freedom (\code{df}) and the
+calculated criterion value (named \code{AIC}, regardless of the value of \code{k}).
+The data frame is sorted in ascending order based on the criterion values.
+Row names are derived from the deparsed calls of the fitted models.
+}
 }
 \description{
-Calculate AIC for a gkwfit object
+Computes the Akaike Information Criterion (AIC) or variants like the Bayesian
+Information Criterion (BIC) for one or more fitted model objects of class \code{"gkwfit"}.
 }
+\details{
+This function calculates an information criterion based on the formula
+\eqn{-2 \times \log Likelihood + k \times df}, where \eqn{df} represents the
+number of estimated parameters in the model (degrees of freedom).
+
+It relies on the \code{\link{logLik.gkwfit}} method to extract the log-likelihood
+and the degrees of freedom for each model.
+
+When comparing multiple models fitted to the \strong{same data}, the model with the
+lower AIC or BIC value is generally preferred. The function returns a sorted
+data frame to facilitate this comparison when multiple objects are provided.
+}
+\examples{
+\dontrun{
+# Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
+
+set.seed(123)
+sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
+
+# Fit different models to the same data
+fit1_kw <- gkwfit(sample_data, family = "kw", silent = TRUE)
+fit2_bkw <- gkwfit(sample_data, family = "bkw", silent = TRUE) # Assuming bkw fits
+fit3_gkw <- gkwfit(sample_data, family = "gkw", silent = TRUE) # Assuming gkw fits
+
+# Calculate AIC for a single model
+aic1 <- AIC(fit1_kw)
+print(aic1)
+
+# Compare AIC values for multiple models
+aic_comparison <- AIC(fit1_kw, fit2_bkw, fit3_gkw)
+print(aic_comparison) # Sorted by AIC
+
+# Compare BIC values for multiple models
+# Get nobs from one of the models (must be fitted to same data)
+n_obs <- attr(logLik(fit1_kw), "nobs")
+bic_comparison <- AIC(fit1_kw, fit2_bkw, fit3_gkw, k = log(n_obs))
+print(bic_comparison)
+# Note: Column is still named 'AIC', but values represent BIC
+# Optional: rename column for clarity
+# colnames(bic_comparison)[colnames(bic_comparison) == "AIC"] <- "BIC"
+# print(bic_comparison)
+}
+
+}
+\seealso{
+\code{\link{gkwfit}}, \code{\link[stats]{AIC}}, \code{\link{logLik.gkwfit}}, \code{\link{BIC.gkwfit}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{methods}
+\keyword{models}

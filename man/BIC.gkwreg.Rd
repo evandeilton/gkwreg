@@ -2,56 +2,92 @@
 % Please edit documentation in R/gkwreg.R
 \name{BIC.gkwreg}
 \alias{BIC.gkwreg}
-\title{Bayesian Information Criterion for Generalized Kumaraswamy Regression Models}
+\title{Bayesian Information Criterion for GKw Regression Models}
 \usage{
 \method{BIC}{gkwreg}(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"gkwreg"}, typically the result of a call
-to \code{\link{gkwreg}}.}
+\item{object}{An object of class \code{"gkwreg"}, typically the result of a
+call to \code{\link{gkwreg}}.}
 
-\item{...}{Optionally, additional objects of class \code{"gkwreg"} for model
-comparison.}
+\item{...}{Optionally, one or more additional fitted model objects of class
+\code{"gkwreg"}, for which BIC should also be calculated.}
 }
 \value{
-If just one object is provided, returns a numeric BIC value. If multiple
-objects are provided, returns a data frame with rows corresponding to the objects
-and columns representing the number of parameters (df) and BIC values.
+If just one \code{object} is provided, returns a single numeric BIC value.
+If multiple objects are provided via \code{...}, returns a \code{data.frame}
+with rows corresponding to the models and columns for the degrees of freedom
+(\code{df}) and the BIC values, sorted by BIC.
 }
 \description{
 Calculates the Bayesian Information Criterion (BIC), also known as Schwarz's
-Bayesian Criterion (SBC), for one or more fitted Generalized Kumaraswamy
-regression models. BIC is a criterion for model selection that penalizes model
-complexity more strongly than AIC.
+Bayesian Criterion (SBC), for one or more fitted Generalized Kumaraswamy (GKw)
+regression model objects (class \code{"gkwreg"}). BIC is used for model selection
+and tends to penalize model complexity more heavily than AIC, especially for
+larger datasets.
 }
 \details{
-The BIC is calculated as:
+The BIC is calculated based on the maximized log-likelihood (\eqn{L}), the
+number of estimated parameters (\eqn{p}) in the model, and the number of
+observations (\eqn{n}):
+\deqn{BIC = -2 \log(L) + p \times \log(n)}
+This function retrieves the log-likelihood, the number of parameters (\code{df}),
+and the number of observations (\code{nobs}) using the \code{\link{logLik.gkwreg}}
+method for the fitted \code{gkwreg} object(s).
 
-\deqn{BIC = -2 \times \log(L) + k \times \log(n)}
+Models with lower BIC values are generally preferred. The penalty term \eqn{p \log(n)}
+increases more rapidly with sample size \eqn{n} compared to AIC's penalty \eqn{2p},
+meaning BIC favors simpler models more strongly in larger samples. BIC can be
+motivated from a Bayesian perspective as an approximation related to Bayes factors.
 
-where \eqn{L} is the maximized likelihood function, \eqn{k} is the number of
-estimated parameters in the model, and \eqn{n} is the number of observations.
-The model with the lowest BIC is generally preferred.
-
-BIC penalizes model complexity more strongly than AIC, especially for larger
-sample sizes. It is derived from a Bayesian framework and approximates the
-Bayes factor for large sample sizes.
+When comparing multiple models passed via \code{...}, the function relies on
+\code{\link[stats]{BIC}}'s default method for creating a comparison table,
+which in turn calls \code{logLik} for each provided object.
 }
 \examples{
 \dontrun{
+# Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
+# and that rkw() is available and data is appropriate (0 < y < 1).
+set.seed(123)
+n <- 100
+x1 <- runif(n)
+x2 <- rnorm(n)
+x3 <- factor(rbinom(n, 1, 0.4))
+alpha <- exp(0.5 + 0.2 * x1)
+beta <- exp(1.0 - 0.1 * x2 + 0.3 * (x3 == "1"))
+y <- rkw(n, alpha = alpha, beta = beta) # Placeholder if rkw not available
+y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+df <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+
 # Fit two competing models
 kw_reg1 <- gkwreg(y ~ x1 | x2, data = df, family = "kw")
-kw_reg2 <- gkwreg(y ~ x1 + x3 | x2, data = df, family = "kw")
+kw_reg2 <- gkwreg(y ~ x1 | x2 + x3, data = df, family = "kw") # More complex beta model
+kw_reg3 <- gkwreg(y ~ 1 | x2 + x3, data = df, family = "kw") # Simpler alpha model
 
-# Compare models using BIC
-BIC(kw_reg1, kw_reg2)
+# Calculate BIC for a single model
+bic1 <- BIC(kw_reg1)
+print(bic1)
+
+# Compare models using BIC (lower is better)
+model_comparison_bic <- BIC(kw_reg1, kw_reg2, kw_reg3)
+print(model_comparison_bic)
 }
 
 }
 \references{
 Schwarz, G. (1978). Estimating the dimension of a model.
-\emph{The Annals of Statistics}, 6(2), 461-464.
+\emph{The Annals of Statistics}, \strong{6}(2), 461-464.
+\doi{10.1214/aos/1176344136}
 }
 \seealso{
-\code{\link{gkwreg}}, \code{\link{logLik.gkwreg}}, \code{\link{AIC.gkwreg}}
+\code{\link{gkwreg}}, \code{\link{logLik.gkwreg}}, \code{\link{AIC.gkwreg}},
+\code{\link[stats]{BIC}}
 }
+\author{
+Lopes, J. E.
+}
+\keyword{BIC}
+\keyword{likelihood}
+\keyword{model}
+\keyword{models}
+\keyword{selection}

@@ -2,15 +2,80 @@
 % Please edit documentation in R/gkwfit.R
 \name{summary.gkwfit}
 \alias{summary.gkwfit}
-\title{Summary method for gkwfit objects}
+\title{Summary Method for gkwfit Objects}
 \usage{
-\method{summary}{gkwfit}(object, ...)
+\method{summary}{gkwfit}(object, correlation = FALSE, ...)
 }
 \arguments{
-\item{object}{A gkwfit object}
+\item{object}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
 
-\item{...}{Additional arguments}
+\item{correlation}{Logical; if \code{TRUE}, the correlation matrix of the estimated
+parameters is computed and included in the summary. Defaults to \code{FALSE}.}
+
+\item{...}{Additional arguments (currently unused).}
+}
+\value{
+An object of class \code{"summary.gkwfit"}, which is a list containing:
+\item{call}{The original function call.}
+\item{family}{The specified distribution family.}
+\item{coefficients}{A matrix of estimates, standard errors, z-values, and p-values.}
+\item{logLik}{The maximized log-likelihood value.}
+\item{aic}{Akaike Information Criterion.}
+\item{bic}{Bayesian Information Criterion.}
+\item{nobs}{Number of observations used in fitting.}
+\item{convergence_code}{The convergence code returned by the optimizer.}
+\item{se_available}{Logical indicating if standard errors could be computed.}
+\item{correlation}{The correlation matrix of coefficients (if \code{correlation = TRUE} and calculable).}
+\item{fixed}{A list of parameters that were held fixed during estimation, or \code{NULL}.}
 }
 \description{
-Summary method for gkwfit objects
+Calculates and prepares a detailed summary of a model fitted by \code{\link{gkwfit}}.
+This includes coefficients, standard errors, test statistics (z-values), p-values,
+log-likelihood, information criteria (AIC, BIC), and convergence status.
 }
+\details{
+This function computes standard errors, z-values (\eqn{Estimate / SE}), and
+p-values (two-tailed test based on the standard normal distribution) for the
+estimated model parameters, provided that the variance-covariance matrix was
+successfully computed and is available in the \code{object} (typically requires
+\code{hessian = TRUE} in the original \code{\link{gkwfit}} call).
+
+The returned object is of class \code{"summary.gkwfit"}, and its printing is
+handled by \code{\link{print.summary.gkwfit}}.
+}
+\examples{
+\dontrun{
+# Assume 'rkw' and 'gkwfit' functions exist
+
+set.seed(123)
+kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5) # n=100
+
+# Fit the model, ensuring hessian=TRUE (default) for SEs
+fit_object <- gkwfit(
+  data = kw_data_sample, family = "kw",
+  plot = FALSE, silent = TRUE
+)
+
+# Calculate the summary object
+summary_info <- summary(fit_object)
+
+# Print the summary (uses print.summary.gkwfit)
+print(summary_info)
+
+# Calculate summary including correlation matrix
+summary_info_corr <- summary(fit_object, correlation = TRUE)
+print(summary_info_corr)
+
+# Access specific parts of the summary object
+print(summary_info$coefficients)
+print(summary_info$logLik)
+}
+
+}
+\seealso{
+\code{\link{gkwfit}}, \code{\link{print.summary.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{methods}

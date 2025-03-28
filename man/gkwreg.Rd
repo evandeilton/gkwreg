@@ -14,8 +14,6 @@ gkwreg(
   fit = "tmb",
   method = c("nlminb", "optim"),
   hessian = TRUE,
-  profile = FALSE,
-  npoints = 20,
   plot = TRUE,
   conf.level = 0.95,
   optimizer.control = list(),
@@ -32,214 +30,403 @@ gkwreg(
 )
 }
 \arguments{
-\item{formula}{A Formula object of the form
-\code{y ~ alpha_terms | beta_terms | gamma_terms | delta_terms | lambda_terms},
-where each part on the right specifies the covariates for the corresponding parameter.
-Missing parts are automatically replaced with intercept-only models.}
+\item{formula}{An object of class \code{\link[Formula]{Formula}} (or one that
+can be coerced to that class). It should be structured as
+\code{y ~ model_alpha | model_beta | model_gamma | model_delta | model_lambda},
+where \code{y} is the response variable and each \code{model_*} part specifies
+the linear predictor for the corresponding parameter (\eqn{\alpha}, \eqn{\beta},
+\eqn{\gamma}, \eqn{\delta}, \eqn{\lambda}). If a part is omitted or specified
+as \code{~ 1} or \code{.}, an intercept-only model is used for that parameter.
+See Details for parameter correspondence in subfamilies.}
 
-\item{data}{A data frame containing the variables in the model.}
+\item{data}{A data frame containing the variables specified in the \code{formula}.}
 
-\item{family}{A character string specifying the distribution family. One of: "gkw" (default),
-"bkw", "kkw", "ekw", "mc", "kw", or "beta". See Details for parameter specifications.}
+\item{family}{A character string specifying the desired distribution family.
+Defaults to \code{"gkw"}. Supported families are:
+\itemize{
+\item \code{"gkw"}: Generalized Kumaraswamy (5 parameters: \eqn{\alpha, \beta, \gamma, \delta, \lambda})
+\item \code{"bkw"}: Beta-Kumaraswamy (4 parameters: \eqn{\alpha, \beta, \gamma, \delta}; \eqn{\lambda = 1} fixed)
+\item \code{"kkw"}: Kumaraswamy-Kumaraswamy (4 parameters: \eqn{\alpha, \beta, \delta, \lambda}; \eqn{\gamma = 1} fixed)
+\item \code{"ekw"}: Exponentiated Kumaraswamy (3 parameters: \eqn{\alpha, \beta, \lambda}; \eqn{\gamma = 1, \delta = 0} fixed)
+\item \code{"mc"}: McDonald / Beta Power (3 parameters: \eqn{\gamma, \delta, \lambda}; \eqn{\alpha = 1, \beta = 1} fixed)
+\item \code{"kw"}: Kumaraswamy (2 parameters: \eqn{\alpha, \beta}; \eqn{\gamma = 1, \delta = 0, \lambda = 1} fixed)
+\item \code{"beta"}: Beta distribution (2 parameters: \eqn{\gamma, \delta}; \eqn{\alpha = 1, \beta = 1, \lambda = 1} fixed)
+}}
 
-\item{link}{A character string or list of character strings specifying the link functions.
-Default links for each parameter: log for \eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, \eqn{\lambda} and logit for \eqn{\delta}.
-Supported link functions: "log", "logit", "identity", "inverse", "sqrt", "probit", "cloglog".}
+\item{link}{Either a single character string specifying the same link function
+for all relevant parameters, or a named list specifying the link function for each
+modeled parameter (e.g., \code{list(alpha = "log", beta = "log", delta = "logit")}).
+Defaults are \code{"log"} for \eqn{\alpha, \beta, \gamma, \lambda} (parameters > 0)
+and \code{"logit"} for \eqn{\delta} (parameter in (0, 1)).
+Supported link functions are:
+\itemize{
+\item \code{"log"}
+\item \code{"logit"}
+\item \code{"identity"}
+\item \code{"inverse"} (i.e., 1/mu)
+\item \code{"sqrt"}
+\item \code{"probit"}
+\item \code{"cloglog"} (complementary log-log)
+}}
 
-\item{start}{Optional list with initial parameter values for regression coefficients.
-If \code{NULL}, reasonable starting values will be determined.}
+\item{start}{An optional named list providing initial values for the regression
+coefficients. Parameter names should match the distribution parameters (alpha,
+beta, etc.), and values should be vectors corresponding to the coefficients
+in the respective linear predictors (including intercept). If \code{NULL}
+(default), suitable starting values are automatically determined based on
+global parameter estimates.}
 
-\item{fixed}{Optional list of parameters or coefficients to be held fixed (not estimated).}
+\item{fixed}{An optional named list specifying parameters or coefficients to be
+held fixed at specific values during estimation. Currently not fully implemented.}
 
-\item{fit}{Estimation method to be used: currently only supports \code{"tmb"}.}
+\item{fit}{Character string specifying the estimation engine. Currently, only
+\code{"tmb"} (Template Model Builder) is supported and required.}
 
-\item{method}{(Only for \code{fit = "tmb"}) Optimization method: \code{"nlminb"} (default) or \code{"optim"}.}
+\item{method}{Character string specifying the optimization algorithm used by TMB.
+Options are \code{"nlminb"} (default, using \code{\link[stats]{nlminb}}) or
+\code{"optim"} (using \code{\link[stats]{optim}} with \code{method = "BFGS"}).}
 
-\item{hessian}{Logical; if \code{TRUE}, computes standard errors and the covariance matrix.}
+\item{hessian}{Logical. If \code{TRUE} (default), the Hessian matrix is computed
+via \code{\link[TMB]{sdreport}} to obtain standard errors and the covariance
+matrix of the estimated coefficients. Setting to \code{FALSE} speeds up fitting
+but prevents calculation of standard errors and confidence intervals.}
 
-\item{profile}{Logical; if \code{TRUE}, computes likelihood profiles for parameters.}
+\item{plot}{Logical. If \code{TRUE} (default), enables the generation of diagnostic
+plots when calling the generic \code{plot()} function on the fitted object.
+Actual plotting is handled by the \code{plot.gkwreg} method.}
 
-\item{npoints}{Number of points to use in profile likelihood calculations.}
+\item{conf.level}{Numeric. The confidence level (1 - alpha) for constructing
+confidence intervals for the parameters. Default is 0.95. Used only if
+\code{hessian = TRUE}.}
 
-\item{plot}{Logical; if \code{TRUE}, generates diagnostic plots.}
+\item{optimizer.control}{A list of control parameters passed directly to the
+chosen optimizer (\code{\link[stats]{nlminb}} or \code{\link[stats]{optim}}).
+See their respective documentation for details.}
 
-\item{conf.level}{Confidence level for intervals (default: 0.95).}
+\item{subset}{An optional vector specifying a subset of observations from \code{data}
+to be used in the fitting process.}
 
-\item{optimizer.control}{List of control parameters passed to the optimizer.}
+\item{weights}{An optional vector of prior weights (e.g., frequency weights)
+to be used in the fitting process. Should be \code{NULL} or a numeric vector
+of non-negative values.}
 
-\item{subset}{An optional vector specifying a subset of observations to be used in the fitting process.}
+\item{offset}{An optional numeric vector or matrix specifying an a priori known
+component to be included \emph{on the scale of the linear predictor} for each parameter.
+If a vector, it's applied to the predictor of the first parameter in the standard
+order (\eqn{\alpha}). If a matrix, columns must correspond to parameters in the
+order \eqn{\alpha, \beta, \gamma, \delta, \lambda}.}
 
-\item{weights}{An optional vector of weights to be used in the fitting process.}
+\item{na.action}{A function which indicates what should happen when the data
+contain \code{NA}s. The default (\code{na.fail}) stops if \code{NA}s are
+present. Other options include \code{\link[stats]{na.omit}} or
+\code{\link[stats]{na.exclude}}.}
 
-\item{offset}{Additional terms with known coefficients to be included in the linear predictors.}
+\item{contrasts}{An optional list specifying the contrasts to be used for factor
+variables in the model. See the \code{contrasts.arg} of
+\code{\link[stats]{model.matrix.default}}.}
 
-\item{na.action}{Function to handle missing values.}
+\item{x}{Logical. If \code{TRUE}, the list of model matrices (one for each modeled
+parameter) is returned as component \code{x} of the fitted object. Default \code{FALSE}.}
 
-\item{contrasts}{List of contrasts to be used for factors in the model matrix.}
+\item{y}{Logical. If \code{TRUE} (default), the response variable (after processing
+by \code{na.action}, \code{subset}) is returned as component \code{y}.}
 
-\item{x}{Logical; if \code{TRUE}, the model matrix is returned.}
+\item{model}{Logical. If \code{TRUE} (default), the model frame (containing all
+variables used from \code{data}) is returned as component \code{model}.}
 
-\item{y}{Logical; if \code{TRUE}, the response vector is returned.}
+\item{silent}{Logical. If \code{TRUE} (default), suppresses progress messages
+from TMB compilation and optimization. Set to \code{FALSE} for verbose output.}
 
-\item{model}{Logical; if \code{TRUE}, the model frame is returned.}
-
-\item{silent}{Logical; if \code{TRUE}, suppresses messages.}
-
-\item{...}{Additional arguments passed to internal functions.}
+\item{...}{Additional arguments, currently unused or passed down to internal
+methods (potentially).}
 }
 \value{
-An object of class \code{"gkwreg"} containing the fitted regression model.
+An object of class \code{gkwreg}. This is a list containing the
+following components:
+\item{call}{The matched function call.}
+\item{family}{The specified distribution family string.}
+\item{formula}{The \code{\link[Formula]{Formula}} object used.}
+\item{coefficients}{A named vector of estimated regression coefficients.}
+\item{fitted.values}{Vector of estimated means (expected values) of the response.}
+\item{residuals}{Vector of response residuals (observed - fitted mean).}
+\item{fitted_parameters}{List containing the estimated mean value for each distribution parameter (\eqn{\alpha, \beta, \gamma, \delta, \lambda}).}
+\item{parameter_vectors}{List containing vectors of the estimated parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) for each observation, evaluated on the link scale.}
+\item{link}{List of link functions used for each parameter.}
+\item{param_names}{Character vector of names of the parameters modeled by the family.}
+\item{fixed_params}{Named list indicating which parameters are fixed by the family definition.}
+\item{loglik}{The maximized log-likelihood value.}
+\item{aic}{Akaike Information Criterion.}
+\item{bic}{Bayesian Information Criterion.}
+\item{deviance}{The deviance ( -2 * loglik ).}
+\item{df.residual}{Residual degrees of freedom (nobs - npar).}
+\item{nobs}{Number of observations used in the fit.}
+\item{npar}{Total number of estimated parameters (coefficients).}
+\item{vcov}{The variance-covariance matrix of the coefficients (if \code{hessian = TRUE}).}
+\item{se}{Standard errors of the coefficients (if \code{hessian = TRUE}).}
+\item{convergence}{Convergence code from the optimizer (0 typically indicates success).}
+\item{message}{Convergence message from the optimizer.}
+\item{iterations}{Number of iterations used by the optimizer.}
+\item{rmse}{Root Mean Squared Error of response residuals.}
+\item{efron_r2}{Efron's pseudo R-squared.}
+\item{mean_absolute_error}{Mean Absolute Error of response residuals.}
+\item{x}{List of model matrices (if \code{x = TRUE}).}
+\item{y}{The response vector (if \code{y = TRUE}).}
+\item{model}{The model frame (if \code{model = TRUE}).}
+\item{tmb_object}{The raw object returned by \code{\link[TMB]{MakeADFun}}.}
 }
 \description{
-Fits a regression model using the Generalized Kumaraswamy (GKw) family of distributions
-for bounded responses in the (0, 1) interval. The function supports modeling parameters
-from all seven submodels of the GKw family as functions of predictors through appropriate
-link functions.
+Fits regression models using the Generalized Kumaraswamy (GKw) family of
+distributions for response variables strictly bounded in the interval (0, 1).
+The function allows modeling parameters from all seven submodels of the GKw
+family as functions of predictors using appropriate link functions. Estimation
+is performed using Maximum Likelihood via the TMB (Template Model Builder) package.
+Requires the \code{Formula} and \code{TMB} packages.
 }
 \details{
-The \code{gkwreg} function extends the \code{gkwfit} framework to regression modeling,
-allowing parameters of the GKw family to depend on covariates. The function handles
-all seven distributions in the Generalized Kumaraswamy family with their specific parameter sets:
+The \code{gkwreg} function provides a regression framework for the Generalized
+Kumaraswamy (GKw) family and its submodels, extending density estimation
+to include covariates. The response variable must be strictly bounded in the
+(0, 1) interval.
 
+\strong{Model Specification:}
+The extended \code{\link[Formula]{Formula}} syntax is crucial for specifying
+potentially different linear predictors for each relevant distribution parameter.
+The parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) correspond sequentially
+to the parts of the formula separated by \code{|}. For subfamilies where some
+parameters are fixed by definition (see \code{family} argument), the corresponding
+parts of the formula are automatically ignored. For example, in a \code{family = "kw"}
+model, only the first two parts (for \eqn{\alpha} and \eqn{\beta}) are relevant.
+
+\strong{Parameter Constraints and Link Functions:}
+The parameters \eqn{\alpha, \beta, \gamma, \lambda} are constrained to be positive,
+while \eqn{\delta} is constrained to the interval (0, 1). The default link functions
+(\code{"log"} for positive parameters, \code{"logit"} for \eqn{\delta}) ensure these
+constraints during estimation. Users can specify alternative link functions suitable
+for the parameter's domain via the \code{link} argument.
+
+\strong{Families and Parameters:}
+The function automatically handles parameter fixing based on the chosen \code{family}:
 \itemize{
-\item \strong{GKw} (Generalized Kumaraswamy): 5 parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, \eqn{\delta}, \eqn{\lambda})
-\item \strong{BKw} (Beta-Kumaraswamy): 4 parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, \eqn{\delta}), with \eqn{\lambda = 1} fixed
-\item \strong{KKw} (Kumaraswamy-Kumaraswamy): 4 parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\delta}, \eqn{\lambda}), with \eqn{\gamma = 1} fixed
-\item \strong{EKw} (Exponentiated Kumaraswamy): 3 parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\lambda}), with \eqn{\gamma = 1}, \eqn{\delta = 0} fixed
-\item \strong{Mc} (McDonald/Beta Power): 3 parameters (\eqn{\gamma}, \eqn{\delta}, \eqn{\lambda}), with \eqn{\alpha = 1}, \eqn{\beta = 1} fixed
-\item \strong{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha}, \eqn{\beta}), with \eqn{\gamma = 1}, \eqn{\delta = 0}, \eqn{\lambda = 1} fixed
-\item \strong{Beta}: 2 parameters (\eqn{\gamma}, \eqn{\delta}), with \eqn{\alpha = 1}, \eqn{\beta = 1}, \eqn{\lambda = 1} fixed
+\item \strong{GKw}: All 5 parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) modeled.
+\item \strong{BKw}: Models \eqn{\alpha, \beta, \gamma, \delta}; fixes \eqn{\lambda = 1}.
+\item \strong{KKw}: Models \eqn{\alpha, \beta, \delta, \lambda}; fixes \eqn{\gamma = 1}.
+\item \strong{EKw}: Models \eqn{\alpha, \beta, \lambda}; fixes \eqn{\gamma = 1, \delta = 0}.
+\item \strong{Mc} (McDonald): Models \eqn{\gamma, \delta, \lambda}; fixes \eqn{\alpha = 1, \beta = 1}.
+\item \strong{Kw} (Kumaraswamy): Models \eqn{\alpha, \beta}; fixes \eqn{\gamma = 1, \delta = 0, \lambda = 1}.
+\item \strong{Beta}: Models \eqn{\gamma, \delta}; fixes \eqn{\alpha = 1, \beta = 1, \lambda = 1}. This parameterization corresponds to the standard Beta distribution with shape1 = \eqn{\gamma} and shape2 = \eqn{\delta}.
 }
 
-For each family, only the relevant parameters are modeled as functions of covariates. The fixed
-parameters are automatically handled based on the selected family.
-
-Default link functions are assigned based on parameter constraints:
-\itemize{
-\item "log" for \eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, and \eqn{\lambda} (which should be positive)
-\item "logit" for \eqn{\delta} (which should be between 0 and 1 when standardized)
-}
+\strong{Estimation Engine:}
+Maximum Likelihood Estimation (MLE) is performed using C++ templates via the
+\code{TMB} package, which provides automatic differentiation and efficient
+optimization capabilities. The specific TMB template used depends on the chosen \code{family}.
 }
 \examples{
 \dontrun{
-require(gkwreg)
+# Load required packages (assuming they are installed)
+# require(gkwreg) # Assuming this package provides rgkw, rkw
+# require(stats)
 
-## Example 1: Simple Kumaraswamy regression model
+## Example 1: Simple Kumaraswamy regression model ----
 set.seed(123)
-n <- 500
+n <- 100 # Reduced N for faster example execution
 x1 <- runif(n, -2, 2)
 x2 <- rnorm(n)
 
-# Generate regression coefficients
+# True regression coefficients
 alpha_coef <- c(0.8, 0.3, -0.2) # Intercept, x1, x2
 beta_coef <- c(1.2, -0.4, 0.1) # Intercept, x1, x2
 
-# Generate linear predictors and transform to parameters
-alpha <- exp(alpha_coef[1] + alpha_coef[2] * x1 + alpha_coef[3] * x2)
-beta <- exp(beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2)
+# Generate linear predictors and transform to parameters using inverse link (exp)
+eta_alpha <- alpha_coef[1] + alpha_coef[2] * x1 + alpha_coef[3] * x2
+eta_beta <- beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2
+alpha_true <- exp(eta_alpha)
+beta_true <- exp(eta_beta)
 
-# Generate responses from Kumaraswamy distribution
-y <- rkw(n, alpha = alpha, beta = beta)
+# Generate responses from Kumaraswamy distribution (assuming rkw is available)
+# Replace rkw with relevant function if needed (e.g., from this package)
+if (exists("rkw", mode = "function")) {
+  y <- rkw(n, alpha = alpha_true, beta = beta_true)
+} else {
+  # Placeholder if rkw is not available in the environment
+  warning("rkw function not found, generating approximate data.")
+  y <- stats::rbeta(n, shape1 = alpha_true, shape2 = beta_true) # Approximation
+}
+y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
 
 # Create data frame
-df <- data.frame(y = y, x1 = x1, x2 = x2)
+df1 <- data.frame(y = y, x1 = x1, x2 = x2)
 
 # Fit Kumaraswamy regression model using extended formula syntax
-kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
+# Model alpha ~ x1 + x2 and beta ~ x1 + x2
+kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = FALSE)
 
 # Display summary
 summary(kw_reg)
 
-# Plot diagnostics
-plot(kw_reg)
+# Plot diagnostics (requires plot.gkwreg method)
+# plot(kw_reg)
 
-## Example 2: Generalized Kumaraswamy regression with parameter-specific formulas
+## Example 2: Generalized Kumaraswamy regression ----
 set.seed(456)
-n <- 400
+n <- 150 # Reduced N
 x1 <- runif(n, -1, 1)
 x2 <- rnorm(n)
-x3 <- rbinom(n, 1, 0.5)
+x3 <- factor(rbinom(n, 1, 0.5), labels = c("A", "B")) # Factor variable
 
-# Generate regression coefficients for each parameter
+# True regression coefficients
 alpha_coef <- c(0.5, 0.2) # Intercept, x1
 beta_coef <- c(0.8, -0.3, 0.1) # Intercept, x1, x2
-gamma_coef <- c(0.6, 0.4) # Intercept, x3
-delta_coef <- c(0.0, 0.2) # Intercept, x3
+gamma_coef <- c(0.6, 0.4) # Intercept, x3B
+delta_coef <- c(0.0, 0.2) # Intercept, x3B (logit scale)
 lambda_coef <- c(-0.2, 0.1) # Intercept, x2
 
+# Design matrices
+X_alpha <- model.matrix(~x1, data = data.frame(x1 = x1))
+X_beta <- model.matrix(~ x1 + x2, data = data.frame(x1 = x1, x2 = x2))
+X_gamma <- model.matrix(~x3, data = data.frame(x3 = x3))
+X_delta <- model.matrix(~x3, data = data.frame(x3 = x3))
+X_lambda <- model.matrix(~x2, data = data.frame(x2 = x2))
+
 # Generate linear predictors and transform to parameters
-alpha <- exp(alpha_coef[1] + alpha_coef[2] * x1)
-beta <- exp(beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2)
-gamma <- exp(gamma_coef[1] + gamma_coef[2] * x3)
-delta <- plogis(delta_coef[1] + delta_coef[2] * x3)
-lambda <- exp(lambda_coef[1] + lambda_coef[2] * x2)
+alpha <- exp(X_alpha \%*\% alpha_coef)
+beta <- exp(X_beta \%*\% beta_coef)
+gamma <- exp(X_gamma \%*\% gamma_coef)
+delta <- plogis(X_delta \%*\% delta_coef) # logit link for delta
+lambda <- exp(X_lambda \%*\% lambda_coef)
 
-# Generate response from GKw distribution
-y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
+# Generate response from GKw distribution (assuming rgkw is available)
+if (exists("rgkw", mode = "function")) {
+  y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
+} else {
+  warning("rgkw function not found, skipping GKw data generation.")
+  y <- NULL
+}
 
-# Create data frame
-df <- data.frame(y = y, x1 = x1, x2 = x2, x3 = as.factor(x3))
+if (!is.null(y)) {
+  y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
 
-# Fit GKw regression with parameter-specific formulas using the extended formula syntax
-gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df, family = "gkw")
+  # Create data frame
+  df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
 
-# Compare true vs. estimated coefficients
-coef(gkw_reg)
+  # Fit GKw regression with parameter-specific formulas
+  # alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
+  gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
 
-## Example 3: Beta regression for a simpler case
+  # Compare true vs. estimated coefficients
+  print("Estimated Coefficients (GKw):")
+  print(coef(gkw_reg))
+  print("True Coefficients (approx):")
+  print(list(
+    alpha = alpha_coef, beta = beta_coef, gamma = gamma_coef,
+    delta = delta_coef, lambda = lambda_coef
+  ))
+}
+
+## Example 3: Beta regression for comparison ----
 set.seed(789)
-n <- 300
+n <- 100 # Reduced N
 x1 <- runif(n, -1, 1)
 
-# Generate regression coefficients
-gamma_coef <- c(1.0, 0.5) # Intercept, x1
-delta_coef <- c(1.5, -0.7) # Intercept, x1
+# True coefficients for Beta parameters (gamma = shape1, delta = shape2)
+gamma_coef <- c(1.0, 0.5) # Intercept, x1 (log scale for shape1)
+delta_coef <- c(1.5, -0.7) # Intercept, x1 (log scale for shape2)
 
-# Generate linear predictors and transform to parameters
-gamma <- exp(gamma_coef[1] + gamma_coef[2] * x1)
-delta <- exp(delta_coef[1] + delta_coef[2] * x1)
+# Generate linear predictors and transform (default link is log for Beta params here)
+X_beta_eg <- model.matrix(~x1, data.frame(x1 = x1))
+gamma_true <- exp(X_beta_eg \%*\% gamma_coef)
+delta_true <- exp(X_beta_eg \%*\% delta_coef)
 
 # Generate response from Beta distribution
-y <- rbeta_(n, gamma, delta)
+y <- stats::rbeta(n, shape1 = gamma_true, shape2 = delta_true)
+y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
 
 # Create data frame
-df <- data.frame(y = y, x1 = x1)
+df_beta <- data.frame(y = y, x1 = x1)
 
-# Fit Beta regression model - for Beta family, we only need the gamma and delta terms
-beta_reg <- gkwreg(y ~ . | . | x1 | x1, data = df, family = "beta")
+# Fit Beta regression model using gkwreg
+# Formula maps to gamma and delta: y ~ . | . | x1 | x1 | .
+# The "." parts for alpha, beta, lambda are ignored by family="beta"
+beta_reg <- gkwreg(y ~ . | . | x1 | x1,
+  data = df_beta, family = "beta",
+  link = list(gamma = "log", delta = "log")
+) # Specify links if non-default
 
 # Display confidence intervals for coefficients
 confint(beta_reg)
 
-## Example 4: Model comparison
-# Fit multiple models and compare them
-kw_reg2 <- gkwreg(y ~ x1 | x1, data = df, family = "kw")
-beta_reg2 <- gkwreg(y ~ . | . | x1 | x1, data = df, family = "beta")
+## Example 4: Model comparison using AIC/BIC ----
+# Fit an alternative model, e.g., Kumaraswamy, to the same beta-generated data
+kw_reg2 <- try(gkwreg(y ~ x1 | x1, data = df_beta, family = "kw"))
 
-# Compare with AIC/BIC
-AIC(kw_reg2, beta_reg2)
-BIC(kw_reg2, beta_reg2)
+if (!inherits(kw_reg2, "try-error")) {
+  print("AIC Comparison (Beta vs Kw):")
+  print(stats::AIC(beta_reg, kw_reg2))
+  print("BIC Comparison (Beta vs Kw):")
+  print(stats::BIC(beta_reg, kw_reg2))
+} else {
+  print("Could not fit Kw model for comparison on beta-generated data.")
+}
 
-## Example 5: Predicting with a fitted model
-# Create new data for prediction
-newdata <- data.frame(x1 = seq(-1, 1, by = 0.1))
+## Example 5: Predicting with a fitted model ----
+# Use the Beta regression model from Example 3
+newdata <- data.frame(x1 = seq(-1, 1, length.out = 20))
 
-# Predict expected response
-pred <- predict(beta_reg, newdata = newdata, type = "response")
+# Predict expected response (mean of the Beta distribution)
+pred_response <- predict(beta_reg, newdata = newdata, type = "response")
 
-# Plot original data and predicted curve
-plot(df$x1, df$y, pch = 20, col = "gray")
-lines(newdata$x1, pred, col = "red", lwd = 2)
+# Predict parameters (gamma and delta) on the scale of the link function
+pred_link <- predict(beta_reg, newdata = newdata, type = "link")
+
+# Predict parameters on the original scale (shape1, shape2)
+pred_params <- predict(beta_reg, newdata = newdata, type = "parameters")
+
+# Plot original data and predicted mean response curve
+plot(df_beta$x1, df_beta$y,
+  pch = 20, col = "grey", xlab = "x1", ylab = "y",
+  main = "Beta Regression Fit (using gkwreg)"
+)
+lines(newdata$x1, pred_response, col = "red", lwd = 2)
+legend("topright", legend = "Predicted Mean", col = "red", lty = 1, lwd = 2)
 }
 
 }
 \references{
 Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-random processes. Journal of Hydrology, 46(1-2), 79-88.
+random processes. \emph{Journal of Hydrology}, \strong{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0}
 
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+\emph{Journal of Statistical Computation and Simulation}, \strong{81}(7), 883-898.
+\doi{10.1080/00949650903530745}
 
 Ferrari, S. L. P., & Cribari-Neto, F. (2004). Beta regression for modelling rates and
-proportions. Journal of Applied Statistics, 31(7), 799-815.
+proportions. \emph{Journal of Applied Statistics}, \strong{31}(7), 799-815.
+\doi{10.1080/0266476042000214501}
+
+Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016). TMB:
+Automatic Differentiation and Laplace Approximation. \emph{Journal of Statistical
+Software}, \strong{70}(5), 1-21. \doi{10.18637/jss.v070.i05}
+(Underlying TMB package)
+
+Zeileis, A., Kleiber, C., Jackman, S. (2008). Regression Models for Count Data in R.
+\emph{Journal of Statistical Software}, \strong{27}(8), 1-25.
+\doi{10.18637/jss.v027.i08} (Discusses \code{Formula} package)
+
+Smithson, M., & Verkuilen, J. (2006). A Better Lemon Squeezer? Maximum-Likelihood
+Regression with Beta-Distributed Dependent Variables. \emph{Psychological Methods},
+\strong{11}(1), 54–71. \doi{10.1037/1082-989X.11.1.54}
 }
+\seealso{
+\code{\link{summary.gkwreg}}, \code{\link{predict.gkwreg}},
+\code{\link{plot.gkwreg}}, \code{\link{coef.gkwreg}}, \code{\link{vcov.gkwreg}},
+\code{\link[stats]{logLik}}, \code{\link[stats]{AIC}},
+\code{\link[Formula]{Formula}}, \code{\link[TMB]{MakeADFun}},
+\code{\link[TMB]{sdreport}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{hoss}
+\keyword{models}
+\keyword{regression}

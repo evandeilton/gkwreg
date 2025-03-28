@@ -2,19 +2,143 @@
 % Please edit documentation in R/gkwfit.R
 \name{predict.gkwfit}
 \alias{predict.gkwfit}
-\title{Calculate predicted density values for a gkwfit object}
+\title{Predict Method for gkwfit Objects}
 \usage{
-\method{predict}{gkwfit}(object, newdata = NULL, type = c("density", "cdf"), ...)
+predict.gkwfit(
+  object,
+  newdata = NULL,
+  type = c("density", "cdf", "quantile", "response"),
+  p = NULL,
+  ...
+)
 }
 \arguments{
-\item{object}{A gkwfit object}
+\item{object}{An object of class \code{"gkwfit"}, typically the result of a
+call to \code{\link{gkwfit}}.}
 
-\item{newdata}{Optional new data points}
+\item{newdata}{An optional numeric vector of values strictly between 0 and 1
+at which to compute predictions for \code{type = "density"} or
+\code{type = "cdf"}. If \code{NULL} (the default) for these types, an
+error is raised as specific points are required. For \code{type = "response"},
+if \code{newdata} is provided, the calculated mean is replicated to match
+the length of \code{newdata}; otherwise (if \code{newdata = NULL}), a
+single mean value is returned. For \code{type = "quantile"}, this argument
+is ignored.}
 
-\item{type}{Type of prediction: "density" or "cdf"}
+\item{type}{A character string specifying the type of prediction required. Valid options are:
+\itemize{
+\item \code{"density"}: Computes the probability density function (pdf) values.
+Requires the \code{newdata} argument.
+\item \code{"cdf"}: Computes the cumulative distribution function (CDF) values.
+Requires the \code{newdata} argument.
+\item \code{"quantile"}: Computes the quantiles for given probabilities.
+Requires the \code{p} argument. Ignores \code{newdata}.
+\item \code{"response"}: Computes the theoretical mean of the fitted distribution.
+Does not strictly require \code{newdata}, but if provided, the result is
+replicated to match its length.
+}}
 
-\item{...}{Additional arguments}
+\item{p}{A numeric vector of probabilities (values between 0 and 1 inclusive)
+for which to compute quantiles. Required and only used when \code{type = "quantile"}.}
+
+\item{...}{Currently unused arguments. Included for consistency with the
+generic \code{\link[stats]{predict}} method.}
+}
+\value{
+The type of return value depends on the \code{type} argument:
+\itemize{
+\item If \code{type = "density"} or \code{type = "cdf"}: A numeric vector of
+density or CDF values, respectively, corresponding to each value in \code{newdata}.
+The length matches the length of \code{newdata}.
+\item If \code{type = "quantile"}: A numeric vector of quantile values
+corresponding to each probability in \code{p}. The length matches the
+length of \code{p}.
+\item If \code{type = "response"}: A single numeric value representing the
+theoretical mean of the fitted distribution if \code{newdata = NULL}. If
+\code{newdata} was provided, a numeric vector repeating the theoretical mean,
+with length matching the length of \code{newdata}.
+}
 }
 \description{
-Calculate predicted density values for a gkwfit object
+Computes various types of predictions based on a model fitted by the
+\code{\link{gkwfit}} function. This includes predicted density (pdf),
+cumulative probability (CDF), quantiles, or the theoretical mean response
+of the fitted distribution.
 }
+\details{
+This function acts as an interface to the underlying distribution functions
+corresponding to the fitted model's family (specified in \code{object$family}).
+It dynamically selects the appropriate density function (e.g., \code{dgkw}, \code{dkw}),
+CDF function (e.g., \code{pgkw}, \code{pkw}), quantile function (e.g., \code{qgkw}, \code{qkw}),
+or potentially a mean function (e.g., \code{meangkw}, \code{meankw}) based on the
+requested \code{type} and the fitted \code{family}.
+
+The function retrieves the estimated parameters using \code{coef(object)} and
+passes them along with \code{newdata} or \code{p} to the relevant underlying
+distribution function.
+
+\strong{Important:} For this function to work correctly, the corresponding \code{d}, \code{p}, \code{q}
+(and \code{mean} if \code{type = "response"} is used, unless it's the standard Beta)
+functions for the specific \code{family} fitted (e.g., \code{dkw}, \code{pkw}, \code{qkw} for the
+\code{"kw"} family) must be available in the environment where \code{predict.gkwfit}
+is called (typically meaning they should be defined and exported by the same package).
+
+Input values in \code{newdata} must be strictly within the open interval (0, 1).
+Probabilities in \code{p} must be within the closed interval (0, 1).
+}
+\examples{
+\dontrun{
+# Assume necessary functions like 'rkw', 'gkwfit',
+# 'dkw', 'pkw', 'qkw', and 'meankw' (or equivalent logic) exist.
+
+set.seed(123)
+kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
+
+# Example points for prediction
+new_pts <- c(0.1, 0.25, 0.5, 0.75, 0.9)
+
+# --- Predict Density ---
+pred_d <- predict(fit_obj, newdata = new_pts, type = "density")
+print(pred_d)
+# plot(new_pts, pred_d, type = "l", main = "Predicted Density")
+
+# --- Predict CDF ---
+pred_p <- predict(fit_obj, newdata = new_pts, type = "cdf")
+print(pred_p)
+# plot(new_pts, pred_p, type = "l", main = "Predicted CDF")
+
+# --- Predict Quantiles ---
+probabilities <- c(0.01, 0.05, 0.5, 0.95, 0.99)
+pred_q <- predict(fit_obj, p = probabilities, type = "quantile")
+print(pred_q)
+
+# --- Predict Mean Response ---
+# Get the single theoretical mean value
+pred_mean_single <- predict(fit_obj, type = "response")
+print(pred_mean_single)
+
+# Get the mean replicated for the length of newdata
+pred_mean_vector <- predict(fit_obj, newdata = new_pts, type = "response")
+print(pred_mean_vector)
+
+# --- Example with a different family (assuming setup exists) ---
+# set.seed(456)
+# gkw_data <- rgkw(100, alpha=2, beta=3, gamma=1.5, delta=2.5, lambda=0.8)
+# fit_gkw <- gkwfit(gkw_data, family="gkw", silent=TRUE)
+# pred_gkw_cdf <- predict(fit_gkw, newdata = new_pts, type = "cdf")
+# print(pred_gkw_cdf)
+}
+
+}
+\seealso{
+\code{\link{gkwfit}}, \code{\link[stats]{predict}}, and the specific
+distribution functions used (e.g., \code{dgkw}, \code{pgkw}, \code{qgkw},
+\code{dkw}, \code{pkw}, \code{qkw}, etc.).
+}
+\author{
+Lopes, J. E.
+}
+\keyword{methods}
+\keyword{models}
+\keyword{prediction}

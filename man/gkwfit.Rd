@@ -26,42 +26,58 @@ gkwfit(
 \arguments{
 \item{data}{A numeric vector with values in the (0, 1) interval.}
 
-\item{family}{A character string specifying the distribution family. One of: "gkw" (default),
-"bkw", "kkw", "ekw", "mc", "kw", or "beta". See Details for parameter specifications.}
+\item{family}{A character string specifying the distribution family. One of: \code{"gkw"} (default),
+\code{"bkw"}, \code{"kkw"}, \code{"ekw"}, \code{"mc"}, \code{"kw"}, or \code{"beta"}. See Details for parameter specifications.}
 
 \item{start}{Optional list with initial parameter values. If \code{NULL}, reasonable starting
 values will be determined from the data.}
 
-\item{fixed}{Optional list of parameters to be held fixed (not estimated).}
+\item{fixed}{Optional list of parameters to be held fixed (not estimated), e.g., \code{list(lambda = 1)}.}
 
-\item{fit}{Estimation method to be used: \code{"tmb"} (default) for TMB or \code{"nr"} for Newton-Raphson.}
+\item{fit}{Estimation method to be used: \code{"tmb"} (recommended) for TMB or \code{"nr"} for Newton-Raphson.}
 
-\item{method}{(Only for \code{fit = "tmb"}) Optimization method to be used: \code{"nlminb"} (default) or \code{"optim"}.}
+\item{method}{(Only for \code{fit = "tmb"}) Optimization method to be used by \code{\link[stats]{optim}} or \code{\link[stats]{nlminb}}: \code{"nlminb"} (default) or \code{"optim"}.}
 
 \item{use_moments}{Logical; if \code{TRUE}, uses the method of moments for initial values.}
 
-\item{hessian}{Logical; if \code{TRUE}, computes standard errors and the covariance matrix.}
+\item{hessian}{Logical; if \code{TRUE}, computes standard errors and the covariance matrix using the observed Hessian matrix.}
 
 \item{profile}{Logical; if \code{TRUE}, computes likelihood profiles for parameters.}
 
-\item{npoints}{Number of points to use in profile likelihood calculations.}
+\item{npoints}{Integer; number of points to use in profile likelihood calculations (minimum 5).}
 
-\item{plot}{Logical; if \code{TRUE}, generates diagnostic plots.}
+\item{plot}{Logical; if \code{TRUE}, generates diagnostic plots (histogram with fitted density, QQ-plot).}
 
 \item{conf.level}{Confidence level for intervals (default: 0.95).}
 
-\item{optimizer.control}{List of control parameters passed to the optimizer. Default values
-are set internally based on the chosen method.}
+\item{optimizer.control}{List of control parameters passed to the optimizer (\code{\link[stats]{nlminb}} or \code{\link[stats]{optim}} for \code{fit = "tmb"}, or the internal Newton-Raphson). Default values
+are set internally based on the chosen method (see Details).}
 
-\item{submodels}{Logical; if \code{TRUE}, fits nested submodels for comparison.}
+\item{submodels}{Logical; if \code{TRUE}, fits nested submodels for comparison via likelihood ratio tests.}
 
-\item{silent}{Logical; if \code{TRUE}, suppresses messages.}
+\item{silent}{Logical; if \code{TRUE}, suppresses messages during fitting.}
 
-\item{...}{Additional arguments passed to internal functions.}
+\item{...}{Additional arguments (currently unused).}
 }
 \value{
-An object of class \code{"gkwfit"} containing the fitted model. The names of the objects
-in the output list are preserved for compatibility.
+An object of class \code{"gkwfit"} (inheriting from \code{"list"}) containing the fitted model results. Key components include:
+\item{coefficients}{Named vector of estimated parameters.}
+\item{vcov}{Variance-covariance matrix of the estimates.}
+\item{logLik}{Log-likelihood value at the maximum.}
+\item{aic}{Akaike Information Criterion.}
+\item{bic}{Bayesian Information Criterion.}
+\item{convergence}{Convergence status code from the optimizer.}
+\item{hessian}{Observed Hessian matrix (if \code{hessian = TRUE}).}
+\item{data}{The input data vector.}
+\item{family}{The specified distribution family.}
+\item{call}{The matched function call.}
+\item{plots}{A list containing ggplot objects for diagnostics (if \code{plot = TRUE}).}
+\item{profile}{A list containing likelihood profile results (if \code{profile = TRUE}).}
+\item{submodels}{A list of fitted submodels (if \code{submodels = TRUE}).}
+\item{lrt}{A list of likelihood ratio test results comparing nested models (if \code{submodels = TRUE}).}
+\item{gof}{Goodness-of-fit statistics (e.g., AD, CvM).}
+\item{diagnostics}{Diagnostic information related to GOF tests.}
+The names of the objects in the output list are preserved for compatibility with potential previous versions.
 }
 \description{
 Fits any distribution from the Generalized Kumaraswamy (GKw) family to data using maximum
@@ -71,53 +87,56 @@ The function supports all seven submodels of the GKw family.
 \details{
 The \code{gkwfit} function implements fitting for all seven distributions in the Generalized Kumaraswamy family:
 \itemize{
-\item \strong{GKw} (Generalized Kumaraswamy): 5 parameters (α, β, γ, δ, λ)
-\item \strong{BKw} (Beta-Kumaraswamy): 4 parameters (α, β, γ, δ), with λ = 1 fixed
-\item \strong{KKw} (Kumaraswamy-Kumaraswamy): 4 parameters (α, β, δ, λ), with γ = 1 fixed
-\item \strong{EKw} (Exponentiated Kumaraswamy): 3 parameters (α, β, λ), with γ = 1, δ = 0 fixed
-\item \strong{Mc} (McDonald/Beta Power): 3 parameters (γ, δ, λ), with α = 1, β = 1 fixed
-\item \strong{Kw} (Kumaraswamy): 2 parameters (α, β), with γ = 1, δ = 0, λ = 1 fixed
-\item \strong{Beta}: 2 parameters (γ, δ), with α = 1, β = 1, λ = 1 fixed
+\item \strong{GKw} (Generalized Kumaraswamy): 5 parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda})
+\item \strong{BKw} (Beta-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \gamma, \delta}), with \eqn{\lambda = 1} fixed
+\item \strong{KKw} (Kumaraswamy-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \delta, \lambda}), with \eqn{\gamma = 1} fixed
+\item \strong{EKw} (Exponentiated Kumaraswamy): 3 parameters (\eqn{\alpha, \beta, \lambda}), with \eqn{\gamma = 1, \delta = 0} fixed
+\item \strong{Mc} (McDonald / Beta Power): 3 parameters (\eqn{\gamma, \delta, \lambda}), with \eqn{\alpha = 1, \beta = 1} fixed
+\item \strong{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha, \beta}), with \eqn{\gamma = 1, \delta = 0, \lambda = 1} fixed
+\item \strong{Beta}: 2 parameters (\eqn{\gamma, \delta}), with \eqn{\alpha = 1, \beta = 1, \lambda = 1} fixed (equivalent to standard Beta distribution parameters)
+}
+All parameters are restricted to be positive.
+
+The function offers two estimation methods via the \code{fit} argument:
+\itemize{
+\item \code{fit = "tmb"}: Uses Template Model Builder (TMB) for robust and efficient fitting, leveraging automatic differentiation. The optimization backend (\code{\link[stats]{nlminb}} or \code{\link[stats]{optim}}) can be selected via the \code{method} argument. This is generally the recommended method.
+\item \code{fit = "nr"}: Uses a custom Newton-Raphson implementation. In this case, the \code{method} argument is ignored. This might be faster for simple cases but potentially less stable than TMB.
 }
 
-The function offers two estimation methods:
+Default values for \code{optimizer.control} depend on the fitting method:
 \itemize{
-\item \code{fit = "tmb"}: Uses Template Model Builder (TMB) for fitting, with the option to choose
-the optimization method via the \code{method} argument, which can be \code{"nlminb"} or \code{"optim"}.
-\item \code{fit = "nr"}: Uses the Newton-Raphson method for fitting. In this case, the \code{method}
-argument is ignored.
+\item For \code{fit = "tmb", method = "nlminb"}: \code{list(eval.max = 500, iter.max = 300)}
+\item For \code{fit = "tmb", method = "optim"}: \code{list(maxit = 500)} (uses \code{method = "BFGS"} by default within optim)
+\item For \code{fit = "nr"}: \code{list(tol = 1e-6, max_iter = 100, step_size = 1.0, enforce_bounds = TRUE, min_param_val = 1e-5, max_param_val = 1e5)}
 }
-
-Default values for optimizer control parameters (\code{optimizer.control}) are:
-\itemize{
-\item For \code{"nlminb"}: \code{list(eval.max = 500, iter.max = 300)}.
-\item For \code{"optim"}: \code{list(maxit = 500)}.
-\item For Newton-Raphson (\code{fit = "nr"}): \code{list(tol = 1e-6, max_iter = 100, step_size = 1.0,
-        enforce_bounds = TRUE, min_param_val = 1e-5, max_param_val = 1e5)}.
-}
+Users can override these defaults by providing their own list to \code{optimizer.control}.
 }
 \examples{
 \dontrun{
+# Ensure the package is loaded (if not already)
+# library(gkwreg) # Or your package name
 
-require(gkwreg)
 ## Example 1: Basic Kumaraswamy distribution fitting
 # Generate sample data from a Kumaraswamy distribution
 set.seed(123)
-n <- 2000
+n <- 200 # Reduced size for faster example
+# Assuming rkw is part of your package or loaded
 kw_data <- rkw(n, alpha = 2.5, beta = 1.5)
 
-# Fit the Kumaraswamy distribution to the data
-kw_fit <- gkwfit(data = kw_data, family = "kw")
+# Fit the Kumaraswamy distribution to the data using TMB
+kw_fit <- gkwfit(data = kw_data, family = "kw", fit = "tmb")
 
-# Display summary of the fitted model
+# Display summary of the fitted model (requires summary.gkwfit method)
 summary(kw_fit)
 
-# Plot the fitted distribution against the data
-kw_fit$plots
+# Show diagnostic plots (requires plot.gkwfit method or access internal list)
+# print(kw_fit$plots[[1]]) # Example: print histogram plot
+# print(kw_fit$plots[[2]]) # Example: print QQ plot
 
 ## Example 2: Fitting a Generalized Kumaraswamy distribution
 # Generate sample data from a GKw distribution
 set.seed(456)
+# Assuming rgkw is part of your package or loaded
 gkw_data <- rgkw(n,
   alpha = 2.0, beta = 3.0,
   gamma = 1.5, delta = 2.5, lambda = 0.8
@@ -126,12 +145,13 @@ gkw_data <- rgkw(n,
 # Fit the GKw distribution using TMB
 gkw_fit <- gkwfit(data = gkw_data, family = "gkw", fit = "tmb")
 
-# Display parameter estimates with confidence intervals
+# Display parameter estimates with confidence intervals (requires confint.gkwfit)
 confint(gkw_fit)
 
 ## Example 3: Comparing different estimation methods
 # Generate sample data from a Beta-Kumaraswamy distribution
-set.seed(7809)
+set.seed(789) # Corrected seed from 7809 to 789
+# Assuming rbkw is part of your package or loaded
 bkw_data <- rbkw(n, alpha = 1.8, beta = 2.2, gamma = 0.9, delta = 1.2)
 
 # Fit using TMB with nlminb optimizer
@@ -143,12 +163,13 @@ bkw_fit_tmb <- gkwfit(
 # Fit using Newton-Raphson method
 bkw_fit_nr <- gkwfit(data = bkw_data, family = "bkw", fit = "nr")
 
-# Compare parameter estimates
-cbind(TMB = coef(bkw_fit_tmb), NR = coef(bkw_fit_nr))
+# Compare parameter estimates (requires coef.gkwfit method)
+print(cbind(TMB = coef(bkw_fit_tmb), NR = coef(bkw_fit_nr)))
 
 ## Example 4: Fixing parameters during estimation
 # Generate data from a Kumaraswamy-Kumaraswamy distribution
 set.seed(101)
+# Assuming rkkw is part of your package or loaded
 kkw_data <- rkkw(n, alpha = 2.5, beta = 1.8, delta = 1.5, lambda = 0.7)
 
 # Fit the model with lambda fixed at 0.7
@@ -157,44 +178,46 @@ kkw_fit <- gkwfit(
   fixed = list(lambda = 0.7)
 )
 
-# Display results
+# Display results (requires coef.gkwfit method)
 coef(kkw_fit)
 
 ## Example 5: Profile likelihoods
-# Generate data from McDonald distribution
+# Generate data from McDonald distribution (Beta Power)
 set.seed(202)
-mc_data <- rbp(n, gamma = 2.0, delta = 1.5, lambda = 0.9)
+# Assuming rbp is part of your package or loaded (or maybe rmc?)
+mc_data <- rmc(n, gamma = 2.0, delta = 1.5, lambda = 0.9) # Assuming rmc exists
 
-# Fit the model with profile likelihoods
+# Fit the model with profile likelihoods (may take time)
 mc_fit <- gkwfit(
   data = mc_data, family = "mc",
-  profile = TRUE, npoints = 15
+  profile = TRUE, npoints = 10 # Reduced points for speed
 )
 
-# Plot profile likelihoods
-mc_fit$plots
+# Plot profile likelihoods (requires plot.profile.gkwfit method or similar)
+# plot(mc_fit$profile) # Or specific plotting function for profiles
 
 ## Example 6: Fitting and comparing submodels
 # Generate data from Exponentiated Kumaraswamy distribution
 set.seed(303)
+# Assuming rekw is part of your package or loaded
 ekw_data <- rekw(n, alpha = 1.7, beta = 2.3, lambda = 1.2)
 
-# Fit the model and all its submodels
-ekw_fit <- gkwfit(data = ekw_data, family = "gkw", fit = "tmb", submodels = TRUE)
+# Fit the GKw model and all its submodels (may take significant time)
+# Consider reducing 'n' for this example
+ekw_fit_all <- gkwfit(data = ekw_data, family = "gkw", fit = "tmb", submodels = TRUE)
 
-# Display likelihood ratio tests
-do.call(rbind, ekw_fit$lrt)
+# Display likelihood ratio tests comparing GKw to nested models
+print(do.call(rbind, ekw_fit_all$lrt))
 
 ## Example 7: Using method of moments for initialization
 # Generate data from Beta distribution
 set.seed(404)
-beta_data <- rbeta(n, shape1 = 2.0, shape2 = 3.0)
+beta_data <- stats::rbeta(n, shape1 = 2.0, shape2 = 3.0)
 
 # Fit using method of moments for starting values
 beta_fit <- gkwfit(data = beta_data, family = "beta", use_moments = TRUE)
 
-# Check starting values vs final estimates
-beta_fit$plots
+# Check final estimates (requires coef.gkwfit method)
 coef(beta_fit)
 
 ## Example 8: Custom optimizer control
@@ -204,12 +227,12 @@ kw_data2 <- rkw(n, alpha = 0.8, beta = 1.2)
 
 # Fit with custom optimizer settings for more iterations
 kw_fit2 <- gkwfit(
-  data = kw_data2, family = "kw",
+  data = kw_data2, family = "kw", fit = "tmb",
   optimizer.control = list(eval.max = 1000, iter.max = 600)
 )
 
-# Check convergence
-kw_fit2$convergence
+# Check convergence status
+print(kw_fit2$convergence)
 
 ## Example 9: Goodness-of-fit assessment
 # Generate data from GKw distribution
@@ -222,52 +245,69 @@ gkw_data2 <- rgkw(n,
 # Fit the model
 gkw_fit2 <- gkwfit(data = gkw_data2, family = "gkw")
 
-# Check goodness-of-fit measures
-gkw_fit2$gof
+# Check goodness-of-fit statistics
+print(gkw_fit2$gof)
 
-# Perform a Kolmogorov-Smirnov test
-ks.test(gkw_data2, function(x) {
+# Perform a Kolmogorov-Smirnov test against the fitted distribution
+# Requires pgkw function and coef method
+ks_result <- stats::ks.test(gkw_data2, function(x) {
   pgkw(x,
-    alpha = coef(gkw_fit2)[1],
-    beta = coef(gkw_fit2)[2],
-    gamma = coef(gkw_fit2)[3],
-    delta = coef(gkw_fit2)[4],
-    lambda = coef(gkw_fit2)[5]
+    alpha = coef(gkw_fit2)["alpha"],
+    beta = coef(gkw_fit2)["beta"],
+    gamma = coef(gkw_fit2)["gamma"],
+    delta = coef(gkw_fit2)["delta"],
+    lambda = coef(gkw_fit2)["lambda"]
   )
 })
+print(ks_result)
 
-## Example 10: Dealing with bounded data
-# Transform data to (0,1) interval if needed
+## Example 10: Dealing with data outside (0,1) via transformation
 set.seed(707)
-original_data <- rnorm(n, mean = 10, sd = 2)
+original_data <- stats::rnorm(n, mean = 10, sd = 2)
 
-# Transform data to (0,1) interval
-transformed_data <- (original_data - min(original_data)) /
-  (max(original_data) - min(original_data))
+# Transform data to (0,1) interval (common practice)
+# Add small epsilon to avoid exact 0 or 1 after transformation
+epsilon <- 1e-6
+orig_min <- min(original_data)
+orig_range <- max(original_data) - orig_min
+transformed_data <- (original_data - orig_min) / orig_range * (1 - 2 * epsilon) + epsilon
+transformed_data <- pmax(epsilon, pmin(1 - epsilon, transformed_data)) # Ensure bounds
 
-# Fit a suitable model
+# Fit a suitable model (e.g., GKw) to transformed data
 trans_fit <- gkwfit(data = transformed_data, family = "gkw")
 
-# Back-transform results for prediction in original scale
-# Example of predicting quantiles in original scale
-orig_min <- min(original_data)
-orig_max <- max(original_data)
-quantiles <- qgkw(
+# Example: Predict quantiles and back-transform to original scale
+# Requires qgkw function and coef method
+fitted_coefs <- coef(trans_fit)
+quantiles_01 <- qgkw(
   p = c(0.1, 0.25, 0.5, 0.75, 0.9),
-  alpha = coef(trans_fit)[1],
-  beta = coef(trans_fit)[2],
-  gamma = coef(trans_fit)[3],
-  delta = coef(trans_fit)[4],
-  lambda = coef(trans_fit)[5]
+  alpha = fitted_coefs["alpha"],
+  beta = fitted_coefs["beta"],
+  gamma = fitted_coefs["gamma"],
+  delta = fitted_coefs["delta"],
+  lambda = fitted_coefs["lambda"]
 )
-original_quantiles <- quantiles * (orig_max - orig_min) + orig_min
+# Back-transform quantiles
+original_quantiles <- (quantiles_01 - epsilon) / (1 - 2 * epsilon) * orig_range + orig_min
 print(original_quantiles)
 }
 }
 \references{
 Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-random processes. Journal of Hydrology, 46(1-2), 79-88.
+random processes. \emph{Journal of Hydrology}, 46(1-2), 79-88. \doi{10.1016/0022-1694(80)90036-0}
 
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+\emph{Journal of Statistical Computation and Simulation}, 81(7), 883-898. \doi{10.1080/00949650903530745}
+
+Bourguignon, M., Silva, R. B., & Cordeiro, G. M. (2014). The Weibull-G family of probability distributions. \emph{Journal of Data Science}, 12(1), 53-68. (Mentioned as GKw is related to this framework)
 }
+\seealso{
+\code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}}, \code{\link{summary.gkwfit}}, \code{\link{print.gkwfit}}, \code{\link{plot.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{confint.gkwfit}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{hplot}
+\keyword{mle}
+\keyword{models}

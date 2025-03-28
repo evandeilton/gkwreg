@@ -57,5 +57,5 @@ summary(kw_reg)
 
 }
 \seealso{
-\code{\link{gkwreg}}, \code{\link{confint.gkwreg}}, \code{\link{summary.gkwreg}}
+\code{\link{gkwreg}}, \code{\link{confint}}, \code{\link{summary.gkwreg}}
 }

@@ -2,17 +2,53 @@
 % Please edit documentation in R/gkwfit.R
 \name{print.gkwfit}
 \alias{print.gkwfit}
-\title{Print method for gkwfit objects}
+\title{Print Method for gkwfit Objects}
 \usage{
 \method{print}{gkwfit}(x, digits = max(3, getOption("digits") - 3), ...)
 }
 \arguments{
-\item{x}{A gkwfit object}
+\item{x}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
 
-\item{digits}{Number of significant digits to display}
+\item{digits}{Integer; the minimum number of significant digits to be printed in values.
+Defaults to \code{max(3, getOption("digits") - 3)}.}
 
-\item{...}{Additional arguments passed to print methods}
+\item{...}{Additional arguments passed to underlying print methods (currently unused).}
+}
+\value{
+Invisibly returns the original input object \code{x}. Called for its side effect of printing to the console.
 }
 \description{
-Print method for gkwfit objects
+Prints a concise summary of a model fitted by the \code{\link{gkwfit}} function,
+displaying the call, estimated coefficients, log-likelihood, AIC, BIC,
+number of observations, and a convergence warning if applicable.
 }
+\examples{
+\dontrun{
+# Assume 'rkw' function exists to generate Kumaraswamy data
+# Assume 'gkwfit' function exists to fit the model
+
+set.seed(123)
+kw_data_sample <- rkw(50, alpha = 2.5, beta = 1.5) # Small n for quick example
+
+# Fit the model (suppressing plots and messages for cleaner example)
+fit_object <- gkwfit(
+  data = kw_data_sample, family = "kw",
+  plot = FALSE, silent = TRUE, hessian = FALSE
+) # Turn off hessian for speed
+
+# Print the fitted object summary
+print(fit_object)
+
+# Alternatively, auto-printing works when the object is returned:
+fit_object
+}
+
+}
+\seealso{
+\code{\link{gkwfit}}, \code{\link{summary.gkwfit}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{internal}
+\keyword{methods}

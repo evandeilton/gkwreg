@@ -2,15 +2,72 @@
 % Please edit documentation in R/gkwfit.R
 \name{logLik.gkwfit}
 \alias{logLik.gkwfit}
-\title{Extract log-likelihood from a gkwfit object}
+\title{Extract Log-Likelihood from a gkwfit Object}
 \usage{
 \method{logLik}{gkwfit}(object, ...)
 }
 \arguments{
-\item{object}{A gkwfit object}
+\item{object}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
 
-\item{...}{Additional arguments}
+\item{...}{Additional arguments (currently ignored).}
+}
+\value{
+An object of class \code{"logLik"}. This is the numeric log-likelihood value
+with the following attributes:
+\item{df}{The number of estimated parameters in the model.}
+\item{nobs}{The number of observations used for fitting the model.}
 }
 \description{
-Extract log-likelihood from a gkwfit object
+Extracts the maximized log-likelihood value from a model fitted by \code{\link{gkwfit}}.
+It returns an object of class \code{"logLik"}, which includes attributes for the
+degrees of freedom (\code{"df"}) and the number of observations (\code{"nobs"}) used in the fit.
 }
+\details{
+This method provides compatibility with standard R functions that operate on
+log-likelihood values, such as \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}},
+and likelihood ratio tests. It retrieves the log-likelihood stored during the
+model fitting process (in \code{object$loglik}) and attaches the required
+attributes (\code{object$df} for the number of estimated parameters and
+\code{object$nobs} for the number of observations).
+}
+\examples{
+\dontrun{
+# Assume 'rkw' and 'gkwfit' functions exist
+
+set.seed(123)
+kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+
+# Fit the model
+fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
+
+# Extract the log-likelihood object
+ll <- logLik(fit_obj)
+
+# Print the value
+print(ll)
+
+# Show attributes
+attributes(ll)
+
+# Use with standard functions
+AIC(fit_obj) # Equivalent to AIC(ll)
+BIC(fit_obj) # Equivalent to BIC(ll)
+
+# Extract components directly
+logLik_value <- as.numeric(ll)
+degrees_freedom <- attr(ll, "df")
+num_observations <- attr(ll, "nobs")
+cat("LogLik:", logLik_value, "\n")
+cat("df:", degrees_freedom, "\n")
+cat("nobs:", num_observations, "\n")
+}
+
+}
+\seealso{
+\code{\link{gkwfit}}, \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{methods}
+\keyword{models}

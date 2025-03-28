@@ -2,15 +2,48 @@
 % Please edit documentation in R/gkwfit.R
 \name{coef.gkwfit}
 \alias{coef.gkwfit}
-\title{Extract coefficients from a gkwfit object}
+\title{Extract Model Coefficients from a gkwfit Object}
 \usage{
 \method{coef}{gkwfit}(object, ...)
 }
 \arguments{
-\item{object}{A gkwfit object}
+\item{object}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
 
-\item{...}{Additional arguments}
+\item{...}{Additional arguments (currently ignored).}
+}
+\value{
+A named numeric vector containing the estimated coefficients for the
+parameters of the specified GKw family distribution. The names correspond
+to the parameter names (e.g., \code{"alpha"}, \code{"beta"}, etc.).
 }
 \description{
-Extract coefficients from a gkwfit object
+Extracts the estimated coefficients for the parameters of a model fitted by
+\code{\link{gkwfit}}. This is an S3 method for the generic \code{\link[stats]{coef}} function.
 }
+\examples{
+\dontrun{
+# Assume 'rkw' and 'gkwfit' functions exist
+
+set.seed(123)
+kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+
+# Fit the model
+fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
+
+# Extract coefficients using the method
+coefficients_vector <- coef(fit_obj)
+print(coefficients_vector)
+
+# Can also use the generic function
+stats::coef(fit_obj)
+}
+
+}
+\seealso{
+\code{\link{gkwfit}}, \code{\link[stats]{coef}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{methods}
+\keyword{models}

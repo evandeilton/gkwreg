@@ -2,15 +2,57 @@
 % Please edit documentation in R/gkwfit.R
 \name{vcov.gkwfit}
 \alias{vcov.gkwfit}
-\title{Extract variance-covariance matrix from a gkwfit object}
+\title{Extract Variance-Covariance Matrix from a gkwfit Object}
 \usage{
 \method{vcov}{gkwfit}(object, ...)
 }
 \arguments{
-\item{object}{A gkwfit object}
+\item{object}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
 
-\item{...}{Additional arguments}
+\item{...}{Additional arguments (currently ignored).}
+}
+\value{
+A numeric matrix representing the variance-covariance matrix of the
+estimated model parameters. Row and column names correspond to the parameter
+names (e.g., \code{"alpha"}, \code{"beta"}, etc.). Returns \code{NULL} or
+raises a warning/error if the matrix is not available (e.g., if \code{hessian=FALSE}
+was used or if the Hessian computation failed).
 }
 \description{
-Extract variance-covariance matrix from a gkwfit object
+Extracts the variance-covariance matrix of the estimated parameters from a model
+fitted by \code{\link{gkwfit}}. This matrix is typically derived from the
+inverse of the observed Hessian matrix calculated during fitting (requires
+\code{hessian = TRUE} in the \code{\link{gkwfit}} call). This is an S3 method
+for the generic \code{\link[stats]{vcov}} function.
 }
+\examples{
+\dontrun{
+# Assume 'rkw' and 'gkwfit' functions exist
+
+set.seed(123)
+kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+
+# Fit the model, ensuring hessian is computed (default TRUE)
+fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
+
+# Extract variance-covariance matrix using the method
+vcov_matrix <- vcov(fit_obj)
+print(vcov_matrix)
+
+# Can also use the generic function
+stats::vcov(fit_obj)
+
+# Extract standard errors from the diagonal
+std_errors <- sqrt(diag(vcov_matrix))
+print(std_errors)
+}
+
+}
+\seealso{
+\code{\link{gkwfit}}, \code{\link[stats]{vcov}}, \code{\link{coef.gkwfit}}, \code{\link{logLik.gkwfit}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{methods}
+\keyword{models}

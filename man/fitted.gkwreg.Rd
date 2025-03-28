@@ -4,57 +4,109 @@
 \alias{fitted.gkwreg}
 \title{Extract Fitted Values from a Generalized Kumaraswamy Regression Model}
 \usage{
-\method{fitted}{gkwreg}(object, family = NULL, ...)
+fitted.gkwreg(object, family = NULL, ...)
 }
 \arguments{
-\item{object}{A fitted model object of class "gkwreg".}
+\item{object}{An object of class \code{"gkwreg"}, typically the result of a
+call to \code{\link{gkwreg}}.}
 
-\item{family}{Character string specifying the distribution family to use.
-If NULL (default), uses the family from the fitted model.
-Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".}
+\item{family}{Character string specifying the distribution family under which
+the fitted mean values should be calculated. If \code{NULL} (default), the
+family stored within the fitted \code{object} is used. Specifying a different
+family (e.g., \code{"beta"}) will trigger recalculation of the fitted means
+based on that family's mean structure, using the original model's estimated
+coefficients mapped to the relevant parameters. Available options match those
+in \code{\link{gkwreg}}: \code{"gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"}.}
 
-\item{...}{Additional arguments. Currently not used.}
+\item{...}{Additional arguments, currently ignored by this method.}
 }
 \value{
-A numeric vector of fitted values (predicted means) on the scale of the
-original response. For the GKw model, these are values between 0 and 1.
+A numeric vector containing the fitted mean values. These values are
+typically bounded between 0 and 1, corresponding to the scale of the original
+response variable. The length of the vector corresponds to the number of
+observations used in the model fit (considering \code{subset} and \code{na.action}).
 }
 \description{
-Extract the fitted values (predicted means) from a fitted Generalized Kumaraswamy
-regression model.
+Extracts the fitted mean values (predicted expected values of the response)
+from a fitted Generalized Kumaraswamy (GKw) regression model object of class
+\code{"gkwreg"}. This is an S3 method for the generic
+\code{\link[stats]{fitted.values}} function.
 }
 \details{
-The fitted values are extracted directly from the model object if available.
-If not available (which may happen in rare cases), they are recalculated using
-the model parameters and the specified family. The values represent the predicted
-means of the response variable conditional on the observed covariates.
+This function retrieves or calculates the fitted values, which represent the
+estimated conditional mean of the response variable given the covariates
+(\eqn{E(Y | X)}).
 
-When using a different family than what was used to fit the model (by specifying
-the 'family' parameter), the function will always recalculate the fitted values
-using the predict method instead of using stored values.
+The function attempts to retrieve fitted values efficiently using the following
+priority:
+\enumerate{
+\item Directly from the \code{fitted.values} component stored in the \code{object},
+if available and complete. It includes logic to handle potentially
+incomplete stored values via interpolation (\code{\link[stats]{approx}}) for
+very large datasets where only a sample might be stored.
+\item By recalculating the mean using stored parameter vectors for each
+observation (\code{object$parameter_vectors}) and an internal function
+(\code{calculateMeans}), if available.
+\item From the \code{fitted} component within the TMB report (\code{object$tmb_object$report()}),
+if available, potentially using interpolation as above.
+\item As a fallback, by calling \code{predict(object, type = "response", family = family)}.
+}
+Specifying a \code{family} different from the one used to fit the model will
+always force recalculation using the \code{predict} method (step 4).
 }
 \examples{
 \dontrun{
+# Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
+# and that rgkw() is available and data is appropriate (0 < y < 1).
+set.seed(456)
+n <- 100
+x1 <- runif(n, -1, 1)
+x2 <- rnorm(n)
+alpha <- exp(0.5 + 0.2 * x1)
+beta <- exp(0.8 - 0.3 * x1 + 0.1 * x2)
+gamma <- exp(0.6)
+delta <- plogis(0.0 + 0.2 * x1)
+lambda <- exp(-0.2 + 0.1 * x2)
+# Use stats::rbeta as placeholder if rgkw is not available
+y <- stats::rbeta(n, shape1 = gamma * alpha, shape2 = delta * beta) # Approximation
+y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+mydata <- data.frame(y = y, x1 = x1, x2 = x2)
+
 # Fit a GKw model
-model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata, family = "gkw")
+model <- gkwreg(y ~ x1 | x1 + x2 | 1 | x1 | x2, data = mydata, family = "gkw")
 
-# Extract fitted values
-fitted_values <- fitted(model)
+# Extract fitted values (using the original 'gkw' family)
+fitted_vals_gkw <- fitted(model)
 
-# Extract fitted values using a different family
-fitted_values_beta <- fitted(model, family = "beta")
+# Extract fitted values recalculated as if it were a Beta model
+# (using the fitted gamma and delta coefficients)
+fitted_vals_beta <- fitted(model, family = "beta")
 
-# Plot observed vs. fitted
-plot(model$y, fitted_values,
-  xlab = "Observed", ylab = "Fitted",
-  main = "Observed vs Fitted Values"
-)
-abline(0, 1, col = "red", lty = 2)
+# Plot observed vs. fitted (using original family)
+response_y <- model$y # Get the response variable used in the fit
+if (!is.null(response_y)) {
+  plot(response_y, fitted_vals_gkw,
+    xlab = "Observed Response", ylab = "Fitted Mean Value",
+    main = "Observed vs Fitted Values (GKw Family)",
+    pch = 1, col = "blue"
+  )
+  abline(0, 1, col = "red", lty = 2) # Line y = x
+} else {
+  print("Response variable not found in model object to create plot.")
+}
+
+# Compare fitted values under different family assumptions
+head(data.frame(GKw_Fitted = fitted_vals_gkw, Beta_Fitted = fitted_vals_beta))
 }
 
 }
 \seealso{
-\code{\link{predict.gkwreg}} for predicting from a GKw model.
-
-\code{\link{residuals.gkwreg}} for extracting residuals.
+\code{\link{gkwreg}}, \code{\link{predict.gkwreg}},
+\code{\link{residuals.gkwreg}}, \code{\link[stats]{fitted.values}}
 }
+\author{
+Lopes, J. E.
+}
+\keyword{fitted}
+\keyword{methods}
+\keyword{regression}

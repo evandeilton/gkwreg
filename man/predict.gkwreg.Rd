@@ -2,9 +2,9 @@
 % Please edit documentation in R/gkwreg.R
 \name{predict.gkwreg}
 \alias{predict.gkwreg}
-\title{Predict Method for Generalized Kumaraswamy Regression Models}
+\title{Predictions from a Fitted Generalized Kumaraswamy Regression Model}
 \usage{
-\method{predict}{gkwreg}(
+predict.gkwreg(
   object,
   newdata = NULL,
   type = c("response", "link", "parameter", "alpha", "beta", "gamma", "delta", "lambda",
@@ -17,64 +17,167 @@
 )
 }
 \arguments{
-\item{object}{A fitted model object of class "gkwreg".}
+\item{object}{An object of class \code{"gkwreg"}, typically the result of a
+call to \code{\link{gkwreg}}.}
 
-\item{newdata}{Optionally, a data frame with new data. If omitted, the original
-data is used.}
+\item{newdata}{Optionally, a data frame containing predictor variables for which
+to make predictions. Column names must match the variables used in the
+original model formula. If omitted or \code{NULL}, predictions are computed
+for the original data used to fit the model.}
 
-\item{type}{Character indicating type of prediction required:
+\item{type}{Character string indicating the type of prediction required. Options are:
 \itemize{
-\item "response" or "mean": predicted mean of the response (default)
-\item "link": linear predictors for all parameters
-\item "parameter": all distribution parameters (alpha, beta, gamma, delta, lambda)
-\item "alpha", "beta", "gamma", "delta", "lambda": individual parameters
-\item "variance": variance of the response
-\item "density" or "pdf": density function at values specified by 'at'
-\item "probability" or "cdf": cumulative distribution function at 'at'
-\item "quantile": quantiles of the distribution at probabilities 'at'
+\item \code{"response"} or \code{"mean"}: (Default) Predicted mean (expected value)
+of the response variable. Returns a numeric vector.
+\item \code{"link"}: Linear predictors for all modeled parameters before applying
+the inverse link function. Returns a matrix or data frame with columns
+corresponding to the parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}).
+\item \code{"parameter"}: Predicted values of all relevant distribution
+parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) on their original scale
+(after applying the inverse link function). Returns a matrix or data frame.
+\item \code{"alpha"}, \code{"beta"}, \code{"gamma"}, \code{"delta"}, \code{"lambda"}:
+Predicted values for the specified individual parameter on its original scale.
+Returns a numeric vector.
+\item \code{"variance"}: Predicted variance of the response variable. Returns a
+numeric vector. Requires the calculation formula for the specific family's variance.
+\item \code{"density"} or \code{"pdf"}: Predicted probability density function (PDF)
+values evaluated at the points specified by the \code{at} argument.
+Return type depends on \code{elementwise}.
+\item \code{"probability"} or \code{"cdf"}: Predicted cumulative distribution
+function (CDF) values evaluated at the points specified by the \code{at} argument.
+Return type depends on \code{elementwise}.
+\item \code{"quantile"}: Predicted quantiles corresponding to the probabilities
+specified by the \code{at} argument. Return type depends on \code{elementwise}.
 }}
 
-\item{na.action}{Function determining what to do with missing values in newdata.}
+\item{na.action}{Function determining how missing values (\code{NA}) in \code{newdata}
+should be handled. The default is typically \code{\link[stats]{na.pass}}, which
+results in \code{NA} predictions where predictor values are missing. Other options
+like \code{\link[stats]{na.omit}} or \code{\link[stats]{na.exclude}} might be relevant.}
 
-\item{at}{Numeric vector at which to evaluate the prediction function for
-types "density", "probability", or "quantile".}
+\item{at}{Numeric vector. For \code{type = "density"}, \code{type = "probability"},
+these are the values at which the density or CDF is evaluated. For
+\code{type = "quantile"}, these are the probabilities for which quantiles are calculated
+(must be between 0 and 1). Required for these types.}
 
-\item{elementwise}{Logical. Should each element of the distribution only be
-evaluated at the corresponding element of 'at' (TRUE) or at all elements
-in 'at' (FALSE).}
+\item{elementwise}{Logical. Only relevant when \code{at} is provided and has the same
+length as the number of predictions being made (e.g., same length as \code{newdata}).
+If \code{TRUE}, the i-th prediction's density/CDF/quantile is evaluated only at the
+i-th value of \code{at}. If \code{FALSE} (default), each prediction's density/CDF/quantile
+is evaluated at \emph{all} values specified in \code{at}, typically returning a matrix.}
 
-\item{family}{Character string specifying the distribution family to use.
-If NULL (default), uses the family from the fitted model.
-Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".}
+\item{family}{Character string specifying the distribution family assumptions
+to use for calculating predictions (especially for mean, variance, density, cdf, quantile).
+If \code{NULL} (default), the family from the fitted \code{object} is used.
+Specifying a different family (e.g., \code{"beta"} for a model fitted as \code{"gkw"})
+will use the fitted coefficients mapped to the parameters of the \emph{new} family to
+calculate the requested quantity based on that \emph{new} family's properties.
+Available options match those in \code{\link{gkwreg}}: \code{"gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"}.}
 
-\item{...}{Further arguments passed to methods.}
+\item{...}{Further arguments passed to or from other methods (currently often unused).}
 }
 \value{
-A vector, matrix, or data frame of predictions, depending on the type.
+The format of the returned value depends on the \code{type} argument:
+\itemize{
+\item For \code{"response"}, \code{"variance"}, or individual parameters
+(\code{"alpha"}, \code{"beta"}, etc.): A numeric vector of the same length
+as the number of rows in \code{newdata} (or the original data).
+\item For \code{"link"} or \code{"parameter"}: A matrix or data frame where rows
+correspond to observations and columns correspond to the distribution parameters.
+\item For \code{"density"}, \code{"probability"}, \code{"quantile"}:
+If \code{elementwise = TRUE}, a numeric vector. If \code{elementwise = FALSE},
+typically a matrix where rows correspond to observations and columns correspond
+to the values in \code{at}.
+}
 }
 \description{
-Obtains predictions and related quantities from a fitted
-Generalized Kumaraswamy regression model.
+Obtains various types of predictions and associated quantities from a fitted
+Generalized Kumaraswamy (GKw) regression model object of class \code{"gkwreg"}.
+Calculations are based on the estimated coefficients and potentially new data.
+}
+\details{
+This function calculates predictions based on the fitted \code{gkwreg} model.
+For types \code{"link"}, \code{"parameter"}, and individual parameters, it computes
+the linear predictors using the estimated coefficients and the predictor values
+from \code{newdata} (or the original data). It then applies the inverse link
+functions for types involving parameters on the original scale.
+
+For \code{type = "response"} (mean) and \code{type = "variance"}, it calculates the
+expected value or variance based on the predicted parameters and the theoretical
+formulas for the specified (or overridden) distribution \code{family}.
+
+For \code{type = "density"}, \code{type = "probability"}, and \code{type = "quantile"},
+it uses the predicted parameters and the corresponding distribution functions
+(PDF, CDF, quantile function) for the specified \code{family}, evaluated at the values
+provided in the \code{at} argument.
+
+Using the \code{family} argument allows exploring predictions under alternative
+distributional assumptions, using the coefficient estimates from the original fit.
 }
 \examples{
 \dontrun{
-# Fit a GKw model
-model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata, family = "gkw")
+# Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
+# and that rgkw() is available and data is appropriate (0 < y < 1).
+set.seed(456)
+n <- 100
+x1 <- runif(n, -1, 1)
+x2 <- rnorm(n)
+alpha <- exp(0.5 + 0.2 * x1)
+beta <- exp(0.8 - 0.3 * x1 + 0.1 * x2)
+gamma <- exp(0.6)
+delta <- plogis(0.0 + 0.2 * x1)
+lambda <- exp(-0.2 + 0.1 * x2)
+# Use stats::rbeta as placeholder if rgkw is not available
+y <- stats::rbeta(n, shape1 = gamma * alpha, shape2 = delta * beta) # Approximation
+y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+mydata <- data.frame(y = y, x1 = x1, x2 = x2)
 
-# Predictions on new data
-newdata <- data.frame(x1 = seq(0, 1, by = 0.1), x2 = rep(0, 11))
+# Fit a GKw model (modeling alpha and beta, others intercept-only)
+model <- gkwreg(y ~ x1 | x1 + x2 | 1 | x1 | x2, data = mydata, family = "gkw")
+
+# --- Predictions on new data ---
+newdata <- data.frame(x1 = seq(-1, 1, by = 0.5), x2 = rep(mean(mydata$x2), 5))
 
 # Predict mean response
-predict(model, newdata, type = "response")
+pred_mean <- predict(model, newdata, type = "response")
+print(pred_mean)
 
-# Predict parameters
-predict(model, newdata, type = "parameter")
+# Predict linear predictors
+pred_link <- predict(model, newdata, type = "link")
+print(pred_link)
 
-# Predict densities at specific points
-predict(model, newdata, type = "density", at = c(0.2, 0.5, 0.8))
+# Predict parameters on original scale
+pred_params <- predict(model, newdata, type = "parameter")
+print(pred_params)
 
-# Predict using a different family than what was fitted
-predict(model, newdata, type = "response", family = "beta")
+# Predict only the alpha parameter
+pred_alpha <- predict(model, newdata, type = "alpha")
+print(pred_alpha)
+
+# Predict densities at specific points for each prediction in newdata
+# Returns a matrix (5 rows x 3 columns)
+pred_dens <- predict(model, newdata, type = "density", at = c(0.2, 0.5, 0.8))
+print(pred_dens)
+
+# Predict 10th percentile (quantile at p=0.1) for each prediction
+pred_q10 <- predict(model, newdata, type = "quantile", at = 0.1)
+print(pred_q10)
+
+# --- Predict using a different family ---
+# Predict response assuming a Beta distribution structure, using the
+# coefficients originally fitted for gamma and delta in the GKw model.
+pred_beta_mean <- predict(model, newdata, type = "response", family = "beta")
+print(pred_beta_mean)
 }
 
 }
+\seealso{
+\code{\link{gkwreg}}, \code{\link{summary.gkwreg}},
+\code{\link[stats]{predict}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{methods}
+\keyword{predict}
+\keyword{regression}

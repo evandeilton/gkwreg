@@ -2,24 +2,72 @@
 % Please edit documentation in R/gkwfit.R
 \name{plot.gkwfit}
 \alias{plot.gkwfit}
-\title{Plot method for gkwfit objects}
+\title{Plot Diagnostics for a gkwfit Object}
 \usage{
-\method{plot}{gkwfit}(
-  x,
-  which = c("histogram", "pp", "qq", "profile"),
-  ask = (which != "all" && length(which) > 1 && dev.interactive()),
-  ...
-)
+\method{plot}{gkwfit}(x, ...)
 }
 \arguments{
-\item{x}{A gkwfit object}
+\item{x}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
 
-\item{which}{Which plots to display}
-
-\item{ask}{Whether to ask before displaying each plot}
-
-\item{...}{Additional arguments}
+\item{...}{Additional arguments (currently ignored).}
+}
+\value{
+Invisibly returns the original input object \code{x}. This function is called for its side effect of producing a plot.
 }
 \description{
-Plot method for gkwfit objects
+Creates a panel of diagnostic plots for assessing the fit of a model estimated
+by \code{\link{gkwfit}}. It displays a histogram of the data overlaid with the
+fitted density, a Probability-Probability (P-P) plot, a Quantile-Quantile (Q-Q)
+plot, and profile likelihood plots for each parameter if they were computed
+during the fit (i.e., if \code{profile = TRUE} was used in \code{\link{gkwfit}}).
 }
+\details{
+This function utilizes \code{ggplot2} for creating the plots and \code{patchwork}
+for arranging them into a single figure. All plots use \code{ggplot2::theme_minimal()}.
+
+If the plots were already generated during the original \code{\link{gkwfit}} call
+(because \code{plot = TRUE}), they are retrieved from the fitted object.
+Otherwise, this function will attempt to generate the plots on the fly,
+which requires the \code{ggplot2} package and the necessary distribution
+functions (like \code{dgkw}, \code{pgkw}, \code{qgkw}, etc.) for the specific
+\code{family} to be available.
+
+The arrangement of plots is handled automatically by \code{patchwork::wrap_plots}.
+No user interaction (like menu selection) is required.
+}
+\examples{
+\dontrun{
+# Assume 'rkw' and 'gkwfit' functions exist
+
+set.seed(123)
+kw_data_sample <- rkw(150, alpha = 2.5, beta = 1.5)
+
+# Fit the model (with plot=FALSE initially)
+fit_object_no_plots <- gkwfit(
+  data = kw_data_sample, family = "kw",
+  plot = FALSE, silent = TRUE
+)
+
+# Generate plots using the plot method
+plot(fit_object_no_plots)
+
+# Fit the model including profile likelihoods (with plot=TRUE)
+fit_object_profiles <- gkwfit(
+  data = kw_data_sample, family = "kw",
+  profile = TRUE, npoints = 10, # Fewer points for example speed
+  plot = TRUE, silent = TRUE
+)
+
+# Display the pre-generated plots using the plot method
+plot(fit_object_profiles)
+}
+
+}
+\seealso{
+\code{\link{gkwfit}}, \code{\link{summary.gkwfit}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{hplot}
+\keyword{methods}

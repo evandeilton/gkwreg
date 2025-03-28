@@ -7,69 +7,114 @@
 \method{summary}{gkwreg}(object, conf.level = 0.95, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"gkwreg"}, typically the result of a call to \code{\link{gkwreg}}.}
+\item{object}{An object of class \code{"gkwreg"}, typically the result of a
+call to \code{\link{gkwreg}}.}
 
-\item{conf.level}{Confidence level for the confidence intervals. Default is 0.95.}
+\item{conf.level}{Numeric. The desired confidence level for constructing
+confidence intervals for the regression coefficients. Default is 0.95.}
 
-\item{...}{Additional arguments (not used).}
+\item{...}{Additional arguments, currently ignored by this method.}
 }
 \value{
-An object of class \code{"summary.gkwreg"} with the following components:
-\item{call}{The original function call that created the model.}
-\item{family}{Distribution family used in the model.}
-\item{coefficients}{Table of coefficient estimates, standard errors, z-values, and p-values.}
-\item{conf.int}{Matrix of confidence intervals for the coefficients.}
-\item{link}{List of link functions used for each parameter.}
-\item{fitted_parameters}{List of fitted parameter means.}
-\item{residuals}{Summary statistics of the model residuals.}
-\item{nobs}{Number of observations used in the model.}
-\item{npar}{Number of parameters in the model.}
+An object of class \code{"summary.gkwreg"}, which is a list containing
+the following components:
+\item{call}{The original function call that created the \code{object}.}
+\item{family}{Character string specifying the distribution family.}
+\item{coefficients}{A data frame (matrix) containing the coefficient estimates,
+standard errors, z-values, and p-values.}
+\item{conf.int}{A matrix containing the lower and upper bounds of the confidence
+intervals for the coefficients (if standard errors are available).}
+\item{link}{A list of character strings specifying the link functions used.}
+\item{fitted_parameters}{A list containing the mean values of the estimated
+distribution parameters.}
+\item{residuals}{A named numeric vector containing summary statistics for the
+response residuals.}
+\item{nobs}{Number of observations used in the fit.}
+\item{npar}{Total number of estimated regression coefficients.}
 \item{df.residual}{Residual degrees of freedom.}
-\item{loglik}{Log-likelihood of the fitted model.}
+\item{loglik}{The maximized log-likelihood value.}
 \item{aic}{Akaike Information Criterion.}
 \item{bic}{Bayesian Information Criterion.}
-\item{rmse}{Root Mean Square Error.}
-\item{efron_r2}{Efron's pseudo-R-squared.}
-\item{mean_absolute_error}{Mean absolute error, if available.}
-\item{convergence}{Convergence status.}
-\item{iterations}{Number of iterations performed by the optimizer.}
+\item{rmse}{Root Mean Squared Error of the residuals.}
+\item{efron_r2}{Efron's pseudo-R-squared value.}
+\item{mean_absolute_error}{Mean Absolute Error of the residuals.}
+\item{convergence}{Convergence code from the optimizer.}
+\item{iterations}{Number of iterations reported by the optimizer.}
+\item{conf.level}{The confidence level used for calculating intervals.}
 }
 \description{
-Computes and returns a detailed statistical summary of a fitted Generalized Kumaraswamy (GKw)
-regression model. The summary provides extensive information about parameter estimates,
-their standard errors, confidence intervals, and model fit statistics.
+Computes and returns a detailed statistical summary for a fitted Generalized
+Kumaraswamy (GKw) regression model object of class \code{"gkwreg"}.
 }
 \details{
-This method creates a comprehensive summary of the fitted GKw regression model. It provides:
+This method provides a comprehensive summary of the fitted \code{gkwreg} model.
+It calculates z-values and p-values for the regression coefficients based on
+the estimated standard errors (if available) and computes confidence intervals
+at the specified \code{conf.level}. The summary includes:
 \itemize{
-\item Model call and family information
-\item A detailed coefficient table with estimates, standard errors, z-values, p-values, and confidence intervals
-\item Link functions for each parameter
-\item Fitted parameter means and their distributions
-\item Extensive model fit statistics
-\item Residual analysis summary
-\item Convergence information
+\item The model call.
+\item The distribution family used.
+\item A table of coefficients including estimates, standard errors, z-values,
+and p-values. Note: Significance stars are typically added by the
+corresponding \code{print.summary.gkwreg} method.
+\item Confidence intervals for the coefficients.
+\item Link functions used for each parameter.
+\item Mean values of the fitted distribution parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}).
+\item A five-number summary (Min, Q1, Median, Q3, Max) plus the mean of the
+response residuals.
+\item Key model fit statistics (Log-likelihood, AIC, BIC, RMSE, Efron's R^2).
+\item Information about model convergence and optimizer iterations.
 }
-
-For the coefficient table, significant p-values are marked with stars based on common
-significance levels (0.001, 0.01, 0.05, 0.1).
+If standard errors were not computed (e.g., \code{hessian = FALSE} in the
+original \code{gkwreg} call), the coefficient table will only contain estimates,
+and confidence intervals will not be available.
 }
 \examples{
 \dontrun{
+# Assuming 'df' is a data frame with response 'y' and predictors 'x1', 'x2'
+# and that rkw() function is available and generates data in (0,1).
+
+set.seed(123)
+n <- 100
+x1 <- runif(n, -2, 2)
+x2 <- rnorm(n)
+alpha_coef <- c(0.8, 0.3, -0.2)
+beta_coef <- c(1.2, -0.4, 0.1)
+eta_alpha <- alpha_coef[1] + alpha_coef[2] * x1 + alpha_coef[3] * x2
+eta_beta <- beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2
+alpha_true <- exp(eta_alpha)
+beta_true <- exp(eta_beta)
+# Use stats::rbeta as a placeholder if rkw is unavailable
+y <- stats::rbeta(n, shape1 = alpha_true, shape2 = beta_true)
+y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+df <- data.frame(y = y, x1 = x1, x2 = x2)
+
 # Fit a Kumaraswamy regression model
 kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
 
-# Generate detailed summary
+# Generate detailed summary using the summary method
 summary_kw <- summary(kw_reg)
 
-# Print summary
+# Print the summary object (uses print.summary.gkwreg)
 print(summary_kw)
 
-# Extract coefficient table
-coef(summary_kw)
+# Extract coefficient table directly from the summary object
+coef_table <- coef(summary_kw) # Equivalent to summary_kw$coefficients
+print(coef_table)
+
+# Extract confidence intervals
+conf_intervals <- confint(summary_kw) # Uses summary_kw$conf.int
+print(conf_intervals)
 }
 
 }
 \seealso{
-\code{\link{gkwreg}}
+\code{\link{gkwreg}}, \code{\link{print.summary.gkwreg}},
+\code{\link[stats]{coef}}, \code{\link[stats]{confint}}
 }
+\author{
+Lopes, J. E.
+}
+\keyword{models}
+\keyword{regression}
+\keyword{summary}

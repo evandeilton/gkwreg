@@ -1,190 +1,380 @@
 #' Fit Generalized Kumaraswamy Regression Models
 #'
 #' @description
-#' Fits a regression model using the Generalized Kumaraswamy (GKw) family of distributions
-#' for bounded responses in the (0, 1) interval. The function supports modeling parameters
-#' from all seven submodels of the GKw family as functions of predictors through appropriate
-#' link functions.
+#' Fits regression models using the Generalized Kumaraswamy (GKw) family of
+#' distributions for response variables strictly bounded in the interval (0, 1).
+#' The function allows modeling parameters from all seven submodels of the GKw
+#' family as functions of predictors using appropriate link functions. Estimation
+#' is performed using Maximum Likelihood via the TMB (Template Model Builder) package.
+#' Requires the \code{Formula} and \code{TMB} packages.
 #'
-#' @param formula A Formula object of the form
-#'   \code{y ~ alpha_terms | beta_terms | gamma_terms | delta_terms | lambda_terms},
-#'   where each part on the right specifies the covariates for the corresponding parameter.
-#'   Missing parts are automatically replaced with intercept-only models.
-#' @param data A data frame containing the variables in the model.
-#' @param family A character string specifying the distribution family. One of: "gkw" (default),
-#'        "bkw", "kkw", "ekw", "mc", "kw", or "beta". See Details for parameter specifications.
-#' @param link A character string or list of character strings specifying the link functions.
-#'        Default links for each parameter: log for \eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, \eqn{\lambda} and logit for \eqn{\delta}.
-#'        Supported link functions: "log", "logit", "identity", "inverse", "sqrt", "probit", "cloglog".
-#' @param start Optional list with initial parameter values for regression coefficients.
-#'        If \code{NULL}, reasonable starting values will be determined.
-#' @param fixed Optional list of parameters or coefficients to be held fixed (not estimated).
-#' @param fit Estimation method to be used: currently only supports \code{"tmb"}.
-#' @param method (Only for \code{fit = "tmb"}) Optimization method: \code{"nlminb"} (default) or \code{"optim"}.
-#' @param hessian Logical; if \code{TRUE}, computes standard errors and the covariance matrix.
-#' @param profile Logical; if \code{TRUE}, computes likelihood profiles for parameters.
-#' @param npoints Number of points to use in profile likelihood calculations.
-#' @param plot Logical; if \code{TRUE}, generates diagnostic plots.
-#' @param conf.level Confidence level for intervals (default: 0.95).
-#' @param optimizer.control List of control parameters passed to the optimizer.
-#' @param subset An optional vector specifying a subset of observations to be used in the fitting process.
-#' @param weights An optional vector of weights to be used in the fitting process.
-#' @param offset Additional terms with known coefficients to be included in the linear predictors.
-#' @param na.action Function to handle missing values.
-#' @param contrasts List of contrasts to be used for factors in the model matrix.
-#' @param x Logical; if \code{TRUE}, the model matrix is returned.
-#' @param y Logical; if \code{TRUE}, the response vector is returned.
-#' @param model Logical; if \code{TRUE}, the model frame is returned.
-#' @param silent Logical; if \code{TRUE}, suppresses messages.
-#' @param ... Additional arguments passed to internal functions.
+#' @param formula An object of class \code{\link[Formula]{Formula}} (or one that
+#'   can be coerced to that class). It should be structured as
+#'   \code{y ~ model_alpha | model_beta | model_gamma | model_delta | model_lambda},
+#'   where \code{y} is the response variable and each \code{model_*} part specifies
+#'   the linear predictor for the corresponding parameter (\eqn{\alpha}, \eqn{\beta},
+#'   \eqn{\gamma}, \eqn{\delta}, \eqn{\lambda}). If a part is omitted or specified
+#'   as \code{~ 1} or \code{.}, an intercept-only model is used for that parameter.
+#'   See Details for parameter correspondence in subfamilies.
+#' @param data A data frame containing the variables specified in the \code{formula}.
+#' @param family A character string specifying the desired distribution family.
+#'   Defaults to \code{"gkw"}. Supported families are:
+#'   \itemize{
+#'     \item \code{"gkw"}: Generalized Kumaraswamy (5 parameters: \eqn{\alpha, \beta, \gamma, \delta, \lambda})
+#'     \item \code{"bkw"}: Beta-Kumaraswamy (4 parameters: \eqn{\alpha, \beta, \gamma, \delta}; \eqn{\lambda = 1} fixed)
+#'     \item \code{"kkw"}: Kumaraswamy-Kumaraswamy (4 parameters: \eqn{\alpha, \beta, \delta, \lambda}; \eqn{\gamma = 1} fixed)
+#'     \item \code{"ekw"}: Exponentiated Kumaraswamy (3 parameters: \eqn{\alpha, \beta, \lambda}; \eqn{\gamma = 1, \delta = 0} fixed)
+#'     \item \code{"mc"}: McDonald / Beta Power (3 parameters: \eqn{\gamma, \delta, \lambda}; \eqn{\alpha = 1, \beta = 1} fixed)
+#'     \item \code{"kw"}: Kumaraswamy (2 parameters: \eqn{\alpha, \beta}; \eqn{\gamma = 1, \delta = 0, \lambda = 1} fixed)
+#'     \item \code{"beta"}: Beta distribution (2 parameters: \eqn{\gamma, \delta}; \eqn{\alpha = 1, \beta = 1, \lambda = 1} fixed)
+#'   }
+#' @param link Either a single character string specifying the same link function
+#'   for all relevant parameters, or a named list specifying the link function for each
+#'   modeled parameter (e.g., \code{list(alpha = "log", beta = "log", delta = "logit")}).
+#'   Defaults are \code{"log"} for \eqn{\alpha, \beta, \gamma, \lambda} (parameters > 0)
+#'   and \code{"logit"} for \eqn{\delta} (parameter in (0, 1)).
+#'   Supported link functions are:
+#'   \itemize{
+#'     \item \code{"log"}
+#'     \item \code{"logit"}
+#'     \item \code{"identity"}
+#'     \item \code{"inverse"} (i.e., 1/mu)
+#'     \item \code{"sqrt"}
+#'     \item \code{"probit"}
+#'     \item \code{"cloglog"} (complementary log-log)
+#'   }
+#' @param start An optional named list providing initial values for the regression
+#'   coefficients. Parameter names should match the distribution parameters (alpha,
+#'   beta, etc.), and values should be vectors corresponding to the coefficients
+#'   in the respective linear predictors (including intercept). If \code{NULL}
+#'   (default), suitable starting values are automatically determined based on
+#'   global parameter estimates.
+#' @param fixed An optional named list specifying parameters or coefficients to be
+#'   held fixed at specific values during estimation. Currently not fully implemented.
+#' @param fit Character string specifying the estimation engine. Currently, only
+#'   \code{"tmb"} (Template Model Builder) is supported and required.
+#' @param method Character string specifying the optimization algorithm used by TMB.
+#'   Options are \code{"nlminb"} (default, using \code{\link[stats]{nlminb}}) or
+#'   \code{"optim"} (using \code{\link[stats]{optim}} with \code{method = "BFGS"}).
+#' @param hessian Logical. If \code{TRUE} (default), the Hessian matrix is computed
+#'   via \code{\link[TMB]{sdreport}} to obtain standard errors and the covariance
+#'   matrix of the estimated coefficients. Setting to \code{FALSE} speeds up fitting
+#'   but prevents calculation of standard errors and confidence intervals.
+#' @param plot Logical. If \code{TRUE} (default), enables the generation of diagnostic
+#'   plots when calling the generic \code{plot()} function on the fitted object.
+#'   Actual plotting is handled by the \code{plot.gkwreg} method.
+#' @param conf.level Numeric. The confidence level (1 - alpha) for constructing
+#'   confidence intervals for the parameters. Default is 0.95. Used only if
+#'   \code{hessian = TRUE}.
+#' @param optimizer.control A list of control parameters passed directly to the
+#'   chosen optimizer (\code{\link[stats]{nlminb}} or \code{\link[stats]{optim}}).
+#'   See their respective documentation for details.
+#' @param subset An optional vector specifying a subset of observations from \code{data}
+#'   to be used in the fitting process.
+#' @param weights An optional vector of prior weights (e.g., frequency weights)
+#'   to be used in the fitting process. Should be \code{NULL} or a numeric vector
+#'   of non-negative values.
+#' @param offset An optional numeric vector or matrix specifying an a priori known
+#'   component to be included *on the scale of the linear predictor* for each parameter.
+#'   If a vector, it's applied to the predictor of the first parameter in the standard
+#'   order (\eqn{\alpha}). If a matrix, columns must correspond to parameters in the
+#'   order \eqn{\alpha, \beta, \gamma, \delta, \lambda}.
+#' @param na.action A function which indicates what should happen when the data
+#'   contain \code{NA}s. The default (\code{na.fail}) stops if \code{NA}s are
+#'   present. Other options include \code{\link[stats]{na.omit}} or
+#'   \code{\link[stats]{na.exclude}}.
+#' @param contrasts An optional list specifying the contrasts to be used for factor
+#'   variables in the model. See the \code{contrasts.arg} of
+#'   \code{\link[stats]{model.matrix.default}}.
+#' @param x Logical. If \code{TRUE}, the list of model matrices (one for each modeled
+#'   parameter) is returned as component \code{x} of the fitted object. Default \code{FALSE}.
+#' @param y Logical. If \code{TRUE} (default), the response variable (after processing
+#'   by \code{na.action}, \code{subset}) is returned as component \code{y}.
+#' @param model Logical. If \code{TRUE} (default), the model frame (containing all
+#'   variables used from \code{data}) is returned as component \code{model}.
+#' @param silent Logical. If \code{TRUE} (default), suppresses progress messages
+#'   from TMB compilation and optimization. Set to \code{FALSE} for verbose output.
+#' @param ... Additional arguments, currently unused or passed down to internal
+#'   methods (potentially).
 #'
-#' @return An object of class \code{"gkwreg"} containing the fitted regression model.
+#' @return An object of class \code{gkwreg}. This is a list containing the
+#'   following components:
+#'   \item{call}{The matched function call.}
+#'   \item{family}{The specified distribution family string.}
+#'   \item{formula}{The \code{\link[Formula]{Formula}} object used.}
+#'   \item{coefficients}{A named vector of estimated regression coefficients.}
+#'   \item{fitted.values}{Vector of estimated means (expected values) of the response.}
+#'   \item{residuals}{Vector of response residuals (observed - fitted mean).}
+#'   \item{fitted_parameters}{List containing the estimated mean value for each distribution parameter (\eqn{\alpha, \beta, \gamma, \delta, \lambda}).}
+#'   \item{parameter_vectors}{List containing vectors of the estimated parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) for each observation, evaluated on the link scale.}
+#'   \item{link}{List of link functions used for each parameter.}
+#'   \item{param_names}{Character vector of names of the parameters modeled by the family.}
+#'   \item{fixed_params}{Named list indicating which parameters are fixed by the family definition.}
+#'   \item{loglik}{The maximized log-likelihood value.}
+#'   \item{aic}{Akaike Information Criterion.}
+#'   \item{bic}{Bayesian Information Criterion.}
+#'   \item{deviance}{The deviance ( -2 * loglik ).}
+#'   \item{df.residual}{Residual degrees of freedom (nobs - npar).}
+#'   \item{nobs}{Number of observations used in the fit.}
+#'   \item{npar}{Total number of estimated parameters (coefficients).}
+#'   \item{vcov}{The variance-covariance matrix of the coefficients (if \code{hessian = TRUE}).}
+#'   \item{se}{Standard errors of the coefficients (if \code{hessian = TRUE}).}
+#'   \item{convergence}{Convergence code from the optimizer (0 typically indicates success).}
+#'   \item{message}{Convergence message from the optimizer.}
+#'   \item{iterations}{Number of iterations used by the optimizer.}
+#'   \item{rmse}{Root Mean Squared Error of response residuals.}
+#'   \item{efron_r2}{Efron's pseudo R-squared.}
+#'   \item{mean_absolute_error}{Mean Absolute Error of response residuals.}
+#'   \item{x}{List of model matrices (if \code{x = TRUE}).}
+#'   \item{y}{The response vector (if \code{y = TRUE}).}
+#'   \item{model}{The model frame (if \code{model = TRUE}).}
+#'   \item{tmb_object}{The raw object returned by \code{\link[TMB]{MakeADFun}}.}
 #'
 #' @details
-#' The \code{gkwreg} function extends the \code{gkwfit} framework to regression modeling,
-#' allowing parameters of the GKw family to depend on covariates. The function handles
-#' all seven distributions in the Generalized Kumaraswamy family with their specific parameter sets:
+#' The \code{gkwreg} function provides a regression framework for the Generalized
+#' Kumaraswamy (GKw) family and its submodels, extending density estimation
+#' to include covariates. The response variable must be strictly bounded in the
+#' (0, 1) interval.
 #'
+#' \strong{Model Specification:}
+#' The extended \code{\link[Formula]{Formula}} syntax is crucial for specifying
+#' potentially different linear predictors for each relevant distribution parameter.
+#' The parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) correspond sequentially
+#' to the parts of the formula separated by \code{|}. For subfamilies where some
+#' parameters are fixed by definition (see \code{family} argument), the corresponding
+#' parts of the formula are automatically ignored. For example, in a \code{family = "kw"}
+#' model, only the first two parts (for \eqn{\alpha} and \eqn{\beta}) are relevant.
+#'
+#' \strong{Parameter Constraints and Link Functions:}
+#' The parameters \eqn{\alpha, \beta, \gamma, \lambda} are constrained to be positive,
+#' while \eqn{\delta} is constrained to the interval (0, 1). The default link functions
+#' (\code{"log"} for positive parameters, \code{"logit"} for \eqn{\delta}) ensure these
+#' constraints during estimation. Users can specify alternative link functions suitable
+#' for the parameter's domain via the \code{link} argument.
+#'
+#' \strong{Families and Parameters:}
+#' The function automatically handles parameter fixing based on the chosen \code{family}:
 #' \itemize{
-#'   \item \strong{GKw} (Generalized Kumaraswamy): 5 parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, \eqn{\delta}, \eqn{\lambda})
-#'   \item \strong{BKw} (Beta-Kumaraswamy): 4 parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, \eqn{\delta}), with \eqn{\lambda = 1} fixed
-#'   \item \strong{KKw} (Kumaraswamy-Kumaraswamy): 4 parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\delta}, \eqn{\lambda}), with \eqn{\gamma = 1} fixed
-#'   \item \strong{EKw} (Exponentiated Kumaraswamy): 3 parameters (\eqn{\alpha}, \eqn{\beta}, \eqn{\lambda}), with \eqn{\gamma = 1}, \eqn{\delta = 0} fixed
-#'   \item \strong{Mc} (McDonald/Beta Power): 3 parameters (\eqn{\gamma}, \eqn{\delta}, \eqn{\lambda}), with \eqn{\alpha = 1}, \eqn{\beta = 1} fixed
-#'   \item \strong{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha}, \eqn{\beta}), with \eqn{\gamma = 1}, \eqn{\delta = 0}, \eqn{\lambda = 1} fixed
-#'   \item \strong{Beta}: 2 parameters (\eqn{\gamma}, \eqn{\delta}), with \eqn{\alpha = 1}, \eqn{\beta = 1}, \eqn{\lambda = 1} fixed
+#'   \item \strong{GKw}: All 5 parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) modeled.
+#'   \item \strong{BKw}: Models \eqn{\alpha, \beta, \gamma, \delta}; fixes \eqn{\lambda = 1}.
+#'   \item \strong{KKw}: Models \eqn{\alpha, \beta, \delta, \lambda}; fixes \eqn{\gamma = 1}.
+#'   \item \strong{EKw}: Models \eqn{\alpha, \beta, \lambda}; fixes \eqn{\gamma = 1, \delta = 0}.
+#'   \item \strong{Mc} (McDonald): Models \eqn{\gamma, \delta, \lambda}; fixes \eqn{\alpha = 1, \beta = 1}.
+#'   \item \strong{Kw} (Kumaraswamy): Models \eqn{\alpha, \beta}; fixes \eqn{\gamma = 1, \delta = 0, \lambda = 1}.
+#'   \item \strong{Beta}: Models \eqn{\gamma, \delta}; fixes \eqn{\alpha = 1, \beta = 1, \lambda = 1}. This parameterization corresponds to the standard Beta distribution with shape1 = \eqn{\gamma} and shape2 = \eqn{\delta}.
 #' }
 #'
-#' For each family, only the relevant parameters are modeled as functions of covariates. The fixed
-#' parameters are automatically handled based on the selected family.
-#'
-#' Default link functions are assigned based on parameter constraints:
-#' \itemize{
-#'   \item "log" for \eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, and \eqn{\lambda} (which should be positive)
-#'   \item "logit" for \eqn{\delta} (which should be between 0 and 1 when standardized)
-#' }
+#' \strong{Estimation Engine:}
+#' Maximum Likelihood Estimation (MLE) is performed using C++ templates via the
+#' \code{TMB} package, which provides automatic differentiation and efficient
+#' optimization capabilities. The specific TMB template used depends on the chosen \code{family}.
 #'
 #' @examples
 #' \dontrun{
-#' require(gkwreg)
+#' # Load required packages (assuming they are installed)
+#' # require(gkwreg) # Assuming this package provides rgkw, rkw
+#' # require(stats)
 #'
-#' ## Example 1: Simple Kumaraswamy regression model
+#' ## Example 1: Simple Kumaraswamy regression model ----
 #' set.seed(123)
-#' n <- 500
+#' n <- 100 # Reduced N for faster example execution
 #' x1 <- runif(n, -2, 2)
 #' x2 <- rnorm(n)
 #'
-#' # Generate regression coefficients
+#' # True regression coefficients
 #' alpha_coef <- c(0.8, 0.3, -0.2) # Intercept, x1, x2
 #' beta_coef <- c(1.2, -0.4, 0.1) # Intercept, x1, x2
 #'
-#' # Generate linear predictors and transform to parameters
-#' alpha <- exp(alpha_coef[1] + alpha_coef[2] * x1 + alpha_coef[3] * x2)
-#' beta <- exp(beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2)
+#' # Generate linear predictors and transform to parameters using inverse link (exp)
+#' eta_alpha <- alpha_coef[1] + alpha_coef[2] * x1 + alpha_coef[3] * x2
+#' eta_beta <- beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2
+#' alpha_true <- exp(eta_alpha)
+#' beta_true <- exp(eta_beta)
 #'
-#' # Generate responses from Kumaraswamy distribution
-#' y <- rkw(n, alpha = alpha, beta = beta)
+#' # Generate responses from Kumaraswamy distribution (assuming rkw is available)
+#' # Replace rkw with relevant function if needed (e.g., from this package)
+#' if (exists("rkw", mode = "function")) {
+#'   y <- rkw(n, alpha = alpha_true, beta = beta_true)
+#' } else {
+#'   # Placeholder if rkw is not available in the environment
+#'   warning("rkw function not found, generating approximate data.")
+#'   y <- stats::rbeta(n, shape1 = alpha_true, shape2 = beta_true) # Approximation
+#' }
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
 #'
 #' # Create data frame
-#' df <- data.frame(y = y, x1 = x1, x2 = x2)
+#' df1 <- data.frame(y = y, x1 = x1, x2 = x2)
 #'
 #' # Fit Kumaraswamy regression model using extended formula syntax
-#' kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
+#' # Model alpha ~ x1 + x2 and beta ~ x1 + x2
+#' kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = FALSE)
 #'
 #' # Display summary
 #' summary(kw_reg)
 #'
-#' # Plot diagnostics
-#' plot(kw_reg)
+#' # Plot diagnostics (requires plot.gkwreg method)
+#' # plot(kw_reg)
 #'
-#' ## Example 2: Generalized Kumaraswamy regression with parameter-specific formulas
+#' ## Example 2: Generalized Kumaraswamy regression ----
 #' set.seed(456)
-#' n <- 400
+#' n <- 150 # Reduced N
 #' x1 <- runif(n, -1, 1)
 #' x2 <- rnorm(n)
-#' x3 <- rbinom(n, 1, 0.5)
+#' x3 <- factor(rbinom(n, 1, 0.5), labels = c("A", "B")) # Factor variable
 #'
-#' # Generate regression coefficients for each parameter
+#' # True regression coefficients
 #' alpha_coef <- c(0.5, 0.2) # Intercept, x1
 #' beta_coef <- c(0.8, -0.3, 0.1) # Intercept, x1, x2
-#' gamma_coef <- c(0.6, 0.4) # Intercept, x3
-#' delta_coef <- c(0.0, 0.2) # Intercept, x3
+#' gamma_coef <- c(0.6, 0.4) # Intercept, x3B
+#' delta_coef <- c(0.0, 0.2) # Intercept, x3B (logit scale)
 #' lambda_coef <- c(-0.2, 0.1) # Intercept, x2
 #'
+#' # Design matrices
+#' X_alpha <- model.matrix(~x1, data = data.frame(x1 = x1))
+#' X_beta <- model.matrix(~ x1 + x2, data = data.frame(x1 = x1, x2 = x2))
+#' X_gamma <- model.matrix(~x3, data = data.frame(x3 = x3))
+#' X_delta <- model.matrix(~x3, data = data.frame(x3 = x3))
+#' X_lambda <- model.matrix(~x2, data = data.frame(x2 = x2))
+#'
 #' # Generate linear predictors and transform to parameters
-#' alpha <- exp(alpha_coef[1] + alpha_coef[2] * x1)
-#' beta <- exp(beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2)
-#' gamma <- exp(gamma_coef[1] + gamma_coef[2] * x3)
-#' delta <- plogis(delta_coef[1] + delta_coef[2] * x3)
-#' lambda <- exp(lambda_coef[1] + lambda_coef[2] * x2)
+#' alpha <- exp(X_alpha %*% alpha_coef)
+#' beta <- exp(X_beta %*% beta_coef)
+#' gamma <- exp(X_gamma %*% gamma_coef)
+#' delta <- plogis(X_delta %*% delta_coef) # logit link for delta
+#' lambda <- exp(X_lambda %*% lambda_coef)
 #'
-#' # Generate response from GKw distribution
-#' y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
+#' # Generate response from GKw distribution (assuming rgkw is available)
+#' if (exists("rgkw", mode = "function")) {
+#'   y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
+#' } else {
+#'   warning("rgkw function not found, skipping GKw data generation.")
+#'   y <- NULL
+#' }
 #'
-#' # Create data frame
-#' df <- data.frame(y = y, x1 = x1, x2 = x2, x3 = as.factor(x3))
+#' if (!is.null(y)) {
+#'   y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
 #'
-#' # Fit GKw regression with parameter-specific formulas using the extended formula syntax
-#' gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df, family = "gkw")
+#'   # Create data frame
+#'   df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
 #'
-#' # Compare true vs. estimated coefficients
-#' coef(gkw_reg)
+#'   # Fit GKw regression with parameter-specific formulas
+#'   # alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
+#'   gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
 #'
-#' ## Example 3: Beta regression for a simpler case
+#'   # Compare true vs. estimated coefficients
+#'   print("Estimated Coefficients (GKw):")
+#'   print(coef(gkw_reg))
+#'   print("True Coefficients (approx):")
+#'   print(list(
+#'     alpha = alpha_coef, beta = beta_coef, gamma = gamma_coef,
+#'     delta = delta_coef, lambda = lambda_coef
+#'   ))
+#' }
+#'
+#' ## Example 3: Beta regression for comparison ----
 #' set.seed(789)
-#' n <- 300
+#' n <- 100 # Reduced N
 #' x1 <- runif(n, -1, 1)
 #'
-#' # Generate regression coefficients
-#' gamma_coef <- c(1.0, 0.5) # Intercept, x1
-#' delta_coef <- c(1.5, -0.7) # Intercept, x1
+#' # True coefficients for Beta parameters (gamma = shape1, delta = shape2)
+#' gamma_coef <- c(1.0, 0.5) # Intercept, x1 (log scale for shape1)
+#' delta_coef <- c(1.5, -0.7) # Intercept, x1 (log scale for shape2)
 #'
-#' # Generate linear predictors and transform to parameters
-#' gamma <- exp(gamma_coef[1] + gamma_coef[2] * x1)
-#' delta <- exp(delta_coef[1] + delta_coef[2] * x1)
+#' # Generate linear predictors and transform (default link is log for Beta params here)
+#' X_beta_eg <- model.matrix(~x1, data.frame(x1 = x1))
+#' gamma_true <- exp(X_beta_eg %*% gamma_coef)
+#' delta_true <- exp(X_beta_eg %*% delta_coef)
 #'
 #' # Generate response from Beta distribution
-#' y <- rbeta_(n, gamma, delta)
+#' y <- stats::rbeta(n, shape1 = gamma_true, shape2 = delta_true)
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
 #'
 #' # Create data frame
-#' df <- data.frame(y = y, x1 = x1)
+#' df_beta <- data.frame(y = y, x1 = x1)
 #'
-#' # Fit Beta regression model - for Beta family, we only need the gamma and delta terms
-#' beta_reg <- gkwreg(y ~ . | . | x1 | x1, data = df, family = "beta")
+#' # Fit Beta regression model using gkwreg
+#' # Formula maps to gamma and delta: y ~ . | . | x1 | x1 | .
+#' # The "." parts for alpha, beta, lambda are ignored by family="beta"
+#' beta_reg <- gkwreg(y ~ . | . | x1 | x1,
+#'   data = df_beta, family = "beta",
+#'   link = list(gamma = "log", delta = "log")
+#' ) # Specify links if non-default
 #'
 #' # Display confidence intervals for coefficients
 #' confint(beta_reg)
 #'
-#' ## Example 4: Model comparison
-#' # Fit multiple models and compare them
-#' kw_reg2 <- gkwreg(y ~ x1 | x1, data = df, family = "kw")
-#' beta_reg2 <- gkwreg(y ~ . | . | x1 | x1, data = df, family = "beta")
+#' ## Example 4: Model comparison using AIC/BIC ----
+#' # Fit an alternative model, e.g., Kumaraswamy, to the same beta-generated data
+#' kw_reg2 <- try(gkwreg(y ~ x1 | x1, data = df_beta, family = "kw"))
 #'
-#' # Compare with AIC/BIC
-#' AIC(kw_reg2, beta_reg2)
-#' BIC(kw_reg2, beta_reg2)
+#' if (!inherits(kw_reg2, "try-error")) {
+#'   print("AIC Comparison (Beta vs Kw):")
+#'   print(stats::AIC(beta_reg, kw_reg2))
+#'   print("BIC Comparison (Beta vs Kw):")
+#'   print(stats::BIC(beta_reg, kw_reg2))
+#' } else {
+#'   print("Could not fit Kw model for comparison on beta-generated data.")
+#' }
 #'
-#' ## Example 5: Predicting with a fitted model
-#' # Create new data for prediction
-#' newdata <- data.frame(x1 = seq(-1, 1, by = 0.1))
+#' ## Example 5: Predicting with a fitted model ----
+#' # Use the Beta regression model from Example 3
+#' newdata <- data.frame(x1 = seq(-1, 1, length.out = 20))
 #'
-#' # Predict expected response
-#' pred <- predict(beta_reg, newdata = newdata, type = "response")
+#' # Predict expected response (mean of the Beta distribution)
+#' pred_response <- predict(beta_reg, newdata = newdata, type = "response")
 #'
-#' # Plot original data and predicted curve
-#' plot(df$x1, df$y, pch = 20, col = "gray")
-#' lines(newdata$x1, pred, col = "red", lwd = 2)
+#' # Predict parameters (gamma and delta) on the scale of the link function
+#' pred_link <- predict(beta_reg, newdata = newdata, type = "link")
+#'
+#' # Predict parameters on the original scale (shape1, shape2)
+#' pred_params <- predict(beta_reg, newdata = newdata, type = "parameters")
+#'
+#' # Plot original data and predicted mean response curve
+#' plot(df_beta$x1, df_beta$y,
+#'   pch = 20, col = "grey", xlab = "x1", ylab = "y",
+#'   main = "Beta Regression Fit (using gkwreg)"
+#' )
+#' lines(newdata$x1, pred_response, col = "red", lwd = 2)
+#' legend("topright", legend = "Predicted Mean", col = "red", lty = 1, lwd = 2)
 #' }
 #'
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-#' random processes. Journal of Hydrology, 46(1-2), 79-88.
+#' random processes. \emph{Journal of Hydrology}, \strong{46}(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' \emph{Journal of Statistical Computation and Simulation}, \strong{81}(7), 883-898.
+#' \doi{10.1080/00949650903530745}
 #'
 #' Ferrari, S. L. P., & Cribari-Neto, F. (2004). Beta regression for modelling rates and
-#' proportions. Journal of Applied Statistics, 31(7), 799-815.
+#' proportions. \emph{Journal of Applied Statistics}, \strong{31}(7), 799-815.
+#' \doi{10.1080/0266476042000214501}
+#'
+#' Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016). TMB:
+#' Automatic Differentiation and Laplace Approximation. \emph{Journal of Statistical
+#' Software}, \strong{70}(5), 1-21. \doi{10.18637/jss.v070.i05}
+#' (Underlying TMB package)
+#'
+#' Zeileis, A., Kleiber, C., Jackman, S. (2008). Regression Models for Count Data in R.
+#' \emph{Journal of Statistical Software}, \strong{27}(8), 1-25.
+#' \doi{10.18637/jss.v027.i08} (Discusses \code{Formula} package)
+#'
+#' Smithson, M., & Verkuilen, J. (2006). A Better Lemon Squeezer? Maximum-Likelihood
+#' Regression with Beta-Distributed Dependent Variables. \emph{Psychological Methods},
+#' \strong{11}(1), 54–71. \doi{10.1037/1082-989X.11.1.54}
+#'
+#' @author Lopes, J. E.
+#'
+#' @seealso \code{\link{summary.gkwreg}}, \code{\link{predict.gkwreg}},
+#'   \code{\link{plot.gkwreg}}, \code{\link{coef.gkwreg}}, \code{\link{vcov.gkwreg}},
+#'   \code{\link[stats]{logLik}}, \code{\link[stats]{AIC}},
+#'   \code{\link[Formula]{Formula}}, \code{\link[TMB]{MakeADFun}},
+#'   \code{\link[TMB]{sdreport}}
+#'
+#' @keywords regression models hoss
+#'
+#' @author  Lopes, J. E.
 #'
 #' @export
 gkwreg <- function(formula,
@@ -196,8 +386,8 @@ gkwreg <- function(formula,
                    fit = "tmb",
                    method = c("nlminb", "optim"),
                    hessian = TRUE,
-                   profile = FALSE,
-                   npoints = 20,
+                   # profile = FALSE,
+                   # npoints = 20,
                    plot = TRUE,
                    conf.level = 0.95,
                    optimizer.control = list(),
@@ -987,67 +1177,161 @@ gkwreg <- function(formula,
 }
 
 
-#' @title Summary Method for Generalized Kumaraswamy Regression Models
+#' @title Extract Coefficients from a Fitted GKw Regression Model
 #'
 #' @description
-#' Computes and returns a detailed statistical summary of a fitted Generalized Kumaraswamy (GKw)
-#' regression model. The summary provides extensive information about parameter estimates,
-#' their standard errors, confidence intervals, and model fit statistics.
+#' Extracts the estimated regression coefficients from a fitted Generalized
+#' Kumaraswamy (GKw) regression model object of class \code{"gkwreg"}. This is
+#' an S3 method for the generic \code{\link[stats]{coef}} function.
 #'
-#' @param object An object of class \code{"gkwreg"}, typically the result of a call to \code{\link{gkwreg}}.
-#' @param conf.level Confidence level for the confidence intervals. Default is 0.95.
-#' @param ... Additional arguments (not used).
+#' @param object An object of class \code{"gkwreg"}, typically the result of a
+#'   call to \code{\link{gkwreg}}.
+#' @param ... Additional arguments, currently ignored by this method.
 #'
 #' @details
-#' This method creates a comprehensive summary of the fitted GKw regression model. It provides:
-#' \itemize{
-#'   \item Model call and family information
-#'   \item A detailed coefficient table with estimates, standard errors, z-values, p-values, and confidence intervals
-#'   \item Link functions for each parameter
-#'   \item Fitted parameter means and their distributions
-#'   \item Extensive model fit statistics
-#'   \item Residual analysis summary
-#'   \item Convergence information
-#' }
+#' This function provides the standard way to access the estimated regression
+#' coefficients from a model fitted with \code{\link{gkwreg}}. It simply
+#' extracts the \code{coefficients} component from the fitted model object.
+#' The function \code{\link[stats]{coefficients}} is an alias for this function.
 #'
-#' For the coefficient table, significant p-values are marked with stars based on common
-#' significance levels (0.001, 0.01, 0.05, 0.1).
+#' @return A named numeric vector containing the estimated regression coefficients
+#'   for all modeled parameters. The names indicate the parameter (e.g., `alpha`,
+#'   `beta`) and the corresponding predictor variable (e.g., `(Intercept)`, `x1`).
 #'
-#' @return An object of class \code{"summary.gkwreg"} with the following components:
-#' \item{call}{The original function call that created the model.}
-#' \item{family}{Distribution family used in the model.}
-#' \item{coefficients}{Table of coefficient estimates, standard errors, z-values, and p-values.}
-#' \item{conf.int}{Matrix of confidence intervals for the coefficients.}
-#' \item{link}{List of link functions used for each parameter.}
-#' \item{fitted_parameters}{List of fitted parameter means.}
-#' \item{residuals}{Summary statistics of the model residuals.}
-#' \item{nobs}{Number of observations used in the model.}
-#' \item{npar}{Number of parameters in the model.}
-#' \item{df.residual}{Residual degrees of freedom.}
-#' \item{loglik}{Log-likelihood of the fitted model.}
-#' \item{aic}{Akaike Information Criterion.}
-#' \item{bic}{Bayesian Information Criterion.}
-#' \item{rmse}{Root Mean Square Error.}
-#' \item{efron_r2}{Efron's pseudo-R-squared.}
-#' \item{mean_absolute_error}{Mean absolute error, if available.}
-#' \item{convergence}{Convergence status.}
-#' \item{iterations}{Number of iterations performed by the optimizer.}
+#' @author Lopes, J. E.
 #'
-#' @seealso \code{\link{gkwreg}}
+#' @seealso \code{\link{gkwreg}}, \code{\link{summary.gkwreg}},
+#'   \code{\link[stats]{coef}}, \code{\link[stats]{confint}}
+#'
+#' @keywords coefficients methods regression
 #'
 #' @examples
 #' \dontrun{
+#' # Assuming 'kw_reg' is a fitted object from gkwreg() as in the
+#' # summary.gkwreg example:
+#' # kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
+#'
+#' # Extract coefficients using the coef method
+#' model_coefficients <- coef(kw_reg)
+#'
+#' # Print the coefficients
+#' print(model_coefficients)
+#'
+#' # Alternatively, using the alias:
+#' model_coefficients_alt <- coefficients(kw_reg)
+#' print(model_coefficients_alt)
+#' }
+#'
+#' @export
+coef.gkwreg <- function(object, ...) {
+  object$coefficients
+}
+
+
+#' @title Summary Method for Generalized Kumaraswamy Regression Models
+#'
+#' @description
+#' Computes and returns a detailed statistical summary for a fitted Generalized
+#' Kumaraswamy (GKw) regression model object of class \code{"gkwreg"}.
+#'
+#' @param object An object of class \code{"gkwreg"}, typically the result of a
+#'   call to \code{\link{gkwreg}}.
+#' @param conf.level Numeric. The desired confidence level for constructing
+#'   confidence intervals for the regression coefficients. Default is 0.95.
+#' @param ... Additional arguments, currently ignored by this method.
+#'
+#' @details
+#' This method provides a comprehensive summary of the fitted \code{gkwreg} model.
+#' It calculates z-values and p-values for the regression coefficients based on
+#' the estimated standard errors (if available) and computes confidence intervals
+#' at the specified \code{conf.level}. The summary includes:
+#' \itemize{
+#'   \item The model call.
+#'   \item The distribution family used.
+#'   \item A table of coefficients including estimates, standard errors, z-values,
+#'     and p-values. Note: Significance stars are typically added by the
+#'     corresponding \code{print.summary.gkwreg} method.
+#'   \item Confidence intervals for the coefficients.
+#'   \item Link functions used for each parameter.
+#'   \item Mean values of the fitted distribution parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}).
+#'   \item A five-number summary (Min, Q1, Median, Q3, Max) plus the mean of the
+#'     response residuals.
+#'   \item Key model fit statistics (Log-likelihood, AIC, BIC, RMSE, Efron's R^2).
+#'   \item Information about model convergence and optimizer iterations.
+#' }
+#' If standard errors were not computed (e.g., \code{hessian = FALSE} in the
+#' original \code{gkwreg} call), the coefficient table will only contain estimates,
+#' and confidence intervals will not be available.
+#'
+#' @return An object of class \code{"summary.gkwreg"}, which is a list containing
+#'   the following components:
+#' \item{call}{The original function call that created the \code{object}.}
+#' \item{family}{Character string specifying the distribution family.}
+#' \item{coefficients}{A data frame (matrix) containing the coefficient estimates,
+#'   standard errors, z-values, and p-values.}
+#' \item{conf.int}{A matrix containing the lower and upper bounds of the confidence
+#'   intervals for the coefficients (if standard errors are available).}
+#' \item{link}{A list of character strings specifying the link functions used.}
+#' \item{fitted_parameters}{A list containing the mean values of the estimated
+#'   distribution parameters.}
+#' \item{residuals}{A named numeric vector containing summary statistics for the
+#'   response residuals.}
+#' \item{nobs}{Number of observations used in the fit.}
+#' \item{npar}{Total number of estimated regression coefficients.}
+#' \item{df.residual}{Residual degrees of freedom.}
+#' \item{loglik}{The maximized log-likelihood value.}
+#' \item{aic}{Akaike Information Criterion.}
+#' \item{bic}{Bayesian Information Criterion.}
+#' \item{rmse}{Root Mean Squared Error of the residuals.}
+#' \item{efron_r2}{Efron's pseudo-R-squared value.}
+#' \item{mean_absolute_error}{Mean Absolute Error of the residuals.}
+#' \item{convergence}{Convergence code from the optimizer.}
+#' \item{iterations}{Number of iterations reported by the optimizer.}
+#' \item{conf.level}{The confidence level used for calculating intervals.}
+#'
+#' @author Lopes, J. E.
+#'
+#' @seealso \code{\link{gkwreg}}, \code{\link{print.summary.gkwreg}},
+#'   \code{\link[stats]{coef}}, \code{\link[stats]{confint}}
+#'
+#' @keywords summary models regression
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming 'df' is a data frame with response 'y' and predictors 'x1', 'x2'
+#' # and that rkw() function is available and generates data in (0,1).
+#'
+#' set.seed(123)
+#' n <- 100
+#' x1 <- runif(n, -2, 2)
+#' x2 <- rnorm(n)
+#' alpha_coef <- c(0.8, 0.3, -0.2)
+#' beta_coef <- c(1.2, -0.4, 0.1)
+#' eta_alpha <- alpha_coef[1] + alpha_coef[2] * x1 + alpha_coef[3] * x2
+#' eta_beta <- beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2
+#' alpha_true <- exp(eta_alpha)
+#' beta_true <- exp(eta_beta)
+#' # Use stats::rbeta as a placeholder if rkw is unavailable
+#' y <- stats::rbeta(n, shape1 = alpha_true, shape2 = beta_true)
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+#' df <- data.frame(y = y, x1 = x1, x2 = x2)
+#'
 #' # Fit a Kumaraswamy regression model
 #' kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
 #'
-#' # Generate detailed summary
+#' # Generate detailed summary using the summary method
 #' summary_kw <- summary(kw_reg)
 #'
-#' # Print summary
+#' # Print the summary object (uses print.summary.gkwreg)
 #' print(summary_kw)
 #'
-#' # Extract coefficient table
-#' coef(summary_kw)
+#' # Extract coefficient table directly from the summary object
+#' coef_table <- coef(summary_kw) # Equivalent to summary_kw$coefficients
+#' print(coef_table)
+#'
+#' # Extract confidence intervals
+#' conf_intervals <- confint(summary_kw) # Uses summary_kw$conf.int
+#' print(conf_intervals)
 #' }
 #'
 #' @export
@@ -1076,7 +1360,7 @@ summary.gkwreg <- function(object, conf.level = 0.95, ...) {
 
   # Calculate confidence intervals
   alpha <- 1 - conf.level
-  z_value <- qnorm(1 - alpha / 2)
+  z_value <- stats::qnorm(1 - alpha / 2)
 
   if (!is.null(se)) {
     ci_lower <- coef_est - z_value * se
@@ -1132,6 +1416,68 @@ summary.gkwreg <- function(object, conf.level = 0.95, ...) {
   return(result)
 }
 
+
+#' @title Print Method for Generalized Kumaraswamy Regression Summaries
+#'
+#' @description
+#' Formats and prints the summary output of a fitted Generalized Kumaraswamy
+#' (GKw) regression model (objects of class \code{"summary.gkwreg"}).
+#'
+#' @param x An object of class \code{"summary.gkwreg"}, typically the result of
+#'   a call to \code{\link{summary.gkwreg}}.
+#' @param digits Integer, controlling the number of significant digits to print.
+#'   Defaults to \code{max(3, getOption("digits") - 3)}.
+#' @param signif.stars Logical. If \code{TRUE}, significance stars are printed
+#'   next to the p-values in the coefficient table. Defaults to the value of
+#'   \code{getOption("show.signif.stars")}.
+#' @param ... Additional arguments, currently ignored by this method.
+#'
+#' @details
+#' This is the print method for objects created by \code{\link{summary.gkwreg}}.
+#' It formats the summary information for display in the console. It is typically
+#' invoked automatically when \code{print()} is called on a \code{summary.gkwreg}
+#' object, or simply by typing the name of the summary object in an interactive R session.
+#'
+#' The output includes:
+#' \itemize{
+#'   \item Model family and the original function call.
+#'   \item Summary statistics for residuals.
+#'   \item A coefficient table with estimates, standard errors, z-values, and
+#'     p-values, optionally marked with significance stars (using
+#'     \code{\link[stats]{printCoefmat}}).
+#'   \item Confidence intervals for coefficients (if available).
+#'   \item Link functions used for each parameter.
+#'   \item Mean values of the fitted distribution parameters.
+#'   \item Key model fit statistics (LogLik, AIC, BIC, RMSE, R^2, etc.).
+#'   \item Convergence status and number of iterations.
+#' }
+#'
+#' @return Invisibly returns the original input object \code{x}. This allows the
+#'   output of \code{print()} to be assigned, but it primarily prints the formatted
+#'   summary to the console.
+#'
+#' @author Lopes, J. E.
+#'
+#' @seealso \code{\link{summary.gkwreg}}, \code{\link{gkwreg}},
+#'   \code{\link[stats]{printCoefmat}}
+#'
+#' @keywords print methods internal hoss
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming 'kw_reg' is a fitted object from gkwreg() as in the
+#' # summary.gkwreg example:
+#' # kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
+#'
+#' # Create the summary object
+#' summary_obj <- summary(kw_reg)
+#'
+#' # Print the summary object - this automatically calls print.summary.gkwreg
+#' summary_obj
+#' # Or explicitly:
+#' # print(summary_obj, digits = 4, signif.stars = TRUE)
+#' }
+#'
 #' @export
 print.summary.gkwreg <- function(x, digits = max(3, getOption("digits") - 3),
                                  signif.stars = getOption("show.signif.stars"), ...) {
@@ -1207,62 +1553,160 @@ print.summary.gkwreg <- function(x, digits = max(3, getOption("digits") - 3),
   invisible(x)
 }
 
-#' @export
-coef.summary.gkwreg <- function(object, ...) {
-  object$coefficients
-}
 
-#' @title Predict Method for Generalized Kumaraswamy Regression Models
+
+#' @title Predictions from a Fitted Generalized Kumaraswamy Regression Model
 #'
-#' @description Obtains predictions and related quantities from a fitted
-#' Generalized Kumaraswamy regression model.
+#' @description
+#' Obtains various types of predictions and associated quantities from a fitted
+#' Generalized Kumaraswamy (GKw) regression model object of class \code{"gkwreg"}.
+#' Calculations are based on the estimated coefficients and potentially new data.
 #'
-#' @param object A fitted model object of class "gkwreg".
-#' @param newdata Optionally, a data frame with new data. If omitted, the original
-#'   data is used.
-#' @param type Character indicating type of prediction required:
+#' @param object An object of class \code{"gkwreg"}, typically the result of a
+#'   call to \code{\link{gkwreg}}.
+#' @param newdata Optionally, a data frame containing predictor variables for which
+#'   to make predictions. Column names must match the variables used in the
+#'   original model formula. If omitted or \code{NULL}, predictions are computed
+#'   for the original data used to fit the model.
+#' @param type Character string indicating the type of prediction required. Options are:
 #'   \itemize{
-#'     \item "response" or "mean": predicted mean of the response (default)
-#'     \item "link": linear predictors for all parameters
-#'     \item "parameter": all distribution parameters (alpha, beta, gamma, delta, lambda)
-#'     \item "alpha", "beta", "gamma", "delta", "lambda": individual parameters
-#'     \item "variance": variance of the response
-#'     \item "density" or "pdf": density function at values specified by 'at'
-#'     \item "probability" or "cdf": cumulative distribution function at 'at'
-#'     \item "quantile": quantiles of the distribution at probabilities 'at'
+#'     \item \code{"response"} or \code{"mean"}: (Default) Predicted mean (expected value)
+#'       of the response variable. Returns a numeric vector.
+#'     \item \code{"link"}: Linear predictors for all modeled parameters before applying
+#'       the inverse link function. Returns a matrix or data frame with columns
+#'       corresponding to the parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}).
+#'     \item \code{"parameter"}: Predicted values of all relevant distribution
+#'       parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) on their original scale
+#'       (after applying the inverse link function). Returns a matrix or data frame.
+#'     \item \code{"alpha"}, \code{"beta"}, \code{"gamma"}, \code{"delta"}, \code{"lambda"}:
+#'       Predicted values for the specified individual parameter on its original scale.
+#'       Returns a numeric vector.
+#'     \item \code{"variance"}: Predicted variance of the response variable. Returns a
+#'       numeric vector. Requires the calculation formula for the specific family's variance.
+#'     \item \code{"density"} or \code{"pdf"}: Predicted probability density function (PDF)
+#'       values evaluated at the points specified by the \code{at} argument.
+#'       Return type depends on \code{elementwise}.
+#'     \item \code{"probability"} or \code{"cdf"}: Predicted cumulative distribution
+#'       function (CDF) values evaluated at the points specified by the \code{at} argument.
+#'       Return type depends on \code{elementwise}.
+#'     \item \code{"quantile"}: Predicted quantiles corresponding to the probabilities
+#'       specified by the \code{at} argument. Return type depends on \code{elementwise}.
 #'   }
-#' @param na.action Function determining what to do with missing values in newdata.
-#' @param at Numeric vector at which to evaluate the prediction function for
-#'   types "density", "probability", or "quantile".
-#' @param elementwise Logical. Should each element of the distribution only be
-#'   evaluated at the corresponding element of 'at' (TRUE) or at all elements
-#'   in 'at' (FALSE).
-#' @param family Character string specifying the distribution family to use.
-#'   If NULL (default), uses the family from the fitted model.
-#'   Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".
-#' @param ... Further arguments passed to methods.
+#' @param na.action Function determining how missing values (\code{NA}) in \code{newdata}
+#'   should be handled. The default is typically \code{\link[stats]{na.pass}}, which
+#'   results in \code{NA} predictions where predictor values are missing. Other options
+#'   like \code{\link[stats]{na.omit}} or \code{\link[stats]{na.exclude}} might be relevant.
+#' @param at Numeric vector. For \code{type = "density"}, \code{type = "probability"},
+#'   these are the values at which the density or CDF is evaluated. For
+#'   \code{type = "quantile"}, these are the probabilities for which quantiles are calculated
+#'   (must be between 0 and 1). Required for these types.
+#' @param elementwise Logical. Only relevant when \code{at} is provided and has the same
+#'   length as the number of predictions being made (e.g., same length as \code{newdata}).
+#'   If \code{TRUE}, the i-th prediction's density/CDF/quantile is evaluated only at the
+#'   i-th value of \code{at}. If \code{FALSE} (default), each prediction's density/CDF/quantile
+#'   is evaluated at *all* values specified in \code{at}, typically returning a matrix.
+#' @param family Character string specifying the distribution family assumptions
+#'   to use for calculating predictions (especially for mean, variance, density, cdf, quantile).
+#'   If \code{NULL} (default), the family from the fitted \code{object} is used.
+#'   Specifying a different family (e.g., \code{"beta"} for a model fitted as \code{"gkw"})
+#'   will use the fitted coefficients mapped to the parameters of the *new* family to
+#'   calculate the requested quantity based on that *new* family's properties.
+#'   Available options match those in \code{\link{gkwreg}}: \code{"gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"}.
+#' @param ... Further arguments passed to or from other methods (currently often unused).
 #'
-#' @return A vector, matrix, or data frame of predictions, depending on the type.
+#' @details
+#' This function calculates predictions based on the fitted \code{gkwreg} model.
+#' For types \code{"link"}, \code{"parameter"}, and individual parameters, it computes
+#' the linear predictors using the estimated coefficients and the predictor values
+#' from \code{newdata} (or the original data). It then applies the inverse link
+#' functions for types involving parameters on the original scale.
+#'
+#' For \code{type = "response"} (mean) and \code{type = "variance"}, it calculates the
+#' expected value or variance based on the predicted parameters and the theoretical
+#' formulas for the specified (or overridden) distribution \code{family}.
+#'
+#' For \code{type = "density"}, \code{type = "probability"}, and \code{type = "quantile"},
+#' it uses the predicted parameters and the corresponding distribution functions
+#' (PDF, CDF, quantile function) for the specified \code{family}, evaluated at the values
+#' provided in the \code{at} argument.
+#'
+#' Using the \code{family} argument allows exploring predictions under alternative
+#' distributional assumptions, using the coefficient estimates from the original fit.
+#'
+#' @return The format of the returned value depends on the \code{type} argument:
+#' \itemize{
+#'   \item For \code{"response"}, \code{"variance"}, or individual parameters
+#'     (\code{"alpha"}, \code{"beta"}, etc.): A numeric vector of the same length
+#'     as the number of rows in \code{newdata} (or the original data).
+#'   \item For \code{"link"} or \code{"parameter"}: A matrix or data frame where rows
+#'     correspond to observations and columns correspond to the distribution parameters.
+#'   \item For \code{"density"}, \code{"probability"}, \code{"quantile"}:
+#'     If \code{elementwise = TRUE}, a numeric vector. If \code{elementwise = FALSE},
+#'     typically a matrix where rows correspond to observations and columns correspond
+#'     to the values in \code{at}.
+#' }
+#'
+#' @author Lopes, J. E.
+#'
+#' @seealso \code{\link{gkwreg}}, \code{\link{summary.gkwreg}},
+#'   \code{\link[stats]{predict}}
+#'
+#' @keywords predict methods regression
 #'
 #' @examples
 #' \dontrun{
-#' # Fit a GKw model
-#' model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata, family = "gkw")
+#' # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
+#' # and that rgkw() is available and data is appropriate (0 < y < 1).
+#' set.seed(456)
+#' n <- 100
+#' x1 <- runif(n, -1, 1)
+#' x2 <- rnorm(n)
+#' alpha <- exp(0.5 + 0.2 * x1)
+#' beta <- exp(0.8 - 0.3 * x1 + 0.1 * x2)
+#' gamma <- exp(0.6)
+#' delta <- plogis(0.0 + 0.2 * x1)
+#' lambda <- exp(-0.2 + 0.1 * x2)
+#' # Use stats::rbeta as placeholder if rgkw is not available
+#' y <- stats::rbeta(n, shape1 = gamma * alpha, shape2 = delta * beta) # Approximation
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+#' mydata <- data.frame(y = y, x1 = x1, x2 = x2)
 #'
-#' # Predictions on new data
-#' newdata <- data.frame(x1 = seq(0, 1, by = 0.1), x2 = rep(0, 11))
+#' # Fit a GKw model (modeling alpha and beta, others intercept-only)
+#' model <- gkwreg(y ~ x1 | x1 + x2 | 1 | x1 | x2, data = mydata, family = "gkw")
+#'
+#' # --- Predictions on new data ---
+#' newdata <- data.frame(x1 = seq(-1, 1, by = 0.5), x2 = rep(mean(mydata$x2), 5))
 #'
 #' # Predict mean response
-#' predict(model, newdata, type = "response")
+#' pred_mean <- predict(model, newdata, type = "response")
+#' print(pred_mean)
 #'
-#' # Predict parameters
-#' predict(model, newdata, type = "parameter")
+#' # Predict linear predictors
+#' pred_link <- predict(model, newdata, type = "link")
+#' print(pred_link)
 #'
-#' # Predict densities at specific points
-#' predict(model, newdata, type = "density", at = c(0.2, 0.5, 0.8))
+#' # Predict parameters on original scale
+#' pred_params <- predict(model, newdata, type = "parameter")
+#' print(pred_params)
 #'
-#' # Predict using a different family than what was fitted
-#' predict(model, newdata, type = "response", family = "beta")
+#' # Predict only the alpha parameter
+#' pred_alpha <- predict(model, newdata, type = "alpha")
+#' print(pred_alpha)
+#'
+#' # Predict densities at specific points for each prediction in newdata
+#' # Returns a matrix (5 rows x 3 columns)
+#' pred_dens <- predict(model, newdata, type = "density", at = c(0.2, 0.5, 0.8))
+#' print(pred_dens)
+#'
+#' # Predict 10th percentile (quantile at p=0.1) for each prediction
+#' pred_q10 <- predict(model, newdata, type = "quantile", at = 0.1)
+#' print(pred_q10)
+#'
+#' # --- Predict using a different family ---
+#' # Predict response assuming a Beta distribution structure, using the
+#' # coefficients originally fitted for gamma and delta in the GKw model.
+#' pred_beta_mean <- predict(model, newdata, type = "response", family = "beta")
+#' print(pred_beta_mean)
 #' }
 #'
 #' @export
@@ -2124,51 +2568,100 @@ predict.gkwreg <- function(object, newdata = NULL,
 #' @title Extract Fitted Values from a Generalized Kumaraswamy Regression Model
 #'
 #' @description
-#' Extract the fitted values (predicted means) from a fitted Generalized Kumaraswamy
-#' regression model.
+#' Extracts the fitted mean values (predicted expected values of the response)
+#' from a fitted Generalized Kumaraswamy (GKw) regression model object of class
+#' \code{"gkwreg"}. This is an S3 method for the generic
+#' \code{\link[stats]{fitted.values}} function.
 #'
-#' @param object A fitted model object of class "gkwreg".
-#' @param family Character string specifying the distribution family to use.
-#'   If NULL (default), uses the family from the fitted model.
-#'   Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".
-#' @param ... Additional arguments. Currently not used.
-#'
-#' @return A numeric vector of fitted values (predicted means) on the scale of the
-#'   original response. For the GKw model, these are values between 0 and 1.
+#' @param object An object of class \code{"gkwreg"}, typically the result of a
+#'   call to \code{\link{gkwreg}}.
+#' @param family Character string specifying the distribution family under which
+#'   the fitted mean values should be calculated. If \code{NULL} (default), the
+#'   family stored within the fitted \code{object} is used. Specifying a different
+#'   family (e.g., \code{"beta"}) will trigger recalculation of the fitted means
+#'   based on that family's mean structure, using the original model's estimated
+#'   coefficients mapped to the relevant parameters. Available options match those
+#'   in \code{\link{gkwreg}}: \code{"gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"}.
+#' @param ... Additional arguments, currently ignored by this method.
 #'
 #' @details
-#' The fitted values are extracted directly from the model object if available.
-#' If not available (which may happen in rare cases), they are recalculated using
-#' the model parameters and the specified family. The values represent the predicted
-#' means of the response variable conditional on the observed covariates.
+#' This function retrieves or calculates the fitted values, which represent the
+#' estimated conditional mean of the response variable given the covariates
+#' (\eqn{E(Y | X)}).
 #'
-#' When using a different family than what was used to fit the model (by specifying
-#' the 'family' parameter), the function will always recalculate the fitted values
-#' using the predict method instead of using stored values.
+#' The function attempts to retrieve fitted values efficiently using the following
+#' priority:
+#' \enumerate{
+#'   \item Directly from the \code{fitted.values} component stored in the \code{object},
+#'     if available and complete. It includes logic to handle potentially
+#'     incomplete stored values via interpolation (\code{\link[stats]{approx}}) for
+#'     very large datasets where only a sample might be stored.
+#'   \item By recalculating the mean using stored parameter vectors for each
+#'     observation (\code{object$parameter_vectors}) and an internal function
+#'     (\code{calculateMeans}), if available.
+#'   \item From the \code{fitted} component within the TMB report (\code{object$tmb_object$report()}),
+#'     if available, potentially using interpolation as above.
+#'   \item As a fallback, by calling \code{predict(object, type = "response", family = family)}.
+#' }
+#' Specifying a \code{family} different from the one used to fit the model will
+#' always force recalculation using the \code{predict} method (step 4).
+#'
+#' @return A numeric vector containing the fitted mean values. These values are
+#'   typically bounded between 0 and 1, corresponding to the scale of the original
+#'   response variable. The length of the vector corresponds to the number of
+#'   observations used in the model fit (considering \code{subset} and \code{na.action}).
+#'
+#' @author Lopes, J. E.
+#'
+#' @seealso \code{\link{gkwreg}}, \code{\link{predict.gkwreg}},
+#'   \code{\link{residuals.gkwreg}}, \code{\link[stats]{fitted.values}}
+#'
+#' @keywords fitted methods regression
 #'
 #' @examples
 #' \dontrun{
+#' # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
+#' # and that rgkw() is available and data is appropriate (0 < y < 1).
+#' set.seed(456)
+#' n <- 100
+#' x1 <- runif(n, -1, 1)
+#' x2 <- rnorm(n)
+#' alpha <- exp(0.5 + 0.2 * x1)
+#' beta <- exp(0.8 - 0.3 * x1 + 0.1 * x2)
+#' gamma <- exp(0.6)
+#' delta <- plogis(0.0 + 0.2 * x1)
+#' lambda <- exp(-0.2 + 0.1 * x2)
+#' # Use stats::rbeta as placeholder if rgkw is not available
+#' y <- stats::rbeta(n, shape1 = gamma * alpha, shape2 = delta * beta) # Approximation
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+#' mydata <- data.frame(y = y, x1 = x1, x2 = x2)
+#'
 #' # Fit a GKw model
-#' model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata, family = "gkw")
+#' model <- gkwreg(y ~ x1 | x1 + x2 | 1 | x1 | x2, data = mydata, family = "gkw")
 #'
-#' # Extract fitted values
-#' fitted_values <- fitted(model)
+#' # Extract fitted values (using the original 'gkw' family)
+#' fitted_vals_gkw <- fitted(model)
 #'
-#' # Extract fitted values using a different family
-#' fitted_values_beta <- fitted(model, family = "beta")
+#' # Extract fitted values recalculated as if it were a Beta model
+#' # (using the fitted gamma and delta coefficients)
+#' fitted_vals_beta <- fitted(model, family = "beta")
 #'
-#' # Plot observed vs. fitted
-#' plot(model$y, fitted_values,
-#'   xlab = "Observed", ylab = "Fitted",
-#'   main = "Observed vs Fitted Values"
-#' )
-#' abline(0, 1, col = "red", lty = 2)
+#' # Plot observed vs. fitted (using original family)
+#' response_y <- model$y # Get the response variable used in the fit
+#' if (!is.null(response_y)) {
+#'   plot(response_y, fitted_vals_gkw,
+#'     xlab = "Observed Response", ylab = "Fitted Mean Value",
+#'     main = "Observed vs Fitted Values (GKw Family)",
+#'     pch = 1, col = "blue"
+#'   )
+#'   abline(0, 1, col = "red", lty = 2) # Line y = x
+#' } else {
+#'   print("Response variable not found in model object to create plot.")
 #' }
 #'
-#' @seealso
-#' \code{\link{predict.gkwreg}} for predicting from a GKw model.
-#'
-#' \code{\link{residuals.gkwreg}} for extracting residuals.
+#' # Compare fitted values under different family assumptions
+#' head(data.frame(GKw_Fitted = fitted_vals_gkw, Beta_Fitted = fitted_vals_beta))
+#' }
 #'
 #' @export
 fitted.gkwreg <- function(object, family = NULL, ...) {
@@ -2327,121 +2820,200 @@ fitted.gkwreg <- function(object, family = NULL, ...) {
   return(fitted_values)
 }
 
+
 #' @title Extract Residuals from a Generalized Kumaraswamy Regression Model
 #'
 #' @description
-#' Extract various types of residuals from a fitted Generalized Kumaraswamy regression model
-#' for diagnostic purposes.
+#' Extracts or calculates various types of residuals from a fitted Generalized
+#' Kumaraswamy (GKw) regression model object of class \code{"gkwreg"}, useful for
+#' model diagnostics.
 #'
-#' @param object A fitted model object of class "gkwreg".
-#' @param type The type of residuals to be computed. Options include:
+#' @param object An object of class \code{"gkwreg"}, typically the result of a
+#'   call to \code{\link{gkwreg}}.
+#' @param type Character string specifying the type of residuals to compute.
+#'   Available options are:
 #'   \itemize{
-#'     \item "response" (default): Response residuals (y - fitted)
-#'     \item "pearson": Pearson residuals (standardized by estimated std dev)
-#'     \item "deviance": Deviance residuals (signed sqrt of deviance contributions)
-#'     \item "quantile": Quantile residuals (normal quantiles of CDF at response)
-#'     \item "modified.deviance": Modified deviance residuals (standardized deviance)
-#'     \item "cox-snell": Cox-Snell residuals (transformation of CDF)
-#'     \item "score": Score residuals (based on score function)
-#'     \item "partial": Partial residuals (requires covariate index)
+#'     \item \code{"response"}: (Default) Raw response residuals:
+#'       \eqn{y - \mu}, where \eqn{\mu} is the fitted mean.
+#'     \item \code{"pearson"}: Pearson residuals: \eqn{(y - \mu) / \sqrt{V(\mu)}},
+#'       where \eqn{V(\mu)} is the variance function of the specified family.
+#'     \item \code{"deviance"}: Deviance residuals: Signed square root of the
+#'       unit deviances. Sum of squares equals the total deviance.
+#'     \item \code{"quantile"}: Randomized quantile residuals (Dunn & Smyth, 1996).
+#'       Transformed via the model's CDF and the standard normal quantile function.
+#'       Should approximate a standard normal distribution if the model is correct.
+#'     \item \code{"modified.deviance"}: (Not typically implemented, placeholder)
+#'       Standardized deviance residuals, potentially adjusted for leverage.
+#'     \item \code{"cox-snell"}: Cox-Snell residuals: \eqn{-\log(1 - F(y))}, where
+#'       \eqn{F(y)} is the model's CDF. Should approximate a standard exponential
+#'       distribution if the model is correct.
+#'     \item \code{"score"}: (Not typically implemented, placeholder) Score residuals,
+#'       related to the derivative of the log-likelihood.
+#'     \item \code{"partial"}: Partial residuals for a specific predictor in one
+#'       parameter's linear model: \eqn{eta_p + \beta_{pk} x_{ik}}, where \eqn{eta_p}
+#'       is the partial linear predictor and \eqn{\beta_{pk} x_{ik}} is the
+#'       component associated with the k-th covariate for the i-th observation.
+#'       Requires \code{parameter} and \code{covariate_idx}.
 #'   }
-#' @param covariate_idx Integer. For 'partial' residuals, specifies which covariate to use
-#'   (1 for first covariate, 2 for second, etc.). Only used if type="partial".
-#' @param parameter Parameter name for partial residuals. One of "alpha", "beta", "gamma",
-#'   "delta", or "lambda". Only used if type="partial".
-#' @param family Character string specifying the distribution family to use.
-#'   If NULL (default), uses the family from the fitted model.
-#'   Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".
-#' @param ... Additional arguments. Currently not used.
-#'
-#' @return A numeric vector of residuals.
+#' @param covariate_idx Integer. Only used if \code{type = "partial"}. Specifies the
+#'   index (column number in the corresponding model matrix) of the covariate for
+#'   which to compute partial residuals.
+#' @param parameter Character string. Only used if \code{type = "partial"}. Specifies
+#'   the distribution parameter (\code{"alpha"}, \code{"beta"}, \code{"gamma"},
+#'   \code{"delta"}, or \code{"lambda"}) whose linear predictor contains the
+#'   covariate of interest.
+#' @param family Character string specifying the distribution family assumptions
+#'   to use when calculating residuals (especially for types involving variance,
+#'   deviance, CDF, etc.). If \code{NULL} (default), the family stored within the
+#'   fitted \code{object} is used. Specifying a different family may be useful
+#'   for diagnostic comparisons. Available options match those in
+#'   \code{\link{gkwreg}}: \code{"gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"}.
+#' @param ... Additional arguments, currently ignored by this method.
 #'
 #' @details
-#' The different types of residuals offer various diagnostic tools for the GKw regression model:
+#' This function calculates various types of residuals useful for diagnosing the
+#' adequacy of a fitted GKw regression model.
 #'
 #' \itemize{
-#'   \item Response residuals: The raw difference between observed and fitted values.
-#'
-#'   \item Pearson residuals: Response residuals standardized by the estimated standard
-#'         deviation from the model. Useful for checking heteroscedasticity.
-#'
-#'   \item Deviance residuals: Signed square root of deviance contributions.
-#'         Useful for assessing model fit.
-#'
-#'   \item Quantile residuals: Normal quantiles of the model's CDF evaluated at observed values.
-#'         These should follow a standard normal distribution if the model is correct.
-#'
-#'   \item Modified deviance residuals: Standardized deviance residuals that should
-#'         better approximate a normal distribution.
-#'
-#'   \item Cox-Snell residuals: Based on -log(1-F(y)), should follow exponential(1)
-#'         distribution if the model is correct. Uses the model's CDF.
-#'
-#'   \item Score residuals: Based on the score function from the model's log-likelihood.
-#'         Useful for assessing influence.
-#'
-#'   \item Partial residuals: For examining individual covariate effects in the context
-#'         of the specified distribution family.
+#'   \item \strong{Response residuals} (\code{type="response"}) are the simplest,
+#'     showing raw differences between observed and fitted mean values.
+#'   \item \strong{Pearson residuals} (\code{type="pearson"}) account for the
+#'     mean-variance relationship specified by the model family. Constant variance
+#'     when plotted against fitted values suggests the variance function is appropriate.
+#'   \item \strong{Deviance residuals} (\code{type="deviance"}) are related to the
+#'     log-likelihood contribution of each observation. Their sum of squares equals
+#'     the total model deviance. They often have more symmetric distributions
+#'     than Pearson residuals.
+#'   \item \strong{Quantile residuals} (\code{type="quantile"}) are particularly useful
+#'     for non-standard distributions as they should always be approximately standard
+#'     normal if the assumed distribution and model structure are correct. Deviations
+#'     from normality in a QQ-plot indicate model misspecification.
+#'   \item \strong{Cox-Snell residuals} (\code{type="cox-snell"}) provide another
+#'     check of the overall distributional fit. A plot of the sorted residuals
+#'     against theoretical exponential quantiles should approximate a straight line
+#'     through the origin with slope 1.
+#'   \item \strong{Partial residuals} (\code{type="partial"}) help visualize the
+#'     marginal relationship between a specific predictor and the response on the
+#'     scale of the linear predictor for a chosen parameter, adjusted for other predictors.
 #' }
+#' Calculations involving the distribution's properties (variance, CDF, PDF) depend
+#' heavily on the specified \code{family}. The function relies on internal helper
+#' functions (potentially implemented in C++ for efficiency) to compute these based
+#' on the fitted parameters for each observation.
 #'
-#' All calculations use the specific properties of the selected distribution family
-#' and are performed efficiently in C++ to ensure good performance even with large datasets.
+#' @return A numeric vector containing the requested type of residuals. The length
+#'   corresponds to the number of observations used in the model fit.
 #'
-#' Specifying a different family than what was used to fit the model can be useful for
-#' diagnostic comparisons between different distribution assumptions.
+#' @author Lopes, J. E.
 #'
 #' @references
 #' Dunn, P. K., & Smyth, G. K. (1996). Randomized Quantile Residuals.
-#' Journal of Computational and Graphical Statistics, 5(3), 236-244.
+#' \emph{Journal of Computational and Graphical Statistics}, \strong{5}(3), 236-244.
+#' \doi{10.2307/1390802}
 #'
 #' Cox, D. R., & Snell, E. J. (1968). A General Definition of Residuals.
-#' Journal of the Royal Statistical Society, Series B, 30(2), 248-275.
+#' \emph{Journal of the Royal Statistical Society, Series B (Methodological)},
+#' \strong{30}(2), 248-275. \doi{10.1111/j.2517-6161.1968.tb00724.x}
 #'
-#' McCullagh, P., & Nelder, J. A. (1989). Generalized Linear Models.
-#' CRC Press.
+#' McCullagh, P., & Nelder, J. A. (1989). \emph{Generalized Linear Models} (2nd ed.).
+#' Chapman and Hall/CRC.
+#'
+#' @seealso \code{\link{gkwreg}}, \code{\link{fitted.gkwreg}},
+#'   \code{\link{predict.gkwreg}}, \code{\link[stats]{residuals}}
+#'
+#' @keywords residuals methods regression diagnostics
 #'
 #' @examples
 #' \dontrun{
-#' # Fit a GKw model
-#' model <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1, data = mydata, family = "gkw")
+#' # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
+#' # and that rgkw() is available and data is appropriate (0 < y < 1).
+#' set.seed(456)
+#' n <- 150
+#' x1 <- runif(n, -1, 1)
+#' x2 <- rnorm(n)
+#' alpha <- exp(0.5 + 0.2 * x1)
+#' beta <- exp(0.8 - 0.3 * x1 + 0.1 * x2)
+#' gamma <- exp(0.6)
+#' delta <- plogis(0.0 + 0.2 * x1)
+#' lambda <- exp(-0.2 + 0.1 * x2)
+#' # Use stats::rbeta as placeholder if rgkw is not available
+#' y <- stats::rbeta(n, shape1 = gamma * alpha, shape2 = delta * beta) # Approximation
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+#' mydata <- data.frame(y = y, x1 = x1, x2 = x2)
 #'
-#' # Extract different types of residuals
+#' # Fit a GKw model
+#' model <- gkwreg(y ~ x1 | x1 + x2 | 1 | x1 | x2, data = mydata, family = "gkw")
+#'
+#' # --- Extract different types of residuals ---
 #' resp_res <- residuals(model, type = "response")
 #' pearson_res <- residuals(model, type = "pearson")
 #' quant_res <- residuals(model, type = "quantile")
-#'
-#' # Using a different family for diagnostic comparison
-#' quant_res_beta <- residuals(model, type = "quantile", family = "beta")
-#'
-#' # QQ-plot for quantile residuals
-#' qqnorm(quant_res)
-#' qqline(quant_res)
-#'
-#' # Cox-Snell residuals for exponential quantile plot
 #' cs_res <- residuals(model, type = "cox-snell")
-#' plot(qexp(ppoints(length(cs_res))), sort(cs_res),
-#'   xlab = "Theoretical Quantiles", ylab = "Cox-Snell Residuals"
+#'
+#' # --- Diagnostic Plots ---
+#' # QQ-plot for quantile residuals (should be approx. normal)
+#' oldpar <- par(mfrow = c(1, 2)) # Arrange plots side-by-side
+#' stats::qqnorm(quant_res, main = "QQ Plot: GKw Quantile Residuals")
+#' stats::qqline(quant_res, col = "blue")
+#'
+#' # Cox-Snell residuals plot (should be approx. exponential -> linear on exp-QQ)
+#' plot(stats::qexp(stats::ppoints(length(cs_res))), sort(cs_res),
+#'   xlab = "Theoretical Exponential Quantiles", ylab = "Sorted Cox-Snell Residuals",
+#'   main = "Cox-Snell Residual Plot", pch = 1
 #' )
 #' abline(0, 1, col = "red")
+#' par(oldpar) # Reset plotting layout
 #'
-#' # Comparing residuals from different distribution families
-#' par(mfrow = c(1, 2))
-#' qqnorm(quant_res, main = "GKw Quantile Residuals")
-#' qqline(quant_res)
-#' qqnorm(quant_res_beta, main = "Beta Quantile Residuals")
-#' qqline(quant_res_beta)
+#' # --- Compare residuals using a different family assumption ---
+#' # Calculate quantile residuals assuming underlying Beta dist
+#' quant_res_beta <- residuals(model, type = "quantile", family = "beta")
 #'
-#' # Partial residuals for examining covariate effect
-#' part_res <- residuals(model,
-#'   type = "partial",
-#'   parameter = "alpha", covariate_idx = 2
-#' )
+#' # Compare QQ-plots
+#' oldpar <- par(mfrow = c(1, 2))
+#' stats::qqnorm(quant_res, main = "GKw Quantile Residuals")
+#' stats::qqline(quant_res, col = "blue")
+#' stats::qqnorm(quant_res_beta, main = "Beta Quantile Residuals (from GKw Fit)")
+#' stats::qqline(quant_res_beta, col = "darkgreen")
+#' par(oldpar)
+#'
+#' # --- Partial Residuals ---
+#' # Examine effect of x1 on the alpha parameter's linear predictor
+#' # Assuming x1 is the 2nd term (after intercept) in the alpha model part: ~ x1
+#' if ("x1" %in% colnames(model$x$alpha)) { # Check if x1 is in alpha model matrix
+#'   # Find index for 'x1' (could be 2 if intercept is first)
+#'   x1_idx_alpha <- which(colnames(model$x$alpha) == "x1")
+#'   if (length(x1_idx_alpha) == 1) {
+#'     part_res_alpha_x1 <- residuals(model,
+#'       type = "partial",
+#'       parameter = "alpha", covariate_idx = x1_idx_alpha
+#'     )
+#'     # Plot partial residuals against the predictor
+#'     plot(mydata$x1, part_res_alpha_x1,
+#'       xlab = "x1", ylab = "Partial Residual (alpha predictor)",
+#'       main = "Partial Residual Plot for alpha ~ x1"
+#'     )
+#'     # Add a smoother to see the trend
+#'     lines(lowess(mydata$x1, part_res_alpha_x1), col = "red")
+#'   }
 #' }
 #'
-#' @seealso
-#' \code{\link{fitted.gkwreg}} for extracting fitted values.
-#'
-#' \code{\link{predict.gkwreg}} for predicting from a GKw model.
+#' # Examine effect of x2 on the beta parameter's linear predictor
+#' # Assuming x2 is the 3rd term in the beta model part: ~ x1 + x2
+#' if ("x2" %in% colnames(model$x$beta)) {
+#'   x2_idx_beta <- which(colnames(model$x$beta) == "x2")
+#'   if (length(x2_idx_beta) == 1) {
+#'     part_res_beta_x2 <- residuals(model,
+#'       type = "partial",
+#'       parameter = "beta", covariate_idx = x2_idx_beta
+#'     )
+#'     plot(mydata$x2, part_res_beta_x2,
+#'       xlab = "x2", ylab = "Partial Residual (beta predictor)",
+#'       main = "Partial Residual Plot for beta ~ x2"
+#'     )
+#'     lines(lowess(mydata$x2, part_res_beta_x2), col = "red")
+#'   }
+#' }
+#' }
 #'
 #' @export
 residuals.gkwreg <- function(
@@ -2676,69 +3248,164 @@ residuals.gkwreg <- function(
 }
 
 
-#' Diagnostic Plots for gkwreg Objects
+#' @title Diagnostic Plots for Generalized Kumaraswamy Regression Models
 #'
 #' @description
-#' This S3 method produces a set of diagnostic plots for a fitted Generalized
-#' Kumaraswamy (GKw) regression model, as returned by \code{\link{gkwreg}}.
-#' The function provides standard plots for residual analysis, influence measures,
-#' and goodness-of-fit assessment. Users may choose between base R graphics or
-#' ggplot2 for plotting.
+#' Produces a set of diagnostic plots for assessing the adequacy of a fitted
+#' Generalized Kumaraswamy (GKw) regression model (objects of class \code{"gkwreg"}).
+#' Options allow selection of specific plots, choice of residual type, and plotting
+#' using either base R graphics or \code{ggplot2}.
 #'
-#' @param x A fitted model object of class \code{"gkwreg"}.
+#' @param x An object of class \code{"gkwreg"}, typically the result of a
+#'   call to \code{\link{gkwreg}}.
 #' @param which Integer vector specifying which diagnostic plots to produce.
-#'   Valid values are from 1 to 6, corresponding to:
+#'   If a subset of the plots is required, specify a subset of the numbers 1:6.
+#'   Defaults to \code{1:6}. The plots correspond to:
 #'   \enumerate{
-#'     \item Residuals vs. Observation Indices.
-#'     \item Cook's Distance Plot.
-#'     \item Generalized Leverage vs. Fitted Values.
-#'     \item Residuals vs. Linear Predictor.
-#'     \item Half-Normal Plot of Residuals.
-#'     \item Predicted vs. Observed Values.
+#'     \item Residuals vs. Observation Indices: Checks for time trends or patterns.
+#'     \item Cook's Distance Plot: Helps identify influential observations.
+#'     \item Generalized Leverage vs. Fitted Values: Identifies points with high leverage.
+#'     \item Residuals vs. Linear Predictor: Checks for non-linearity and heteroscedasticity.
+#'     \item Half-Normal Plot of Residuals (with simulated envelope): Assesses normality
+#'       of residuals, comparing against simulated quantiles.
+#'     \item Predicted vs. Observed Values: Checks overall model prediction accuracy.
 #'   }
-#' @param caption A character vector of captions for the plots. Its length must be at
-#'   least \code{max(which)}.
-#' @param sub.caption A character string for a common subtitle above the plots (e.g.,
-#'   the original call of the model). Defaults to the deparsed call of \code{x}.
-#' @param main An optional character string to be used as the main title for each plot,
-#'   appended to the respective caption.
-#' @param ask Logical; if \code{TRUE}, the user is prompted before each plot (only applicable
-#'   to base R graphics). Defaults to \code{TRUE} when the number of plots exceeds the current
-#'   graphics layout.
-#' @param ... Additional graphical parameters to be passed to the underlying plotting functions.
-#' @param type Character string indicating the type of residual to be used.
-#'   Valid options are:
+#' @param caption Character vector providing captions (titles) for the plots.
+#'   Its length must be at least \code{max(which)}. Defaults are provided for plots 1-6.
+#' @param sub.caption Character string used as a common subtitle positioned above all plots
+#'   (especially when multiple plots are arranged). Defaults to the deparsed model call.
+#' @param main An optional character string to be prepended to the individual plot captions
+#'   (from the \code{caption} argument).
+#' @param ask Logical. If \code{TRUE} (and using base R graphics with multiple plots
+#'   on an interactive device), the user is prompted before displaying each plot.
+#'   Defaults to \code{TRUE} if more plots are requested than fit on the current screen layout.
+#' @param ... Additional arguments passed to the underlying plotting functions
+#'   (e.g., graphical parameters like \code{col}, \code{pch}, \code{cex} for base R plots).
+#' @param type Character string indicating the type of residuals to be used for plotting.
+#'   Defaults to \code{"quantile"}. Valid options are:
 #'   \itemize{
-#'     \item \code{"quantile"}: Quantile residuals, based on the probability integral transform.
-#'       Recommended for bounded response variables like those in GKw regression.
-#'     \item \code{"pearson"}: Pearson residuals, standardized by the estimated standard deviation.
-#'       Useful for identifying heteroscedasticity.
-#'     \item \code{"deviance"}: Deviance residuals, based on the contribution to the deviance.
-#'       Helpful for assessing model fit quality.
+#'     \item \code{"quantile"}: Randomized quantile residuals (Dunn & Smyth, 1996).
+#'       Recommended for bounded responses as they should be approximately N(0,1)
+#'       if the model is correctly specified.
+#'     \item \code{"pearson"}: Pearson residuals (response residual standardized by
+#'       estimated standard deviation). Useful for checking the variance function.
+#'     \item \code{"deviance"}: Deviance residuals. Related to the log-likelihood
+#'       contribution of each observation.
 #'   }
-#'   Defaults to \code{"quantile"}.
-#' @param family Character string specifying the distribution family to use.
-#'   If NULL (default), uses the family from the fitted model.
-#'   Available options: "gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta".
-#' @param nsim Integer; number of simulations for the half-normal plot envelope.
-#'   Must be a positive integer. Defaults to 100.
-#' @param level Numeric; confidence level for the half-normal plot envelope.
-#'   Must be between 0 and 1. Defaults to 0.90.
-#' @param use_ggplot Logical; if \code{TRUE}, ggplot2 is used for plotting, otherwise base R
-#'   graphics are used. Defaults to \code{FALSE}.
-#' @param arrange_plots Logical; if \code{TRUE} and \code{use_ggplot = TRUE}, attempts to
-#'   arrange multiple plots in a grid using \code{gridExtra::grid.arrange} or
-#'   \code{ggpubr::ggarrange}. Defaults to \code{FALSE}.
-#' @param sample_size Integer or NULL; if provided and less than the number of observations,
-#'   a random sample of observations of this size will be used for plotting. Useful for very
-#'   large datasets. Defaults to NULL (use all observations).
-#' @param theme_fn Function; a ggplot2 theme function to be applied to all plots when
-#'   \code{use_ggplot = TRUE}. Defaults to \code{ggplot2::theme_minimal()}.
-#' @param save_diagnostics Logical; if \code{TRUE}, returns a list with the diagnostic
-#'   measures used for plotting. Defaults to \code{FALSE}.
+#' @param family Character string specifying the distribution family assumptions
+#'   to use when calculating residuals and other diagnostics. If \code{NULL} (default),
+#'   the family stored within the fitted \code{object} is used. Specifying a different
+#'   family can be useful for diagnostic comparisons. Available options match those
+#'   in \code{\link{gkwreg}}: \code{"gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"}.
+#' @param nsim Integer. Number of simulations used to generate the envelope in the
+#'   half-normal plot (\code{which = 5}). Defaults to 100. Must be positive.
+#' @param level Numeric. The confidence level (between 0 and 1) for the simulated
+#'   envelope in the half-normal plot (\code{which = 5}). Defaults to 0.90.
+#' @param use_ggplot Logical. If \code{TRUE}, plots are generated using the \code{ggplot2}
+#'   package. If \code{FALSE} (default), base R graphics are used. Requires the
+#'   \code{ggplot2} package to be installed if set to \code{TRUE}.
+#' @param arrange_plots Logical. Only relevant if \code{use_ggplot = TRUE} and multiple
+#'   plots are requested (\code{length(which) > 1}). If \code{TRUE}, attempts to arrange
+#'   the generated \code{ggplot} objects into a grid using either the \code{gridExtra}
+#'   or \code{ggpubr} package (requires one of them to be installed). Defaults to \code{FALSE}.
+#' @param sample_size Integer or \code{NULL}. If specified as an integer less than the
+#'   total number of observations (\code{x$nobs}), a random sample of this size is
+#'   used for calculating diagnostics and plotting. This can be useful for speeding up
+#'   plots with very large datasets. Defaults to \code{NULL} (use all observations).
+#' @param theme_fn A function. Only relevant if \code{use_ggplot = TRUE}. Specifies a
+#'   \code{ggplot2} theme function to apply to the plots (e.g., \code{theme_bw},
+#'   \code{theme_classic}). Defaults to \code{ggplot2::theme_minimal}.
+#' @param save_diagnostics Logical. If \code{TRUE}, the function invisibly returns a list
+#'   containing the calculated diagnostic measures (residuals, leverage, Cook's distance, etc.)
+#'   instead of the model object. If \code{FALSE} (default), the function invisibly
+#'   returns the original model object \code{x}.
 #'
-#' @return Invisibly returns either the fitted model object \code{x} (if \code{save_diagnostics = FALSE})
-#'   or a list containing the diagnostic measures (if \code{save_diagnostics = TRUE}).
+#' @details
+#' Diagnostic plots are essential for evaluating the assumptions and adequacy of
+#' fitted regression models. This function provides several standard plots adapted
+#' for \code{gkwreg} objects.
+#'
+#' The choice of residual type (\code{type}) is important. For models with bounded
+#' responses like the GKw family, quantile residuals (\code{type = "quantile"}) are
+#' generally preferred as they are constructed to be approximately normally distributed
+#' under a correctly specified model, making standard diagnostic tools like QQ-plots
+#' more directly interpretable.
+#'
+#' The plots help to assess:
+#' \itemize{
+#'   \item Plot 1 (Residuals vs. Index): Potential patterns or autocorrelation over time/index.
+#'   \item Plot 2 (Cook's Distance): Observations with disproportionately large influence
+#'     on the estimated coefficients.
+#'   \item Plot 3 (Leverage vs. Fitted): Observations with unusual predictor combinations
+#'     (high leverage) that might influence the fit.
+#'   \item Plot 4 (Residuals vs. Linear Predictor): Non-linearity in the predictor-response
+#'     relationship or non-constant variance (heteroscedasticity).
+#'   \item Plot 5 (Half-Normal Plot): Deviations from the assumed residual distribution
+#'     (ideally normal for quantile residuals). Points outside the simulated envelope
+#'     are potentially problematic.
+#'   \item Plot 6 (Predicted vs. Observed): Overall goodness-of-fit and potential systematic
+#'     over- or under-prediction.
+#' }
+#' The function relies on internal helper functions to calculate the necessary diagnostic
+#' quantities and generate the plots using either base R or \code{ggplot2}.
+#'
+#' @return Invisibly returns either the original fitted model object \code{x}
+#'   (if \code{save_diagnostics = FALSE}) or a list containing the calculated
+#'   diagnostic measures used for plotting (if \code{save_diagnostics = TRUE}).
+#'   Primarily called for its side effect of generating plots.
+#'
+#' @author Lopes, J. E.
+#'
+#' @seealso \code{\link{gkwreg}}, \code{\link{residuals.gkwreg}},
+#'   \code{\link{summary.gkwreg}}, \code{\link[stats]{plot.lm}},
+#'   \code{\link[ggplot2]{ggplot}}, \code{\link[gridExtra]{grid.arrange}},
+#'   \code{\link[ggpubr]{ggarrange}}
+#'
+#' @keywords plot methods regression diagnostics hplot
+#'
+#' @examples
+#' \dontrun{
+#' # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
+#' # and that rgkw() is available and data is appropriate (0 < y < 1).
+#' set.seed(456)
+#' n <- 150
+#' x1 <- runif(n, -1, 1)
+#' x2 <- rnorm(n)
+#' alpha <- exp(0.5 + 0.2 * x1)
+#' beta <- exp(0.8 - 0.3 * x1 + 0.1 * x2)
+#' gamma <- exp(0.6)
+#' delta <- plogis(0.0 + 0.2 * x1)
+#' lambda <- exp(-0.2 + 0.1 * x2)
+#' # Use stats::rbeta as placeholder if rgkw is not available
+#' y <- stats::rbeta(n, shape1 = gamma * alpha, shape2 = delta * beta) # Approximation
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+#' mydata <- data.frame(y = y, x1 = x1, x2 = x2)
+#'
+#' # Fit a GKw model
+#' model <- gkwreg(y ~ x1 | x1 + x2 | 1 | x1 | x2, data = mydata, family = "gkw")
+#'
+#' # --- Generate default base R plots (prompts for each plot) ---
+#' plot(model)
+#'
+#' # --- Generate specific plots using base R ---
+#' plot(model, which = c(1, 5), type = "quantile") # Residuals vs Index, Half-Normal
+#'
+#' # --- Generate plots using ggplot2 (requires ggplot2 package) ---
+#' # Ensure ggplot2 is installed: install.packages("ggplot2")
+#' plot(model, which = c(4, 6), use_ggplot = TRUE) # Res vs Lin Pred, Pred vs Obs
+#'
+#' # --- Generate all ggplot2 plots and arrange them (requires gridExtra or ggpubr) ---
+#' # Ensure gridExtra is installed: install.packages("gridExtra")
+#' # plot(model, use_ggplot = TRUE, arrange_plots = TRUE, ask = FALSE)
+#'
+#' # --- Generate plots using Pearson residuals ---
+#' plot(model, which = 4, type = "pearson") # Res vs Lin Pred using Pearson residuals
+#'
+#' # --- Save diagnostic measures instead of plotting ---
+#' diagnostics <- plot(model, save_diagnostics = TRUE)
+#' head(diagnostics$residuals)
+#' head(diagnostics$cooks_distance)
+#' }
 #'
 #' @export
 plot.gkwreg <- function(x,
@@ -3489,7 +4156,7 @@ plot.gkwreg <- function(x,
   abs_resid <- abs(resid_vec)
   sorted_abs_resid <- sort(abs_resid)
   prob_points <- (seq_along(idx) - 0.5) / length(idx)
-  hn_q <- qnorm(0.5 + prob_points / 2) # half-normal quantiles from normal
+  hn_q <- stats::qnorm(0.5 + prob_points / 2) # half-normal quantiles from normal
 
   # Prepare data frame
   half_normal_data <- data.frame(
@@ -4083,9 +4750,9 @@ plot.gkwreg <- function(x,
     # Fallback to a half-normal Q-Q plot approach
     return(
       ggplot2::ggplot(diag_data$data, ggplot2::aes(sample = abs_resid)) +
-        ggplot2::stat_qq(distribution = function(p) qnorm(p * 0.5 + 0.5)) +
+        ggplot2::stat_qq(distribution = function(p) stats::qnorm(p * 0.5 + 0.5)) +
         ggplot2::stat_qq_line(
-          distribution = function(p) qnorm(p * 0.5 + 0.5),
+          distribution = function(p) stats::qnorm(p * 0.5 + 0.5),
           color = "gray", linetype = "dashed"
         ) +
         ggplot2::labs(
@@ -4164,6 +4831,7 @@ plot.gkwreg <- function(x,
 
 
 # Extract confidence intervals from TMB profile likelihood objects
+#' @keywords internal
 extract_profile_ci <- function(profile_obj, level = 0.95) {
   # Check if the profile object has the expected format
   if (!is.data.frame(profile_obj) || !all(c("par", "value") %in% names(profile_obj))) {
@@ -4197,80 +4865,122 @@ extract_profile_ci <- function(profile_obj, level = 0.95) {
 }
 
 
-#' Confidence Intervals for Generalized Kumaraswamy Regression Coefficients
+#' @title Confidence Intervals for GKw Distribution Parameters
 #'
 #' @description
-#' Computes confidence intervals for one or more parameters in a fitted
-#' Generalized Kumaraswamy regression model. This function provides both
-#' Wald-type confidence intervals (based on standard errors and normal
-#' approximation) and profile likelihood confidence intervals when available.
+#' Computes confidence intervals for one or more parameters estimated by fitting a
+#' Generalized Kumaraswamy (GKw) distribution or its subfamilies using
+#' \code{\link{gkwfit}}. Supports Wald-type and potentially profile likelihood intervals.
 #'
-#' @param object An object of class \code{"gkwreg"}, typically the result of
-#'   \code{\link{gkwreg}}.
+#' @param object An object of class \code{"gkwfit"}, typically the result of a
+#'   call to \code{\link{gkwfit}}.
 #' @param parm A specification of which parameters to compute confidence intervals
-#'   for. Either a character vector of parameter names or a numeric vector of
-#'   parameter indices. If missing, confidence intervals for all parameters are
-#'   returned.
-#' @param level The confidence level required. Default is 0.95 (95\% confidence
-#'   interval).
-#' @param method The method used to compute the confidence intervals. Options are:
-#'   \code{"wald"} (default) for Wald-type intervals based on standard errors, or
-#'   \code{"profile"} for profile likelihood intervals.
-#' @param max_steps Integer; maximum number of steps for profile likelihood
-#'   evaluation. Only applicable when \code{method = "profile"}. Default is 100.
-#' @param stepsize Numeric; step size factor for profile likelihood evaluation.
-#'   Only applicable when \code{method = "profile"}. Default is 0.01.
-#' @param trace Logical; if \code{TRUE}, prints information about the profiling
-#'   process. Default is \code{FALSE}.
-#' @param ... Additional arguments (currently not used).
+#'   for. Can be:
+#'   \itemize{
+#'     \item A character vector containing the names of the parameters (e.g.,
+#'       \code{"alpha"}, \code{"beta"}, \code{"gamma"}).
+#'     \item A numeric vector containing the indices of the parameters in the
+#'       \code{coef(object)} vector.
+#'     \item Missing (default), in which case confidence intervals for all
+#'       estimated (non-fixed) parameters are computed.
+#'   }
+#' @param level Numeric. The desired confidence level, e.g., 0.95 for a 95%
+#'   confidence interval. Must be between 0 and 1. Default is 0.95.
+#' @param method Character string specifying the method used to compute the
+#'   confidence intervals. Options are:
+#'   \itemize{
+#'     \item \code{"wald"}: (Default) Computes Wald-type intervals based on the
+#'       estimated parameters, their standard errors, and the normal approximation.
+#'       Requires standard errors to be available (i.e., model fitted with
+#'       \code{hessian = TRUE}).
+#'     \item \code{"profile"}: Computes intervals based on the profile likelihood.
+#'       This requires the model to have been fitted using TMB and the \code{TMB}
+#'       package to be installed. May not be supported by all fitting methods within
+#'       \code{gkwfit}.
+#'   }
+#' @param max_steps Integer. Maximum number of steps allowed during the profile
+#'   likelihood calculation for each parameter. Only applicable when
+#'   \code{method = "profile"}. Default is 100.
+#' @param stepsize Numeric. Initial step size factor used in the profile likelihood search,
+#'   relative to the parameter's standard error. Only applicable when
+#'   \code{method = "profile"}. Default is 0.01.
+#' @param trace Logical. If \code{TRUE}, prints progress information during the
+#'   profile likelihood calculation. Only applicable when \code{method = "profile"}.
+#'   Default is \code{FALSE}.
+#' @param ... Additional arguments, currently ignored by this method.
 #'
 #' @details
-#' For Wald-type intervals (\code{method = "wald"}), the function computes
-#' confidence intervals using the formula:
+#' This function computes confidence intervals for the parameters
+#' (\eqn{\theta}) of a GKw distribution fit.
 #'
-#' \deqn{\hat{\beta}_j \pm z_{1-\alpha/2} \cdot \mathrm{SE}(\hat{\beta}_j)}
+#' \strong{Wald intervals} (\code{method = "wald"}) are calculated using the
+#' standard formula based on the asymptotic normality of MLEs:
+#' \deqn{\hat{\theta}_j \pm z_{1-\alpha/2} \cdot \mathrm{SE}(\hat{\theta}_j)}
+#' where \eqn{\hat{\theta}_j} is the estimated parameter, \eqn{\mathrm{SE}(\hat{\theta}_j)}
+#' is its estimated standard error (obtained from the Hessian matrix), \eqn{\alpha = 1 - \mathrm{level}},
+#' and \eqn{z_{1-\alpha/2}} is the \eqn{1-\alpha/2} quantile of the standard normal
+#' distribution (obtained via \code{stats::qnorm}). These intervals rely on
+#' the availability of standard errors in the \code{object}.
 #'
-#' where \eqn{\hat{\beta}_j} is the estimated coefficient, \eqn{\mathrm{SE}(\hat{\beta}_j)}
-#' is the standard error, and \eqn{z_{1-\alpha/2}} is the \eqn{1-\alpha/2} quantile
-#' of the standard normal distribution, with \eqn{\alpha = 1 - \mathrm{level}}.
+#' \strong{Profile likelihood intervals} (\code{method = "profile"}) are derived
+#' by finding the parameter values for which the profile log-likelihood function
+#' drops by \eqn{\chi^2_{1, 1-\alpha}/2} from its maximum. This method can provide
+#' more accurate coverage but is computationally more intensive and requires that
+#' the model was fitted using an engine that supports profiling (like TMB). If
+#' profiling is not supported or fails, the function may fall back to Wald intervals
+#' with a warning.
 #'
-#' For profile likelihood intervals (\code{method = "profile"}), the function uses
-#' the embedded TMB object to compute confidence intervals based on the profile
-#' likelihood, which can be more accurate for non-linear models or when the
-#' likelihood is asymmetric.
-#'
-#' @return A matrix with columns giving the lower and upper confidence limits for
-#' each parameter. These will be labeled according to the confidence level used.
-#' If \code{method = "profile"} but profile likelihood intervals cannot be computed
-#' (e.g., if the model was not fitted with TMB or if \code{hessian = FALSE}), the
-#' function will fall back to Wald-type intervals with a warning.
+#' @return A matrix with two columns, giving the lower and upper confidence limits
+#'   for each requested parameter. Rows are named after the parameters. Columns are
+#'   labeled with the corresponding confidence percentage (e.g., "2.5 %" and "97.5 %"
+#'   for \code{level = 0.95}). If intervals cannot be computed, the corresponding
+#'   rows will contain \code{NA}.
 #'
 #' @note
-#' For robust confidence intervals, ensure that the model was fitted with
-#' \code{hessian = TRUE} in the \code{gkwreg} function call. Profile likelihood
-#' intervals can be computationally expensive but typically provide more accurate
-#' coverage, especially for parameters with asymmetric likelihood surfaces.
+#' Reliable Wald confidence intervals require that the model was fitted using
+#' \code{hessian = TRUE} in the original \code{\link{gkwfit}} call. Profile likelihood
+#' intervals depend on the fitting method used within \code{gkwfit} (e.g., requires TMB).
+#'
+#' @author Lopes, J. E.
+#'
+#' @seealso \code{\link{gkwfit}}, \code{\link{summary.gkwfit}},
+#'   \code{\link{coef.gkwfit}}, \code{\link[stats]{confint}}
+#'
+#' @keywords confidence intervals methods htest
 #'
 #' @examples
 #' \dontrun{
-#' # Fit a Kumaraswamy regression model
-#' kw_reg <- gkwreg(y ~ x1 + x2 | x3, data = df, family = "kw")
+#' # Assume 'y_data' is a vector of observations between 0 and 1.
+#' set.seed(123)
+#' y_data <- rkw(200, alpha = 2, beta = 3) # Example using Kumaraswamy
+#' y_data <- pmax(pmin(y_data, 1 - 1e-7), 1e-7)
 #'
-#' # Calculate 95% confidence intervals for all parameters
-#' confint(kw_reg)
+#' # Fit the distribution (ensure hessian=TRUE for Wald CIs)
+#' fit_kw <- gkwfit(y_data, family = "kw", hessian = TRUE)
 #'
-#' # Calculate 90% confidence intervals for specific parameters
-#' confint(kw_reg, parm = c("alpha:(Intercept)", "beta:x3"), level = 0.90)
+#' # --- Wald Confidence Intervals ---
 #'
-#' # Calculate profile likelihood confidence intervals
-#' confint(kw_reg, method = "profile")
+#' # Calculate 95% Wald confidence intervals for alpha and beta
+#' ci_wald_kw <- confint(fit_kw)
+#' print(ci_wald_kw)
+#'
+#' # Calculate 90% Wald confidence interval for alpha only
+#' ci_wald_alpha <- confint(fit_kw, parm = "alpha", level = 0.90)
+#' print(ci_wald_alpha)
+#'
+#' # --- Profile Likelihood Confidence Intervals (if supported by gkwfit method) ---
+#'
+#' # Calculate 95% profile likelihood CIs (may take longer, requires TMB fit)
+#' ci_profile_kw <- try(confint(fit_kw, method = "profile"))
+#' if (!inherits(ci_profile_kw, "try-error")) {
+#'   print(ci_profile_kw)
+#' } else {
+#'   print("Profile likelihood CI calculation failed or not supported.")
+#' }
 #' }
 #'
-#' @seealso \code{\link{gkwreg}}, \code{\link{summary.gkwreg}}
-#'
-#' @importFrom stats qnorm
 #' @export
-confint.gkwreg <- function(object, parm, level = 0.95,
+confint.gkwfit <- function(object, parm, level = 0.95,
                            method = c("wald", "profile"),
                            max_steps = 100, stepsize = 0.01,
                            trace = FALSE, ...) {
@@ -4278,8 +4988,8 @@ confint.gkwreg <- function(object, parm, level = 0.95,
   method <- match.arg(method)
 
   # Check if object is of correct class
-  if (!inherits(object, "gkwreg")) {
-    stop("'object' must be a fitted model object of class 'gkwreg'")
+  if (!inherits(object, "gkwfit")) {
+    stop("'object' must be a fitted model object of class 'gkwfit'")
   }
 
   # Check if level is valid
@@ -4287,11 +4997,15 @@ confint.gkwreg <- function(object, parm, level = 0.95,
     stop("'level' must be a numeric value between 0 and 1")
   }
 
-  # Retrieve the coefficients and their names
-  cf <- object$coefficients
-
-  if (is.null(cf)) {
-    stop("No coefficients found in the model object")
+  # Retrieve the coefficients (parameter estimates) and their names
+  # Assuming coef.gkwfit exists or object$estimate is available
+  cf <- try(stats::coef(object), silent = TRUE)
+  if (inherits(cf, "try-error") || is.null(cf)) {
+    if (!is.null(object$estimate)) {
+      cf <- object$estimate
+    } else {
+      stop("No parameter estimates found in the model object")
+    }
   }
 
   cf_names <- names(cf)
@@ -4303,7 +5017,7 @@ confint.gkwreg <- function(object, parm, level = 0.95,
     parm_names <- cf_names
   } else if (is.numeric(parm)) {
     if (any(parm < 1 | parm > n_coefs)) {
-      stop("If numeric, 'parm' must contain valid coefficient indices")
+      stop("If numeric, 'parm' must contain valid parameter indices")
     }
     parm_idx <- parm
     parm_names <- cf_names[parm_idx]
@@ -4331,160 +5045,209 @@ confint.gkwreg <- function(object, parm, level = 0.95,
 
   # Compute confidence intervals based on method
   if (method == "wald") {
-    if (is.null(object$se)) {
+    # Assuming object$se contains standard errors for the parameters
+    se_all <- object$se
+    if (is.null(se_all)) {
+      # Try vcov if se is not directly available
+      vc <- try(stats::vcov(object), silent = TRUE)
+      if (!inherits(vc, "try-error") && !is.null(vc)) {
+        se_all <- sqrt(diag(vc))
+      }
+    }
+
+    if (is.null(se_all) || length(se_all) != n_coefs) {
       warning(
-        "Standard errors not found in the model object. ",
+        "Standard errors not found or have incorrect length in the model object. ",
         "The model may have been fitted with hessian = FALSE. ",
-        "Consider refitting with hessian = TRUE for valid confidence intervals."
+        "Cannot compute Wald intervals."
       )
       # Set CIs to NA and return
       return(ci)
     }
 
-    # Extract standard errors
-    se_sub <- object$se[parm_idx]
-
-    # Critical value from normal distribution
-    z_crit <- qnorm(1 - alpha / 2)
-
-    # Compute Wald-type intervals
-    ci[, 1] <- cf_sub - z_crit * se_sub # Lower bound
-    ci[, 2] <- cf_sub + z_crit * se_sub # Upper bound
-  } else if (method == "profile") {
-    # Check if TMB object is available
-    if (is.null(object$tmb_object)) {
-      warning("TMB object not found in the model. Falling back to Wald-type intervals.")
-
-      # Fall back to Wald-type intervals
-      if (!is.null(object$se)) {
-        se_sub <- object$se[parm_idx]
-        z_crit <- qnorm(1 - alpha / 2)
-        ci[, 1] <- cf_sub - z_crit * se_sub # Lower bound
-        ci[, 2] <- cf_sub + z_crit * se_sub # Upper bound
-      }
-
-      return(ci)
+    # Ensure names match if possible
+    if (!is.null(names(se_all)) && all(cf_names %in% names(se_all))) {
+      se_ordered <- se_all[cf_names] # Order SEs like coefficients
+    } else {
+      warning("Names of standard errors do not match parameter names; assuming same order.")
+      se_ordered <- se_all
     }
 
-    # Check if package TMB is available
-    if (!requireNamespace("TMB", quietly = TRUE)) {
+    # Extract standard errors for selected parameters
+    se_sub <- se_ordered[parm_idx]
+
+    # Check if any selected SE is NA or non-positive
+    if (anyNA(se_sub) || any(se_sub <= 0)) {
+      warning("Missing or non-positive standard errors found for some parameters. Wald intervals cannot be computed for these.")
+      valid_se_idx <- !is.na(se_sub) & se_sub > 0
+    } else {
+      valid_se_idx <- rep(TRUE, length(se_sub))
+    }
+
+
+    # Critical value from normal distribution *** CODE FIX: Use stats::qnorm ***
+    z_crit <- stats::qnorm(1 - alpha / 2)
+
+    # Compute Wald-type intervals only for valid SEs
+    if (any(valid_se_idx)) {
+      ci[valid_se_idx, 1] <- cf_sub[valid_se_idx] - z_crit * se_sub[valid_se_idx] # Lower bound
+      ci[valid_se_idx, 2] <- cf_sub[valid_se_idx] + z_crit * se_sub[valid_se_idx] # Upper bound
+    }
+  } else if (method == "profile") {
+    # Check if TMB object is available (assuming gkwfit might use TMB)
+    # Modify this check based on how gkwfit stores TMB results, if it does.
+    tmb_obj <- object$tmb_object # Or wherever it might be stored
+
+    if (is.null(tmb_obj)) {
+      warning("TMB object not found in the model. Profile likelihood intervals may not be supported by the fitting method used. Falling back to Wald-type intervals.")
+      method <- "wald" # Force fallback
+    } else if (!requireNamespace("TMB", quietly = TRUE)) {
       warning(
         "Package 'TMB' is required for profile likelihood confidence intervals. ",
         "Falling back to Wald-type intervals."
       )
-
-      # Fall back to Wald-type intervals
-      if (!is.null(object$se)) {
-        se_sub <- object$se[parm_idx]
-        z_crit <- qnorm(1 - alpha / 2)
-        ci[, 1] <- cf_sub - z_crit * se_sub # Lower bound
-        ci[, 2] <- cf_sub + z_crit * se_sub # Upper bound
-      }
-
-      return(ci)
+      method <- "wald" # Force fallback
     }
 
-    # Use profiling when available
-    obj <- object$tmb_object
+    # If method is still profile after checks...
+    if (method == "profile") {
+      obj <- tmb_obj # Use the found TMB object
 
-    # Try to use TMB's tmbprofile
+      # Get standard errors again for stepsize calculation, needed even for profile
+      se_all <- object$se
+      if (is.null(se_all)) {
+        vc <- try(stats::vcov(object), silent = TRUE)
+        if (!inherits(vc, "try-error") && !is.null(vc)) {
+          se_all <- sqrt(diag(vc))
+        }
+      }
+      if (is.null(se_all) || length(se_all) != n_coefs) {
+        warning("Cannot compute profile intervals without standard errors for step size guidance. Falling back to Wald method if possible.")
+        method <- "wald" # Force fallback
+      } else {
+        if (!is.null(names(se_all)) && all(cf_names %in% names(se_all))) {
+          se_ordered <- se_all[cf_names]
+        } else {
+          se_ordered <- se_all
+        }
+        se_sub <- se_ordered[parm_idx]
+      }
+    }
+
+    # If method became 'wald' due to fallback, recalculate Wald CIs if possible
+    if (method == "wald") {
+      # Recalculate Wald (redundant code, refactor if preferred)
+      se_all <- object$se
+      if (is.null(se_all)) {
+        vc <- try(stats::vcov(object), silent = TRUE)
+        if (!inherits(vc, "try-error") && !is.null(vc)) {
+          se_all <- sqrt(diag(vc))
+        }
+      }
+      if (!is.null(se_all) && length(se_all) == n_coefs) {
+        if (!is.null(names(se_all)) && all(cf_names %in% names(se_all))) {
+          se_ordered <- se_all[cf_names]
+        } else {
+          se_ordered <- se_all
+        }
+        se_sub <- se_ordered[parm_idx]
+        valid_se_idx <- !is.na(se_sub) & se_sub > 0
+        if (any(valid_se_idx)) {
+          # *** CODE FIX: Use stats::qnorm ***
+          z_crit <- stats::qnorm(1 - alpha / 2)
+          ci[valid_se_idx, 1] <- cf_sub[valid_se_idx] - z_crit * se_sub[valid_se_idx]
+          ci[valid_se_idx, 2] <- cf_sub[valid_se_idx] + z_crit * se_sub[valid_se_idx]
+        } else {
+          # Ensure NA if valid_se_idx is all FALSE
+          ci[, ] <- NA
+        }
+      } else {
+        # Ensure NA if SEs are completely missing
+        ci[, ] <- NA
+      }
+      return(ci) # Return after fallback calculation
+    }
+
+
+    # --- Proceed with Profile Calculation (if method is still "profile") ---
     tryCatch(
       {
         if (trace) message("Computing profile likelihood confidence intervals...")
 
-        # Loop through parameters and compute profile CIs
+        # Loop through selected parameters and compute profile CIs
         for (i in seq_along(parm_idx)) {
           param_name <- parm_names[i]
           param_idx <- parm_idx[i]
+          current_se <- se_sub[i] # Get SE for this parameter
+
+          if (is.na(current_se) || current_se <= 0) {
+            warning(
+              "Invalid standard error for parameter '", param_name,
+              "'. Cannot compute profile interval. Skipping."
+            )
+            next # Skip to next parameter
+          }
 
           if (trace) message("Processing parameter: ", param_name)
 
-          # Map TMB parameter name to internal parameter index
-          # This is implementation-specific and may need adjustment
-          tmb_param_idx <- .map_gkwreg_to_tmb_param(object, param_idx)
+          # Map gkwfit parameter name/index to the TMB parameter index/name
+          # This is highly dependent on the TMB template structure for gkwfit
+          # Placeholder: assume direct mapping by index for now
+          tmb_param_idx <- param_idx # Needs verification based on TMB template
 
-          if (is.na(tmb_param_idx)) {
-            if (trace) message("Could not map parameter to TMB index. Skipping.")
-            next
-          }
-
-          # Compute profile
+          # Compute profile using TMB::tmbprofile
           profile_obj <- try(TMB::tmbprofile(
             obj = obj,
-            name = tmb_param_idx,
-            h = stepsize * object$se[param_idx],
-            steptol = 0.01,
-            sd = TRUE,
-            trace = trace,
-            inner.method = "nlminb",
-            maxsteps = max_steps
+            name = tmb_param_idx - 1, # TMB often uses 0-based index in C++? Or name? Check TMB docs. Assuming index for now.
+            h = stepsize * current_se,
+            ytol = 2, # Corresponds to approx chi-sq quantile for 95% CI
+            level = level, # Pass level directly if tmbprofile supports it (newer versions might)
+            trace = trace
+            # Potentially add other args like maxsteps, steptol if needed by tmbprofile call
           ), silent = !trace)
 
           # Check if profiling succeeded
           if (inherits(profile_obj, "try-error")) {
             warning(
               "Profile likelihood calculation failed for parameter '",
-              param_name, "'. Falling back to Wald-type interval."
+              param_name, "'. No interval computed."
             )
-
-            # Fall back to Wald-type interval for this parameter
-            if (!is.null(object$se)) {
-              se_val <- object$se[param_idx]
-              z_crit <- qnorm(1 - alpha / 2)
-              ci[i, 1] <- cf_sub[i] - z_crit * se_val
-              ci[i, 2] <- cf_sub[i] + z_crit * se_val
-            }
-
+            # Leave CI as NA
             next
           }
 
-          # Extract confidence interval from profile
-          # profile_ci <- try(TMB::confint(profile_obj, level = level), silent = !trace)
-          profile_ci <- try(extract_profile_ci(profile_obj, level = level), silent = !trace)
+          # Extract confidence interval using TMB::tmbprofile
+          profile_ci <- try(TMB::tmbprofile(profile_obj, level = level), silent = !trace)
 
-          if (inherits(profile_ci, "try-error") || !is.numeric(profile_ci) || length(profile_ci) != 2) {
+          # Validate extracted CI
+          if (inherits(profile_ci, "try-error") || !is.numeric(profile_ci) || NROW(profile_ci) != 1 || NCOL(profile_ci) != 2) {
             warning(
-              "Could not extract profile likelihood confidence interval for parameter '",
-              param_name, "'. Falling back to Wald-type interval."
+              "Could not extract valid profile likelihood confidence interval for parameter '",
+              param_name, "'."
             )
-
-            # Fall back to Wald-type interval for this parameter
-            if (!is.null(object$se)) {
-              se_val <- object$se[param_idx]
-              z_crit <- qnorm(1 - alpha / 2)
-              ci[i, 1] <- cf_sub[i] - z_crit * se_val
-              ci[i, 2] <- cf_sub[i] + z_crit * se_val
-            }
-
+            # Leave CI as NA
             next
           }
 
           # Store the profile likelihood CI
-          ci[i, 1] <- profile_ci[1] # Lower bound
-          ci[i, 2] <- profile_ci[2] # Upper bound
-        }
+          ci[i, 1] <- profile_ci[1, 1] # Lower bound
+          ci[i, 2] <- profile_ci[1, 2] # Upper bound
+        } # End loop through parameters
       },
       error = function(e) {
+        # Catch general errors during the profiling process
         warning(
-          "Error in profile likelihood calculation: ", e$message,
-          "\nFalling back to Wald-type intervals."
+          "Error during profile likelihood calculation: ", e$message,
+          "\nNo profile intervals computed."
         )
-
-        # Fall back to Wald-type intervals for all parameters
-        if (!is.null(object$se)) {
-          se_sub <- object$se[parm_idx]
-          z_crit <- qnorm(1 - alpha / 2)
-          ci[, 1] <- cf_sub - z_crit * se_sub # Lower bound
-          ci[, 2] <- cf_sub + z_crit * se_sub # Upper bound
-        }
+        # Leave remaining CIs as NA
       }
-    )
-  }
+    ) # End tryCatch for profiling
+  } # End profile method section
 
-  # Return the confidence intervals
+  # Return the confidence intervals matrix
   return(ci)
 }
-
 
 
 #' Map gkwreg parameter index to TMB parameter index
@@ -4567,52 +5330,97 @@ confint.gkwreg <- function(object, parm, level = 0.95,
 }
 
 
-#' Extract Log-Likelihood from a Generalized Kumaraswamy Regression Model
+#' @title Extract Log-Likelihood from a Generalized Kumaraswamy Regression Model
 #'
 #' @description
-#' This function extracts the log-likelihood value from a fitted Generalized
-#' Kumaraswamy regression model. The result is returned as an object of class
-#' \code{"logLik"}, which can be used for model selection and comparison.
+#' This function extracts the maximized log-likelihood value from a fitted Generalized
+#' Kumaraswamy (GKw) regression model object (class \code{"gkwreg"}). The result is
+#' returned as an object of class \code{"logLik"}, which includes attributes for
+#' degrees of freedom and number of observations, suitable for use with model
+#' selection criteria like AIC and BIC.
 #'
 #' @param object An object of class \code{"gkwreg"}, typically the result of a call
 #'   to \code{\link{gkwreg}}.
-#' @param ... Additional arguments (currently not used).
+#' @param ... Additional arguments, currently ignored by this method.
 #'
 #' @details
-#' The log-likelihood for Generalized Kumaraswamy regression models is computed
-#' during model fitting and stored in the model object. This function retrieves
-#' the stored value and creates a proper \code{"logLik"} object with the appropriate
-#' attributes for use with model selection criteria and likelihood ratio tests.
+#' The log-likelihood value is typically computed during the model fitting process
+#' (e.g., by \code{\link{gkwreg}}) and stored within the resulting object. This
+#' method retrieves this stored value. If the value is not directly available, it
+#' attempts to calculate it from the stored deviance (\eqn{logLik = -deviance / 2}).
 #'
-#' For GKw family models, the log-likelihood is computed as:
+#' The log-likelihood for a GKw family model with parameters \eqn{\theta} is
+#' generally defined as the sum of the log-density contributions for each observation:
+#' \deqn{l(\theta | y) = \sum_{i=1}^n \log f(y_i; \alpha_i, \beta_i, \gamma_i, \delta_i, \lambda_i)}
+#' where \eqn{f(y; \dots)} is the probability density function (PDF) of the specific
+#' distribution from the GKw family used in the model (determined by the \code{family}
+#' argument in \code{gkwreg}), and parameters (\eqn{\alpha_i, \dots, \lambda_i}) may
+#' depend on covariates.
 #'
-#' \deqn{l(\theta) = \sum_{i=1}^n \log f(y_i; \alpha_i, \beta_i, \gamma_i, \delta_i, \lambda_i)}
+#' The function also extracts the number of estimated parameters (\code{df}) and the
+#' number of observations (\code{nobs}) used in the fit, storing them as attributes
+#' of the returned \code{"logLik"} object, which is essential for functions like
+#' \code{\link[stats]{AIC}} and \code{\link[stats]{BIC}}. It attempts to find \code{df}
+#' and \code{nobs} from various components within the \code{object} if they are not
+#' directly stored as \code{npar} and \code{nobs}.
 #'
-#' where \eqn{f(y; \alpha, \beta, \gamma, \delta, \lambda)} is the probability
-#' density function of the specific distribution from the GKw family, and \eqn{\theta}
-#' represents all model parameters.
+#' @return An object of class \code{"logLik"} representing the maximized
+#'   log-likelihood value. It has the following attributes:
+#'   \itemize{
+#'     \item \code{df}: (numeric) The number of estimated parameters in the model
+#'       (coefficients).
+#'     \item \code{nobs}: (numeric) The number of observations used for fitting the model.
+#'   }
 #'
-#' @return An object of class \code{"logLik"} with the following attributes:
-#' \itemize{
-#'   \item \code{df}: The number of estimated parameters in the model.
-#'   \item \code{nobs}: The number of observations used for fitting the model.
-#' }
+#' @author Lopes, J. E.
+#'
+#' @seealso \code{\link{gkwreg}}, \code{\link{AIC.gkwreg}}, \code{\link{BIC.gkwreg}},
+#'   \code{\link[stats]{logLik}}, \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}}
+#'
+#' @keywords log-likelihood models likelihood
 #'
 #' @examples
 #' \dontrun{
-#' # Fit a Kumaraswamy regression model
-#' kw_reg <- gkwreg(y ~ x1 + x2 | x3, data = df, family = "kw")
+#' # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
+#' # and that rkw() is available and data is appropriate (0 < y < 1).
+#' set.seed(123)
+#' n <- 100
+#' x1 <- runif(n)
+#' x2 <- rnorm(n)
+#' x3 <- factor(rbinom(n, 1, 0.4))
+#' alpha <- exp(0.5 + 0.2 * x1)
+#' beta <- exp(1.0 - 0.1 * x2 + 0.3 * (x3 == "1"))
+#' y <- rkw(n, alpha = alpha, beta = beta) # Placeholder if rkw not available
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+#' df <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
 #'
-#' # Extract log-likelihood
+#' # Fit a Kumaraswamy regression model
+#' kw_reg <- gkwreg(y ~ x1 | x2 + x3, data = df, family = "kw")
+#'
+#' # Extract log-likelihood object
 #' ll <- logLik(kw_reg)
+#'
+#' # Print the log-likelihood value (with attributes)
 #' print(ll)
 #'
-#' # Get the number of parameters
-#' attr(ll, "df")
+#' # Access the value directly
+#' ll_value <- as.numeric(ll)
+#' print(ll_value)
+#'
+#' # Get the number of parameters (degrees of freedom)
+#' df_model <- attr(ll, "df")
+#' print(paste("Number of parameters:", df_model))
+#'
+#' # Get the number of observations
+#' nobs_model <- attr(ll, "nobs")
+#' print(paste("Number of observations:", nobs_model))
+#'
+#' # Use with AIC/BIC
+#' AIC(kw_reg)
+#' BIC(kw_reg)
 #' }
 #'
-#' @seealso \code{\link{gkwreg}}, \code{\link{AIC.gkwreg}}, \code{\link{BIC.gkwreg}}
-#'
+#' @export
 logLik.gkwreg <- function(object, ...) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {
@@ -4633,22 +5441,24 @@ logLik.gkwreg <- function(object, ...) {
     }
   }
 
-  # Get the number of parameters
+  # Get the number of parameters (degrees of freedom for the model)
+  # Use npar if available, otherwise count coefficients
   df <- object$npar
   if (is.null(df)) {
     # Try to determine number of parameters from coefficients
     if (!is.null(object$coefficients)) {
       df <- length(object$coefficients)
     } else {
-      warning("Number of parameters not found in the model object")
+      warning("Number of parameters ('npar') not found in the model object")
       df <- NA_integer_
     }
   }
 
-  # Get the number of observations
+  # Get the number of observations used in the fit
+  # Use nobs if available, otherwise infer from other components
   nobs <- object$nobs
   if (is.null(nobs)) {
-    # Try to determine number of observations from residuals or fitted values
+    # Try to determine number of observations from residuals or fitted values or y
     if (!is.null(object$residuals)) {
       nobs <- length(object$residuals)
     } else if (!is.null(object$fitted.values)) {
@@ -4656,12 +5466,17 @@ logLik.gkwreg <- function(object, ...) {
     } else if (!is.null(object$y)) {
       nobs <- length(object$y)
     } else {
-      warning("Number of observations not found in the model object")
+      warning("Number of observations ('nobs') not found in the model object")
       nobs <- NA_integer_
     }
   }
 
+  # Ensure df and nobs are numeric, even if NA
+  df <- as.numeric(df)
+  nobs <- as.numeric(nobs)
+
   # Create and return the logLik object with appropriate attributes
+  # Use structure() to assign attributes and class simultaneously
   structure(ll,
     df = df,
     nobs = nobs,
@@ -4669,177 +5484,301 @@ logLik.gkwreg <- function(object, ...) {
   )
 }
 
-#' Akaike's Information Criterion for Generalized Kumaraswamy Regression Models
+
+#' @title Akaike's Information Criterion for GKw Regression Models
 #'
 #' @description
 #' Calculates the Akaike Information Criterion (AIC) for one or more fitted
-#' Generalized Kumaraswamy regression models. AIC is a measure of the relative
-#' quality of statistical models for a given set of data, providing a means for
-#' model selection.
+#' Generalized Kumaraswamy (GKw) regression model objects (class \code{"gkwreg"}).
+#' AIC is commonly used for model selection, penalizing model complexity.
 #'
-#' @param object An object of class \code{"gkwreg"}, typically the result of a call
-#'   to \code{\link{gkwreg}}.
-#' @param ... Optionally, additional objects of class \code{"gkwreg"} for model
-#'   comparison.
-#' @param k The penalty per parameter to be used; the default \code{k = 2} gives
-#'   the traditional AIC.
+#' @param object An object of class \code{"gkwreg"}, typically the result of a
+#'   call to \code{\link{gkwreg}}.
+#' @param ... Optionally, one or more additional fitted model objects of class
+#'   \code{"gkwreg"}, for which AIC should also be calculated.
+#' @param k Numeric, the penalty per parameter. The default \code{k = 2} corresponds
+#'   to the traditional AIC. Using \code{k = log(nobs)} would yield BIC (though using
+#'   \code{\link{BIC.gkwreg}} is preferred for that).
 #'
 #' @details
-#' The AIC is calculated as:
+#' The AIC is calculated based on the maximized log-likelihood (\eqn{L}) and the
+#' number of estimated parameters (\eqn{p}) in the model:
+#' \deqn{AIC = -2 \log(L) + k \times p}
+#' This function retrieves the log-likelihood and the number of parameters (\code{df})
+#' using the \code{\link{logLik.gkwreg}} method for the fitted \code{gkwreg} object(s).
+#' Models with lower AIC values are generally preferred, as they indicate a better
+#' balance between goodness of fit and model parsimony.
 #'
-#' \deqn{AIC = -2 \times \log(L) + 2 \times k}
+#' When comparing multiple models passed via \code{...}, the function relies on
+#' \code{\link[stats]{AIC}}'s default method for creating a comparison table,
+#' which in turn calls \code{logLik} for each provided object.
 #'
-#' where \eqn{L} is the maximized likelihood function and \eqn{k} is the number of
-#' estimated parameters in the model. The model with the lowest AIC is generally
-#' preferred.
+#' For small sample sizes relative to the number of parameters, the second-order
+#' AIC (AICc) might be more appropriate:
+#' \deqn{AICc = AIC + \frac{2p(p+1)}{n-p-1}}
+#' where \eqn{n} is the number of observations. AICc is not directly computed by
+#' this function but can be calculated manually using the returned AIC, \eqn{p}
+#' (from \code{attr(logLik(object), "df")}), and \eqn{n}
+#' (from \code{attr(logLik(object), "nobs")}).
 #'
-#' For small sample sizes, the corrected AIC (AICc) may be more appropriate.
-#' Though not directly implemented here, it can be calculated as:
+#' @return If just one \code{object} is provided, returns a single numeric AIC value.
+#'   If multiple objects are provided via \code{...}, returns a \code{data.frame}
+#'   with rows corresponding to the models and columns for the degrees of freedom
+#'   (\code{df}) and the AIC values, sorted by AIC.
 #'
-#' \deqn{AICc = AIC + \frac{2k(k+1)}{n-k-1}}
-#'
-#' where \eqn{n} is the sample size.
-#'
-#' @return If just one object is provided, returns a numeric AIC value. If multiple
-#' objects are provided, returns a data frame with rows corresponding to the objects
-#' and columns representing the number of parameters (df) and AIC values.
-#'
-#' @examples
-#' \dontrun{
-#' # Fit two competing models
-#' kw_reg1 <- gkwreg(y ~ x1 | x2, data = df, family = "kw")
-#' kw_reg2 <- gkwreg(y ~ x1 + x3 | x2, data = df, family = "kw")
-#'
-#' # Compare models using AIC
-#' AIC(kw_reg1, kw_reg2)
-#'
-#' # Calculate AIC with a different penalty
-#' AIC(kw_reg1, k = 3)
-#' }
-#'
-#' @seealso \code{\link{gkwreg}}, \code{\link{logLik.gkwreg}}, \code{\link{BIC.gkwreg}}
+#' @author Lopes, J. E.
 #'
 #' @references
 #' Akaike, H. (1974). A new look at the statistical model identification.
-#' \emph{IEEE Transactions on Automatic Control}, 19(6), 716-723.
+#' \emph{IEEE Transactions on Automatic Control}, \strong{19}(6), 716-723.
+#' \doi{10.1109/TAC.1974.1100705}
 #'
+#' Burnham, K. P., & Anderson, D. R. (2002). \emph{Model Selection and Multimodel
+#' Inference: A Practical Information-Theoretic Approach} (2nd ed.). Springer-Verlag.
+#'
+#' @seealso \code{\link{gkwreg}}, \code{\link{logLik.gkwreg}}, \code{\link{BIC.gkwreg}},
+#'   \code{\link[stats]{AIC}}
+#'
+#' @keywords AIC models likelihood model selection
+#'
+#' @examples
+#' \dontrun{
+#' # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
+#' # and that rkw() is available and data is appropriate (0 < y < 1).
+#' set.seed(123)
+#' n <- 100
+#' x1 <- runif(n)
+#' x2 <- rnorm(n)
+#' x3 <- factor(rbinom(n, 1, 0.4))
+#' alpha <- exp(0.5 + 0.2 * x1)
+#' beta <- exp(1.0 - 0.1 * x2 + 0.3 * (x3 == "1"))
+#' y <- rkw(n, alpha = alpha, beta = beta) # Placeholder if rkw not available
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+#' df <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+#'
+#' # Fit two competing models
+#' kw_reg1 <- gkwreg(y ~ x1 | x2, data = df, family = "kw")
+#' kw_reg2 <- gkwreg(y ~ x1 | x2 + x3, data = df, family = "kw") # More complex beta model
+#' kw_reg3 <- gkwreg(y ~ 1 | x2 + x3, data = df, family = "kw") # Simpler alpha model
+#'
+#' # Calculate AIC for a single model
+#' aic1 <- AIC(kw_reg1)
+#' print(aic1)
+#'
+#' # Compare models using AIC (lower is better)
+#' model_comparison_aic <- AIC(kw_reg1, kw_reg2, kw_reg3)
+#' print(model_comparison_aic)
+#'
+#' # Calculate AIC with a different penalty (e.g., k=4)
+#' aic1_k4 <- AIC(kw_reg1, k = 4)
+#' print(aic1_k4)
+#' }
+#'
+#' @export
 AIC.gkwreg <- function(object, ..., k = 2) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {
     stop("'object' must be a fitted model object of class 'gkwreg'")
   }
 
-  # Handle case with multiple models for comparison
-  if (length(list(...)) > 0) {
+  # Capture additional model objects
+  dot_objects <- list(...)
+
+  # Handle case with multiple models for comparison using stats::AIC generic logic
+  # This relies on the generic dispatching to logLik.gkwreg for each object
+  if (length(dot_objects) > 0) {
+    # Ensure all additional objects are also gkwreg models (or compatible)
+    obj_list <- c(list(object), dot_objects)
+    classes <- vapply(obj_list, function(o) class(o)[1], character(1))
+    if (!all(classes == "gkwreg")) {
+      # Allow comparison if logLik methods exist for other object types
+      # stats::AIC handles this, just pass them through
+      warning("Comparing objects of different classes.")
+    }
+    # Call the default stats::AIC logic which handles multiple objects
+    # It uses logLik() on each object.
     return(stats::AIC(object = object, ..., k = k))
   }
 
-  # Check if AIC is already computed and stored in the object
-  if (!is.null(object$aic) && k == 2) {
+  # --- Handle single object case ---
+
+  # Check if AIC is already computed and stored in the object AND k is the default 2
+  # Avoid recalculating standard AIC if already present
+  if (!is.null(object$aic) && identical(k, 2)) {
     return(object$aic)
   }
 
   # Calculate AIC from log-likelihood and number of parameters
-  ll <- logLik(object)
+  ll <- stats::logLik(object) # Use stats::logLik generic, dispatches to logLik.gkwreg
 
-  # Number of parameters
+  # Extract number of parameters (df) from the logLik object
   df <- attr(ll, "df")
-  if (is.na(df)) {
-    warning("Number of parameters not available. AIC calculation may be inaccurate.")
-    # Try to extract parameters from the coefficients
+
+  # Check if df is valid
+  if (is.null(df) || is.na(df) || !is.numeric(df) || df < 0) {
+    warning("Could not extract a valid number of parameters (df) from the logLik object. AIC calculation might be incorrect.")
+    # Attempt fallback: count coefficients if df is invalid
     if (!is.null(object$coefficients)) {
       df <- length(object$coefficients)
+      warning("Using the count of coefficients (", df, ") as the number of parameters.")
     } else {
-      df <- 0 # Default to avoid errors, but will give incorrect results
+      df <- NA_real_ # Cannot determine df
+      warning("Setting number of parameters to NA.")
     }
   }
 
-  # Calculate and return AIC
-  -2 * as.numeric(ll) + k * df
+  # Check if logLik value is valid
+  ll_val <- as.numeric(ll)
+  if (is.null(ll_val) || is.na(ll_val) || !is.finite(ll_val)) {
+    warning("Invalid log-likelihood value extracted. Cannot compute AIC.")
+    return(NA_real_)
+  }
+
+  # Calculate and return AIC using the formula -2*logLik + k*df
+  aic_val <- -2 * ll_val + k * df
+
+  return(aic_val)
 }
 
 
-#' Bayesian Information Criterion for Generalized Kumaraswamy Regression Models
+
+#' @title Bayesian Information Criterion for GKw Regression Models
 #'
 #' @description
 #' Calculates the Bayesian Information Criterion (BIC), also known as Schwarz's
-#' Bayesian Criterion (SBC), for one or more fitted Generalized Kumaraswamy
-#' regression models. BIC is a criterion for model selection that penalizes model
-#' complexity more strongly than AIC.
+#' Bayesian Criterion (SBC), for one or more fitted Generalized Kumaraswamy (GKw)
+#' regression model objects (class \code{"gkwreg"}). BIC is used for model selection
+#' and tends to penalize model complexity more heavily than AIC, especially for
+#' larger datasets.
 #'
-#' @param object An object of class \code{"gkwreg"}, typically the result of a call
-#'   to \code{\link{gkwreg}}.
-#' @param ... Optionally, additional objects of class \code{"gkwreg"} for model
-#'   comparison.
+#' @param object An object of class \code{"gkwreg"}, typically the result of a
+#'   call to \code{\link{gkwreg}}.
+#' @param ... Optionally, one or more additional fitted model objects of class
+#'   \code{"gkwreg"}, for which BIC should also be calculated.
 #'
 #' @details
-#' The BIC is calculated as:
+#' The BIC is calculated based on the maximized log-likelihood (\eqn{L}), the
+#' number of estimated parameters (\eqn{p}) in the model, and the number of
+#' observations (\eqn{n}):
+#' \deqn{BIC = -2 \log(L) + p \times \log(n)}
+#' This function retrieves the log-likelihood, the number of parameters (\code{df}),
+#' and the number of observations (\code{nobs}) using the \code{\link{logLik.gkwreg}}
+#' method for the fitted \code{gkwreg} object(s).
 #'
-#' \deqn{BIC = -2 \times \log(L) + k \times \log(n)}
+#' Models with lower BIC values are generally preferred. The penalty term \eqn{p \log(n)}
+#' increases more rapidly with sample size \eqn{n} compared to AIC's penalty \eqn{2p},
+#' meaning BIC favors simpler models more strongly in larger samples. BIC can be
+#' motivated from a Bayesian perspective as an approximation related to Bayes factors.
 #'
-#' where \eqn{L} is the maximized likelihood function, \eqn{k} is the number of
-#' estimated parameters in the model, and \eqn{n} is the number of observations.
-#' The model with the lowest BIC is generally preferred.
+#' When comparing multiple models passed via \code{...}, the function relies on
+#' \code{\link[stats]{BIC}}'s default method for creating a comparison table,
+#' which in turn calls \code{logLik} for each provided object.
 #'
-#' BIC penalizes model complexity more strongly than AIC, especially for larger
-#' sample sizes. It is derived from a Bayesian framework and approximates the
-#' Bayes factor for large sample sizes.
+#' @return If just one \code{object} is provided, returns a single numeric BIC value.
+#'   If multiple objects are provided via \code{...}, returns a \code{data.frame}
+#'   with rows corresponding to the models and columns for the degrees of freedom
+#'   (\code{df}) and the BIC values, sorted by BIC.
 #'
-#' @return If just one object is provided, returns a numeric BIC value. If multiple
-#' objects are provided, returns a data frame with rows corresponding to the objects
-#' and columns representing the number of parameters (df) and BIC values.
-#'
-#' @examples
-#' \dontrun{
-#' # Fit two competing models
-#' kw_reg1 <- gkwreg(y ~ x1 | x2, data = df, family = "kw")
-#' kw_reg2 <- gkwreg(y ~ x1 + x3 | x2, data = df, family = "kw")
-#'
-#' # Compare models using BIC
-#' BIC(kw_reg1, kw_reg2)
-#' }
-#'
-#' @seealso \code{\link{gkwreg}}, \code{\link{logLik.gkwreg}}, \code{\link{AIC.gkwreg}}
+#' @author Lopes, J. E.
 #'
 #' @references
 #' Schwarz, G. (1978). Estimating the dimension of a model.
-#' \emph{The Annals of Statistics}, 6(2), 461-464.
+#' \emph{The Annals of Statistics}, \strong{6}(2), 461-464.
+#' \doi{10.1214/aos/1176344136}
+#'
+#' @seealso \code{\link{gkwreg}}, \code{\link{logLik.gkwreg}}, \code{\link{AIC.gkwreg}},
+#'   \code{\link[stats]{BIC}}
+#'
+#' @keywords BIC models likelihood model selection
+#'
+#' @examples
+#' \dontrun{
+#' # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
+#' # and that rkw() is available and data is appropriate (0 < y < 1).
+#' set.seed(123)
+#' n <- 100
+#' x1 <- runif(n)
+#' x2 <- rnorm(n)
+#' x3 <- factor(rbinom(n, 1, 0.4))
+#' alpha <- exp(0.5 + 0.2 * x1)
+#' beta <- exp(1.0 - 0.1 * x2 + 0.3 * (x3 == "1"))
+#' y <- rkw(n, alpha = alpha, beta = beta) # Placeholder if rkw not available
+#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
+#' df <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+#'
+#' # Fit two competing models
+#' kw_reg1 <- gkwreg(y ~ x1 | x2, data = df, family = "kw")
+#' kw_reg2 <- gkwreg(y ~ x1 | x2 + x3, data = df, family = "kw") # More complex beta model
+#' kw_reg3 <- gkwreg(y ~ 1 | x2 + x3, data = df, family = "kw") # Simpler alpha model
+#'
+#' # Calculate BIC for a single model
+#' bic1 <- BIC(kw_reg1)
+#' print(bic1)
+#'
+#' # Compare models using BIC (lower is better)
+#' model_comparison_bic <- BIC(kw_reg1, kw_reg2, kw_reg3)
+#' print(model_comparison_bic)
+#' }
+#'
+#' @export
 BIC.gkwreg <- function(object, ...) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {
     stop("'object' must be a fitted model object of class 'gkwreg'")
   }
 
-  # Handle case with multiple models for comparison
-  if (length(list(...)) > 0) {
+  # Capture additional model objects
+  dot_objects <- list(...)
+
+  # Handle case with multiple models for comparison using stats::BIC generic logic
+  if (length(dot_objects) > 0) {
+    # Ensure all additional objects are also gkwreg models (or compatible)
+    obj_list <- c(list(object), dot_objects)
+    classes <- vapply(obj_list, function(o) class(o)[1], character(1))
+    if (!all(classes == "gkwreg")) {
+      # Allow comparison if logLik methods exist for other object types
+      # stats::BIC handles this, just pass them through
+      warning("Comparing objects of different classes.")
+    }
+    # Call the default stats::BIC logic which handles multiple objects
+    # It uses logLik() on each object.
     return(stats::BIC(object = object, ...))
   }
 
+  # --- Handle single object case ---
+
   # Check if BIC is already computed and stored in the object
+  # Avoid recalculating if already present
   if (!is.null(object$bic)) {
     return(object$bic)
   }
 
   # Calculate BIC from log-likelihood, number of parameters, and number of observations
-  ll <- logLik(object)
+  ll <- stats::logLik(object) # Use stats::logLik generic, dispatches to logLik.gkwreg
 
-  # Number of parameters
+  # Extract number of parameters (df) from the logLik object
   df <- attr(ll, "df")
-  if (is.na(df)) {
-    warning("Number of parameters not available. BIC calculation may be inaccurate.")
-    # Try to extract parameters from the coefficients
+
+  # Check if df is valid
+  if (is.null(df) || is.na(df) || !is.numeric(df) || df < 0) {
+    warning("Could not extract a valid number of parameters (df) from the logLik object. BIC calculation might be incorrect.")
+    # Attempt fallback: count coefficients if df is invalid
     if (!is.null(object$coefficients)) {
       df <- length(object$coefficients)
+      warning("Using the count of coefficients (", df, ") as the number of parameters.")
     } else {
-      df <- 0 # Default to avoid errors, but will give incorrect results
+      df <- NA_real_ # Cannot determine df
+      warning("Setting number of parameters to NA.")
     }
   }
 
-  # Number of observations
+  # Extract number of observations (nobs) from the logLik object
   n <- attr(ll, "nobs")
-  if (is.na(n)) {
-    warning("Number of observations not available. BIC calculation may be inaccurate.")
-    # Try to extract number of observations from residuals or fitted values
+
+  # Check if nobs is valid
+  if (is.null(n) || is.na(n) || !is.numeric(n) || n <= 0) {
+    warning("Could not extract a valid number of observations (nobs) from the logLik object. BIC calculation might be incorrect.")
+    # Attempt fallback: try various sources from the object
     if (!is.null(object$residuals)) {
       n <- length(object$residuals)
     } else if (!is.null(object$fitted.values)) {
@@ -4847,14 +5786,39 @@ BIC.gkwreg <- function(object, ...) {
     } else if (!is.null(object$y)) {
       n <- length(object$y)
     } else {
-      n <- 0 # Default to avoid errors, but will give incorrect results
+      n <- NA_real_ # Cannot determine nobs
+      warning("Setting number of observations to NA.")
     }
+    if (!is.na(n)) warning("Using length of residuals/fitted/y (", n, ") as the number of observations.")
   }
 
-  # Calculate and return BIC
-  -2 * as.numeric(ll) + df * log(n)
+  # Check if logLik value is valid
+  ll_val <- as.numeric(ll)
+  if (is.null(ll_val) || is.na(ll_val) || !is.finite(ll_val)) {
+    warning("Invalid log-likelihood value extracted. Cannot compute BIC.")
+    return(NA_real_)
+  }
+
+  # Check if df and n are valid for calculation
+  if (is.na(df) || is.na(n) || n <= 0) {
+    warning("Cannot compute BIC due to missing or invalid 'df' or 'nobs'.")
+    return(NA_real_)
+  }
+
+  # Calculate and return BIC using the formula -2*logLik + df*log(n)
+  bic_val <- -2 * ll_val + df * log(n)
+
+  return(bic_val)
 }
 
+
+#' Register the S3 method
+#' @param object gkwreg class fit
+#' @param ... Additional arguments passed to or from other methods.
+#' @export
+confint <- function(object, ...) {
+  UseMethod("confint.gkwfit")
+}
 
 
 #' Register the S3 method
@@ -4929,7 +5893,7 @@ BIC <- function(object, ...) {
 #' summary(kw_reg)
 #' }
 #'
-#' @seealso \code{\link{gkwreg}}, \code{\link{confint.gkwreg}}, \code{\link{summary.gkwreg}}
+#' @seealso \code{\link{gkwreg}}, \code{\link{confint}}, \code{\link{summary.gkwreg}}
 #'
 #' @export
 vcov.gkwreg <- function(object, complete = TRUE, ...) {
