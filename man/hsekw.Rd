@@ -2,85 +2,154 @@
 % Please edit documentation in R/RcppExports.R
 \name{hsekw}
 \alias{hsekw}
-\title{Analytic Hessian Matrix for Exponentiated Kumaraswamy Distribution}
+\title{Hessian Matrix of the Negative Log-Likelihood for the EKw Distribution}
 \usage{
 hsekw(par, data)
 }
 \arguments{
-\item{par}{Numeric vector of length 3 containing the parameters
-(α, β, λ) in that order. All parameters must be positive.}
+\item{par}{A numeric vector of length 3 containing the distribution parameters
+in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+\code{lambda} (\eqn{\lambda > 0}).}
 
-\item{data}{Numeric vector of observations, where all values must be
-in the open interval (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-A 3×3 numeric matrix representing the Hessian of the negative
-log-likelihood function. If parameters or data are invalid
-(parameters ≤ 0 or data outside (0,1)), returns a matrix of
-NaN values.
+Returns a 3x3 numeric matrix representing the Hessian matrix of the
+negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+where \eqn{\theta = (\alpha, \beta, \lambda)}.
+Returns a 3x3 matrix populated with \code{NaN} if any parameter values are
+invalid according to their constraints, or if any value in \code{data} is
+not in the interval (0, 1).
 }
 \description{
-Computes the analytic Hessian matrix of the log-likelihood function for
-the Exponentiated Kumaraswamy (EKw) distribution. This function provides
-exact second derivatives needed for optimization and inference.
+Computes the analytic 3x3 Hessian matrix (matrix of second partial derivatives)
+of the negative log-likelihood function for the Exponentiated Kumaraswamy (EKw)
+distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(\eqn{\beta}), and \code{lambda} (\eqn{\lambda}). This distribution is the
+special case of the Generalized Kumaraswamy (GKw) distribution where
+\eqn{\gamma = 1} and \eqn{\delta = 0}. The Hessian is useful for estimating
+standard errors and in optimization algorithms.
 }
 \details{
-The log-likelihood for the Exponentiated Kumaraswamy distribution is:
-
+This function calculates the analytic second partial derivatives of the
+negative log-likelihood function based on the EKw log-likelihood
+(\eqn{\gamma=1, \delta=0} case of GKw, see \code{\link{llekw}}):
 \deqn{
-\ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta)
-+ (\alpha-1) \sum \ln(x_i)
-+ (\beta-1) \sum \ln(1 - x_i^\alpha)
-+ (\lambda-1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
+\ell(\theta | \mathbf{x}) = n[\ln(\lambda) + \ln(\alpha) + \ln(\beta)]
++ \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i)]
 }
-
-The implementation computes all second derivatives analytically for each term.
-For computational efficiency, the following transformations are used:
+where \eqn{\theta = (\alpha, \beta, \lambda)} and intermediate terms are:
 \itemize{
-\item \deqn{A = x^α} and derivatives
-\item \deqn{v = 1 - A}
-\item \deqn{w = 1 - v^β}
+\item \eqn{v_i = 1 - x_i^{\alpha}}
+\item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
 }
+The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}
+for \eqn{\theta_i, \theta_j \in \{\alpha, \beta, \lambda\}}.
 
-The returned Hessian matrix has the following structure:
+Key properties of the returned matrix:
 \itemize{
-\item Rows/columns 1-3 correspond to α, β, λ respectively
-\item The matrix is symmetric (as expected for a Hessian)
-\item The matrix represents second derivatives of the negative log-likelihood
+\item Dimensions: 3x3.
+\item Symmetry: The matrix is symmetric.
+\item Ordering: Rows and columns correspond to the parameters in the order
+\eqn{\alpha, \beta, \lambda}.
+\item Content: Analytic second derivatives of the \emph{negative} log-likelihood.
 }
-
-This function is implemented in C++ for computational efficiency.
+This corresponds to the relevant 3x3 submatrix of the 5x5 GKw Hessian (\code{\link{hsgkw}})
+evaluated at \eqn{\gamma=1, \delta=0}. The exact analytical formulas are implemented directly.
 }
 \examples{
 \dontrun{
-# Generate sample data from an EKw distribution
+# Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
+
+# Generate sample data
 set.seed(123)
-x <- rekw(100, 2, 3, 0.5)
-hist(x, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+true_par_ekw <- c(alpha = 2, beta = 3, lambda = 0.5)
+if (exists("rekw")) {
+  sample_data_ekw <- rekw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+                          lambda = true_par_ekw[3])
+} else {
+  sample_data_ekw <- rgkw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+                         gamma = 1, delta = 0, lambda = true_par_ekw[3])
+}
+hist(sample_data_ekw, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
 
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5, 0.5), llekw, method = "BFGS",
-                hessian = TRUE, data = x)
+# --- Find MLE estimates ---
+start_par_ekw <- c(1.5, 2.5, 0.8)
+mle_result_ekw <- stats::optim(par = start_par_ekw,
+                               fn = llekw,
+                               gr = if (exists("grekw")) grekw else NULL,
+                               method = "BFGS",
+                               hessian = TRUE, # Ask optim for numerical Hessian
+                               data = sample_data_ekw)
 
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llekw, x = result$par, data = x)
-num_hess <- numDeriv::hessian(llekw, x = result$par, data = x)
+# --- Compare analytical Hessian to numerical Hessian ---
+if (mle_result_ekw$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE) &&
+    exists("hsekw")) {
 
-ana_grad <- grekw(result$par, data = x)
-ana_hess <- hsekw(result$par, data = x)
+  mle_par_ekw <- mle_result_ekw$par
+  cat("\nComparing Hessians for EKw at MLE estimates:\n")
 
-# Check differences (should be very small)
-round(num_grad - ana_grad, 4)
-round(num_hess - ana_hess, 4)
+  # Numerical Hessian of llekw
+  num_hess_ekw <- numDeriv::hessian(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
 
+  # Analytical Hessian from hsekw
+  ana_hess_ekw <- hsekw(par = mle_par_ekw, data = sample_data_ekw)
+
+  cat("Numerical Hessian (EKw):\n")
+  print(round(num_hess_ekw, 4))
+  cat("Analytical Hessian (EKw):\n")
+  print(round(ana_hess_ekw, 4))
+
+  # Check differences
+  cat("Max absolute difference between EKw Hessians:\n")
+  print(max(abs(num_hess_ekw - ana_hess_ekw)))
+
+  # Optional: Use analytical Hessian for Standard Errors
+  # tryCatch({
+  #   cov_matrix_ekw <- solve(ana_hess_ekw)
+  #   std_errors_ekw <- sqrt(diag(cov_matrix_ekw))
+  #   cat("Std. Errors from Analytical EKw Hessian:\n")
+  #   print(std_errors_ekw)
+  # }, error = function(e) {
+  #   warning("Could not invert analytical EKw Hessian: ", e$message)
+  # })
+
+} else {
+  cat("\nSkipping EKw Hessian comparison.\n")
+  cat("Requires convergence, 'numDeriv' package, and function 'hsekw'.\n")
 }
 
+} # End of \dontrun block
 
 }
 \references{
-Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-Journal of Hydrology, 46(1-2), 79-88.
+Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+Kumaraswamy distribution. \emph{Journal of the Franklin Institute}, \emph{349}(3),
+955-971. \doi{10.1016/j.jfranklin.2011.12.016}
 
-Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+(Note: Specific Hessian formulas might be derived or sourced from additional references).
 }
+\seealso{
+\code{\link{hsgkw}} (parent distribution Hessian),
+\code{\link{llekw}} (negative log-likelihood for EKw),
+\code{grekw} (gradient for EKw, if available),
+\code{\link{dekw}} (density for EKw),
+\code{\link[stats]{optim}},
+\code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{hessian}
+\keyword{likelihood}
+\keyword{optimize}

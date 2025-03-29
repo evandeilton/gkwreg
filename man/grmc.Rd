@@ -2,93 +2,141 @@
 % Please edit documentation in R/RcppExports.R
 \name{grmc}
 \alias{grmc}
-\title{Gradient Function for Beta Power Log-Likelihood}
+\title{Gradient of the Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution}
 \usage{
 grmc(par, data)
 }
 \arguments{
-\item{par}{NumericVector of length 3 containing parameters (γ, δ, λ) in that order.
-All parameters must be positive.}
+\item{par}{A numeric vector of length 3 containing the distribution parameters
+in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+\code{lambda} (\eqn{\lambda > 0}).}
 
-\item{data}{NumericVector of observations, where all values must be in the open interval (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-NumericVector of length 3 containing the gradient components (partial derivatives)
-of the negative log-likelihood with respect to each parameter (γ, δ, λ).
-Returns a vector of NaN values if any parameters or data values are invalid.
+Returns a numeric vector of length 3 containing the partial derivatives
+of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+respect to each parameter:
+\eqn{(-\partial \ell/\partial \gamma, -\partial \ell/\partial \delta, -\partial \ell/\partial \lambda)}.
+Returns a vector of \code{NaN} if any parameter values are invalid according
+to their constraints, or if any value in \code{data} is not in the
+interval (0, 1).
 }
 \description{
-Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-function for the Beta Power (BP) distribution, also known as McDonald distribution.
-This function provides the exact gradient needed for efficient optimization in
-maximum likelihood estimation. The BP is a submodel of GKw with α = 1 and β = 1 fixed.
+Computes the gradient vector (vector of first partial derivatives) of the
+negative log-likelihood function for the McDonald (Mc) distribution (also
+known as Beta Power) with parameters \code{gamma} (\eqn{\gamma}), \code{delta}
+(\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). This distribution is the
+special case of the Generalized Kumaraswamy (GKw) distribution where
+\eqn{\alpha = 1} and \eqn{\beta = 1}. The gradient is useful for optimization.
 }
 \details{
-The gradient vector contains the following partial derivatives of the negative log-likelihood:
+The components of the gradient vector of the negative log-likelihood
+(\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the Mc (\eqn{\alpha=1, \beta=1})
+model are:
 
 \deqn{
-\frac{\partial \ell}{\partial \gamma} = -n[\psi(\gamma+\delta+1) - \psi(\gamma)] -
-\lambda\sum_{i=1}^{n}\log(x_i)
+-\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma+\delta+1) - \psi(\gamma)] -
+\lambda\sum_{i=1}^{n}\ln(x_i)
 }
-
 \deqn{
-\frac{\partial \ell}{\partial \delta} = -n[\psi(\gamma+\delta+1) - \psi(\delta+1)] -
-\sum_{i=1}^{n}\log(1-x_i^{\lambda})
+-\frac{\partial \ell}{\partial \delta} = n[\psi(\gamma+\delta+1) - \psi(\delta+1)] -
+\sum_{i=1}^{n}\ln(1-x_i^{\lambda})
 }
-
 \deqn{
-\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \gamma\sum_{i=1}^{n}\log(x_i) +
-\delta\sum_{i=1}^{n}\frac{x_i^{\lambda}\log(x_i)}{1-x_i^{\lambda}}
+-\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \gamma\sum_{i=1}^{n}\ln(x_i) +
+\delta\sum_{i=1}^{n}\frac{x_i^{\lambda}\ln(x_i)}{1-x_i^{\lambda}}
 }
 
-where:
-\itemize{
-\item \deqn{\psi} is the digamma function (derivative of the log-gamma function)
-}
-
-The implementation includes several numerical safeguards:
-\itemize{
-\item Parameter and data validation with appropriate error handling
-\item Clamping of intermediate values to avoid numerical underflow/overflow
-\item Efficient vector operations using Armadillo C++ library
-}
-
-The returned gradient is negated to align with minimization of negative log-likelihood
-in optimization routines.
+where \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
+These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+minimizing the negative log-likelihood. They correspond to the relevant components
+of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\alpha=1, \beta=1}.
 }
 \examples{
 \dontrun{
-# Generate sample data from a BP distribution
+# Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
+
+# Generate sample data
 set.seed(123)
-x <- rmc(100, 2, 3, 0.5)
-hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
+true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+                      lambda = true_par_mc[3])
+hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
 
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
-                hessian = TRUE, data = x)
+# --- Find MLE estimates ---
+start_par_mc <- c(1.5, 2.5, 0.8)
+mle_result_mc <- stats::optim(par = start_par_mc,
+                              fn = llmc,
+                              gr = grmc, # Use analytical gradient for Mc
+                              method = "BFGS",
+                              hessian = TRUE,
+                              data = sample_data_mc)
 
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
-num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
+# --- Compare analytical gradient to numerical gradient ---
+if (mle_result_mc$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE)) {
 
-ana_grad <- grmc(result$par, data = x)
-ana_hess <- hsmc(result$par, data = x)
+  mle_par_mc <- mle_result_mc$par
+  cat("\nComparing Gradients for Mc at MLE estimates:\n")
 
-# Check differences (should be very small)
-round(num_grad - ana_grad, 4)
-round(num_hess - ana_hess, 4)
+  # Numerical gradient of llmc
+  num_grad_mc <- numDeriv::grad(func = llmc, x = mle_par_mc, data = sample_data_mc)
+
+  # Analytical gradient from grmc
+  ana_grad_mc <- grmc(par = mle_par_mc, data = sample_data_mc)
+
+  cat("Numerical Gradient (Mc):\n")
+  print(num_grad_mc)
+  cat("Analytical Gradient (Mc):\n")
+  print(ana_grad_mc)
+
+  # Check differences
+  cat("Max absolute difference between Mc gradients:\n")
+  print(max(abs(num_grad_mc - ana_grad_mc)))
+
+} else {
+  cat("\nSkipping Mc gradient comparison.\n")
 }
+
+# Example with Hessian comparison (if hsmc exists)
+if (mle_result_mc$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE) && exists("hsmc")) {
+
+  num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+  ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+  cat("\nMax absolute difference between Mc Hessians:\n")
+  print(max(abs(num_hess_mc - ana_hess_mc)))
+
+}
+
+} # End of \dontrun block
 
 }
 \references{
-McDonald, J. B. (1984). Some generalized functions for the size distribution of income.
-Econometrica, 52(3), 647-665.
+McDonald, J. B. (1984). Some generalized functions for the size distribution
+of income. \emph{Econometrica}, 52(3), 647-663. \doi{10.2307/1913469}
 
-Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+(Note: Specific gradient formulas might be derived or sourced from additional references).
 }
 \seealso{
-\code{\link[gkwreg]{llmc}} for the negative log-likelihood function,
-\code{\link[gkwreg]{hsmc}} for the Hessian matrix of the BP log-likelihood,
-\code{\link[gkwreg]{dmc}} for the BP density function,
+\code{\link{grgkw}} (parent distribution gradient),
+\code{\link{llmc}} (negative log-likelihood for Mc),
+\code{hsmc} (Hessian for Mc, if available),
+\code{\link{dmc}} (density for Mc),
+\code{\link[stats]{optim}},
+\code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+\code{\link[base]{digamma}}.
 }
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{gradient}
+\keyword{likelihood}
+\keyword{mcdonald}
+\keyword{optimize}

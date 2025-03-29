@@ -2,49 +2,150 @@
 % Please edit documentation in R/RcppExports.R
 \name{llekw}
 \alias{llekw}
-\title{Negative Log-Likelihood for Exponentiated Kumaraswamy}
+\title{Negative Log-Likelihood for the Exponentiated Kumaraswamy (EKw) Distribution}
 \usage{
 llekw(par, data)
 }
 \arguments{
-\item{par}{NumericVector of length 3, (α, β, λ).}
+\item{par}{A numeric vector of length 3 containing the distribution parameters
+in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+\code{lambda} (\eqn{\lambda > 0}).}
 
-\item{data}{NumericVector of observations, each in (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-A double value: the negative log-likelihood. \code{Inf} if invalid.
+Returns a single \code{double} value representing the negative
+log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+if any parameter values in \code{par} are invalid according to their
+constraints, or if any value in \code{data} is not in the interval (0, 1).
 }
 \description{
-Computes the negative log-likelihood of EKw(α, β, λ), for data in (0,1).
+Computes the negative log-likelihood function for the Exponentiated
+Kumaraswamy (EKw) distribution with parameters \code{alpha} (\eqn{\alpha}),
+\code{beta} (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}), given a vector
+of observations. This distribution is the special case of the Generalized
+Kumaraswamy (GKw) distribution where \eqn{\gamma = 1} and \eqn{\delta = 0}.
+This function is suitable for maximum likelihood estimation.
 }
 \details{
-The PDF is
+The Exponentiated Kumaraswamy (EKw) distribution is the GKw distribution
+(\code{\link{dekw}}) with \eqn{\gamma=1} and \eqn{\delta=0}. Its probability
+density function (PDF) is:
 \deqn{
- f(x)= \lambda\,\alpha\,\beta \, x^{\alpha-1}\,(1-x^\alpha)^{\beta-1}\,[1-(1-x^\alpha)^\beta]^{\lambda-1}.
+f(x | \theta) = \lambda \alpha \beta x^{\alpha-1} (1 - x^\alpha)^{\beta-1} \bigl[1 - (1 - x^\alpha)^\beta \bigr]^{\lambda - 1}
 }
-The log-likelihood is the sum of log(f(x_i)). We return the negative log-likelihood.
+for \eqn{0 < x < 1} and \eqn{\theta = (\alpha, \beta, \lambda)}.
+The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+\eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+\deqn{
+\ell(\theta | \mathbf{x}) = n[\ln(\lambda) + \ln(\alpha) + \ln(\beta)]
++ \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i)]
+}
+where:
+\itemize{
+\item \eqn{v_i = 1 - x_i^{\alpha}}
+\item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+}
+This function computes and returns the \emph{negative} log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+Numerical stability is maintained similarly to \code{\link{llgkw}}.
 }
 \examples{
 \dontrun{
-# Generate sample data from an EKw distribution
+# Assuming existence of rekw, grekw, hsekw functions for EKw distribution
+
+# Generate sample data from a known EKw distribution
 set.seed(123)
-x <- rekw(100, 2, 3, 0.5)
-hist(x, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+true_par_ekw <- c(alpha = 2, beta = 3, lambda = 0.5)
+# Use rekw if it exists, otherwise use rgkw with gamma=1, delta=0
+if (exists("rekw")) {
+  sample_data_ekw <- rekw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+                          lambda = true_par_ekw[3])
+} else {
+  sample_data_ekw <- rgkw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+                         gamma = 1, delta = 0, lambda = true_par_ekw[3])
+}
+hist(sample_data_ekw, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
 
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5, 0.5), llekw, method = "BFGS",
-                hessian = TRUE, data = x)
+# --- Maximum Likelihood Estimation using optim ---
+# Initial parameter guess
+start_par_ekw <- c(1.5, 2.5, 0.8)
 
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llekw, x = result$par, data = x)
-num_hess <- numDeriv::hessian(llekw, x = result$par, data = x)
+# Perform optimization (minimizing negative log-likelihood)
+# Use method="L-BFGS-B" for box constraints if needed (all params > 0)
+mle_result_ekw <- stats::optim(par = start_par_ekw,
+                               fn = llekw, # Use the EKw neg-log-likelihood
+                               method = "BFGS", # Or "L-BFGS-B" with lower=1e-6
+                               hessian = TRUE,
+                               data = sample_data_ekw)
 
-ana_grad <- grekw(result$par, data = x)
-ana_hess <- hsekw(result$par, data = x)
-
-# Check differences (should be very small)
-round(num_grad - ana_grad, 4)
-round(num_hess - ana_hess, 4)
+# Check convergence and results
+if (mle_result_ekw$convergence == 0) {
+  print("Optimization converged successfully.")
+  mle_par_ekw <- mle_result_ekw$par
+  print("Estimated EKw parameters:")
+  print(mle_par_ekw)
+  print("True EKw parameters:")
+  print(true_par_ekw)
+} else {
+  warning("Optimization did not converge!")
+  print(mle_result_ekw$message)
 }
 
+# --- Compare numerical and analytical derivatives (if available) ---
+# Requires 'numDeriv' package and analytical functions 'grekw', 'hsekw'
+if (mle_result_ekw$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE) &&
+    exists("grekw") && exists("hsekw")) {
+
+  cat("\nComparing Derivatives at EKw MLE estimates:\n")
+
+  # Numerical derivatives of llekw
+  num_grad_ekw <- numDeriv::grad(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+  num_hess_ekw <- numDeriv::hessian(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+
+  # Analytical derivatives (assuming they return derivatives of negative LL)
+  ana_grad_ekw <- grekw(par = mle_par_ekw, data = sample_data_ekw)
+  ana_hess_ekw <- hsekw(par = mle_par_ekw, data = sample_data_ekw)
+
+  # Check differences
+  cat("Max absolute difference between gradients:\n")
+  print(max(abs(num_grad_ekw - ana_grad_ekw)))
+  cat("Max absolute difference between Hessians:\n")
+  print(max(abs(num_hess_ekw - ana_hess_ekw)))
+
+} else {
+   cat("\nSkipping derivative comparison for EKw.\n")
+   cat("Requires convergence, 'numDeriv' package and functions 'grekw', 'hsekw'.\n")
 }
+
+} # End of \dontrun block
+
+}
+\references{
+Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+Kumaraswamy distribution. \emph{Journal of the Franklin Institute}, \emph{349}(3),
+955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+}
+\seealso{
+\code{\link{llgkw}} (parent distribution negative log-likelihood),
+\code{\link{dekw}}, \code{\link{pekw}}, \code{\link{qekw}}, \code{\link{rekw}},
+\code{grekw} (gradient, if available),
+\code{hsekw} (Hessian, if available),
+\code{\link[stats]{optim}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{likelihood}
+\keyword{optimize}

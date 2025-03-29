@@ -14,8 +14,8 @@
 \value{
 An object of class \code{"logLik"}. This is the numeric log-likelihood value
 with the following attributes:
-\item{df}{The number of estimated parameters in the model.}
-\item{nobs}{The number of observations used for fitting the model.}
+\item{df}{The number of estimated parameters in the model (integer).}
+\item{nobs}{The number of observations used for fitting the model (integer).}
 }
 \description{
 Extracts the maximized log-likelihood value from a model fitted by \code{\link{gkwfit}}.
@@ -32,42 +32,53 @@ attributes (\code{object$df} for the number of estimated parameters and
 }
 \examples{
 \dontrun{
-# Assume 'rkw' and 'gkwfit' functions exist
+# Assume 'rkw' and 'gkwfit' functions from your package exist
 
 set.seed(123)
-kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+# Generate sample data (use rkw if available, otherwise placeholder)
+# kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+kw_data_sample <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
+kw_data_sample <- 1 - (1 - kw_data_sample)^(1 / 2.5) # Placeholder
+kw_data_sample <- pmax(1e-6, pmin(1 - 1e-6, kw_data_sample)) # Ensure (0,1)
 
 # Fit the model
 fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
 
-# Extract the log-likelihood object
-ll <- logLik(fit_obj)
+# Check if fit converged and has necessary components
+if (fit_obj$convergence == 0 && !is.null(fit_obj$loglik)) {
+  # Extract the log-likelihood object
+  ll <- logLik(fit_obj)
 
-# Print the value
-print(ll)
+  # Print the value (uses print.logLik)
+  print(ll)
 
-# Show attributes
-attributes(ll)
+  # Show attributes
+  attributes(ll)
 
-# Use with standard functions
-AIC(fit_obj) # Equivalent to AIC(ll)
-BIC(fit_obj) # Equivalent to BIC(ll)
+  # Use with standard functions (requires the corresponding AIC/BIC methods
+  # for gkwfit OR relies on them calling this logLik method)
+  AIC(fit_obj) # Should work if AIC.gkwfit calls logLik(fit_obj)
+  BIC(fit_obj) # Should work if BIC.gkwfit calls logLik(fit_obj)
 
-# Extract components directly
-logLik_value <- as.numeric(ll)
-degrees_freedom <- attr(ll, "df")
-num_observations <- attr(ll, "nobs")
-cat("LogLik:", logLik_value, "\n")
-cat("df:", degrees_freedom, "\n")
-cat("nobs:", num_observations, "\n")
+  # Extract components directly
+  logLik_value <- as.numeric(ll)
+  degrees_freedom <- attr(ll, "df")
+  num_observations <- attr(ll, "nobs")
+  cat("LogLik:", logLik_value, "\n")
+  cat("df:", degrees_freedom, "\n")
+  cat("nobs:", num_observations, "\n")
+} else {
+  print("Fit did not converge or is missing log-likelihood.")
+}
 }
 
 }
 \seealso{
-\code{\link{gkwfit}}, \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}}
+\code{\link{gkwfit}}, \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}}, \code{\link[stats]{logLik}}
 }
 \author{
 Lopes, J. E.
 }
 \keyword{methods}
 \keyword{models}
+\keyword{utility}

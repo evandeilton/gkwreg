@@ -7,10 +7,12 @@
 \method{summary}{gkwfit}(object, correlation = FALSE, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
+\item{object}{An object of class \code{"gkwfit"}, typically the result of a call
+to \code{\link{gkwfit}}.}
 
 \item{correlation}{Logical; if \code{TRUE}, the correlation matrix of the estimated
-parameters is computed and included in the summary. Defaults to \code{FALSE}.}
+parameters is computed from the \code{vcov} component and included in the
+summary. Defaults to \code{FALSE}.}
 
 \item{...}{Additional arguments (currently unused).}
 }
@@ -18,37 +20,54 @@ parameters is computed and included in the summary. Defaults to \code{FALSE}.}
 An object of class \code{"summary.gkwfit"}, which is a list containing:
 \item{call}{The original function call.}
 \item{family}{The specified distribution family.}
-\item{coefficients}{A matrix of estimates, standard errors, z-values, and p-values.}
-\item{logLik}{The maximized log-likelihood value.}
+\item{coefficients}{A matrix of estimates, standard errors, z-values, and p-values. Contains NAs if SEs could not be computed.}
+\item{loglik}{The maximized log-likelihood value (numeric).}
+\item{df}{The number of estimated parameters.}
 \item{aic}{Akaike Information Criterion.}
 \item{bic}{Bayesian Information Criterion.}
-\item{nobs}{Number of observations used in fitting.}
-\item{convergence_code}{The convergence code returned by the optimizer.}
+\item{aicc}{Corrected Akaike Information Criterion.}
+\item{nobs}{Number of observations used in fitting (integer).}
+\item{convergence}{The convergence code returned by the optimizer.}
+\item{message}{The message returned by the optimizer.}
 \item{se_available}{Logical indicating if standard errors could be computed.}
-\item{correlation}{The correlation matrix of coefficients (if \code{correlation = TRUE} and calculable).}
-\item{fixed}{A list of parameters that were held fixed during estimation, or \code{NULL}.}
+\item{correlation}{The correlation matrix of coefficients (if \code{correlation = TRUE} and calculable), otherwise \code{NULL}.}
+\item{fixed}{A named list of parameters that were held fixed during estimation, or \code{NULL}.}
+\item{fit_method}{The primary fitting method specified ('tmb' or 'nr').}
+\item{optimizer_method}{The specific optimizer used (e.g., 'nlminb', 'optim', 'Newton-Raphson').}
 }
 \description{
 Calculates and prepares a detailed summary of a model fitted by \code{\link{gkwfit}}.
 This includes coefficients, standard errors, test statistics (z-values), p-values,
-log-likelihood, information criteria (AIC, BIC), and convergence status.
+log-likelihood, information criteria (AIC, BIC, AICc), number of estimated
+parameters, convergence status, and optimizer details.
 }
 \details{
 This function computes standard errors, z-values (\eqn{Estimate / SE}), and
 p-values (two-tailed test based on the standard normal distribution) for the
-estimated model parameters, provided that the variance-covariance matrix was
-successfully computed and is available in the \code{object} (typically requires
-\code{hessian = TRUE} in the original \code{\link{gkwfit}} call).
+estimated model parameters by utilizing the coefficient estimates (\code{coef})
+and their variance-covariance matrix (\code{vcov}). This requires that the
+variance-covariance matrix was successfully computed and is available in the
+\code{object} (typically requires \code{hessian = TRUE} in the original
+\code{\link{gkwfit}} call and successful Hessian inversion).
+
+If standard errors cannot be reliably calculated (e.g., \code{vcov} is missing,
+invalid, or indicates non-positive variance), the corresponding columns in the
+coefficient table will contain \code{NA} values, and the \code{se_available}
+flag will be set to \code{FALSE}.
 
 The returned object is of class \code{"summary.gkwfit"}, and its printing is
 handled by \code{\link{print.summary.gkwfit}}.
 }
 \examples{
 \dontrun{
-# Assume 'rkw' and 'gkwfit' functions exist
+# Assume 'rkw' and 'gkwfit' functions from your package exist
 
 set.seed(123)
-kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5) # n=100
+# Generate sample data (use rkw if available, otherwise placeholder)
+# kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+kw_data_sample <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
+kw_data_sample <- 1 - (1 - kw_data_sample)^(1 / 2.5) # Placeholder
+kw_data_sample <- pmax(1e-6, pmin(1 - 1e-6, kw_data_sample)) # Ensure (0,1)
 
 # Fit the model, ensuring hessian=TRUE (default) for SEs
 fit_object <- gkwfit(
@@ -56,26 +75,35 @@ fit_object <- gkwfit(
   plot = FALSE, silent = TRUE
 )
 
-# Calculate the summary object
-summary_info <- summary(fit_object)
+# Check if fit converged and has coefficients/vcov
+if (fit_object$convergence == 0 && !is.null(fit_object$coefficients)) {
+  # Calculate the summary object
+  summary_info <- summary(fit_object)
 
-# Print the summary (uses print.summary.gkwfit)
-print(summary_info)
+  # Print the summary (uses print.summary.gkwfit)
+  print(summary_info)
 
-# Calculate summary including correlation matrix
-summary_info_corr <- summary(fit_object, correlation = TRUE)
-print(summary_info_corr)
+  # Calculate summary including correlation matrix
+  summary_info_corr <- summary(fit_object, correlation = TRUE)
+  print(summary_info_corr)
 
-# Access specific parts of the summary object
-print(summary_info$coefficients)
-print(summary_info$logLik)
+  # Access specific parts of the summary object
+  print(summary_info$coefficients)
+  print(summary_info$loglik)
+  print(summary_info$convergence)
+  print(summary_info$message)
+} else {
+  print("Fit did not converge or is missing essential components.")
+  print(fit_object) # Print the raw object for debugging
+}
 }
 
 }
 \seealso{
-\code{\link{gkwfit}}, \code{\link{print.summary.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}
+\code{\link{gkwfit}}, \code{\link{print.summary.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{AIC.gkwfit}}
 }
 \author{
-Lopes, J. E.
+Lopes, J. E. (with refinements)
 }
 \keyword{methods}
+\keyword{summary}

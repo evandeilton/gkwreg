@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{rgkw}
 \alias{rgkw}
-\title{Random Number Generation for Generalized Kumaraswamy Distribution}
+\title{Generalized Kumaraswamy Distribution Random Generation}
 \usage{
 rgkw(
   n,
@@ -14,88 +14,108 @@ rgkw(
 )
 }
 \arguments{
-\item{n}{Number of random values to generate. Must be a positive integer.}
+\item{n}{Number of observations. If \code{length(n) > 1}, the length is
+taken to be the number required. Must be a non-negative integer.}
 
-\item{alpha}{Shape parameter α > 0 (scalar or vector). Controls the left tail behavior. Default: 1.0.}
+\item{alpha}{Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{beta}{Shape parameter β > 0 (scalar or vector). Controls the right tail behavior. Default: 1.0.}
+\item{beta}{Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{gamma}{Shape parameter γ > 0 (scalar or vector). Affects the central shape. Default: 1.0.}
+\item{gamma}{Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{Shape parameter δ ≥ 0 (scalar or vector). Introduces additional flexibility. Default: 0.0.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 
-\item{lambda}{Shape parameter λ > 0 (scalar or vector). Controls overall dispersion. Default: 1.0.}
+\item{lambda}{Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 }
 \value{
-Vector of length n containing random values from the GKw distribution.
-If any parameters are invalid, the function produces an error.
-Returns NA for parameter combinations that are invalid.
+A vector of length \code{n} containing random deviates from the GKw
+distribution. The length of the result is determined by \code{n} and the
+recycling rule applied to the parameters (\code{alpha}, \code{beta},
+\code{gamma}, \code{delta}, \code{lambda}). Returns \code{NaN} if parameters
+are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0}, \code{gamma <= 0},
+\code{delta < 0}, \code{lambda <= 0}).
 }
 \description{
-Generates random deviates from the Generalized Kumaraswamy distribution GKw(α, β, γ, δ, λ).
-The implementation uses an efficient transformation method based on the Beta distribution
-as derived in Carrasco et al. (2010).
+Generates random deviates from the five-parameter Generalized Kumaraswamy (GKw)
+distribution defined on the interval (0, 1).
 }
 \details{
-According to Carrasco et al. (2010), if V ~ Beta(γ, δ+1), then:
-
+The generation method relies on the transformation property: if
+\eqn{V \sim \mathrm{Beta}(\gamma, \delta+1)}, then the random variable \code{X}
+defined as
 \deqn{
-X = \{1 - [1 - V^{1/\lambda}]^{1/\beta}\}^{1/\alpha}
+X = \left\{ 1 - \left[ 1 - V^{1/\lambda} \right]^{1/\beta} \right\}^{1/\alpha}
 }
+follows the GKw(\eqn{\alpha, \beta, \gamma, \delta, \lambda}) distribution.
 
-follows a GKw(α, β, γ, δ, λ) distribution.
-
-The random generation algorithm implements this transformation method:
+The algorithm proceeds as follows:
 \enumerate{
-\item Generate V ~ Beta(γ, δ+1)
-\item Compute v = V^(1/λ)
-\item Compute tmp = 1 - v
-\item Compute tmp2 = tmp^(1/β)
-\item Compute x = (1 - tmp2)^(1/α)
+\item Generate \code{V} from \code{stats::rbeta(n, shape1 = gamma, shape2 = delta + 1)}.
+\item Calculate \eqn{\code{v = V^{1/\lambda}}}.
+\item Calculate \eqn{\code{w = (1 - v)^{1/\beta}}}.
+\item Calculate \eqn{\code{x = (1 - w)^{1/\alpha}}}.
 }
-
-This implementation includes several optimizations:
-\itemize{
-\item Special cases for α=1, β=1, or λ=1 are handled directly to improve efficiency
-\item Boundary cases are checked at each step to maintain numerical stability
-\item Safe power transformations prevent numerical issues with extreme values
-\item Full support for vectorized parameters with appropriate broadcasting
-}
+Parameters (\code{alpha}, \code{beta}, \code{gamma}, \code{delta}, \code{lambda})
+are recycled to match the length required by \code{n}. Numerical stability is
+maintained by handling potential edge cases during the transformations.
 }
 \examples{
 \dontrun{
-# Generate 1000 random values from a GKw(2,3,1,0,1)
-x <- rgkw(1000, 2, 3, 1, 0, 1)
+set.seed(1234) # for reproducibility
 
-# Histogram of generated values
-hist(x, breaks = 30, probability = TRUE,
-     main = "Histogram of GKw(2,3,1,0,1) Random Values")
+# Generate 1000 random values from a specific GKw distribution (Kw case)
+x_sample <- rgkw(1000, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+summary(x_sample)
 
-# Add the theoretical density curve
-curve(dgkw(x, 2, 3, 1, 0, 1), add = TRUE, col = "red", lwd = 2)
+# Histogram of generated values compared to theoretical density
+hist(x_sample, breaks = 30, freq = FALSE, # freq=FALSE for density scale
+     main = "Histogram of GKw(2,3,1,0,1) Sample", xlab = "x", ylim = c(0, 2.5))
+curve(dgkw(x, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1),
+      add = TRUE, col = "red", lwd = 2, n = 201)
+legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2, bty = "n")
 
-# Comparing empirical and theoretical quantiles
-prob_points <- seq(0.1, 0.9, by = 0.1)
-theo_quantiles <- qgkw(prob_points, 2, 3, 1, 0, 1)
-emp_quantiles <- quantile(x, prob_points)
-plot(theo_quantiles, emp_quantiles,
+# Comparing empirical and theoretical quantiles (Q-Q plot)
+prob_points <- seq(0.01, 0.99, by = 0.01)
+theo_quantiles <- qgkw(prob_points, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+emp_quantiles <- quantile(x_sample, prob_points)
+
+plot(theo_quantiles, emp_quantiles, pch = 16, cex = 0.8,
      main = "Q-Q Plot for GKw(2,3,1,0,1)",
-     xlab = "Theoretical Quantiles",
-     ylab = "Empirical Quantiles")
-abline(0, 1, col = "blue")
+     xlab = "Theoretical Quantiles", ylab = "Empirical Quantiles (n=1000)")
+abline(a = 0, b = 1, col = "blue", lty = 2)
 
-# Using vectorized parameters
-alphas <- c(0.5, 1.0, 2.0)
-samples <- rgkw(300, alphas, 2, 1, 0, 1)  # 100 samples from each configuration
-hist(samples, breaks = 30, probability = TRUE,
-     main = "Mixed GKw Samples with Different Alpha Values")
+# Using vectorized parameters: generate 1 value for each alpha
+alphas_vec <- c(0.5, 1.0, 2.0)
+n_param <- length(alphas_vec)
+samples_vec <- rgkw(n_param, alpha = alphas_vec, beta = 2, gamma = 1, delta = 0, lambda = 1)
+print(samples_vec) # One sample for each alpha value
+# Result length matches n=3, parameters alpha recycled accordingly
+
+# Example with invalid parameters (should produce NaN)
+invalid_sample <- rgkw(1, alpha = -1, beta = 2, gamma = 1, delta = 0, lambda = 1)
+print(invalid_sample)
 }
-
 }
 \references{
-Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-Journal of Hydrology, 46(1-2), 79-88.
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753}
 
-Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0}
 }
+\seealso{
+\code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}},
+\code{\link[stats]{rbeta}}, \code{\link[base]{set.seed}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{random}

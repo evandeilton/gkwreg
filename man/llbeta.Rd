@@ -2,47 +2,142 @@
 % Please edit documentation in R/RcppExports.R
 \name{llbeta}
 \alias{llbeta}
-\title{Negative Log-Likelihood for the Beta Distribution}
+\title{Negative Log-Likelihood for the Beta Distribution (gamma, delta+1 Parameterization)}
 \usage{
 llbeta(par, data)
 }
 \arguments{
-\item{par}{NumericVector of length 2: (gamma, delta).}
+\item{par}{A numeric vector of length 2 containing the distribution parameters
+in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).}
 
-\item{data}{NumericVector of observations in (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-A single numeric value. +Inf if invalid parameters or data out of domain.
+Returns a single \code{double} value representing the negative
+log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+if any parameter values in \code{par} are invalid according to their
+constraints, or if any value in \code{data} is not in the interval (0, 1).
 }
 \description{
-Computes \eqn{-\ell(\theta)} for Beta(\code{gamma, delta}), given data x in (0,1).
+Computes the negative log-likelihood function for the standard Beta
+distribution, using a parameterization common in generalized distribution
+families. The distribution is parameterized by \code{gamma} (\eqn{\gamma}) and
+\code{delta} (\eqn{\delta}), corresponding to the standard Beta distribution
+with shape parameters \code{shape1 = gamma} and \code{shape2 = delta + 1}.
+This function is suitable for maximum likelihood estimation.
 }
 \details{
-If \eqn{f(x)= x^{\gamma-1}(1-x)^{\delta}/B(\gamma,\delta+1)}, the log-likelihood is
-\eqn{\sum_i [(\gamma-1)\ln x_i + \delta\ln(1-x_i)] - n \ln B(\gamma,\delta+1)}.
-We return its negative for optimization usage.
+This function calculates the negative log-likelihood for a Beta distribution
+with parameters \code{shape1 = gamma} (\eqn{\gamma}) and \code{shape2 = delta + 1} (\eqn{\delta+1}).
+The probability density function (PDF) is:
+\deqn{
+f(x | \gamma, \delta) = \frac{x^{\gamma-1} (1-x)^{\delta}}{B(\gamma, \delta+1)}
+}
+for \eqn{0 < x < 1}, where \eqn{B(a,b)} is the Beta function (\code{\link[base]{beta}}).
+The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+\eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+\deqn{
+\ell(\theta | \mathbf{x}) = \sum_{i=1}^{n} [(\gamma-1)\ln(x_i) + \delta\ln(1-x_i)] - n \ln B(\gamma, \delta+1)
+}
+where \eqn{\theta = (\gamma, \delta)}.
+This function computes and returns the \emph{negative} log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+It is equivalent to the negative log-likelihood of the GKw distribution
+(\code{\link{llgkw}}) evaluated at \eqn{\alpha=1, \beta=1, \lambda=1}, and also
+to the negative log-likelihood of the McDonald distribution (\code{\link{llmc}})
+evaluated at \eqn{\lambda=1}. The term \eqn{\ln B(\gamma, \delta+1)} is typically
+computed using log-gamma functions (\code{\link[base]{lgamma}}) for numerical stability.
 }
 \examples{
 \dontrun{
-# Generate sample data from a Beta distribution
+# Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
+
+# Generate sample data from a Beta(2, 4) distribution
+# (gamma=2, delta=3 in this parameterization)
 set.seed(123)
-x <- rbeta_(100, 2, 3)
-hist(x, breaks = 20, main = "Beta(2, 3) Sample")
+true_par_beta <- c(gamma = 2, delta = 3)
+sample_data_beta <- rbeta_(100, gamma = true_par_beta[1], delta = true_par_beta[2])
+hist(sample_data_beta, breaks = 20, main = "Beta(2, 4) Sample")
 
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5), llbeta, method = "BFGS",
-                hessian = TRUE, data = x)
+# --- Maximum Likelihood Estimation using optim ---
+# Initial parameter guess
+start_par_beta <- c(1.5, 2.5)
 
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llbeta, x = result$par, data = x)
-num_hess <- numDeriv::hessian(llbeta, x = result$par, data = x)
+# Perform optimization (minimizing negative log-likelihood)
+# Use method="L-BFGS-B" for box constraints (params > 0 / >= 0)
+mle_result_beta <- stats::optim(par = start_par_beta,
+                               fn = llbeta, # Use the custom Beta neg-log-likelihood
+                               method = "L-BFGS-B",
+                               lower = c(1e-6, 1e-6), # Bounds: gamma>0, delta>=0
+                               hessian = TRUE,
+                               data = sample_data_beta)
 
-ana_grad <- grbeta(result$par, data = x)
-ana_hess <- hsbeta(result$par, data = x)
+# Check convergence and results
+if (mle_result_beta$convergence == 0) {
+  print("Optimization converged successfully.")
+  mle_par_beta <- mle_result_beta$par
+  print("Estimated Beta parameters (gamma, delta):")
+  print(mle_par_beta)
+  print("True Beta parameters (gamma, delta):")
+  print(true_par_beta)
+  cat(sprintf("MLE corresponds approx to Beta(\%.2f, \%.2f)\n",
+      mle_par_beta[1], mle_par_beta[2] + 1))
 
-# Check differences (should be very small)
-round(num_grad - ana_grad, 4)
-round(num_hess - ana_hess, 4)
+} else {
+  warning("Optimization did not converge!")
+  print(mle_result_beta$message)
 }
 
+# --- Compare numerical and analytical derivatives (if available) ---
+# Requires 'numDeriv' package and analytical functions 'grbeta', 'hsbeta'
+if (mle_result_beta$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE) &&
+    exists("grbeta") && exists("hsbeta")) {
+
+  cat("\nComparing Derivatives at Beta MLE estimates:\n")
+
+  # Numerical derivatives of llbeta
+  num_grad_beta <- numDeriv::grad(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+  num_hess_beta <- numDeriv::hessian(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+
+  # Analytical derivatives (assuming they return derivatives of negative LL)
+  ana_grad_beta <- grbeta(par = mle_par_beta, data = sample_data_beta)
+  ana_hess_beta <- hsbeta(par = mle_par_beta, data = sample_data_beta)
+
+  # Check differences
+  cat("Max absolute difference between gradients:\n")
+  print(max(abs(num_grad_beta - ana_grad_beta)))
+  cat("Max absolute difference between Hessians:\n")
+  print(max(abs(num_hess_beta - ana_hess_beta)))
+
+} else {
+   cat("\nSkipping derivative comparison for Beta.\n")
+   cat("Requires convergence, 'numDeriv' pkg & functions 'grbeta', 'hsbeta'.\n")
 }
+
+} # End of \dontrun block
+
+}
+\references{
+Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). \emph{Continuous Univariate
+Distributions, Volume 2} (2nd ed.). Wiley.
+
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+}
+\seealso{
+\code{\link{llgkw}}, \code{\link{llmc}} (related negative log-likelihoods),
+\code{dbeta_}, \code{pbeta_}, \code{qbeta_}, \code{rbeta_},
+\code{grbeta} (gradient, if available),
+\code{hsbeta} (Hessian, if available),
+\code{\link[stats]{optim}}, \code{\link[base]{lbeta}}.
+}
+\author{
+Lopes, J. E.
+}
+\keyword{beta}
+\keyword{distribution}
+\keyword{likelihood}
+\keyword{optimize}

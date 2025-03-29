@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{dgkw}
 \alias{dgkw}
-\title{Density Function for Generalized Kumaraswamy Distribution}
+\title{Density of the Generalized Kumaraswamy Distribution}
 \usage{
 dgkw(
   x,
@@ -15,32 +15,43 @@ dgkw(
 )
 }
 \arguments{
-\item{x}{Vector of quantiles where the density will be evaluated.}
+\item{x}{Vector of quantiles (values between 0 and 1).}
 
-\item{alpha}{Shape parameter α > 0 (scalar or vector). Controls the left tail behavior. Default: 1.0.}
+\item{alpha}{Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{beta}{Shape parameter β > 0 (scalar or vector). Controls the right tail behavior. Default: 1.0.}
+\item{beta}{Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{gamma}{Shape parameter γ > 0 (scalar or vector). Affects the central shape. Default: 1.0.}
+\item{gamma}{Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{Shape parameter δ ≥ 0 (scalar or vector). Introduces additional flexibility. Default: 0.0.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 
-\item{lambda}{Shape parameter λ > 0 (scalar or vector). Controls overall dispersion. Default: 1.0.}
+\item{lambda}{Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{log_prob}{Logical; if TRUE, probabilities are returned as log(f(x)). Default: FALSE.}
+\item{log_prob}{Logical; if \code{TRUE}, the logarithm of the density is
+returned. Default: \code{FALSE}.}
 }
 \value{
-Vector of density values corresponding to each element in x. If x contains
-values outside (0,1), those positions will return 0 (or -Inf if log_prob=TRUE).
+A vector of density values (\eqn{f(x)}) or log-density values
+(\eqn{\log(f(x))}). The length of the result is determined by the recycling
+rule applied to the arguments (\code{x}, \code{alpha}, \code{beta},
+\code{gamma}, \code{delta}, \code{lambda}). Returns \code{0} (or \code{-Inf}
+if \code{log_prob = TRUE}) for \code{x} outside the interval (0, 1), or
+\code{NaN} if parameters are invalid.
 }
 \description{
-Calculates the probability density function (PDF) of the Generalized Kumaraswamy
-distribution GKw(α, β, γ, δ, λ) for values in the open interval (0,1). Returns
-either f(x; θ) or log(f(x; θ)) depending on the log_prob parameter.
+Computes the probability density function (PDF) for the five-parameter
+Generalized Kumaraswamy (GKw) distribution, defined on the interval (0, 1).
 }
 \details{
-The probability density function of the GKw distribution as derived by Carrasco et al. (2010) is:
-
+The probability density function of the Generalized Kumaraswamy (GKw)
+distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(\eqn{\beta}), \code{gamma} (\eqn{\gamma}), \code{delta} (\eqn{\delta}), and
+\code{lambda} (\eqn{\lambda}) is given by:
 \deqn{
 f(x; \alpha, \beta, \gamma, \delta, \lambda) =
   \frac{\lambda \alpha \beta x^{\alpha-1}(1-x^{\alpha})^{\beta-1}}
@@ -48,63 +59,75 @@ f(x; \alpha, \beta, \gamma, \delta, \lambda) =
   [1-(1-x^{\alpha})^{\beta}]^{\gamma\lambda-1}
   [1-[1-(1-x^{\alpha})^{\beta}]^{\lambda}]^{\delta}
 }
+for \eqn{x \in (0,1)}, where \eqn{B(a, b)} is the Beta function
+\code{\link[base]{beta}}.
 
-for x in (0,1), where B(γ, δ+1) is the beta function.
-
-This distribution arises from the construction:
-
-\deqn{f(x; \theta) = g_2(G_1(x; \alpha, \beta); \gamma, \delta, \lambda) \cdot g_1(x; \alpha, \beta)}
-
-where G_1 is the CDF of the Kumaraswamy distribution, g_1 is its PDF, and g_2 is the
-generalized beta density of first kind.
-
-The function handles several edge cases:
+This distribution was proposed by Cordeiro & de Castro (2011) and includes
+several other distributions as special cases:
 \itemize{
-\item Returns 0 (or -Inf if log_prob=TRUE) for x outside (0,1)
-\item Implements numerical stability precautions for x very close to 0 or 1
-\item Returns 0 (or -Inf) for parameter combinations that would cause computational issues
+\item Kumaraswamy (Kw): \code{gamma = 1}, \code{delta = 0}, \code{lambda = 1}
+\item Exponentiated Kumaraswamy (EKw): \code{gamma = 1}, \code{delta = 0}
+\item Beta-Kumaraswamy (BKw): \code{lambda = 1}
+\item Generalized Beta type 1 (GB1 - implies McDonald): \code{alpha = 1}, \code{beta = 1}
+\item Beta distribution: \code{alpha = 1}, \code{beta = 1}, \code{lambda = 1}
 }
-
-The GKw distribution includes several special cases:
-\itemize{
-\item Kumaraswamy (Kw): γ=1, δ=0, λ=1
-\item McDonald distribution: α=1, β=1
-\item Beta distribution: α=1, β=1, λ=1
-\item Beta-Kumaraswamy (BKw): λ=1
-\item Kumaraswamy-Kumaraswamy: γ=1
-\item Exponentiated Kumaraswamy (EKw): γ=1, δ=0
-\item Beta Power (BP): α=1, β=1
-}
+The function includes checks for valid parameters and input values \code{x}.
+It uses numerical stabilization for \code{x} close to 0 or 1.
 }
 \examples{
 \dontrun{
 # Simple density evaluation at a point
-dgkw(0.5, 2, 3, 1, 0, 1)
+dgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
 
 # Plot the PDF for various parameter sets
-x <- seq(0.01, 0.99, by = 0.01)
+x_vals <- seq(0.01, 0.99, by = 0.01)
 
-# Standard Kumaraswamy (γ=1, δ=0, λ=1)
-plot(x, dgkw(x, 2, 3, 1, 0, 1), type = "l",
-     main = "GKw Densities", ylab = "f(x)", col = "blue")
+# Standard Kumaraswamy (gamma=1, delta=0, lambda=1)
+pdf_kw <- dgkw(x_vals, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 
-# Beta equivalent (α=1, β=1, λ=1)
-lines(x, dgkw(x, 1, 1, 2, 3, 1), col = "red")
+# Beta equivalent (alpha=1, beta=1, lambda=1) - Beta(gamma, delta+1)
+pdf_beta <- dgkw(x_vals, alpha = 1, beta = 1, gamma = 2, delta = 3, lambda = 1)
+# Compare with stats::dbeta
+pdf_beta_check <- stats::dbeta(x_vals, shape1 = 2, shape2 = 3 + 1)
+# max(abs(pdf_beta - pdf_beta_check)) # Should be close to zero
 
-# Exponentiated Kumaraswamy (γ=1, δ=0)
-lines(x, dgkw(x, 2, 3, 1, 0, 2), col = "green")
+# Exponentiated Kumaraswamy (gamma=1, delta=0)
+pdf_ekw <- dgkw(x_vals, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 2)
+
+plot(x_vals, pdf_kw, type = "l", ylim = range(c(pdf_kw, pdf_beta, pdf_ekw)),
+     main = "GKw Densities Examples", ylab = "f(x)", xlab="x", col = "blue")
+lines(x_vals, pdf_beta, col = "red")
+lines(x_vals, pdf_ekw, col = "green")
+legend("topright", legend = c("Kw(2,3)", "Beta(2,4) equivalent", "EKw(2,3, lambda=2)"),
+       col = c("blue", "red", "green"), lty = 1, bty = "n")
+
+# Log-density
+log_pdf_val <- dgkw(0.5, 2, 3, 1, 0, 1, log_prob = TRUE)
+print(log_pdf_val)
+print(log(dgkw(0.5, 2, 3, 1, 0, 1))) # Should match
 
 # Vectorized parameter example
-alphas <- c(0.5, 1.5, 3.0)
+alphas_vec <- c(0.5, 1.5, 3.0)
 # Returns 3 density values for the same x
-dgkw(0.5, alphas, 2, 1, 0, 1)
+dgkw(0.5, alpha = alphas_vec, beta = 2, gamma = 1, delta = 0, lambda = 1)
 }
 
 }
 \references{
-Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-Journal of Hydrology, 46(1-2), 79-88.
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753}
 
-Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0}
 }
+\seealso{
+\code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}} (if these exist),
+\code{\link[stats]{dbeta}}, \code{\link[stats]{integrate}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{density}
+\keyword{distribution}

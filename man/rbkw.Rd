@@ -2,25 +2,127 @@
 % Please edit documentation in R/RcppExports.R
 \name{rbkw}
 \alias{rbkw}
-\title{Random Generation from Beta-Kumaraswamy Distribution}
+\title{Random Number Generation for the Beta-Kumaraswamy (BKw) Distribution}
 \usage{
 rbkw(n, alpha, beta, gamma, delta)
 }
 \arguments{
-\item{n}{Integer number of observations to generate.}
+\item{n}{Number of observations. If \code{length(n) > 1}, the length is
+taken to be the number required. Must be a non-negative integer.}
 
-\item{alpha}{Shape parameter α > 0.}
+\item{alpha}{Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{beta}{Shape parameter β > 0.}
+\item{beta}{Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{gamma}{Shape parameter γ > 0.}
+\item{gamma}{Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{Shape parameter δ ≥ 0.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 }
 \value{
-A numeric vector of length n with random draws from the BKw distribution.
+A vector of length \code{n} containing random deviates from the BKw
+distribution. The length of the result is determined by \code{n} and the
+recycling rule applied to the parameters (\code{alpha}, \code{beta},
+\code{gamma}, \code{delta}). Returns \code{NaN} if parameters
+are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0}, \code{gamma <= 0},
+\code{delta < 0}).
 }
 \description{
-Generates n samples from BKw(α, β, γ, δ) using the transformation:
-\eqn{V ~ Beta(γ, δ+1) => X = {1 - (1 - V)^(1/β)}^(1/α)}.
+Generates random deviates from the Beta-Kumaraswamy (BKw) distribution
+with parameters \code{alpha} (\eqn{\alpha}), \code{beta} (\eqn{\beta}),
+\code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}). This distribution
+is a special case of the Generalized Kumaraswamy (GKw) distribution where
+the parameter \eqn{\lambda = 1}.
 }
+\details{
+The generation method uses the relationship between the GKw distribution and the
+Beta distribution. The general procedure for GKw (\code{\link{rgkw}}) is:
+If \eqn{W \sim \mathrm{Beta}(\gamma, \delta+1)}, then
+\eqn{X = \{1 - [1 - W^{1/\lambda}]^{1/\beta}\}^{1/\alpha}} follows the
+GKw(\eqn{\alpha, \beta, \gamma, \delta, \lambda}) distribution.
+
+For the BKw distribution, \eqn{\lambda=1}. Therefore, the algorithm simplifies to:
+\enumerate{
+\item Generate \eqn{V \sim \mathrm{Beta}(\gamma, \delta+1)} using
+\code{\link[stats]{rbeta}}.
+\item Compute the BKw variate \eqn{X = \{1 - (1 - V)^{1/\beta}\}^{1/\alpha}}.
+}
+This procedure is implemented efficiently, handling parameter recycling as needed.
+}
+\examples{
+\dontrun{
+set.seed(2026) # for reproducibility
+
+# Generate 1000 random values from a specific BKw distribution
+alpha_par <- 2.0
+beta_par <- 1.5
+gamma_par <- 1.0
+delta_par <- 0.5
+
+x_sample_bkw <- rbkw(1000, alpha = alpha_par, beta = beta_par,
+                     gamma = gamma_par, delta = delta_par)
+summary(x_sample_bkw)
+
+# Histogram of generated values compared to theoretical density
+hist(x_sample_bkw, breaks = 30, freq = FALSE, # freq=FALSE for density
+     main = "Histogram of BKw Sample", xlab = "x", ylim = c(0, 2.5))
+curve(dbkw(x, alpha = alpha_par, beta = beta_par, gamma = gamma_par,
+           delta = delta_par),
+      add = TRUE, col = "red", lwd = 2, n = 201)
+legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2, bty = "n")
+
+# Comparing empirical and theoretical quantiles (Q-Q plot)
+prob_points <- seq(0.01, 0.99, by = 0.01)
+theo_quantiles <- qbkw(prob_points, alpha = alpha_par, beta = beta_par,
+                       gamma = gamma_par, delta = delta_par)
+emp_quantiles <- quantile(x_sample_bkw, prob_points, type = 7)
+
+plot(theo_quantiles, emp_quantiles, pch = 16, cex = 0.8,
+     main = "Q-Q Plot for BKw Distribution",
+     xlab = "Theoretical Quantiles", ylab = "Empirical Quantiles (n=1000)")
+abline(a = 0, b = 1, col = "blue", lty = 2)
+
+# Compare summary stats with rgkw(..., lambda=1, ...)
+# Note: individual values will differ due to randomness
+x_sample_gkw <- rgkw(1000, alpha = alpha_par, beta = beta_par, gamma = gamma_par,
+                     delta = delta_par, lambda = 1.0)
+print("Summary stats for rbkw sample:")
+print(summary(x_sample_bkw))
+print("Summary stats for rgkw(lambda=1) sample:")
+print(summary(x_sample_gkw)) # Should be similar
+
+# Vectorized parameters: generate 1 value for each gamma
+gammas_vec <- c(0.5, 1.0, 2.0)
+n_param <- length(gammas_vec)
+samples_vec <- rbkw(n_param, alpha = alpha_par, beta = beta_par,
+                    gamma = gammas_vec, delta = delta_par)
+print(samples_vec) # One sample for each gamma value
+
+} # End of \dontrun block
+
+}
+\references{
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+
+Devroye, L. (1986). \emph{Non-Uniform Random Variate Generation}. Springer-Verlag.
+(General methods for random variate generation).
+}
+\seealso{
+\code{\link{rgkw}} (parent distribution random generation),
+\code{\link{dbkw}}, \code{\link{pbkw}}, \code{\link{qbkw}} (other BKw functions),
+\code{\link[stats]{rbeta}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{random}

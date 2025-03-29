@@ -2,27 +2,145 @@
 % Please edit documentation in R/RcppExports.R
 \name{llbkw}
 \alias{llbkw}
-\title{Negative Log-Likelihood for Beta-Kumaraswamy Distribution}
+\title{Negative Log-Likelihood for Beta-Kumaraswamy (BKw) Distribution}
 \usage{
 llbkw(par, data)
 }
 \arguments{
-\item{par}{NumericVector of length 4, \eqn{(α, β, γ, δ)}.}
+\item{par}{A numeric vector of length 4 containing the distribution parameters
+in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+\code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).}
 
-\item{data}{NumericVector of observations, each in (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-A single numeric value (the negative log-likelihood). Returns \code{-Inf} if
-parameters are invalid or if any data point is outside (0,1).
+Returns a single \code{double} value representing the negative
+log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+if any parameter values in \code{par} are invalid according to their
+constraints, or if any value in \code{data} is not in the interval (0, 1).
 }
 \description{
-Computes the negative log-likelihood of the BKw(α, β, γ, δ) model given data in (0,1).
+Computes the negative log-likelihood function for the Beta-Kumaraswamy (BKw)
+distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}),
+given a vector of observations. This distribution is the special case of the
+Generalized Kumaraswamy (GKw) distribution where \eqn{\lambda = 1}. This function
+is typically used for maximum likelihood estimation via numerical optimization.
 }
 \details{
-The PDF is
+The Beta-Kumaraswamy (BKw) distribution is the GKw distribution (\code{\link{dgkw}})
+with \eqn{\lambda=1}. Its probability density function (PDF) is:
 \deqn{
-  f(x)=\frac{\alpha \beta}{B(\gamma, \delta+1)} x^{\alpha-1} (1-x^\alpha)^{\beta(\delta+1)-1} [1-(1-x^\alpha)^\beta]^{\gamma-1}.
+f(x | \theta) = \frac{\alpha \beta}{B(\gamma, \delta+1)} x^{\alpha - 1} \bigl(1 - x^\alpha\bigr)^{\beta(\delta+1) - 1} \bigl[1 - \bigl(1 - x^\alpha\bigr)^\beta\bigr]^{\gamma - 1}
 }
-The log-likelihood \eqn{\ell(\theta)} is the sum of log(f(x_i)) for i=1..n. We return
-the negative log-likelihood for convenience in optimization.
+for \eqn{0 < x < 1}, \eqn{\theta = (\alpha, \beta, \gamma, \delta)}, and \eqn{B(a,b)}
+is the Beta function (\code{\link[base]{beta}}).
+The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+\eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+\deqn{
+\ell(\theta | \mathbf{x}) = n[\ln(\alpha) + \ln(\beta) - \ln B(\gamma, \delta+1)]
++ \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta(\delta+1)-1)\ln(v_i) + (\gamma-1)\ln(w_i)]
 }
+where:
+\itemize{
+\item \eqn{v_i = 1 - x_i^{\alpha}}
+\item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+}
+This function computes and returns the \emph{negative} log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+Numerical stability is maintained similarly to \code{\link{llgkw}}.
+}
+\examples{
+\dontrun{
+# Assuming existence of rbkw, grbkw, hsbkw functions for BKw distribution
+
+# Generate sample data from a known BKw distribution
+set.seed(124)
+true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.0, delta = 0.5)
+# Use rbkw if it exists, otherwise use rgkw with lambda=1
+if (exists("rbkw")) {
+  sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+                         gamma = true_par_bkw[3], delta = true_par_bkw[4])
+} else {
+  sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+                         gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
+}
+hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.0, 0.5) Sample")
+
+# --- Maximum Likelihood Estimation using optim ---
+# Initial parameter guess
+start_par_bkw <- c(1.8, 1.2, 1.1, 0.3)
+
+# Perform optimization (minimizing negative log-likelihood)
+mle_result_bkw <- stats::optim(par = start_par_bkw,
+                               fn = llbkw, # Use the BKw neg-log-likelihood
+                               method = "BFGS", # Needs parameters > 0, consider L-BFGS-B
+                               hessian = TRUE,
+                               data = sample_data_bkw)
+
+# Check convergence and results
+if (mle_result_bkw$convergence == 0) {
+  print("Optimization converged successfully.")
+  mle_par_bkw <- mle_result_bkw$par
+  print("Estimated BKw parameters:")
+  print(mle_par_bkw)
+  print("True BKw parameters:")
+  print(true_par_bkw)
+} else {
+  warning("Optimization did not converge!")
+  print(mle_result_bkw$message)
+}
+
+# --- Compare numerical and analytical derivatives (if available) ---
+# Requires 'numDeriv' package and analytical functions 'grbkw', 'hsbkw'
+if (mle_result_bkw$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE) &&
+    exists("grbkw") && exists("hsbkw")) {
+
+  cat("\nComparing Derivatives at BKw MLE estimates:\n")
+
+  # Numerical derivatives of llbkw
+  num_grad_bkw <- numDeriv::grad(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+  num_hess_bkw <- numDeriv::hessian(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+
+  # Analytical derivatives (assuming they return derivatives of negative LL)
+  ana_grad_bkw <- grbkw(par = mle_par_bkw, data = sample_data_bkw)
+  ana_hess_bkw <- hsbkw(par = mle_par_bkw, data = sample_data_bkw)
+
+  # Check differences
+  cat("Max absolute difference between gradients:\n")
+  print(max(abs(num_grad_bkw - ana_grad_bkw)))
+  cat("Max absolute difference between Hessians:\n")
+  print(max(abs(num_hess_bkw - ana_hess_bkw)))
+
+} else {
+   cat("\nSkipping derivative comparison for BKw.\n")
+   cat("Requires convergence, 'numDeriv' package and functions 'grbkw', 'hsbkw'.\n")
+}
+
+} # End of \dontrun block
+
+}
+\references{
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+}
+\seealso{
+\code{\link{llgkw}} (parent distribution negative log-likelihood),
+\code{\link{dbkw}}, \code{\link{pbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}},
+\code{grbkw} (gradient, if available),
+\code{hsbkw} (Hessian, if available),
+\code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{likelihood}
+\keyword{optimize}

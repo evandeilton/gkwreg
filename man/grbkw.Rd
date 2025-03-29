@@ -2,97 +2,161 @@
 % Please edit documentation in R/RcppExports.R
 \name{grbkw}
 \alias{grbkw}
-\title{Gradient Function for Beta-Kumaraswamy Log-Likelihood}
+\title{Gradient of the Negative Log-Likelihood for the BKw Distribution}
 \usage{
 grbkw(par, data)
 }
 \arguments{
-\item{par}{NumericVector of length 4 containing parameters (α, β, γ, δ) in that order.
-All parameters must be positive.}
+\item{par}{A numeric vector of length 4 containing the distribution parameters
+in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+\code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).}
 
-\item{data}{NumericVector of observations, where all values must be in the open interval (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-NumericVector of length 4 containing the gradient components (partial derivatives)
-of the negative log-likelihood with respect to each parameter (α, β, γ, δ).
-Returns a vector of NaN values if any parameters or data values are invalid.
+Returns a numeric vector of length 4 containing the partial derivatives
+of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+respect to each parameter:
+\eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \gamma, -\partial \ell/\partial \delta)}.
+Returns a vector of \code{NaN} if any parameter values are invalid according
+to their constraints, or if any value in \code{data} is not in the
+interval (0, 1).
 }
 \description{
-Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-function for the Beta-Kumaraswamy (BKw) distribution. This function provides
-the exact gradient needed for efficient optimization in maximum likelihood estimation.
-The BKw is a submodel of GKw with λ = 1 fixed.
+Computes the gradient vector (vector of first partial derivatives) of the
+negative log-likelihood function for the Beta-Kumaraswamy (BKw) distribution
+with parameters \code{alpha} (\eqn{\alpha}), \code{beta} (\eqn{\beta}),
+\code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}). This distribution
+is the special case of the Generalized Kumaraswamy (GKw) distribution where
+\eqn{\lambda = 1}. The gradient is typically used in optimization algorithms
+for maximum likelihood estimation.
 }
 \details{
-The gradient vector contains the following partial derivatives of the negative log-likelihood:
+The components of the gradient vector of the negative log-likelihood
+(\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the BKw (\eqn{\lambda=1}) model are:
 
 \deqn{
-\frac{\partial \ell}{\partial \alpha} = \frac{n}{\alpha} + \sum_{i=1}^{n}\log(x_i) -
-\sum_{i=1}^{n}\left[x_i^{\alpha} \log(x_i) \left(\frac{\beta(\delta+1)-1}{v_i} -
+-\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
++ \sum_{i=1}^{n}\left[x_i^{\alpha} \ln(x_i) \left(\frac{\beta(\delta+1)-1}{v_i} -
 \frac{(\gamma-1) \beta v_i^{\beta-1}}{w_i}\right)\right]
 }
-
 \deqn{
-\frac{\partial \ell}{\partial \beta} = \frac{n}{\beta} + (\delta+1)\sum_{i=1}^{n}\log(v_i) -
-\sum_{i=1}^{n}\left[v_i^{\beta} \log(v_i) \frac{\gamma-1}{w_i}\right]
+-\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - (\delta+1)\sum_{i=1}^{n}\ln(v_i)
++ \sum_{i=1}^{n}\left[\frac{(\gamma-1) v_i^{\beta} \ln(v_i)}{w_i}\right]
 }
-
 \deqn{
-\frac{\partial \ell}{\partial \gamma} = -n[\psi(\gamma) - \psi(\gamma+\delta+1)] +
-\sum_{i=1}^{n}\log(w_i)
+-\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma) - \psi(\gamma+\delta+1)] -
+\sum_{i=1}^{n}\ln(w_i)
 }
-
 \deqn{
-\frac{\partial \ell}{\partial \delta} = -n[\psi(\delta+1) - \psi(\gamma+\delta+1)] +
-\beta\sum_{i=1}^{n}\log(v_i)
+-\frac{\partial \ell}{\partial \delta} = n[\psi(\delta+1) - \psi(\gamma+\delta+1)] -
+\beta\sum_{i=1}^{n}\ln(v_i)
 }
 
 where:
 \itemize{
-\item \deqn{v_i = 1 - x_i^{\alpha}}
-\item \deqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
-\item \deqn{\psi} is the digamma function (derivative of the log-gamma function)
+\item \eqn{v_i = 1 - x_i^{\alpha}}
+\item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+\item \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
 }
-
-The implementation includes several numerical safeguards:
-\itemize{
-\item Parameter and data validation with appropriate error handling
-\item Clamping of intermediate values to avoid numerical underflow/overflow
-\item Efficient vector operations using Armadillo C++ library
-}
-
-The returned gradient is negated to align with minimization of negative log-likelihood
-in optimization routines.
+These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+minimizing the negative log-likelihood. They correspond to the general GKw
+gradient (\code{\link{grgkw}}) components for \eqn{\alpha, \beta, \gamma, \delta}
+evaluated at \eqn{\lambda=1}. Note that the component for \eqn{\lambda} is omitted.
+Numerical stability is maintained through careful implementation.
 }
 \examples{
 \dontrun{
-# Generate sample data from a BKw distribution
+# Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
+
+# Generate sample data
 set.seed(123)
-x <- rbkw(100, 2, 3, 1, 0.5)
-hist(x, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
-
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5, 0.5, 0.5), llbkw, method = "BFGS",
-                hessian = TRUE, data = x)
-
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llbkw, x = result$par, data = x)
-num_hess <- numDeriv::hessian(llbkw, x = result$par, data = x)
-
-ana_grad <- grbkw(result$par, data = x)
-ana_hess <- hsbkw(result$par, data = x)
-
-# Check differences (should be very small)
-round(num_grad - ana_grad, 4)
-round(num_hess - ana_hess, 4)
-
+true_par_bkw <- c(alpha = 2, beta = 3, gamma = 1, delta = 0.5)
+if (exists("rbkw")) {
+  sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+                         gamma = true_par_bkw[3], delta = true_par_bkw[4])
+} else {
+  sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+                         gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
 }
+hist(sample_data_bkw, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
+
+# --- Find MLE estimates ---
+start_par_bkw <- c(1.5, 2.5, 0.8, 0.3)
+mle_result_bkw <- stats::optim(par = start_par_bkw,
+                               fn = llbkw,
+                               gr = grbkw, # Use analytical gradient for BKw
+                               method = "BFGS",
+                               hessian = TRUE,
+                               data = sample_data_bkw)
+
+# --- Compare analytical gradient to numerical gradient ---
+if (mle_result_bkw$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE)) {
+
+  mle_par_bkw <- mle_result_bkw$par
+  cat("\nComparing Gradients for BKw at MLE estimates:\n")
+
+  # Numerical gradient of llbkw
+  num_grad_bkw <- numDeriv::grad(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+
+  # Analytical gradient from grbkw
+  ana_grad_bkw <- grbkw(par = mle_par_bkw, data = sample_data_bkw)
+
+  cat("Numerical Gradient (BKw):\n")
+  print(num_grad_bkw)
+  cat("Analytical Gradient (BKw):\n")
+  print(ana_grad_bkw)
+
+  # Check differences
+  cat("Max absolute difference between BKw gradients:\n")
+  print(max(abs(num_grad_bkw - ana_grad_bkw)))
+
+} else {
+  cat("\nSkipping BKw gradient comparison.\n")
+}
+
+# --- Optional: Compare with relevant components of GKw gradient ---
+# Requires grgkw function
+if (mle_result_bkw$convergence == 0 && exists("grgkw")) {
+  # Create 5-param vector for grgkw (insert lambda=1)
+  mle_par_gkw_equiv <- c(mle_par_bkw[1:4], lambda = 1.0)
+  ana_grad_gkw <- grgkw(par = mle_par_gkw_equiv, data = sample_data_bkw)
+  # Extract components corresponding to alpha, beta, gamma, delta
+  ana_grad_gkw_subset <- ana_grad_gkw[c(1, 2, 3, 4)]
+
+  cat("\nComparison with relevant components of GKw gradient:\n")
+  cat("Max absolute difference:\n")
+  print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
+}
+
+} # End of \dontrun block
 
 }
 \references{
-Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-Journal of Hydrology, 46(1-2), 79-88.
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 
-Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+(Note: Specific gradient formulas might be derived or sourced from additional references).
 }
+\seealso{
+\code{\link{grgkw}} (parent distribution gradient),
+\code{\link{llbkw}} (negative log-likelihood for BKw),
+\code{\link{hsbkw}} (Hessian for BKw, if available),
+\code{\link{dbkw}} (density for BKw),
+\code{\link[stats]{optim}},
+\code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+\code{\link[base]{digamma}}.
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{gradient}
+\keyword{likelihood}
+\keyword{optimize}

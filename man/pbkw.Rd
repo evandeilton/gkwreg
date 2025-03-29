@@ -2,32 +2,125 @@
 % Please edit documentation in R/RcppExports.R
 \name{pbkw}
 \alias{pbkw}
-\title{CDF of Beta-Kumaraswamy Distribution}
+\title{Cumulative Distribution Function (CDF) of the Beta-Kumaraswamy (BKw) Distribution}
 \usage{
 pbkw(q, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
-\item{q}{Vector of quantiles in (0,1).}
+\item{q}{Vector of quantiles (values generally between 0 and 1).}
 
-\item{alpha}{Shape parameter α > 0.}
+\item{alpha}{Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{beta}{Shape parameter β > 0.}
+\item{beta}{Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{gamma}{Shape parameter γ > 0.}
+\item{gamma}{Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{Shape parameter δ ≥ 0.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 
-\item{lower_tail}{Logical; if TRUE (default), returns F(q)=P(X≤q), else 1-F(q).}
+\item{lower_tail}{Logical; if \code{TRUE} (default), probabilities are
+\eqn{P(X \le q)}, otherwise, \eqn{P(X > q)}.}
 
-\item{log_p}{Logical; if TRUE, returns log-probabilities.}
+\item{log_p}{Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+\eqn{\log(p)}. Default: \code{FALSE}.}
 }
 \value{
-A vector of probabilities, matching the length of the broadcast inputs.
+A vector of probabilities, \eqn{F(q)}, or their logarithms/complements
+depending on \code{lower_tail} and \code{log_p}. The length of the result
+is determined by the recycling rule applied to the arguments (\code{q},
+\code{alpha}, \code{beta}, \code{gamma}, \code{delta}). Returns \code{0}
+(or \code{-Inf} if \code{log_p = TRUE}) for \code{q <= 0} and \code{1}
+(or \code{0} if \code{log_p = TRUE}) for \code{q >= 1}. Returns \code{NaN}
+for invalid parameters.
 }
 \description{
-Computes the cumulative distribution function for BKw(α, β, γ, δ).
+Computes the cumulative distribution function (CDF), \eqn{P(X \le q)}, for the
+Beta-Kumaraswamy (BKw) distribution with parameters \code{alpha} (\eqn{\alpha}),
+\code{beta} (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta}
+(\eqn{\delta}). This distribution is defined on the interval (0, 1) and is
+a special case of the Generalized Kumaraswamy (GKw) distribution where
+\eqn{\lambda = 1}.
 }
 \details{
-CDF: \eqn{F(x) = I_{1 - (1 - x^α)^β}(\gamma, \delta+1)}, where \eqn{I_z(a,b)} is the
-regularized incomplete beta function.
+The Beta-Kumaraswamy (BKw) distribution is a special case of the
+five-parameter Generalized Kumaraswamy distribution (\code{\link{pgkw}})
+obtained by setting the shape parameter \eqn{\lambda = 1}.
+
+The CDF of the GKw distribution is \eqn{F_{GKw}(q) = I_{y(q)}(\gamma, \delta+1)},
+where \eqn{y(q) = [1-(1-q^{\alpha})^{\beta}]^{\lambda}} and \eqn{I_x(a,b)}
+is the regularized incomplete beta function (\code{\link[stats]{pbeta}}).
+Setting \eqn{\lambda=1} simplifies \eqn{y(q)} to \eqn{1 - (1 - q^\alpha)^\beta},
+yielding the BKw CDF:
+\deqn{
+F(q; \alpha, \beta, \gamma, \delta) = I_{1 - (1 - q^\alpha)^\beta}(\gamma, \delta+1)
 }
+This is evaluated using the \code{\link[stats]{pbeta}} function.
+}
+\examples{
+\dontrun{
+# Example values
+q_vals <- c(0.2, 0.5, 0.8)
+alpha_par <- 2.0
+beta_par <- 1.5
+gamma_par <- 1.0
+delta_par <- 0.5
+
+# Calculate CDF P(X <= q)
+probs <- pbkw(q_vals, alpha_par, beta_par, gamma_par, delta_par)
+print(probs)
+
+# Calculate upper tail P(X > q)
+probs_upper <- pbkw(q_vals, alpha_par, beta_par, gamma_par, delta_par,
+                    lower_tail = FALSE)
+print(probs_upper)
+# Check: probs + probs_upper should be 1
+print(probs + probs_upper)
+
+# Calculate log CDF
+log_probs <- pbkw(q_vals, alpha_par, beta_par, gamma_par, delta_par,
+                  log_p = TRUE)
+print(log_probs)
+# Check: should match log(probs)
+print(log(probs))
+
+# Compare with pgkw setting lambda = 1
+probs_gkw <- pgkw(q_vals, alpha_par, beta_par, gamma = gamma_par,
+                 delta = delta_par, lambda = 1.0)
+print(paste("Max difference:", max(abs(probs - probs_gkw)))) # Should be near zero
+
+# Plot the CDF
+curve_q <- seq(0.01, 0.99, length.out = 200)
+curve_p <- pbkw(curve_q, alpha = 2, beta = 3, gamma = 0.5, delta = 1)
+plot(curve_q, curve_p, type = "l", main = "BKw CDF Example",
+     xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
+
+# Vectorized parameters
+gammas_vec <- c(0.5, 1.0, 2.0)
+probs_vec <- pbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
+print(probs_vec) # CDF at q=0.5 for 3 different gamma values
+
+} # End of \dontrun block
+
+}
+\references{
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+}
+\seealso{
+\code{\link{pgkw}} (parent distribution CDF),
+\code{\link{dbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}} (other BKw functions),
+\code{\link[stats]{pbeta}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{cumulative}
+\keyword{distribution}

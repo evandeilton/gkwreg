@@ -2,93 +2,151 @@
 % Please edit documentation in R/RcppExports.R
 \name{hsgkw}
 \alias{hsgkw}
-\title{Analytic Hessian Matrix for Generalized Kumaraswamy Distribution}
+\title{Hessian Matrix of the Negative Log-Likelihood for the GKw Distribution}
 \usage{
 hsgkw(par, data)
 }
 \arguments{
-\item{par}{Numeric vector of length 5 containing the parameters
-(α, β, γ, δ, λ) in that order. All parameters must be positive.}
+\item{par}{A numeric vector of length 5 containing the distribution parameters
+in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+\code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+\code{lambda} (\eqn{\lambda > 0}).}
 
-\item{data}{Numeric vector of observations, where all values must be
-in the open interval (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-A 5×5 numeric matrix representing the Hessian of the negative
-log-likelihood function. If parameters or data are invalid
-(parameters ≤ 0 or data outside (0,1)), returns a matrix of
-NaN values.
+Returns a 5x5 numeric matrix representing the Hessian matrix of the
+negative log-likelihood function, i.e., the matrix of second partial
+derivatives \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)}.
+Returns a 5x5 matrix populated with \code{NaN} if any parameter values are
+invalid according to their constraints, or if any value in \code{data} is
+not in the interval (0, 1).
 }
 \description{
-Computes the analytic Hessian matrix of the log-likelihood function for
-the Generalized Kumaraswamy (GKw) distribution. This function provides
-exact second derivatives needed for optimization and inference.
+Computes the analytic Hessian matrix (matrix of second partial derivatives)
+of the negative log-likelihood function for the five-parameter Generalized
+Kumaraswamy (GKw) distribution. This is typically used to estimate standard
+errors of maximum likelihood estimates or in optimization algorithms.
 }
 \details{
-The log-likelihood for the generalized Kumaraswamy distribution is:
-
+This function calculates the analytic second partial derivatives of the
+negative log-likelihood function based on the GKw PDF (see \code{\link{dgkw}}).
+The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} is given by:
 \deqn{
-\ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta) - n \ln B(\gamma, \delta+1)
-+ (\alpha-1) \sum \ln(x_i)
-+ (\beta-1) \sum \ln(1 - x_i^\alpha)
-+ (\gamma\lambda - 1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
-+ \delta \sum \ln\{1 - \{1 - (1 - x_i^\alpha)^\beta\}^\lambda\}
+\ell(\theta) = n \ln(\lambda\alpha\beta) - n \ln B(\gamma, \delta+1)
++ \sum_{i=1}^{n} [(\alpha-1) \ln(x_i)
++ (\beta-1) \ln(v_i)
++ (\gamma\lambda - 1) \ln(w_i)
++ \delta \ln(z_i)]
 }
-
-where B refers to the Beta function.
-
-The implementation computes all second derivatives analytically for each term.
-For computational efficiency, the following transformations are used:
+where \eqn{\theta = (\alpha, \beta, \gamma, \delta, \lambda)}, \eqn{B(a,b)}
+is the Beta function (\code{\link[base]{beta}}), and intermediate terms are:
 \itemize{
-\item \deqn{A = x^α} and derivatives
-\item \deqn{v = 1 - A}
-\item \deqn{w = 1 - v^β}
-  \item \deqn{z = 1 - w^λ}
+\item \eqn{v_i = 1 - x_i^{\alpha}}
+\item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+\item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
 }
+The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}.
 
-The returned Hessian matrix has the following structure:
+Key properties of the returned matrix:
 \itemize{
-\item Rows/columns 1-5 correspond to α, β, γ, δ, λ respectively
-\item The matrix is symmetric (as expected for a Hessian)
-\item The matrix represents second derivatives of the negative log-likelihood
+\item Dimensions: 5x5.
+\item Symmetry: The matrix is symmetric.
+\item Ordering: Rows and columns correspond to the parameters in the order
+\eqn{\alpha, \beta, \gamma, \delta, \lambda}.
+\item Content: Analytic second derivatives of the \emph{negative} log-likelihood.
 }
-
-This function is implemented in C++ for computational efficiency.
+The exact analytical formulas for the second derivatives are implemented
+directly (often derived using symbolic differentiation) for accuracy and
+efficiency, typically using C++.
 }
 \examples{
 \dontrun{
-# Generate sample data from a GKw distribution
+# Generate sample data from a known GKw distribution
 set.seed(123)
-x <- rgkw(100, 2, 3, 1.0, 0.5, 0.5)
-hist(x, breaks = 20, main = "GKw(2, 3, 1.0, 0.5, 0.5) Sample")
+true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
+sample_data <- rgkw(100, alpha = true_par[1], beta = true_par[2],
+                   gamma = true_par[3], delta = true_par[4], lambda = true_par[5])
 
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5, 0.5, 0.5, 0.5), llgkw, method = "BFGS",
-                hessian = TRUE, data = x)
+# --- Find MLE estimates (e.g., using optim) ---
+start_par <- c(1.5, 2.5, 1.2, 0.3, 0.6) # Initial guess
+mle_result <- stats::optim(par = start_par,
+                           fn = llgkw,
+                           method = "BFGS",
+                           hessian = TRUE, # Ask optim for numerical Hessian
+                           data = sample_data)
 
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llgkw, x = result$par, data = x)
-num_hess <- numDeriv::hessian(llgkw, x = result$par, data = x)
+if (mle_result$convergence == 0) {
+  mle_par <- mle_result$par
+  print("MLE parameters found:")
+  print(mle_par)
 
-ana_grad <- grgkw(result$par, data = x)
-ana_hess <- hsgkw(result$par, data = x)
+  # --- Compare analytical Hessian to numerical Hessian ---
+  # Requires the 'numDeriv' package
+  if (requireNamespace("numDeriv", quietly = TRUE)) {
 
-# Check differences (should be very small)
-round(num_grad - ana_grad, 4)
-round(num_hess - ana_hess, 4)
+    cat("\nComparing Hessians at MLE estimates:\n")
 
+    # Numerical Hessian from numDeriv applied to negative LL function
+    num_hess <- numDeriv::hessian(func = llgkw, x = mle_par, data = sample_data)
+
+    # Analytical Hessian (output of hsgkw)
+    ana_hess <- hsgkw(par = mle_par, data = sample_data)
+
+    cat("Numerical Hessian (from numDeriv):\n")
+    print(round(num_hess, 4))
+    cat("Analytical Hessian (from hsgkw):\n")
+    print(round(ana_hess, 4))
+
+    # Check differences (should be small)
+    cat("Max absolute difference between Hessians:\n")
+    print(max(abs(num_hess - ana_hess)))
+
+    # Optional: Use analytical Hessian to estimate standard errors
+    # Ensure Hessian is positive definite before inverting
+    # fisher_info_analytic <- ana_hess # Hessian of negative LL
+    # tryCatch({
+    #   cov_matrix <- solve(fisher_info_analytic)
+    #   std_errors <- sqrt(diag(cov_matrix))
+    #   cat("Std. Errors from Analytical Hessian:\n")
+    #   print(std_errors)
+    # }, error = function(e) {
+    #   warning("Could not invert analytical Hessian to get standard errors: ", e$message)
+    # })
+
+  } else {
+    cat("\nSkipping Hessian comparison (requires 'numDeriv' package).\n")
+  }
+} else {
+  warning("Optimization did not converge. Hessian comparison skipped.")
 }
+
+} # End of \dontrun block
 
 }
 \references{
-Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-Journal of Hydrology, 46(1-2), 79-88.
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753}
 
-Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0}
+(Note: Specific Hessian formulas might be derived or sourced from additional references).
 }
 \seealso{
-\code{\link[gkwreg]{dgkw}} for the GKw density function,
-\code{\link[gkwreg]{gkwreg}} for fitting GKw regression models,
-\code{\link[gkwreg]{pgkw}} for the GKw cumulative distribution function
+\code{\link{llgkw}} (negative log-likelihood function),
+\code{\link{grgkw}} (gradient vector),
+\code{\link{dgkw}} (density function),
+\code{\link{gkwreg}} (if provides regression fitting),
+\code{\link[stats]{optim}},
+\code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 }
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{hessian}
+\keyword{likelihood}
+\keyword{optimize}

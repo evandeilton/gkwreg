@@ -2,72 +2,139 @@
 % Please edit documentation in R/RcppExports.R
 \name{grbeta}
 \alias{grbeta}
-\title{Gradient Function for Beta Log-Likelihood}
+\title{Gradient of the Negative Log-Likelihood for the Beta Distribution (gamma, delta+1 Parameterization)}
 \usage{
 grbeta(par, data)
 }
 \arguments{
-\item{par}{NumericVector of length 2 containing parameters (γ, δ) in that order.
-All parameters must be positive.}
+\item{par}{A numeric vector of length 2 containing the distribution parameters
+in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).}
 
-\item{data}{NumericVector of observations, where all values must be in the open interval (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-NumericVector of length 2 containing the gradient components (partial derivatives)
-of the negative log-likelihood with respect to each parameter (γ, δ).
-Returns a vector of NaN values if any parameters or data values are invalid.
+Returns a numeric vector of length 2 containing the partial derivatives
+of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+respect to each parameter: \eqn{(-\partial \ell/\partial \gamma, -\partial \ell/\partial \delta)}.
+Returns a vector of \code{NaN} if any parameter values are invalid according
+to their constraints, or if any value in \code{data} is not in the
+interval (0, 1).
 }
 \description{
-Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-function for the Beta distribution. This function provides the exact gradient needed
-for efficient optimization in maximum likelihood estimation.
-The Beta is a submodel of GKw with α = 1, β = 1, and λ = 1 fixed.
+Computes the gradient vector (vector of first partial derivatives) of the
+negative log-likelihood function for the standard Beta distribution, using
+a parameterization common in generalized distribution families. The
+distribution is parameterized by \code{gamma} (\eqn{\gamma}) and \code{delta}
+(\eqn{\delta}), corresponding to the standard Beta distribution with shape
+parameters \code{shape1 = gamma} and \code{shape2 = delta + 1}.
+The gradient is useful for optimization algorithms.
 }
 \details{
-The gradient vector contains the following partial derivatives of the negative log-likelihood:
+This function calculates the gradient of the negative log-likelihood for a
+Beta distribution with parameters \code{shape1 = gamma} (\eqn{\gamma}) and
+\code{shape2 = delta + 1} (\eqn{\delta+1}). The components of the gradient
+vector (\eqn{-\nabla \ell(\theta | \mathbf{x})}) are:
 
 \deqn{
-\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma+\delta+1) - \psi(\gamma)] -
-\sum_{i=1}^{n}\log(x_i)
+-\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma) - \psi(\gamma+\delta+1)] -
+\sum_{i=1}^{n}\ln(x_i)
 }
-
 \deqn{
-\frac{\partial \ell}{\partial \delta} = n[\psi(\gamma+\delta+1) - \psi(\delta+1)] -
-\sum_{i=1}^{n}\log(1-x_i)
+-\frac{\partial \ell}{\partial \delta} = n[\psi(\delta+1) - \psi(\gamma+\delta+1)] -
+\sum_{i=1}^{n}\ln(1-x_i)
 }
 
-where:
-\itemize{
-\item \deqn{\psi} is the digamma function (derivative of the log-gamma function)
-}
-
-Note that this implementation works with the GKw family parameterization of the Beta
-distribution where shape1=γ and shape2=δ+1 in standard statistical notation.
-
-The implementation includes several numerical safeguards:
-\itemize{
-\item Parameter and data validation with appropriate error handling
-\item Efficient vector operations using Armadillo C++ library
-}
-
-The returned gradient is for the negative log-likelihood to align with minimization
-in optimization routines.
+where \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
+These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+minimizing the negative log-likelihood. They correspond to the relevant components
+of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\alpha=1, \beta=1, \lambda=1}.
+Note the parameterization: the standard Beta shape parameters are \eqn{\gamma} and \eqn{\delta+1}.
 }
 \examples{
 \dontrun{
-# Generate sample data from a Beta distribution
+# Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
+
+# Generate sample data from a Beta(2, 4) distribution
+# (gamma=2, delta=3 in this parameterization)
 set.seed(123)
-x <- rbeta_(100, 2, 3)
-hist(x, breaks = 20, main = "Beta(2, 3) Sample")
+true_par_beta <- c(gamma = 2, delta = 3)
+sample_data_beta <- rbeta_(100, gamma = true_par_beta[1], delta = true_par_beta[2])
+hist(sample_data_beta, breaks = 20, main = "Beta(2, 4) Sample")
 
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5), llbeta, method = "BFGS",
-                hessian = TRUE, data = x)
+# --- Find MLE estimates ---
+start_par_beta <- c(1.5, 2.5)
+mle_result_beta <- stats::optim(par = start_par_beta,
+                               fn = llbeta,
+                               gr = grbeta, # Use analytical gradient
+                               method = "L-BFGS-B",
+                               lower = c(1e-6, 1e-6), # Bounds: gamma>0, delta>=0
+                               hessian = TRUE,
+                               data = sample_data_beta)
 
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llbeta, x = result$par, data = x)
-ana_grad <- grbeta(result$par, data = x)
-round(num_grad - ana_grad, 4)
+# --- Compare analytical gradient to numerical gradient ---
+if (mle_result_beta$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE)) {
+
+  mle_par_beta <- mle_result_beta$par
+  cat("\nComparing Gradients for Beta at MLE estimates:\n")
+
+  # Numerical gradient of llbeta
+  num_grad_beta <- numDeriv::grad(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+
+  # Analytical gradient from grbeta
+  ana_grad_beta <- grbeta(par = mle_par_beta, data = sample_data_beta)
+
+  cat("Numerical Gradient (Beta):\n")
+  print(num_grad_beta)
+  cat("Analytical Gradient (Beta):\n")
+  print(ana_grad_beta)
+
+  # Check differences
+  cat("Max absolute difference between Beta gradients:\n")
+  print(max(abs(num_grad_beta - ana_grad_beta)))
+
+} else {
+  cat("\nSkipping Beta gradient comparison.\n")
 }
 
+# Example with Hessian comparison (if hsbeta exists)
+if (mle_result_beta$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE) && exists("hsbeta")) {
+
+  num_hess_beta <- numDeriv::hessian(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+  ana_hess_beta <- hsbeta(par = mle_par_beta, data = sample_data_beta)
+  cat("\nMax absolute difference between Beta Hessians:\n")
+  print(max(abs(num_hess_beta - ana_hess_beta)))
+
 }
+
+} # End of \dontrun block
+
+}
+\references{
+Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). \emph{Continuous Univariate
+Distributions, Volume 2} (2nd ed.). Wiley.
+
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+(Note: Specific gradient formulas might be derived or sourced from additional references).
+}
+\seealso{
+\code{\link{grgkw}}, \code{\link{grmc}} (related gradients),
+\code{\link{llbeta}} (negative log-likelihood function),
+\code{hsbeta} (Hessian, if available),
+\code{dbeta_}, \code{pbeta_}, \code{qbeta_}, \code{rbeta_},
+\code{\link[stats]{optim}},
+\code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+\code{\link[base]{digamma}}.
+}
+\author{
+Lopes, J. E.
+}
+\keyword{beta}
+\keyword{distribution}
+\keyword{gradient}
+\keyword{likelihood}
+\keyword{optimize}

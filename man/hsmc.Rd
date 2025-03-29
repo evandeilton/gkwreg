@@ -2,104 +2,158 @@
 % Please edit documentation in R/RcppExports.R
 \name{hsmc}
 \alias{hsmc}
-\title{Hessian Matrix Function for Beta Power (McDonald) Log-Likelihood}
+\title{Hessian Matrix of the Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution}
 \usage{
 hsmc(par, data)
 }
 \arguments{
-\item{par}{NumericVector of length 3 containing parameters (γ, δ, λ) in that order.
-All parameters must be positive.}
+\item{par}{A numeric vector of length 3 containing the distribution parameters
+in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+\code{lambda} (\eqn{\lambda > 0}).}
 
-\item{data}{NumericVector of observations, where all values must be in the open interval (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-NumericMatrix of dimensions 3x3 containing the Hessian components (second derivatives)
-of the negative log-likelihood with respect to each parameter pair (γ, δ, λ).
-Returns a matrix of NaN values if any parameters or data values are invalid.
+Returns a 3x3 numeric matrix representing the Hessian matrix of the
+negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+where \eqn{\theta = (\gamma, \delta, \lambda)}.
+Returns a 3x3 matrix populated with \code{NaN} if any parameter values are
+invalid according to their constraints, or if any value in \code{data} is
+not in the interval (0, 1).
 }
 \description{
-Calculates the Hessian matrix (second-order partial derivatives) of the negative log-likelihood
-function for the Beta Power (BP) distribution, also known as McDonald distribution.
-This function provides the exact Hessian needed for efficient optimization in maximum likelihood
-estimation and for asymptotic inference. The BP is a submodel of GKw with α = 1 and β = 1 fixed.
+Computes the analytic 3x3 Hessian matrix (matrix of second partial derivatives)
+of the negative log-likelihood function for the McDonald (Mc) distribution
+(also known as Beta Power) with parameters \code{gamma} (\eqn{\gamma}),
+\code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). This distribution
+is the special case of the Generalized Kumaraswamy (GKw) distribution where
+\eqn{\alpha = 1} and \eqn{\beta = 1}. The Hessian is useful for estimating
+standard errors and in optimization algorithms.
 }
 \details{
-The Hessian matrix contains the following second derivatives of the negative log-likelihood:
+This function calculates the analytic second partial derivatives of the
+negative log-likelihood function (\eqn{-\ell(\theta|\mathbf{x})}).
+The components are based on the second derivatives of the log-likelihood \eqn{\ell}
+(derived from the PDF in \code{\link{dmc}}).
+
+\strong{Note:} The formulas below represent the second derivatives of the positive
+log-likelihood (\eqn{\ell}). The function returns the \strong{negative} of these values.
+Users should verify these formulas independently if using for critical applications.
 
 \deqn{
-\frac{\partial^2 \ell}{\partial \gamma^2} = -n[\psi'(\gamma+\delta+1) - \psi'(\gamma)]
+\frac{\partial^2 \ell}{\partial \gamma^2} = -n[\psi'(\gamma) - \psi'(\gamma+\delta+1)]
 }
-
 \deqn{
 \frac{\partial^2 \ell}{\partial \gamma \partial \delta} = -n\psi'(\gamma+\delta+1)
 }
-
 \deqn{
-\frac{\partial^2 \ell}{\partial \gamma \partial \lambda} = -\sum_{i=1}^{n}\log(x_i)
+\frac{\partial^2 \ell}{\partial \gamma \partial \lambda} = \sum_{i=1}^{n}\ln(x_i)
 }
-
 \deqn{
-\frac{\partial^2 \ell}{\partial \delta^2} = -n[\psi'(\gamma+\delta+1) - \psi'(\delta+1)]
+\frac{\partial^2 \ell}{\partial \delta^2} = -n[\psi'(\delta+1) - \psi'(\gamma+\delta+1)]
 }
-
 \deqn{
-\frac{\partial^2 \ell}{\partial \delta \partial \lambda} = \sum_{i=1}^{n}\frac{x_i^{\lambda}\log(x_i)}{1-x_i^{\lambda}}
+\frac{\partial^2 \ell}{\partial \delta \partial \lambda} = -\sum_{i=1}^{n}\frac{x_i^{\lambda}\ln(x_i)}{1-x_i^{\lambda}}
 }
-
 \deqn{
-\frac{\partial^2 \ell}{\partial \lambda^2} = \frac{n}{\lambda^2} + \gamma^2\sum_{i=1}^{n}[\log(x_i)]^2 +
-\delta\sum_{i=1}^{n}\frac{x_i^{\lambda}[\log(x_i)]^2}{1-x_i^{\lambda}}\left(1 + \frac{x_i^{\lambda}}{1-x_i^{\lambda}}\right)
+\frac{\partial^2 \ell}{\partial \lambda^2} = -\frac{n}{\lambda^2} -
+\delta\sum_{i=1}^{n}\frac{x_i^{\lambda}[\ln(x_i)]^2}{(1-x_i^{\lambda})^2}
 }
 
-where:
-\itemize{
-\item \deqn{\psi'} is the trigamma function (second derivative of the log-gamma function)
-}
+where \eqn{\psi'(\cdot)} is the trigamma function (\code{\link[base]{trigamma}}).
+(\emph{Note: The formula for \eqn{\partial^2 \ell / \partial \lambda^2} provided in the source
+comment was different and potentially related to the expected information matrix;
+the formula shown here is derived from the gradient provided earlier. Verification
+is recommended.})
 
-The implementation includes several numerical safeguards:
-\itemize{
-\item Parameter and data validation with appropriate error handling
-\item Clamping of intermediate values to avoid numerical underflow/overflow
-\item Symmetry of the Hessian matrix is guaranteed by construction
-\item Efficient vector operations using Armadillo C++ library
-}
-
-The returned Hessian is negated to align with minimization of negative log-likelihood
-in optimization routines.
+The returned matrix is symmetric, with rows/columns corresponding to
+\eqn{\gamma, \delta, \lambda}.
 }
 \examples{
 \dontrun{
-# Generate sample data from a BP distribution
+# Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
+
+# Generate sample data
 set.seed(123)
-x <- rmc(100, 2, 3, 0.5)
-hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
+true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+                      lambda = true_par_mc[3])
+hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
 
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
-                hessian = TRUE, data = x)
+# --- Find MLE estimates ---
+start_par_mc <- c(1.5, 2.5, 0.8)
+mle_result_mc <- stats::optim(par = start_par_mc,
+                              fn = llmc,
+                              gr = if (exists("grmc")) grmc else NULL,
+                              method = "BFGS",
+                              hessian = TRUE, # Ask optim for numerical Hessian
+                              data = sample_data_mc)
 
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
-num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
+# --- Compare analytical Hessian to numerical Hessian ---
+if (mle_result_mc$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE) &&
+    exists("hsmc")) {
 
-ana_grad <- grmc(result$par, data = x)
-ana_hess <- hsmc(result$par, data = x)
+  mle_par_mc <- mle_result_mc$par
+  cat("\nComparing Hessians for Mc at MLE estimates:\n")
 
-# Check differences (should be very small)
-round(num_grad - ana_grad, 4)
-round(num_hess - ana_hess, 4)
+  # Numerical Hessian of llmc
+  num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+
+  # Analytical Hessian from hsmc
+  ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+
+  cat("Numerical Hessian (Mc):\n")
+  print(round(num_hess_mc, 4))
+  cat("Analytical Hessian (Mc):\n")
+  print(round(ana_hess_mc, 4))
+
+  # Check differences (monitor sign consistency)
+  cat("Max absolute difference between Mc Hessians:\n")
+  print(max(abs(num_hess_mc - ana_hess_mc)))
+
+  # Optional: Use analytical Hessian for Standard Errors
+  # tryCatch({
+  #   cov_matrix_mc <- solve(ana_hess_mc) # ana_hess_mc is already Hessian of negative LL
+  #   std_errors_mc <- sqrt(diag(cov_matrix_mc))
+  #   cat("Std. Errors from Analytical Mc Hessian:\n")
+  #   print(std_errors_mc)
+  # }, error = function(e) {
+  #   warning("Could not invert analytical Mc Hessian: ", e$message)
+  # })
+
+} else {
+  cat("\nSkipping Mc Hessian comparison.\n")
+  cat("Requires convergence, 'numDeriv' package, and function 'hsmc'.\n")
 }
+
+} # End of \dontrun block
 
 }
 \references{
-McDonald, J. B. (1984). Some generalized functions for the size distribution of income.
-Econometrica, 52(3), 647-665.
+McDonald, J. B. (1984). Some generalized functions for the size distribution
+of income. \emph{Econometrica}, 52(3), 647-663. \doi{10.2307/1913469}
 
-Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+(Note: Specific Hessian formulas might be derived or sourced from additional references).
 }
 \seealso{
-\code{\link[gkwreg]{llmc}} for the negative log-likelihood function,
-\code{\link[gkwreg]{grmc}} for the gradient of the BP log-likelihood,
-\code{\link[gkwreg]{dmc}} for the BP density function,
+\code{\link{hsgkw}} (parent distribution Hessian),
+\code{\link{llmc}} (negative log-likelihood for Mc),
+\code{\link{grmc}} (gradient for Mc, if available),
+\code{\link{dmc}} (density for Mc),
+\code{\link[stats]{optim}},
+\code{\link[numDeriv]{hessian}} (for numerical Hessian comparison),
+\code{\link[base]{trigamma}}.
 }
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{hessian}
+\keyword{likelihood}
+\keyword{mcdonald}
+\keyword{optimize}

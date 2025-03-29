@@ -2,30 +2,141 @@
 % Please edit documentation in R/RcppExports.R
 \name{qmc}
 \alias{qmc}
-\title{Quantile Function of the Beta Power Distribution}
+\title{Quantile Function of the McDonald (Mc)/Beta Power Distribution}
 \usage{
 qmc(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
-\item{p}{Vector of probabilities in (0,1) (or in log scale if log_p=TRUE).}
+\item{p}{Vector of probabilities (values between 0 and 1).}
 
-\item{gamma}{Shape parameter \eqn{γ > 0}.}
+\item{gamma}{Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{Shape parameter \eqn{δ \ge 0}.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 
-\item{lambda}{Shape parameter \eqn{λ > 0}.}
+\item{lambda}{Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{lower_tail}{Logical; if TRUE, p=F(x). If FALSE, p=1-F(x).}
+\item{lower_tail}{Logical; if \code{TRUE} (default), probabilities are \eqn{p = P(X \le q)},
+otherwise, probabilities are \eqn{p = P(X > q)}.}
 
-\item{log_p}{Logical; if TRUE, p is log(p).}
+\item{log_p}{Logical; if \code{TRUE}, probabilities \code{p} are given as
+\eqn{\log(p)}. Default: \code{FALSE}.}
+}
+\value{
+A vector of quantiles corresponding to the given probabilities \code{p}.
+The length of the result is determined by the recycling rule applied to
+the arguments (\code{p}, \code{gamma}, \code{delta}, \code{lambda}).
+Returns:
+\itemize{
+\item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE},
+when \code{lower_tail = TRUE}).
+\item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE},
+when \code{lower_tail = TRUE}).
+\item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+\item \code{NaN} for invalid parameters (e.g., \code{gamma <= 0},
+\code{delta < 0}, \code{lambda <= 0}).
+}
+Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 }
 \description{
-Computes \eqn{x = Q(p)}, the quantile function for \eqn{BP(γ, δ, λ)}.
+Computes the quantile function (inverse CDF) for the McDonald (Mc) distribution
+(also known as Beta Power) with parameters \code{gamma} (\eqn{\gamma}),
+\code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). It finds the
+value \code{q} such that \eqn{P(X \le q) = p}. This distribution is a special
+case of the Generalized Kumaraswamy (GKw) distribution where \eqn{\alpha = 1}
+and \eqn{\beta = 1}.
 }
 \details{
-The quantile function is
+The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(q)}. The CDF
+for the Mc (\eqn{\alpha=1, \beta=1}) distribution is \eqn{F(q) = I_{q^\lambda}(\gamma, \delta+1)},
+where \eqn{I_z(a,b)} is the regularized incomplete beta function (see \code{\link{pmc}}).
+
+To find the quantile \eqn{q}, we first invert the Beta function part: let
+\eqn{y = I^{-1}_{p}(\gamma, \delta+1)}, where \eqn{I^{-1}_p(a,b)} is the
+inverse computed via \code{\link[stats]{qbeta}}. We then solve \eqn{q^\lambda = y}
+for \eqn{q}, yielding the quantile function:
 \deqn{
-  Q(p) = \Bigl[\mathrm{qbeta}(p,\;\gamma,\;\delta+1)\Bigr]^{1/\lambda}.
+Q(p) = \left[ I^{-1}_{p}(\gamma, \delta+1) \right]^{1/\lambda}
 }
-if lower_tail=TRUE and log_p=FALSE. Adjust for tails or logs accordingly.
+The function uses this formula, calculating \eqn{I^{-1}_{p}(\gamma, \delta+1)}
+via \code{qbeta(p, gamma, delta + 1, ...)} while respecting the
+\code{lower_tail} and \code{log_p} arguments. This is equivalent to the general
+GKw quantile function (\code{\link{qgkw}}) evaluated with \eqn{\alpha=1, \beta=1}.
 }
+\examples{
+\dontrun{
+# Example values
+p_vals <- c(0.1, 0.5, 0.9)
+gamma_par <- 2.0
+delta_par <- 1.5
+lambda_par <- 1.0 # Equivalent to Beta(gamma, delta+1)
+
+# Calculate quantiles using qmc
+quantiles <- qmc(p_vals, gamma_par, delta_par, lambda_par)
+print(quantiles)
+# Compare with Beta quantiles
+print(stats::qbeta(p_vals, shape1 = gamma_par, shape2 = delta_par + 1))
+
+# Calculate quantiles for upper tail probabilities P(X > q) = p
+quantiles_upper <- qmc(p_vals, gamma_par, delta_par, lambda_par,
+                       lower_tail = FALSE)
+print(quantiles_upper)
+# Check: qmc(p, ..., lt=F) == qmc(1-p, ..., lt=T)
+print(qmc(1 - p_vals, gamma_par, delta_par, lambda_par))
+
+# Calculate quantiles from log probabilities
+log_p_vals <- log(p_vals)
+quantiles_logp <- qmc(log_p_vals, gamma_par, delta_par, lambda_par, log_p = TRUE)
+print(quantiles_logp)
+# Check: should match original quantiles
+print(quantiles)
+
+# Compare with qgkw setting alpha = 1, beta = 1
+quantiles_gkw <- qgkw(p_vals, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+                      delta = delta_par, lambda = lambda_par)
+print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be near zero
+
+# Verify inverse relationship with pmc
+p_check <- 0.75
+q_calc <- qmc(p_check, gamma_par, delta_par, lambda_par = 1.5) # Use lambda != 1
+p_recalc <- pmc(q_calc, gamma_par, delta_par, lambda_par = 1.5)
+print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
+# abs(p_check - p_recalc) < 1e-9 # Should be TRUE
+
+# Boundary conditions
+print(qmc(c(0, 1), gamma_par, delta_par, lambda_par)) # Should be 0, 1
+print(qmc(c(-Inf, 0), gamma_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
+
+# Vectorized parameters
+lambdas_vec <- c(0.5, 1.0, 2.0)
+quantiles_vec <- qmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
+print(quantiles_vec) # Median for 3 different lambda values
+
+} # End of \dontrun block
+
+}
+\references{
+McDonald, J. B. (1984). Some generalized functions for the size distribution
+of income. \emph{Econometrica}, 52(3), 647-663. \doi{10.2307/1913469}
+
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+}
+\seealso{
+\code{\link{qgkw}} (parent distribution quantile function),
+\code{\link{dmc}}, \code{\link{pmc}}, \code{\link{rmc}} (other Mc functions),
+\code{\link[stats]{qbeta}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{mcdonald}
+\keyword{quantile}

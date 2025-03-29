@@ -396,7 +396,7 @@
   # Calculate confidence intervals if valid standard errors are available
   conf_int <- NULL
   if (any(!is.na(filtered_std_errors))) {
-    z_value <- stats::qnorm(1 - (1 - conf.level) / 2)
+    z_value <- stats::qnorm(1 - conf.level / 2)
     conf_int_params <- character()
     conf_int_estimates <- numeric()
     conf_int_se <- numeric()
@@ -485,7 +485,7 @@
   # Check and compile TMB code
   tryCatch(
     {
-      .check_and_compile_TMB_code("gkwmletmb", verbose = silent)
+      .check_and_compile_TMB_code("gkwmletmb", verbose = !silent)
     },
     error = function(e) {
       stop("Failed to compile TMB code: ", e$message)
@@ -1246,7 +1246,6 @@
 }
 
 
-
 #' Calculate goodness-of-fit statistics
 #'
 #' @param result Fit result from TMB or Newton-Raphson.
@@ -1709,6 +1708,12 @@ gkwfit <- function(data,
   # Generate diagnostic plots if requested
   if (plot) {
     plots <- .generate_plots(result, data, family, silent)
+
+    plots <- patchwork::wrap_plots(plots) +
+      patchwork::plot_annotation(
+        title = paste("Diagnostic Plots for Fitted", toupper(family), "Model")
+      )
+
     if (!is.null(plots)) {
       result$plots <- plots
     }
@@ -1720,7 +1725,7 @@ gkwfit <- function(data,
   result$diagnostics <- gof_results$diagnostics
 
   # Set the class for S3 methods
-  class(result) <- c("gkwfit", "list")
+  class(result) <- "gkwfit"
 
   # Return the final result
   return(result)
@@ -1794,24 +1799,36 @@ print.gkwfit <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 
 
 
+# Ensure stats package is implicitly available or loaded for pnorm, cov2cor etc.
+
 #' @title Summary Method for gkwfit Objects
 #'
 #' @description
 #' Calculates and prepares a detailed summary of a model fitted by \code{\link{gkwfit}}.
 #' This includes coefficients, standard errors, test statistics (z-values), p-values,
-#' log-likelihood, information criteria (AIC, BIC), and convergence status.
+#' log-likelihood, information criteria (AIC, BIC, AICc), number of estimated
+#' parameters, convergence status, and optimizer details.
 #'
-#' @param object An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.
+#' @param object An object of class \code{"gkwfit"}, typically the result of a call
+#'   to \code{\link{gkwfit}}.
 #' @param correlation Logical; if \code{TRUE}, the correlation matrix of the estimated
-#'   parameters is computed and included in the summary. Defaults to \code{FALSE}.
+#'   parameters is computed from the \code{vcov} component and included in the
+#'   summary. Defaults to \code{FALSE}.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @details
 #' This function computes standard errors, z-values (\eqn{Estimate / SE}), and
 #' p-values (two-tailed test based on the standard normal distribution) for the
-#' estimated model parameters, provided that the variance-covariance matrix was
-#' successfully computed and is available in the \code{object} (typically requires
-#' \code{hessian = TRUE} in the original \code{\link{gkwfit}} call).
+#' estimated model parameters by utilizing the coefficient estimates (\code{coef})
+#' and their variance-covariance matrix (\code{vcov}). This requires that the
+#' variance-covariance matrix was successfully computed and is available in the
+#' \code{object} (typically requires \code{hessian = TRUE} in the original
+#' \code{\link{gkwfit}} call and successful Hessian inversion).
+#'
+#' If standard errors cannot be reliably calculated (e.g., \code{vcov} is missing,
+#' invalid, or indicates non-positive variance), the corresponding columns in the
+#' coefficient table will contain \code{NA} values, and the \code{se_available}
+#' flag will be set to \code{FALSE}.
 #'
 #' The returned object is of class \code{"summary.gkwfit"}, and its printing is
 #' handled by \code{\link{print.summary.gkwfit}}.
@@ -1819,24 +1836,33 @@ print.gkwfit <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #' @return An object of class \code{"summary.gkwfit"}, which is a list containing:
 #' \item{call}{The original function call.}
 #' \item{family}{The specified distribution family.}
-#' \item{coefficients}{A matrix of estimates, standard errors, z-values, and p-values.}
-#' \item{logLik}{The maximized log-likelihood value.}
+#' \item{coefficients}{A matrix of estimates, standard errors, z-values, and p-values. Contains NAs if SEs could not be computed.}
+#' \item{loglik}{The maximized log-likelihood value (numeric).}
+#' \item{df}{The number of estimated parameters.}
 #' \item{aic}{Akaike Information Criterion.}
 #' \item{bic}{Bayesian Information Criterion.}
-#' \item{nobs}{Number of observations used in fitting.}
-#' \item{convergence_code}{The convergence code returned by the optimizer.}
+#' \item{aicc}{Corrected Akaike Information Criterion.}
+#' \item{nobs}{Number of observations used in fitting (integer).}
+#' \item{convergence}{The convergence code returned by the optimizer.}
+#' \item{message}{The message returned by the optimizer.}
 #' \item{se_available}{Logical indicating if standard errors could be computed.}
-#' \item{correlation}{The correlation matrix of coefficients (if \code{correlation = TRUE} and calculable).}
-#' \item{fixed}{A list of parameters that were held fixed during estimation, or \code{NULL}.}
+#' \item{correlation}{The correlation matrix of coefficients (if \code{correlation = TRUE} and calculable), otherwise \code{NULL}.}
+#' \item{fixed}{A named list of parameters that were held fixed during estimation, or \code{NULL}.}
+#' \item{fit_method}{The primary fitting method specified ('tmb' or 'nr').}
+#' \item{optimizer_method}{The specific optimizer used (e.g., 'nlminb', 'optim', 'Newton-Raphson').}
 #'
-#' @seealso \code{\link{gkwfit}}, \code{\link{print.summary.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}
+#' @seealso \code{\link{gkwfit}}, \code{\link{print.summary.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{AIC.gkwfit}}
 #'
 #' @examples
 #' \dontrun{
-#' # Assume 'rkw' and 'gkwfit' functions exist
+#' # Assume 'rkw' and 'gkwfit' functions from your package exist
 #'
 #' set.seed(123)
-#' kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5) # n=100
+#' # Generate sample data (use rkw if available, otherwise placeholder)
+#' # kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+#' kw_data_sample <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
+#' kw_data_sample <- 1 - (1 - kw_data_sample)^(1 / 2.5) # Placeholder
+#' kw_data_sample <- pmax(1e-6, pmin(1 - 1e-6, kw_data_sample)) # Ensure (0,1)
 #'
 #' # Fit the model, ensuring hessian=TRUE (default) for SEs
 #' fit_object <- gkwfit(
@@ -1844,62 +1870,103 @@ print.gkwfit <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #'   plot = FALSE, silent = TRUE
 #' )
 #'
-#' # Calculate the summary object
-#' summary_info <- summary(fit_object)
+#' # Check if fit converged and has coefficients/vcov
+#' if (fit_object$convergence == 0 && !is.null(fit_object$coefficients)) {
+#'   # Calculate the summary object
+#'   summary_info <- summary(fit_object)
 #'
-#' # Print the summary (uses print.summary.gkwfit)
-#' print(summary_info)
+#'   # Print the summary (uses print.summary.gkwfit)
+#'   print(summary_info)
 #'
-#' # Calculate summary including correlation matrix
-#' summary_info_corr <- summary(fit_object, correlation = TRUE)
-#' print(summary_info_corr)
+#'   # Calculate summary including correlation matrix
+#'   summary_info_corr <- summary(fit_object, correlation = TRUE)
+#'   print(summary_info_corr)
 #'
-#' # Access specific parts of the summary object
-#' print(summary_info$coefficients)
-#' print(summary_info$logLik)
+#'   # Access specific parts of the summary object
+#'   print(summary_info$coefficients)
+#'   print(summary_info$loglik)
+#'   print(summary_info$convergence)
+#'   print(summary_info$message)
+#' } else {
+#'   print("Fit did not converge or is missing essential components.")
+#'   print(fit_object) # Print the raw object for debugging
+#' }
 #' }
 #'
-#' @keywords methods
-#' @author Lopes, J. E.
+#' @keywords methods summary
+#' @author Lopes, J. E. (with refinements)
 #' @export
 summary.gkwfit <- function(object, correlation = FALSE, ...) {
   if (!inherits(object, "gkwfit")) {
     stop("Input 'object' must be of class 'gkwfit'")
   }
 
-  # Use accessor methods if they exist, otherwise direct access
-  coefs <- if (exists("coef.gkwfit", mode = "function")) stats::coef(object) else object$coefficients
-  vcov_matrix <- if (exists("vcov.gkwfit", mode = "function")) stats::vcov(object) else object$vcov
-  logLik_val <- if (exists("logLik.gkwfit", mode = "function")) stats::logLik(object) else object$logLik
-  nobs_val <- if (exists("nobs.gkwfit", mode = "function")) stats::nobs(object) else object$nobs
-  aic_val <- if (exists("AIC.gkwfit", mode = "function")) stats::AIC(object) else object$aic
-  bic_val <- if (exists("BIC.gkwfit", mode = "function")) stats::BIC(object) else object$bic
-  conv_status <- object$convergence # Assuming direct access is okay here
-  fixed_params <- object$fixed
+  # --- Extract components (using accessors if defined, else direct) ---
+  # Define helper to safely get value or NULL
+  safe_get <- function(obj, name, accessor = NULL) {
+    val <- NULL
+    if (!is.null(accessor) && exists(accessor, mode = "function")) {
+      # Use tryCatch in case accessor fails unexpectedly
+      val <- tryCatch(get(accessor)(obj), error = function(e) {
+        warning("Accessor function '", accessor, "' failed: ", e$message)
+        NULL
+      })
+    }
+    # Fallback or if no accessor specified
+    if (is.null(val) && name %in% names(obj)) {
+      val <- obj[[name]]
+    }
+    return(val)
+  }
 
+  coefs <- safe_get(object, "coefficients", "coef.gkwfit")
+  vcov_matrix <- safe_get(object, "vcov", "vcov.gkwfit")
+  logLik_val <- safe_get(object, "loglik", "logLik.gkwfit") # Note output name is loglik
+  nobs_val <- safe_get(object, "nobs", "nobs.gkwfit")
+  aic_val <- safe_get(object, "AIC", "AIC.gkwfit")
+  bic_val <- safe_get(object, "BIC", "BIC.gkwfit")
+  aicc_val <- safe_get(object, "AICc") # Assuming no standard AICc accessor
+  df_val <- safe_get(object, "df") # Number of estimated parameters
+
+  # Direct access for components less likely to have accessors
+  conv_status <- object$convergence
+  conv_message <- object$message
+  fixed_params <- object$fixed
+  family_val <- object$family
+  call_val <- object$call
+  fit_method_val <- object$method # From TMB fit
+  optimizer_method_val <- object$optimizer_method # Specific optimizer
+
+  # --- Prepare Coefficient Table ---
   se_available <- FALSE
   coef_table <- NULL
 
-  valid_vcov <- !is.null(vcov_matrix) &&
-    is.matrix(vcov_matrix) &&
-    !is.null(coefs) && length(coefs) > 0 && # Ensure coefficients exist
-    all(dim(vcov_matrix) == length(coefs)) &&
-    !anyNA(diag(vcov_matrix)) && # Check for NAs on diagonal
-    all(diag(vcov_matrix) >= 0) # Check for non-negative variances
-
-  if (valid_vcov) {
-    # Ensure coefs is a named vector if it's not already
-    if (is.null(names(coefs)) && length(coefs) == nrow(vcov_matrix) && !is.null(rownames(vcov_matrix))) {
-      names(coefs) <- rownames(vcov_matrix)
-    } else if (is.null(names(coefs))) {
-      # Fallback if names cannot be inferred
-      warning("Coefficient names are missing; using generic names.")
-      names(coefs) <- paste0("param", seq_along(coefs))
+  # Ensure coefficients exist before proceeding
+  if (is.null(coefs) || length(coefs) == 0) {
+    warning("No coefficients found in the 'gkwfit' object.")
+    # Create an empty matrix with standard columns for consistency downstream
+    coef_table <- matrix(NA_real_,
+      nrow = 0, ncol = 4,
+      dimnames = list(NULL, c("Estimate", "Std. Error", "z value", "Pr(>|z|)"))
+    )
+  } else {
+    # Ensure coefficients are named
+    if (is.null(names(coefs))) {
+      # Try getting names from vcov if possible
+      if (!is.null(vcov_matrix) && is.matrix(vcov_matrix) && nrow(vcov_matrix) == length(coefs) && !is.null(rownames(vcov_matrix))) {
+        names(coefs) <- rownames(vcov_matrix)
+      } else {
+        warning("Coefficient names are missing; using generic names.")
+        names(coefs) <- paste0("param", seq_along(coefs))
+      }
     }
 
-    std_err <- sqrt(diag(vcov_matrix))
+    # se <- sqrt(diag(solve(hskkw(object$coefficients, data = object$data))))
+
+    # std_err <- sqrt(diag(solve(vcov_matrix)))
+    std_err <- object$std.errors
     z_vals <- coefs / std_err
-    # Handle cases where std_err might be zero -> infinite z -> NA
+    # Handle division by zero or non-finite results safely
     z_vals[!is.finite(z_vals)] <- NA
     p_vals <- 2 * stats::pnorm(abs(z_vals), lower.tail = FALSE)
 
@@ -1910,130 +1977,187 @@ summary.gkwfit <- function(object, correlation = FALSE, ...) {
       `Pr(>|z|)` = p_vals
     )
     se_available <- TRUE
-    # Ensure row names match coefficient names
-    rownames(coef_table) <- names(coefs)
-  } else {
-    # Ensure coefs is named even if SEs fail
-    if (!is.null(coefs) && is.null(names(coefs))) {
-      names(coefs) <- paste0("param", seq_along(coefs))
-    } else if (is.null(coefs)) {
-      coefs <- numeric(0) # Handle case where coefs might be NULL
-    }
-    # Create table with NAs if SEs cannot be calculated
-    coef_table <- cbind(
-      Estimate = coefs,
-      `Std. Error` = NA_real_,
-      `z value` = NA_real_,
-      `Pr(>|z|)` = NA_real_
-    )
-    rownames(coef_table) <- names(coefs)
+    rownames(coef_table) <- names(coefs) # Ensure row names are set
+    # Row names should be correct due to checks above
   }
 
+  # --- Calculate Correlation Matrix (optional) ---
   cor_matrix <- NULL
   if (correlation && se_available) {
-    # Ensure vcov has non-zero diagonal > machine epsilon for cov2cor stability
-    if (all(diag(vcov_matrix) > .Machine$double.eps^0.5)) { # Use sqrt(eps) as tolerance
-      cor_matrix <- stats::cov2cor(vcov_matrix)
-      # Ensure dimnames match coef names
-      dimnames(cor_matrix) <- list(names(coefs), names(coefs))
+    # Further check for near-zero variances before cov2cor
+    if (all(diag(vcov_matrix) > sqrt(.Machine$double.eps))) {
+      cor_matrix <- tryCatch(stats::cov2cor(vcov_matrix), error = function(e) {
+        warning("Could not compute correlation matrix from 'vcov': ", e$message)
+        NULL # Return NULL if cov2cor fails
+      })
+      # Ensure dimnames match coefficient names, should be correct if vcov check passed
+      if (!is.null(cor_matrix)) dimnames(cor_matrix) <- list(names(coefs), names(coefs))
     } else {
       warning("Cannot compute correlations: near-zero or zero variance estimates found.")
     }
   }
 
+
+  # --- Assemble Summary List ---
   summary_list <- list(
-    call = object$call,
-    family = object$family,
+    call = call_val,
+    family = family_val,
     coefficients = coef_table,
-    logLik = as.numeric(logLik_val), # Ensure raw number
-    aic = aic_val,
-    bic = bic_val,
-    nobs = as.integer(nobs_val), # Ensure integer
-    convergence_code = conv_status,
+    loglik = if (is.numeric(logLik_val)) as.numeric(logLik_val) else NA_real_,
+    df = if (is.numeric(df_val)) as.integer(df_val) else NA_integer_,
+    aic = if (is.numeric(aic_val)) aic_val else NA_real_,
+    bic = if (is.numeric(bic_val)) bic_val else NA_real_,
+    aicc = if (is.numeric(aicc_val)) aicc_val else NA_real_,
+    nobs = if (is.numeric(nobs_val)) as.integer(nobs_val) else NA_integer_,
+    convergence = if (is.numeric(conv_status)) conv_status else NA_integer_,
+    message = if (is.character(conv_message)) conv_message else NA_character_,
     se_available = se_available,
     correlation = cor_matrix,
-    fixed = fixed_params
+    fixed = fixed_params, # Can be NULL if none were fixed
+    fit_method = fit_method_val, # Method used in TMB call (nlminb/optim) or null if NR? Need gkwfit logic check. Let's assume it stores 'tmb' or 'nr' maybe? Check object$method vs object$optimizer_method
+    optimizer_method = optimizer_method_val # Specific optimizer used
   )
 
-  class(summary_list) <- c("summary.gkwfit", "list")
+  # Assign class
+  class(summary_list) <- "summary.gkwfit"
   return(summary_list)
 }
 
 
-#' @title S3 method for class 'summary.gkwfit'
+# Ensure stats package is implicitly available or loaded for printCoefmat
+
+#' @title Print Method for summary.gkwfit Objects
 #'
 #' @description
-#' Prints the formatted summary of a \code{gkwfit} model object, as generated by
+#' Prints the formatted summary of a \code{gkwfit} model object, generated by
 #' \code{summary.gkwfit}. It displays the call, family, coefficient table
-#' (with standard errors, z-values, p-values, and significance stars), fit statistics
-#' (LogLik, AIC, BIC, N), fixed parameters, convergence status, and optionally the
-#' correlation matrix of coefficients.
+#' (with estimates, standard errors, z-values, p-values, and significance stars*),
+#' fit statistics (LogLik, AIC, BIC, AICc), number of parameters and observations,
+#' fixed parameters (if any), fit method, convergence status including optimizer
+#' message, and optionally the correlation matrix of coefficients.
 #'
-#' @param x An object of class \code{"summary.gkwfit"}, usually the result of \code{summary(gkwfit_object)}.
-#' @param digits Integer; the minimum number of significant digits to display in the output.
-#' @param signif.stars Logical; if \code{TRUE}, p-values are additionally encoded visually using
-#'   "significance stars". Defaults to \code{getOption("show.signif.stars")}.
+#' * Significance stars are shown next to p-values by default if standard errors
+#'   were available.
+#'
+#' @param x An object of class \code{"summary.gkwfit"}, usually the result of
+#'   \code{summary(gkwfit_object)}.
+#' @param digits Integer; the minimum number of significant digits to display
+#'   for numeric values. Defaults to \code{max(3L, getOption("digits") - 3L)}.
+#' @param signif.stars Logical; if \code{TRUE}, p-values are additionally encoded
+#'   visually using "significance stars". Defaults to
+#'   \code{getOption("show.signif.stars", TRUE)}.
 #' @param ... Additional arguments passed to \code{\link[stats]{printCoefmat}}.
 #'
-#' @return Invisibly returns the original input object \code{x}. Called primarily for its side effect of printing to the console.
+#' @return Invisibly returns the original input object \code{x}. Called primarily
+#'   for its side effect of printing the summary to the console.
 #'
 #' @seealso \code{\link{summary.gkwfit}}, \code{\link{gkwfit}}, \code{\link[stats]{printCoefmat}}
 #'
-#' @keywords methods internal
-#' @author Lopes, J. E.
+#' @keywords methods internal print
+#' @author Lopes, J. E. (with refinements)
 #' @export
+#' @method print summary.gkwfit
 print.summary.gkwfit <- function(x, digits = max(3L, getOption("digits") - 3L),
                                  signif.stars = getOption("show.signif.stars", TRUE),
                                  ...) {
+  # --- Print Call ---
   cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"), "\n\n", sep = "")
-  cat("Family:", x$family, "\n\n")
-  cat("Coefficients:\n")
 
-  stats::printCoefmat(x$coefficients,
-    digits = digits, signif.stars = signif.stars,
-    na.print = "NA", P.values = x$se_available, has.Pvalue = x$se_available,
-    cs.ind = 1:2, tst.ind = 3, zap.ind = integer(), ...
-  )
+  # --- Print Family ---
+  cat("Family:", ifelse(is.null(x$family), "Not specified", x$family), "\n")
 
-  if (!x$se_available) {
-    cat("\n(Standard Errors & Tests cannot be computed or were not requested)\n")
-  }
-
-  cat("\n--- Fit Statistics ---\n")
-  # Use format() for consistent digit handling respecting user options
-  cat("Log-likelihood:", format(x$logLik, digits = digits), "\n")
-  cat("AIC:", format(x$aic, digits = digits), ", BIC:", format(x$bic, digits = digits), "\n")
-  cat("Number of observations:", x$nobs, "\n")
-
+  # --- Print Fixed Parameters ---
   if (!is.null(x$fixed) && length(x$fixed) > 0) {
-    fixed_text <- paste(names(x$fixed), "=", format(unlist(x$fixed), digits = digits), collapse = ", ")
-    cat("Fixed parameters:", fixed_text, "\n")
+    cat("Fixed Parameters:\n")
+    fixed_vals <- sapply(x$fixed, function(val) format(val, digits = digits, nsmall = 0))
+    fixed_str <- paste(names(x$fixed), "=", fixed_vals, collapse = ", ")
+    cat(" ", fixed_str, "\n")
   }
 
-  conv_code <- x$convergence_code
+  # --- Print Coefficients ---
+  cat("\nCoefficients:\n")
+  if (!is.null(x$coefficients) && nrow(x$coefficients) > 0) {
+    # Determine if p-values exist (last column usually) and SEs were available
+    has_pvalue <- x$se_available && (ncol(x$coefficients) == 4)
+
+    stats::printCoefmat(x$coefficients,
+      digits = digits,
+      signif.stars = signif.stars, # Ensures stars are used based on option/arg
+      na.print = "NA",
+      has.Pvalue = has_pvalue, # Correctly indicate if P-values are present and valid
+      cs.ind = 1:2, # Column indices for Estimate and Std. Error
+      tst.ind = 3, # Column index for z value (test statistic)
+      # zap.ind = integer(), # Optional: prevent zapping small numbers, default is usually fine
+      ...
+    )
+    if (!x$se_available) {
+      cat("\n(Standard Errors & Tests unavailable; requires valid Hessian/vcov)\n")
+    }
+  } else {
+    cat(" (No coefficients estimated or available to display)\n")
+  }
+
+
+  # --- Print Fit Statistics ---
+  cat("\n--- Fit Statistics ---\n")
+  cat("Log-likelihood:", formatC(x$loglik, format = "f", digits = digits))
+  cat("  Parameters (est.):", ifelse(is.na(x$df), "NA", x$df), "\n") # Added df
+  cat(
+    "AIC:", formatC(x$aic, format = "f", digits = digits),
+    "  BIC:", formatC(x$bic, format = "f", digits = digits),
+    "  AICc:", formatC(x$aicc, format = "f", digits = digits), "\n"
+  ) # Added AICc
+  cat("Number of observations:", ifelse(is.na(x$nobs), "NA", x$nobs), "\n")
+
+
+  # --- Print Fit Method and Convergence ---
+  cat("Fit Method:", ifelse(is.null(x$fit_method), "Unknown", x$fit_method))
+  if (!is.null(x$optimizer_method) && !is.null(x$fit_method) &&
+    x$optimizer_method != x$fit_method) {
+    cat(" (Optimizer: ", x$optimizer_method, ")", sep = "")
+  }
+  cat("\n") # Newline before convergence
+
+  # Convergence Status Text
+  conv_code <- x$convergence
   if (is.null(conv_code) || is.na(conv_code)) {
-    conv_status_text <- "Convergence status unknown"
+    conv_status_text <- "Unknown"
   } else if (conv_code == 0) {
-    # Add check for potential false convergence if applicable? Maybe too complex here.
     conv_status_text <- "Successful convergence"
   } else {
-    conv_status_text <- paste("Optimizer potentially did NOT converge (code:", conv_code, ")")
-    # Suggest checking optimizer output/message if available in the original fit object
+    conv_status_text <- paste0("Potential issues (code ", conv_code, ")")
   }
-  cat("Convergence:", conv_status_text, "\n")
+  cat("Convergence:", conv_status_text)
 
+  # Optimizer Message
+  conv_msg <- if (!is.null(x$message) && nzchar(trimws(x$message))) trimws(x$message) else "None reported"
+  # Print message only if it's not trivial (like the standard NLMINB message for success) or if convergence failed
+  # Basic heuristic: print if code != 0 or if message is not standard success message
+  print_msg <- (!is.na(conv_code) && conv_code != 0) ||
+    (conv_msg != "None reported" && !grepl("relative convergence|objective function values|both X and GR tolerances met", conv_msg, ignore.case = TRUE))
+
+  if (print_msg) {
+    cat("\nOptimizer Message:", conv_msg, "\n")
+  } else {
+    cat("\n") # Ensure newline even if message isn't printed
+  }
+
+
+  # --- Print Correlation Matrix (Optional) ---
   if (!is.null(x$correlation)) {
     cat("\nCorrelation of Coefficients:\n")
     cor_mat <- x$correlation
-    # Ensure lower triangle only for printing clarity if matrix is large
-    # But printCoefmat style often prints full symmetric matrix nicely
-    print(cor_mat, digits = digits, ...) # Let print handle it directly
+    # Use stats::print.default or similar; printCoefmat is not for cor matrices
+    # Ensure symmetric is FALSE if you only want lower/upper triangle
+    stats::printCoefmat(cor_mat,
+      digits = digits, signif.stars = FALSE, # No stars for correlations
+      na.print = "NA", P.values = FALSE, has.Pvalue = FALSE, ...
+    )
   }
 
-  cat("\n") # Final newline
-  invisible(x)
+  cat("\n") # Final newline for clean separation
+  invisible(x) # Return the summary object invisibly
 }
-
 
 #' @title Plot Diagnostics for a gkwfit Object
 #'
@@ -2185,88 +2309,6 @@ plot.gkwfit <- function(x, ...) {
   }
 
   invisible(x)
-}
-
-
-
-#' @title Extract Log-Likelihood from a gkwfit Object
-#'
-#' @description
-#' Extracts the maximized log-likelihood value from a model fitted by \code{\link{gkwfit}}.
-#' It returns an object of class \code{"logLik"}, which includes attributes for the
-#' degrees of freedom (\code{"df"}) and the number of observations (\code{"nobs"}) used in the fit.
-#'
-#' @param object An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.
-#' @param ... Additional arguments (currently ignored).
-#'
-#' @details
-#' This method provides compatibility with standard R functions that operate on
-#' log-likelihood values, such as \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}},
-#' and likelihood ratio tests. It retrieves the log-likelihood stored during the
-#' model fitting process (in \code{object$loglik}) and attaches the required
-#' attributes (\code{object$df} for the number of estimated parameters and
-#' \code{object$nobs} for the number of observations).
-#'
-#' @return An object of class \code{"logLik"}. This is the numeric log-likelihood value
-#'   with the following attributes:
-#'   \item{df}{The number of estimated parameters in the model.}
-#'   \item{nobs}{The number of observations used for fitting the model.}
-#'
-#' @seealso \code{\link{gkwfit}}, \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}}
-#'
-#' @examples
-#' \dontrun{
-#' # Assume 'rkw' and 'gkwfit' functions exist
-#'
-#' set.seed(123)
-#' kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
-#'
-#' # Fit the model
-#' fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
-#'
-#' # Extract the log-likelihood object
-#' ll <- logLik(fit_obj)
-#'
-#' # Print the value
-#' print(ll)
-#'
-#' # Show attributes
-#' attributes(ll)
-#'
-#' # Use with standard functions
-#' AIC(fit_obj) # Equivalent to AIC(ll)
-#' BIC(fit_obj) # Equivalent to BIC(ll)
-#'
-#' # Extract components directly
-#' logLik_value <- as.numeric(ll)
-#' degrees_freedom <- attr(ll, "df")
-#' num_observations <- attr(ll, "nobs")
-#' cat("LogLik:", logLik_value, "\n")
-#' cat("df:", degrees_freedom, "\n")
-#' cat("nobs:", num_observations, "\n")
-#' }
-#'
-#' @keywords methods models
-#' @author Lopes, J. E.
-#' @export
-logLik.gkwfit <- function(object, ...) {
-  # Ensure components exist before accessing
-  if (!all(c("loglik", "df", "nobs") %in% names(object))) {
-    stop("The 'gkwfit' object is missing required components: 'loglik', 'df', or 'nobs'.")
-  }
-
-  val <- object$loglik
-  # Basic validation of attributes
-  df_val <- object$df
-  nobs_val <- object$nobs
-  if (!is.numeric(val) || length(val) != 1) stop("'loglik' component must be a single numeric value.")
-  if (!is.numeric(df_val) || length(df_val) != 1 || df_val < 0) stop("'df' component must be a single non-negative numeric value.")
-  if (!is.numeric(nobs_val) || length(nobs_val) != 1 || nobs_val < 0) stop("'nobs' component must be a single non-negative numeric value.")
-
-  attr(val, "df") <- as.integer(df_val) # Store df as integer
-  attr(val, "nobs") <- as.integer(nobs_val) # Store nobs as integer
-  class(val) <- "logLik"
-  return(val)
 }
 
 
@@ -2874,6 +2916,133 @@ predict.gkwfit <- function(object, newdata = NULL,
 }
 
 
+#' @title Extract Log-Likelihood from a gkwfit Object
+#'
+#' @description
+#' Extracts the maximized log-likelihood value from a model fitted by \code{\link{gkwfit}}.
+#' It returns an object of class \code{"logLik"}, which includes attributes for the
+#' degrees of freedom (\code{"df"}) and the number of observations (\code{"nobs"}) used in the fit.
+#'
+#' @param object An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.
+#' @param ... Additional arguments (currently ignored).
+#'
+#' @details
+#' This method provides compatibility with standard R functions that operate on
+#' log-likelihood values, such as \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}},
+#' and likelihood ratio tests. It retrieves the log-likelihood stored during the
+#' model fitting process (in \code{object$loglik}) and attaches the required
+#' attributes (\code{object$df} for the number of estimated parameters and
+#' \code{object$nobs} for the number of observations).
+#'
+#' @return An object of class \code{"logLik"}. This is the numeric log-likelihood value
+#'   with the following attributes:
+#'   \item{df}{The number of estimated parameters in the model (integer).}
+#'   \item{nobs}{The number of observations used for fitting the model (integer).}
+#'
+#' @seealso \code{\link{gkwfit}}, \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}}, \code{\link[stats]{logLik}}
+#'
+#' @examples
+#' \dontrun{
+#' # Assume 'rkw' and 'gkwfit' functions from your package exist
+#'
+#' set.seed(123)
+#' # Generate sample data (use rkw if available, otherwise placeholder)
+#' # kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+#' kw_data_sample <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
+#' kw_data_sample <- 1 - (1 - kw_data_sample)^(1 / 2.5) # Placeholder
+#' kw_data_sample <- pmax(1e-6, pmin(1 - 1e-6, kw_data_sample)) # Ensure (0,1)
+#'
+#' # Fit the model
+#' fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
+#'
+#' # Check if fit converged and has necessary components
+#' if (fit_obj$convergence == 0 && !is.null(fit_obj$loglik)) {
+#'   # Extract the log-likelihood object
+#'   ll <- logLik(fit_obj)
+#'
+#'   # Print the value (uses print.logLik)
+#'   print(ll)
+#'
+#'   # Show attributes
+#'   attributes(ll)
+#'
+#'   # Use with standard functions (requires the corresponding AIC/BIC methods
+#'   # for gkwfit OR relies on them calling this logLik method)
+#'   AIC(fit_obj) # Should work if AIC.gkwfit calls logLik(fit_obj)
+#'   BIC(fit_obj) # Should work if BIC.gkwfit calls logLik(fit_obj)
+#'
+#'   # Extract components directly
+#'   logLik_value <- as.numeric(ll)
+#'   degrees_freedom <- attr(ll, "df")
+#'   num_observations <- attr(ll, "nobs")
+#'   cat("LogLik:", logLik_value, "\n")
+#'   cat("df:", degrees_freedom, "\n")
+#'   cat("nobs:", num_observations, "\n")
+#' } else {
+#'   print("Fit did not converge or is missing log-likelihood.")
+#' }
+#' }
+#'
+#' @keywords methods models utility
+#' @author Lopes, J. E.
+#' @importFrom stats logLik
+#' @method logLik gkwfit
+#' @export
+logLik.gkwfit <- function(object, ...) {
+  # Ensure the input object is of the correct class
+  if (!inherits(object, "gkwfit")) {
+    stop("Input 'object' must be of class 'gkwfit'.")
+  }
+
+  # Check for the existence of required components
+  required_comps <- c("loglik", "df", "nobs")
+  missing_comps <- setdiff(required_comps, names(object))
+  if (length(missing_comps) > 0) {
+    stop(
+      "The 'gkwfit' object provided to logLik.gkwfit is missing required component(s): ",
+      paste(missing_comps, collapse = ", "), "."
+    )
+  }
+
+  val <- object$loglik
+  df_val <- object$df
+  nobs_val <- object$nobs
+
+  # Validate the types and values of the components
+  if (!is.numeric(val) || length(val) != 1 || !is.finite(val)) {
+    stop("Component 'loglik' must be a single finite numeric value in logLik.gkwfit.")
+  }
+  # df should be a non-negative integer count of estimated parameters
+  if (!is.numeric(df_val) || length(df_val) != 1 || !is.finite(df_val) || df_val < 0 || (df_val %% 1 != 0)) {
+    # Allow tolerance for floating point comparison, although df should be integer
+    if (!isTRUE(all.equal(df_val, round(df_val))) || df_val < 0) {
+      stop("Component 'df' (number of estimated parameters) must be a single non-negative integer in logLik.gkwfit.")
+    }
+    # Coerce potentially float-like integer (e.g. 3.0) to integer
+    df_val <- as.integer(round(df_val))
+  } else {
+    df_val <- as.integer(df_val) # Ensure integer type
+  }
+
+  # nobs should be a positive integer count of observations
+  if (!is.numeric(nobs_val) || length(nobs_val) != 1 || !is.finite(nobs_val) || nobs_val <= 0 || (nobs_val %% 1 != 0)) {
+    if (!isTRUE(all.equal(nobs_val, round(nobs_val))) || nobs_val <= 0) {
+      stop("Component 'nobs' (number of observations) must be a single positive integer in logLik.gkwfit.")
+    }
+    nobs_val <- as.integer(round(nobs_val))
+  } else {
+    nobs_val <- as.integer(nobs_val) # Ensure integer type
+  }
+
+  # Assign attributes and class
+  attr(val, "df") <- df_val
+  attr(val, "nobs") <- nobs_val
+  class(val) <- "logLik"
+
+  return(val)
+}
+
+
 #' @title Calculate AIC or BIC for gkwfit Objects
 #'
 #' @description
@@ -2943,6 +3112,8 @@ predict.gkwfit <- function(object, newdata = NULL,
 #'
 #' @keywords models methods
 #' @author Lopes, J. E.
+#' @importFrom stats AIC
+#' @method AIC gkwfit
 #' @export
 AIC.gkwfit <- function(object, ..., k = 2) {
   # --- Input Validation ---
@@ -3017,14 +3188,14 @@ AIC.gkwfit <- function(object, ..., k = 2) {
 }
 
 
-
 #' @title Calculate Bayesian Information Criterion (BIC) for gkwfit Objects
 #'
 #' @description
 #' Computes the Bayesian Information Criterion (BIC), sometimes called the
 #' Schwarz criterion (SIC), for one or more fitted model objects of class \code{"gkwfit"}.
 #'
-#' @param object An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.
+#' @param object An object of class \code{"gkwfit"}, typically the result of a call
+#'   to \code{\link{gkwfit}}.
 #' @param ... Optionally, more fitted model objects of class \code{"gkwfit"}.
 #'
 #' @details
@@ -3035,21 +3206,23 @@ AIC.gkwfit <- function(object, ..., k = 2) {
 #'
 #' It relies on the \code{\link{logLik.gkwfit}} method to extract the log-likelihood,
 #' the degrees of freedom (\code{df}), and the number of observations (\code{nobs})
-#' for each model.
+#' for each model. Ensure that \code{logLik.gkwfit} is defined and returns a valid
+#' \code{"logLik"} object with appropriate attributes.
 #'
 #' When comparing multiple models fitted to the **same data**, the model with the
 #' lower BIC value is generally preferred, as BIC tends to penalize model complexity
 #' more heavily than AIC for larger sample sizes. The function returns a sorted
-#' data frame to facilitate this comparison when multiple objects are provided.
+#' data frame to facilitate this comparison when multiple objects are provided. A
+#' warning is issued if models were fitted to different numbers of observations.
 #'
 #' @return
 #' \itemize{
-#'   \item If only one \code{object} is provided: A single numeric value representing the calculated BIC.
+#'   \item If only one \code{object} is provided: A single numeric value, the calculated BIC.
 #'   \item If multiple objects are provided: A \code{data.frame} with rows corresponding
 #'     to the models and columns for the degrees of freedom (\code{df}) and the
 #'     calculated BIC value (named \code{BIC}). The data frame is sorted in
-#'     ascending order based on the BIC values. Row names are derived from the
-#'     deparsed calls of the fitted models.
+#'     ascending order based on the BIC values. Row names are generated from the
+#'     deparsed calls or the names of the arguments passed to BIC.
 #' }
 #'
 #' @seealso \code{\link{gkwfit}}, \code{\link[stats]{BIC}}, \code{\link{logLik.gkwfit}}, \code{\link{AIC.gkwfit}}
@@ -3059,63 +3232,119 @@ AIC.gkwfit <- function(object, ..., k = 2) {
 #' # Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
 #'
 #' set.seed(123)
-#' sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
+#' # Generate sample data (use rkw if available, otherwise placeholder)
+#' # sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
+#' sample_data <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
+#' sample_data <- 1 - (1 - sample_data)^(1 / 2.5) # Placeholder
+#' sample_data <- pmax(1e-6, pmin(1 - 1e-6, sample_data)) # Ensure (0,1)
 #'
 #' # Fit different models to the same data
-#' fit1_kw <- gkwfit(sample_data, family = "kw", silent = TRUE)
-#' fit2_bkw <- gkwfit(sample_data, family = "bkw", silent = TRUE) # Assuming bkw fits
-#' fit3_gkw <- gkwfit(sample_data, family = "gkw", silent = TRUE) # Assuming gkw fits
+#' fit1_kw <- tryCatch(gkwfit(sample_data, family = "kw", silent = TRUE),
+#'   error = function(e) NULL
+#' )
+#' fit2_bkw <- tryCatch(gkwfit(sample_data, family = "bkw", silent = TRUE),
+#'   error = function(e) NULL
+#' ) # Assuming bkw fits
+#' fit3_gkw <- tryCatch(gkwfit(sample_data, family = "gkw", silent = TRUE),
+#'   error = function(e) NULL
+#' ) # Assuming gkw fits
 #'
-#' # Calculate BIC for a single model
-#' bic1 <- BIC(fit1_kw)
-#' print(bic1)
+#' # Ensure fits were successful before proceeding
+#' fit_list <- Filter(Negate(is.null), list(
+#'   fit1_kw = fit1_kw,
+#'   fit2_bkw = fit2_bkw, fit3_gkw = fit3_gkw
+#' ))
 #'
-#' # Compare BIC values for multiple models
-#' bic_comparison <- BIC(fit1_kw, fit2_bkw, fit3_gkw)
-#' print(bic_comparison) # Sorted by BIC
+#' if (length(fit_list) > 0) {
+#'   # Calculate BIC for a single model (if fit1_kw exists)
+#'   if (!is.null(fit1_kw)) {
+#'     bic1 <- BIC(fit1_kw)
+#'     print(bic1)
+#'   }
+#'
+#'   # Compare BIC values for multiple models (if more than one fit exists)
+#'   if (length(fit_list) > 1) {
+#'     # Pass models individually using do.call
+#'     bic_comparison <- do.call(BIC, fit_list)
+#'     # Or if saved in a list: BIC(fit_list[[1]], fit_list[[2]], ...)
+#'     print(bic_comparison) # Sorted by BIC
+#'   }
+#' } else {
+#'   print("No models fitted successfully.")
+#' }
 #' }
 #'
-#' @keywords models methods
-#' @author Lopes, J. E.
+#' @keywords models methods stats
+#' @author Lopes, J. E. (with refinements)
+#' @importFrom stats BIC logLik nobs
+#' @method BIC gkwfit
 #' @export
 BIC.gkwfit <- function(object, ...) {
-  # --- Input Validation ---
-  if (!inherits(object, "gkwfit")) {
-    stop("Input 'object' must be of class 'gkwfit'.")
-  }
+  # Combine the first object and any others passed via ...
   objects <- list(object, ...)
-  obj_classes <- sapply(objects, class)
-  if (any(!sapply(obj_classes, function(cls) inherits(cls, "gkwfit")))) {
-    warning("All objects passed to BIC should ideally inherit from 'gkwfit'.")
+  # Store original argument names/expressions for potential use in rownames
+  arg_names <- as.character(match.call(expand.dots = TRUE)[-1L])
+
+  # --- Basic Input Validation ---
+  obj_classes <- sapply(objects, function(o) class(o)[1]) # Get primary class
+  if (!inherits(object, "gkwfit")) {
+    stop("The first argument 'object' must be of class 'gkwfit'.")
+  }
+  if (any(!sapply(objects, inherits, "gkwfit"))) {
+    # Find which ones don't inherit
+    bad_obj_indices <- which(!sapply(objects, inherits, "gkwfit"))
+    warning(
+      "Argument(s) at position(s) ", paste(bad_obj_indices, collapse = ", "),
+      " do not inherit from 'gkwfit'. Ensure all models are comparable."
+    )
   }
 
   # --- Use logLik method to get value, df, and nobs attribute consistently ---
-  lls <- lapply(objects, function(obj) {
-    ll <- tryCatch(logLik(obj), error = function(e) NULL)
+  lls <- vector("list", length(objects))
+  for (i in seq_along(objects)) {
+    current_obj <- objects[[i]]
+    ll <- tryCatch(stats::logLik(current_obj), error = function(e) {
+      # Provide context if logLik fails
+      list(error = TRUE, message = paste("Failed to extract logLik for model #", i, ": ", e$message))
+    })
+
+    # Check for failure during logLik extraction
+    if (is.list(ll) && isTRUE(ll$error)) {
+      stop(ll$message)
+    }
+
+    # Validate the returned logLik object
     if (is.null(ll) || !inherits(ll, "logLik")) {
-      stop("Could not extract valid 'logLik' object for model: ", deparse1(substitute(obj)))
+      stop(
+        "Could not extract a valid 'logLik' object for model #", i,
+        " (argument '", arg_names[i], "')."
+      )
     }
     req_attrs <- c("df", "nobs")
     if (!all(req_attrs %in% names(attributes(ll)))) {
-      stop("The 'logLik' object is missing 'df' or 'nobs' attribute for model: ", deparse1(substitute(obj)))
+      stop(
+        "The 'logLik' object is missing 'df' or 'nobs' attribute for model #", i,
+        " (argument '", arg_names[i], "')."
+      )
     }
-    # Check nobs > 0 for log()
     n_obs_val <- attr(ll, "nobs")
-    if (is.null(n_obs_val) || !is.numeric(n_obs_val) || length(n_obs_val) != 1 || n_obs_val <= 0) {
-      stop("Number of observations ('nobs') must be a single positive value for BIC calculation for model: ", deparse1(substitute(obj)))
+    if (is.null(n_obs_val) || !is.numeric(n_obs_val) || length(n_obs_val) != 1 || n_obs_val <= 0 || !is.finite(n_obs_val)) {
+      stop(
+        "Number of observations ('nobs' attribute of logLik) must be a single positive finite value ",
+        "for BIC calculation for model #", i, " (argument '", arg_names[i], "')."
+      )
     }
-    ll
-  })
+    # Store the validated logLik object
+    lls[[i]] <- ll
+  } # End loop through objects
 
   # --- Check if nobs are consistent for model comparison ---
   nobs_vals <- sapply(lls, attr, "nobs")
-  if (length(lls) > 1) {
-    if (length(unique(nobs_vals)) > 1) {
-      warning(
-        "Models were not all fitted to the same number of observations.",
-        "\nBIC comparison might be problematic."
-      )
-    }
+  if (length(unique(nobs_vals)) > 1) {
+    warning(
+      "Models were not all fitted to the same number of observations.",
+      "\nBIC comparison across models with different 'nobs' may be problematic."
+    )
   }
 
   # --- Calculate BIC ---
@@ -3125,35 +3354,33 @@ BIC.gkwfit <- function(object, ...) {
 
   # --- Format Output ---
   if (length(objects) == 1) {
+    # Return single numeric value for single object
     return(vals)
   } else {
-    # Try to get model names from call
-    calls <- lapply(objects, function(obj) {
-      obj_call <- tryCatch(obj$call, error = function(e) NULL)
-      if (!is.call(obj_call)) obj_call <- NULL
-      obj_call
-    })
-    # Use deparse1 for concise name, provide default if call missing
-    mnames <- character(length(calls))
-    for (i in seq_along(calls)) {
-      if (!is.null(calls[[i]])) {
-        mnames[i] <- deparse1(calls[[i]], collapse = " ")
+    # Create data frame for multiple objects
+    # Try to get model names from call stored in the object, fall back to arg names
+    mnames <- character(length(objects))
+    for (i in seq_along(objects)) {
+      obj_call <- tryCatch(objects[[i]]$call, error = function(e) NULL)
+      if (!is.null(obj_call) && is.call(obj_call)) {
+        # Use deparse1 for concise name from the object's call
+        mnames[i] <- deparse1(obj_call, collapse = " ")
       } else {
-        # Try getting name from the list(...) call if possible
-        deparsed_arg <- deparse1(substitute(list(object, ...))[[i + 1]])
-        mnames[i] <- if (deparsed_arg == ".") paste0("Model", i) else deparsed_arg
+        # Fallback to the name/expression used in the BIC() call
+        mnames[i] <- arg_names[i]
       }
     }
 
+    # Ensure unique names if needed (e.g., if default calls were used)
     if (anyDuplicated(mnames)) mnames <- make.unique(mnames, sep = ".")
 
     result <- data.frame(
       df = dfs,
-      BIC = vals # Column name is BIC
+      BIC = vals # Column name is BIC (standard)
     )
     rownames(result) <- mnames
 
-    # Sort by the criterion value
+    # Sort by the criterion value (ascending)
     result <- result[order(result$BIC), ]
     return(result)
   }

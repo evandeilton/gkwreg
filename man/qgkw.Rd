@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{qgkw}
 \alias{qgkw}
-\title{Quantile Function for Generalized Kumaraswamy Distribution}
+\title{Generalized Kumaraswamy Distribution Quantile Function}
 \usage{
 qgkw(
   p,
@@ -16,96 +16,128 @@ qgkw(
 )
 }
 \arguments{
-\item{p}{Vector of probabilities for which to compute quantiles. Values should be in (0,1),
-or in (-Inf,0] if log_p=TRUE.}
+\item{p}{Vector of probabilities (values between 0 and 1).}
 
-\item{alpha}{Shape parameter α > 0 (scalar or vector). Controls the left tail behavior. Default: 1.0.}
+\item{alpha}{Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{beta}{Shape parameter β > 0 (scalar or vector). Controls the right tail behavior. Default: 1.0.}
+\item{beta}{Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{gamma}{Shape parameter γ > 0 (scalar or vector). Affects the central shape. Default: 1.0.}
+\item{gamma}{Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{Shape parameter δ ≥ 0 (scalar or vector). Introduces additional flexibility. Default: 0.0.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 
-\item{lambda}{Shape parameter λ > 0 (scalar or vector). Controls overall dispersion. Default: 1.0.}
+\item{lambda}{Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{lower_tail}{Logical; if TRUE (default), probabilities are P(X ≤ x), otherwise P(X > x).}
+\item{lower_tail}{Logical; if \code{TRUE} (default), probabilities are
+\eqn{P(X \le x)}, otherwise, \eqn{P(X > x)}.}
 
-\item{log_p}{Logical; if TRUE, probabilities are provided as log(p). Default: FALSE.}
+\item{log_p}{Logical; if \code{TRUE}, probabilities \code{p} are given as
+\eqn{\log(p)}. Default: \code{FALSE}.}
 }
 \value{
-Vector of quantiles corresponding to each probability in p. Returns:
+A vector of quantiles corresponding to the given probabilities \code{p}.
+The length of the result is determined by the recycling rule applied to
+the arguments (\code{p}, \code{alpha}, \code{beta}, \code{gamma},
+\code{delta}, \code{lambda}). Returns:
 \itemize{
-\item 0 for probabilities ≤ 0 (or when log(p) = -Inf if log_p=TRUE)
-\item 1 for probabilities ≥ 1 (or when log(p) = 0 if log_p=TRUE)
-\item NA for invalid inputs (including p > 1 when log_p=TRUE, which would be log(p) > 0)
-\item NA for invalid parameters (any of α, β, γ ≤ 0, δ < 0, or λ ≤ 0)
+\item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE}).
+\item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE}).
+\item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+\item \code{NaN} for invalid parameters (e.g., \code{alpha <= 0},
+\code{beta <= 0}, \code{gamma <= 0}, \code{delta < 0},
+\code{lambda <= 0}).
 }
 }
 \description{
-Calculates the quantile function (inverse CDF) of the Generalized Kumaraswamy
-distribution GKw(α, β, γ, δ, λ). For a given probability p, returns the value x
-such that P(X ≤ x) = p, where X follows a GKw distribution with the specified parameters.
+Computes the quantile function (inverse CDF) for the five-parameter
+Generalized Kumaraswamy (GKw) distribution. Finds the value \code{x} such
+that \eqn{P(X \le x) = p}, where \code{X} follows the GKw distribution.
 }
 \details{
-According to Carrasco et al. (2010), the quantile function for the GKw distribution is
-derived by inverting the CDF i6WhxCboBxuB4gIj3xeQF1G227VOLfPL-\deqn{
-Q(p) = \{1 - (1 - (I^{-1}_{p}(\gamma, \delta+1))^{1/\lambda})^{1/\beta}\}^{1/\alpha}
+The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(x)}.
+Given \eqn{F(x) = I_{y(x)}(\gamma, \delta+1)} where
+\eqn{y(x) = [1-(1-x^{\alpha})^{\beta}]^{\lambda}}, the quantile function is:
+\deqn{
+Q(p) = x = \left\{ 1 - \left[ 1 - \left( I^{-1}_{p}(\gamma, \delta+1) \right)^{1/\lambda} \right]^{1/\beta} \right\}^{1/\alpha}
 }
+where \eqn{I^{-1}_{p}(a, b)} is the inverse of the regularized incomplete beta
+function, which corresponds to the quantile function of the Beta distribution,
+\code{\link[stats]{qbeta}}.
 
-where \eqn{I^{-1}_{p}(a, b)} is the inverse regularized incomplete beta function.
-
-The implementation follows these steps to compute the quantile:
+The computation proceeds as follows:
 \enumerate{
-\item Find y = qbeta(p, γ, δ+1)
-\item Compute \deqn{v = y^(1/λ)}
-  \item Compute \deqn{tmp = 1 - v}
-\item Compute \deqn{tmp2 = tmp^(1/β)}
-  \item Compute \deqn{q = (1 - tmp2)^(1/α)}
+\item Calculate \code{y = stats::qbeta(p, shape1 = gamma, shape2 = delta + 1, lower.tail = lower_tail, log.p = log_p)}.
+\item Calculate \eqn{\code{v = y^{1/\lambda}}}.
+\item Calculate \eqn{\code{w = (1 - v)^{1/\beta}}}. Note: Requires \eqn{v \le 1}.
+\item Calculate \eqn{\code{q = (1 - w)^{1/\alpha}}}. Note: Requires \eqn{w \le 1}.
 }
-
-Special care is taken at each step to handle numerical issues:
-\itemize{
-\item Boundary cases (p ≤ 0 or p ≥ 1) are handled directly
-\item Intermediate results are checked for validity at each transformation step
-\item Special cases where parameters equal 1 are optimized for speed and accuracy
-}
-
-This implementation supports vectorized parameters, allowing any combination of
-vector and scalar inputs for all distribution parameters, with proper broadcasting
-for vectors of different lengths.
+Numerical stability is maintained by handling boundary cases (\code{p = 0},
+\code{p = 1}) directly and checking intermediate results (e.g., ensuring
+arguments to powers are non-negative).
 }
 \examples{
 \dontrun{
-# Basic quantile calculation
-qgkw(0.5, 2, 3, 1, 0, 1)  # Median of GKw(2,3,1,0,1)
+# Basic quantile calculation (median)
+median_val <- qgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+print(median_val)
 
 # Computing multiple quantiles
-probs <- c(0.1, 0.25, 0.5, 0.75, 0.9)
-qgkw(probs, 2, 3, 1, 0, 1)  # Various percentiles
+probs <- c(0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99)
+quantiles <- qgkw(probs, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+print(quantiles)
 
-# Upper tail quantiles
-qgkw(0.1, 2, 3, 1, 0, 1, lower_tail = FALSE)  # 90th percentile
+# Upper tail quantile (e.g., find x such that P(X > x) = 0.1, which is 90th percentile)
+q90 <- qgkw(0.1, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1,
+            lower_tail = FALSE)
+print(q90)
+# Check: should match quantile for p = 0.9 with lower_tail = TRUE
+print(qgkw(0.9, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1))
 
 # Log probabilities
-qgkw(log(0.5), 2, 3, 1, 0, 1, log_p = TRUE)
+median_logp <- qgkw(log(0.5), alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1,
+                    log_p = TRUE)
+print(median_logp) # Should match median_val
 
 # Vectorized parameters
-alphas <- c(0.5, 1.0, 2.0)
-betas <- c(1.0, 2.0, 3.0)
-qgkw(0.5, alphas, betas)  # Will return 3 quantile values
+alphas_vec <- c(0.5, 1.0, 2.0)
+betas_vec <- c(1.0, 2.0, 3.0)
+# Get median for 3 different GKw distributions
+medians_vec <- qgkw(0.5, alpha = alphas_vec, beta = betas_vec)
+print(medians_vec)
 
 # Verify inverse relationship with pgkw
-p <- 0.75
-x <- qgkw(p, 2, 3, 1, 0, 1)
-pgkw(x, 2, 3, 1, 0, 1)  # Should be approximately 0.75
-}
+p_val <- 0.75
+x_val <- qgkw(p_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+p_check <- pgkw(x_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+print(paste("Calculated p:", p_check, " (Expected:", p_val, ")"))
+# abs(p_check - p_val) < 1e-9 # Should be TRUE
 
+# Edge cases
+qgkw(c(0, 1), alpha = 2, beta = 3) # Should return 0, 1
+qgkw(c(-0.1, 1.1), alpha = 2, beta = 3) # Should return NaN, NaN
+qgkw(0.5, alpha = -1, beta = 3) # Should return NaN (invalid alpha)
+}
 }
 \references{
-Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-Journal of Hydrology, 46(1-2), 79-88.
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753}
 
-Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0}
 }
+\seealso{
+\code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{rgkw}},
+\code{\link[stats]{qbeta}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{quantile}

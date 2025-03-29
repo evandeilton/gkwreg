@@ -4,7 +4,7 @@
 \alias{predict.gkwfit}
 \title{Predict Method for gkwfit Objects}
 \usage{
-predict.gkwfit(
+\method{predict}{gkwfit}(
   object,
   newdata = NULL,
   type = c("density", "cdf", "quantile", "response"),

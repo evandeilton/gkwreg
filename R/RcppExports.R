@@ -13,27 +13,40 @@ gkwgetstartvalues <- function(x, n_starts = 5L) {
     .Call(`_gkwreg_gkwgetstartvalues`, x, n_starts)
 }
 
-#' @title Density Function for Generalized Kumaraswamy Distribution
+#' @title Density of the Generalized Kumaraswamy Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution density
 #'
 #' @description
-#' Calculates the probability density function (PDF) of the Generalized Kumaraswamy
-#' distribution GKw(α, β, γ, δ, λ) for values in the open interval (0,1). Returns
-#' either f(x; θ) or log(f(x; θ)) depending on the log_prob parameter.
+#' Computes the probability density function (PDF) for the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution, defined on the interval (0, 1).
 #'
-#' @param x Vector of quantiles where the density will be evaluated.
-#' @param alpha Shape parameter α > 0 (scalar or vector). Controls the left tail behavior. Default: 1.0.
-#' @param beta Shape parameter β > 0 (scalar or vector). Controls the right tail behavior. Default: 1.0.
-#' @param gamma Shape parameter γ > 0 (scalar or vector). Affects the central shape. Default: 1.0.
-#' @param delta Shape parameter δ ≥ 0 (scalar or vector). Introduces additional flexibility. Default: 0.0.
-#' @param lambda Shape parameter λ > 0 (scalar or vector). Controls overall dispersion. Default: 1.0.
-#' @param log_prob Logical; if TRUE, probabilities are returned as log(f(x)). Default: FALSE.
+#' @param x Vector of quantiles (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param log_prob Logical; if \code{TRUE}, the logarithm of the density is
+#'   returned. Default: \code{FALSE}.
 #'
-#' @return Vector of density values corresponding to each element in x. If x contains
-#'         values outside (0,1), those positions will return 0 (or -Inf if log_prob=TRUE).
+#' @return A vector of density values (\eqn{f(x)}) or log-density values
+#'   (\eqn{\log(f(x))}). The length of the result is determined by the recycling
+#'   rule applied to the arguments (\code{x}, \code{alpha}, \code{beta},
+#'   \code{gamma}, \code{delta}, \code{lambda}). Returns \code{0} (or \code{-Inf}
+#'   if \code{log_prob = TRUE}) for \code{x} outside the interval (0, 1), or
+#'   \code{NaN} if parameters are invalid.
 #'
 #' @details
-#' The probability density function of the GKw distribution as derived by Carrasco et al. (2010) is:
-#'
+#' The probability density function of the Generalized Kumaraswamy (GKw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), \code{delta} (\eqn{\delta}), and
+#' \code{lambda} (\eqn{\lambda}) is given by:
 #' \deqn{
 #' f(x; \alpha, \beta, \gamma, \delta, \lambda) =
 #'   \frac{\lambda \alpha \beta x^{\alpha-1}(1-x^{\alpha})^{\beta-1}}
@@ -41,63 +54,70 @@ gkwgetstartvalues <- function(x, n_starts = 5L) {
 #'   [1-(1-x^{\alpha})^{\beta}]^{\gamma\lambda-1}
 #'   [1-[1-(1-x^{\alpha})^{\beta}]^{\lambda}]^{\delta}
 #' }
+#' for \eqn{x \in (0,1)}, where \eqn{B(a, b)} is the Beta function
+#' \code{\link[base]{beta}}.
 #'
-#' for x in (0,1), where B(γ, δ+1) is the beta function.
-#'
-#' This distribution arises from the construction:
-#'
-#' \deqn{f(x; \theta) = g_2(G_1(x; \alpha, \beta); \gamma, \delta, \lambda) \cdot g_1(x; \alpha, \beta)}
-#'
-#' where G_1 is the CDF of the Kumaraswamy distribution, g_1 is its PDF, and g_2 is the
-#' generalized beta density of first kind.
-#'
-#' The function handles several edge cases:
+#' This distribution was proposed by Cordeiro & de Castro (2011) and includes
+#' several other distributions as special cases:
 #' \itemize{
-#'   \item Returns 0 (or -Inf if log_prob=TRUE) for x outside (0,1)
-#'   \item Implements numerical stability precautions for x very close to 0 or 1
-#'   \item Returns 0 (or -Inf) for parameter combinations that would cause computational issues
+#'   \item Kumaraswamy (Kw): \code{gamma = 1}, \code{delta = 0}, \code{lambda = 1}
+#'   \item Exponentiated Kumaraswamy (EKw): \code{gamma = 1}, \code{delta = 0}
+#'   \item Beta-Kumaraswamy (BKw): \code{lambda = 1}
+#'   \item Generalized Beta type 1 (GB1 - implies McDonald): \code{alpha = 1}, \code{beta = 1}
+#'   \item Beta distribution: \code{alpha = 1}, \code{beta = 1}, \code{lambda = 1}
 #' }
-#'
-#' The GKw distribution includes several special cases:
-#' \itemize{
-#'   \item Kumaraswamy (Kw): γ=1, δ=0, λ=1
-#'   \item McDonald distribution: α=1, β=1
-#'   \item Beta distribution: α=1, β=1, λ=1
-#'   \item Beta-Kumaraswamy (BKw): λ=1
-#'   \item Kumaraswamy-Kumaraswamy: γ=1
-#'   \item Exponentiated Kumaraswamy (EKw): γ=1, δ=0
-#'   \item Beta Power (BP): α=1, β=1
-#' }
+#' The function includes checks for valid parameters and input values \code{x}.
+#' It uses numerical stabilization for \code{x} close to 0 or 1.
 #'
 #' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}} (if these exist),
+#' \code{\link[stats]{dbeta}}, \code{\link[stats]{integrate}}
 #'
 #' @examples
 #' \dontrun{
 #' # Simple density evaluation at a point
-#' dgkw(0.5, 2, 3, 1, 0, 1)
+#' dgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
 #'
 #' # Plot the PDF for various parameter sets
-#' x <- seq(0.01, 0.99, by = 0.01)
+#' x_vals <- seq(0.01, 0.99, by = 0.01)
 #'
-#' # Standard Kumaraswamy (γ=1, δ=0, λ=1)
-#' plot(x, dgkw(x, 2, 3, 1, 0, 1), type = "l",
-#'      main = "GKw Densities", ylab = "f(x)", col = "blue")
+#' # Standard Kumaraswamy (gamma=1, delta=0, lambda=1)
+#' pdf_kw <- dgkw(x_vals, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 #'
-#' # Beta equivalent (α=1, β=1, λ=1)
-#' lines(x, dgkw(x, 1, 1, 2, 3, 1), col = "red")
+#' # Beta equivalent (alpha=1, beta=1, lambda=1) - Beta(gamma, delta+1)
+#' pdf_beta <- dgkw(x_vals, alpha = 1, beta = 1, gamma = 2, delta = 3, lambda = 1)
+#' # Compare with stats::dbeta
+#' pdf_beta_check <- stats::dbeta(x_vals, shape1 = 2, shape2 = 3 + 1)
+#' # max(abs(pdf_beta - pdf_beta_check)) # Should be close to zero
 #'
-#' # Exponentiated Kumaraswamy (γ=1, δ=0)
-#' lines(x, dgkw(x, 2, 3, 1, 0, 2), col = "green")
+#' # Exponentiated Kumaraswamy (gamma=1, delta=0)
+#' pdf_ekw <- dgkw(x_vals, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 2)
+#'
+#' plot(x_vals, pdf_kw, type = "l", ylim = range(c(pdf_kw, pdf_beta, pdf_ekw)),
+#'      main = "GKw Densities Examples", ylab = "f(x)", xlab="x", col = "blue")
+#' lines(x_vals, pdf_beta, col = "red")
+#' lines(x_vals, pdf_ekw, col = "green")
+#' legend("topright", legend = c("Kw(2,3)", "Beta(2,4) equivalent", "EKw(2,3, lambda=2)"),
+#'        col = c("blue", "red", "green"), lty = 1, bty = "n")
+#'
+#' # Log-density
+#' log_pdf_val <- dgkw(0.5, 2, 3, 1, 0, 1, log_prob = TRUE)
+#' print(log_pdf_val)
+#' print(log(dgkw(0.5, 2, 3, 1, 0, 1))) # Should match
 #'
 #' # Vectorized parameter example
-#' alphas <- c(0.5, 1.5, 3.0)
+#' alphas_vec <- c(0.5, 1.5, 3.0)
 #' # Returns 3 density values for the same x
-#' dgkw(0.5, alphas, 2, 1, 0, 1)
+#' dgkw(0.5, alpha = alphas_vec, beta = 2, gamma = 1, delta = 0, lambda = 1)
 #' }
 #'
 #' @export
@@ -105,2356 +125,5991 @@ dgkw <- function(x, alpha = as.numeric( c(1.0)), beta = as.numeric( c(1.0)), gam
     .Call(`_gkwreg_dgkw`, x, alpha, beta, gamma, delta, lambda, log_prob)
 }
 
-#' @title Cumulative Distribution Function for Generalized Kumaraswamy Distribution
+#' @title Generalized Kumaraswamy Distribution CDF
+#' @author Lopes, J. E.
+#' @keywords distribution cumulative
 #'
 #' @description
-#' Calculates the cumulative distribution function (CDF) of the Generalized Kumaraswamy
-#' distribution GKw(α, β, γ, δ, λ) for values in the interval (0,1). Returns F(q) = P(X ≤ q)
-#' by default, with options for upper tail probability P(X > q) and log transformations.
+#' Computes the cumulative distribution function (CDF) for the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution, defined on the interval (0, 1).
+#' Calculates \eqn{P(X \le q)}.
 #'
-#' @param q Vector of quantiles where the CDF will be evaluated.
-#' @param alpha Shape parameter α > 0 (scalar or vector). Controls the left tail behavior. Default: 1.0.
-#' @param beta Shape parameter β > 0 (scalar or vector). Controls the right tail behavior. Default: 1.0.
-#' @param gamma Shape parameter γ > 0 (scalar or vector). Affects the central shape. Default: 1.0.
-#' @param delta Shape parameter δ ≥ 0 (scalar or vector). Introduces additional flexibility. Default: 0.0.
-#' @param lambda Shape parameter λ > 0 (scalar or vector). Controls overall dispersion. Default: 1.0.
-#' @param lower_tail Logical; if TRUE (default), probabilities are P(X ≤ q), otherwise P(X > q).
-#' @param log_p Logical; if TRUE, probabilities are returned as log(p). Default: FALSE.
+#' @param q Vector of quantiles (values generally between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are
+#'   \eqn{P(X \le q)}, otherwise, \eqn{P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
 #'
-#' @return Vector of probabilities corresponding to each element in q.
+#' @return A vector of probabilities, \eqn{F(q)}, or their logarithms if
+#'   \code{log_p = TRUE}. The length of the result is determined by the recycling
+#'   rule applied to the arguments (\code{q}, \code{alpha}, \code{beta},
+#'   \code{gamma}, \code{delta}, \code{lambda}). Returns \code{0} (or \code{-Inf}
+#'   if \code{log_p = TRUE}) for \code{q <= 0} and \code{1} (or \code{0} if
+#'   \code{log_p = TRUE}) for \code{q >= 1}. Returns \code{NaN} for invalid
+#'   parameters.
 #'
 #' @details
-#' The cumulative distribution function for the GKw distribution as derived in
-#' Carrasco et al. (2010) is:
-#'
+#' The cumulative distribution function (CDF) of the Generalized Kumaraswamy (GKw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), \code{delta} (\eqn{\delta}), and
+#' \code{lambda} (\eqn{\lambda}) is given by:
 #' \deqn{
 #' F(q; \alpha, \beta, \gamma, \delta, \lambda) =
-#'   I_{[1-(1-q^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta+1)
+#'   I_{x(q)}(\gamma, \delta+1)
 #' }
-#'
-#' where I_x(a,b) is the regularized incomplete beta function defined as:
-#'
+#' where \eqn{x(q) = [1-(1-q^{\alpha})^{\beta}]^{\lambda}} and \eqn{I_x(a, b)}
+#' is the regularized incomplete beta function, defined as:
 #' \deqn{
-#' I_x(a, b) = \frac{B_x(a, b)}{B(a, b)}
+#' I_x(a, b) = \frac{B_x(a, b)}{B(a, b)} = \frac{\int_0^x t^{a-1}(1-t)^{b-1} dt}{\int_0^1 t^{a-1}(1-t)^{b-1} dt}
 #' }
+#' This corresponds to the \code{\link[stats]{pbeta}} function in R, such that
+#' \eqn{F(q; \alpha, \beta, \gamma, \delta, \lambda) = \code{pbeta}(x(q), \code{shape1} = \gamma, \code{shape2} = \delta+1)}.
 #'
-#' With B_x(a, b) being the incomplete beta function:
-#'
-#' \deqn{
-#' B_x(a, b) = \int_0^x t^{a-1}(1-t)^{b-1} dt
-#' }
-#'
-#' The GKw distribution can be derived from the following construction:
-#' Let \eqn{G_1(x; \alpha, \beta)} be the two-parameter Kumaraswamy CDF and \eqn{g_2(x; \gamma, \delta, \lambda)}
-#' be the generalized beta density of first kind. Then:
-#'
-#' \deqn{
-#' F(x; \theta) = \int_0^{G_1(x; \alpha, \beta)} g_2(t; \gamma, \delta, \lambda) dt
-#' }
-#'
-#' The function implements specialized numerical techniques for stability from the paper,
-#' carefully handling boundary cases and extreme parameter values to ensure proper behavior
-#' throughout the parameter space.
+#' The GKw distribution includes several special cases, such as the Kumaraswamy,
+#' Beta, and Exponentiated Kumaraswamy distributions (see \code{\link{dgkw}} for details).
+#' The function utilizes numerical algorithms for computing the regularized
+#' incomplete beta function accurately, especially near the boundaries.
 #'
 #' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{dgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}},
+#' \code{\link[stats]{pbeta}}
 #'
 #' @examples
 #' \dontrun{
 #' # Simple CDF evaluation
-#' pgkw(0.5, 2, 3, 1, 0, 1)
+#' prob <- pgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
+#' print(prob)
+#'
+#' # Upper tail probability P(X > q)
+#' prob_upper <- pgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1,
+#'                  lower_tail = FALSE)
+#' print(prob_upper)
+#' # Check: prob + prob_upper should be 1
+#' print(prob + prob_upper)
+#'
+#' # Log probability
+#' log_prob <- pgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1,
+#'                  log_p = TRUE)
+#' print(log_prob)
+#' # Check: exp(log_prob) should be prob
+#' print(exp(log_prob))
 #'
 #' # Use of vectorized parameters
-#' alphas <- c(0.5, 1.0, 2.0)
-#' betas <- c(1.0, 2.0, 3.0)
-#' pgkw(0.5, alphas, betas)
+#' q_vals <- c(0.2, 0.5, 0.8)
+#' alphas_vec <- c(0.5, 1.0, 2.0)
+#' betas_vec <- c(1.0, 2.0, 3.0)
+#' pgkw(q_vals, alpha = alphas_vec, beta = betas_vec) # Vectorizes over q, alpha, beta
 #'
-#' # Comparing special cases
-#' x <- seq(0.01, 0.99, by = 0.01)
-#' # Standard Kumaraswamy
-#' pkw <- pgkw(x, 2, 3, 1, 0, 1)
-#' # Beta distribution
-#' pbeta_equiv <- pgkw(x, 1, 1, 2, 3, 1)
-#' }
+#' # Plotting the CDF for special cases
+#' x_seq <- seq(0.01, 0.99, by = 0.01)
+#' # Standard Kumaraswamy CDF
+#' cdf_kw <- pgkw(x_seq, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+#' # Beta distribution CDF equivalent (Beta(gamma, delta+1))
+#' cdf_beta_equiv <- pgkw(x_seq, alpha = 1, beta = 1, gamma = 2, delta = 3, lambda = 1)
+#' # Compare with stats::pbeta
+#' cdf_beta_check <- stats::pbeta(x_seq, shape1 = 2, shape2 = 3 + 1)
+#' # max(abs(cdf_beta_equiv - cdf_beta_check)) # Should be close to zero
 #'
+#' plot(x_seq, cdf_kw, type = "l", ylim = c(0, 1),
+#'      main = "GKw CDF Examples", ylab = "F(x)", xlab = "x", col = "blue")
+#' lines(x_seq, cdf_beta_equiv, col = "red", lty = 2)
+#' legend("bottomright", legend = c("Kw(2,3)", "Beta(2,4) equivalent"),
+#'        col = c("blue", "red"), lty = c(1, 2), bty = "n")
+#'}
 #' @export
 pgkw <- function(q, alpha = as.numeric( c(1.0)), beta = as.numeric( c(1.0)), gamma = as.numeric( c(1.0)), delta = as.numeric( c(0.0)), lambda = as.numeric( c(1.0)), lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_pgkw`, q, alpha, beta, gamma, delta, lambda, lower_tail, log_p)
 }
 
-#' @title Quantile Function for Generalized Kumaraswamy Distribution
+#' @title Generalized Kumaraswamy Distribution Quantile Function
+#' @author Lopes, J. E.
+#' @keywords distribution quantile
 #'
 #' @description
-#' Calculates the quantile function (inverse CDF) of the Generalized Kumaraswamy
-#' distribution GKw(α, β, γ, δ, λ). For a given probability p, returns the value x
-#' such that P(X ≤ x) = p, where X follows a GKw distribution with the specified parameters.
+#' Computes the quantile function (inverse CDF) for the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution. Finds the value \code{x} such
+#' that \eqn{P(X \le x) = p}, where \code{X} follows the GKw distribution.
 #'
-#' @param p Vector of probabilities for which to compute quantiles. Values should be in (0,1),
-#'        or in (-Inf,0] if log_p=TRUE.
-#' @param alpha Shape parameter α > 0 (scalar or vector). Controls the left tail behavior. Default: 1.0.
-#' @param beta Shape parameter β > 0 (scalar or vector). Controls the right tail behavior. Default: 1.0.
-#' @param gamma Shape parameter γ > 0 (scalar or vector). Affects the central shape. Default: 1.0.
-#' @param delta Shape parameter δ ≥ 0 (scalar or vector). Introduces additional flexibility. Default: 0.0.
-#' @param lambda Shape parameter λ > 0 (scalar or vector). Controls overall dispersion. Default: 1.0.
-#' @param lower_tail Logical; if TRUE (default), probabilities are P(X ≤ x), otherwise P(X > x).
-#' @param log_p Logical; if TRUE, probabilities are provided as log(p). Default: FALSE.
+#' @param p Vector of probabilities (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are
+#'   \eqn{P(X \le x)}, otherwise, \eqn{P(X > x)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \code{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
 #'
-#' @return Vector of quantiles corresponding to each probability in p. Returns:
+#' @return A vector of quantiles corresponding to the given probabilities \code{p}.
+#'   The length of the result is determined by the recycling rule applied to
+#'   the arguments (\code{p}, \code{alpha}, \code{beta}, \code{gamma},
+#'   \code{delta}, \code{lambda}). Returns:
 #'   \itemize{
-#'     \item 0 for probabilities ≤ 0 (or when log(p) = -Inf if log_p=TRUE)
-#'     \item 1 for probabilities ≥ 1 (or when log(p) = 0 if log_p=TRUE)
-#'     \item NA for invalid inputs (including p > 1 when log_p=TRUE, which would be log(p) > 0)
-#'     \item NA for invalid parameters (any of α, β, γ ≤ 0, δ < 0, or λ ≤ 0)
+#'     \item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE}).
+#'     \item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE}).
+#'     \item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+#'     \item \code{NaN} for invalid parameters (e.g., \code{alpha <= 0},
+#'           \code{beta <= 0}, \code{gamma <= 0}, \code{delta < 0},
+#'           \code{lambda <= 0}).
 #'   }
 #'
 #' @details
-#' According to Carrasco et al. (2010), the quantile function for the GKw distribution is
-#' derived by inverting the CDF \deqn{F(x) = I_{(1-(1-x^α)^β)^λ}(γ, δ+1)}:
-#'
+#' The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(x)}.
+#' Given \eqn{F(x) = I_{y(x)}(\gamma, \delta+1)} where
+#' \eqn{y(x) = [1-(1-x^{\alpha})^{\beta}]^{\lambda}}, the quantile function is:
 #' \deqn{
-#' Q(p) = \{1 - (1 - (I^{-1}_{p}(\gamma, \delta+1))^{1/\lambda})^{1/\beta}\}^{1/\alpha}
+#' Q(p) = x = \left\{ 1 - \left[ 1 - \left( I^{-1}_{p}(\gamma, \delta+1) \right)^{1/\lambda} \right]^{1/\beta} \right\}^{1/\alpha}
 #' }
+#' where \eqn{I^{-1}_{p}(a, b)} is the inverse of the regularized incomplete beta
+#' function, which corresponds to the quantile function of the Beta distribution,
+#' \code{\link[stats]{qbeta}}.
 #'
-#' where \eqn{I^{-1}_{p}(a, b)} is the inverse regularized incomplete beta function.
-#'
-#' The implementation follows these steps to compute the quantile:
+#' The computation proceeds as follows:
 #' \enumerate{
-#'   \item Find y = qbeta(p, γ, δ+1)
-#'   \item Compute \deqn{v = y^(1/λ)}
-#'   \item Compute \deqn{tmp = 1 - v}
-#'   \item Compute \deqn{tmp2 = tmp^(1/β)}
-#'   \item Compute \deqn{q = (1 - tmp2)^(1/α)}
+#'   \item Calculate \code{y = stats::qbeta(p, shape1 = gamma, shape2 = delta + 1, lower.tail = lower_tail, log.p = log_p)}.
+#'   \item Calculate \eqn{\code{v = y^{1/\lambda}}}.
+#'   \item Calculate \eqn{\code{w = (1 - v)^{1/\beta}}}. Note: Requires \eqn{v \le 1}.
+#'   \item Calculate \eqn{\code{q = (1 - w)^{1/\alpha}}}. Note: Requires \eqn{w \le 1}.
 #' }
-#'
-#' Special care is taken at each step to handle numerical issues:
-#' \itemize{
-#'   \item Boundary cases (p ≤ 0 or p ≥ 1) are handled directly
-#'   \item Intermediate results are checked for validity at each transformation step
-#'   \item Special cases where parameters equal 1 are optimized for speed and accuracy
-#' }
-#'
-#' This implementation supports vectorized parameters, allowing any combination of
-#' vector and scalar inputs for all distribution parameters, with proper broadcasting
-#' for vectors of different lengths.
+#' Numerical stability is maintained by handling boundary cases (\code{p = 0},
+#' \code{p = 1}) directly and checking intermediate results (e.g., ensuring
+#' arguments to powers are non-negative).
 #'
 #' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{rgkw}},
+#' \code{\link[stats]{qbeta}}
 #'
 #' @examples
 #' \dontrun{
-#' # Basic quantile calculation
-#' qgkw(0.5, 2, 3, 1, 0, 1)  # Median of GKw(2,3,1,0,1)
+#' # Basic quantile calculation (median)
+#' median_val <- qgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+#' print(median_val)
 #'
 #' # Computing multiple quantiles
-#' probs <- c(0.1, 0.25, 0.5, 0.75, 0.9)
-#' qgkw(probs, 2, 3, 1, 0, 1)  # Various percentiles
+#' probs <- c(0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99)
+#' quantiles <- qgkw(probs, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+#' print(quantiles)
 #'
-#' # Upper tail quantiles
-#' qgkw(0.1, 2, 3, 1, 0, 1, lower_tail = FALSE)  # 90th percentile
+#' # Upper tail quantile (e.g., find x such that P(X > x) = 0.1, which is 90th percentile)
+#' q90 <- qgkw(0.1, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1,
+#'             lower_tail = FALSE)
+#' print(q90)
+#' # Check: should match quantile for p = 0.9 with lower_tail = TRUE
+#' print(qgkw(0.9, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1))
 #'
 #' # Log probabilities
-#' qgkw(log(0.5), 2, 3, 1, 0, 1, log_p = TRUE)
+#' median_logp <- qgkw(log(0.5), alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1,
+#'                     log_p = TRUE)
+#' print(median_logp) # Should match median_val
 #'
 #' # Vectorized parameters
-#' alphas <- c(0.5, 1.0, 2.0)
-#' betas <- c(1.0, 2.0, 3.0)
-#' qgkw(0.5, alphas, betas)  # Will return 3 quantile values
+#' alphas_vec <- c(0.5, 1.0, 2.0)
+#' betas_vec <- c(1.0, 2.0, 3.0)
+#' # Get median for 3 different GKw distributions
+#' medians_vec <- qgkw(0.5, alpha = alphas_vec, beta = betas_vec)
+#' print(medians_vec)
 #'
 #' # Verify inverse relationship with pgkw
-#' p <- 0.75
-#' x <- qgkw(p, 2, 3, 1, 0, 1)
-#' pgkw(x, 2, 3, 1, 0, 1)  # Should be approximately 0.75
-#' }
+#' p_val <- 0.75
+#' x_val <- qgkw(p_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+#' p_check <- pgkw(x_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+#' print(paste("Calculated p:", p_check, " (Expected:", p_val, ")"))
+#' # abs(p_check - p_val) < 1e-9 # Should be TRUE
 #'
+#' # Edge cases
+#' qgkw(c(0, 1), alpha = 2, beta = 3) # Should return 0, 1
+#' qgkw(c(-0.1, 1.1), alpha = 2, beta = 3) # Should return NaN, NaN
+#' qgkw(0.5, alpha = -1, beta = 3) # Should return NaN (invalid alpha)
+#'}
 #' @export
 qgkw <- function(p, alpha = as.numeric( c(1.0)), beta = as.numeric( c(1.0)), gamma = as.numeric( c(1.0)), delta = as.numeric( c(0.0)), lambda = as.numeric( c(1.0)), lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_qgkw`, p, alpha, beta, gamma, delta, lambda, lower_tail, log_p)
 }
 
-#' @title Random Number Generation for Generalized Kumaraswamy Distribution
+#' @title Generalized Kumaraswamy Distribution Random Generation
+#' @author Lopes, J. E.
+#' @keywords distribution random
 #'
 #' @description
-#' Generates random deviates from the Generalized Kumaraswamy distribution GKw(α, β, γ, δ, λ).
-#' The implementation uses an efficient transformation method based on the Beta distribution
-#' as derived in Carrasco et al. (2010).
+#' Generates random deviates from the five-parameter Generalized Kumaraswamy (GKw)
+#' distribution defined on the interval (0, 1).
 #'
-#' @param n Number of random values to generate. Must be a positive integer.
-#' @param alpha Shape parameter α > 0 (scalar or vector). Controls the left tail behavior. Default: 1.0.
-#' @param beta Shape parameter β > 0 (scalar or vector). Controls the right tail behavior. Default: 1.0.
-#' @param gamma Shape parameter γ > 0 (scalar or vector). Affects the central shape. Default: 1.0.
-#' @param delta Shape parameter δ ≥ 0 (scalar or vector). Introduces additional flexibility. Default: 0.0.
-#' @param lambda Shape parameter λ > 0 (scalar or vector). Controls overall dispersion. Default: 1.0.
+#' @param n Number of observations. If \code{length(n) > 1}, the length is
+#'   taken to be the number required. Must be a non-negative integer.
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
 #'
-#' @return Vector of length n containing random values from the GKw distribution.
-#'   If any parameters are invalid, the function produces an error.
-#'   Returns NA for parameter combinations that are invalid.
+#' @return A vector of length \code{n} containing random deviates from the GKw
+#'   distribution. The length of the result is determined by \code{n} and the
+#'   recycling rule applied to the parameters (\code{alpha}, \code{beta},
+#'   \code{gamma}, \code{delta}, \code{lambda}). Returns \code{NaN} if parameters
+#'   are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0}, \code{gamma <= 0},
+#'   \code{delta < 0}, \code{lambda <= 0}).
 #'
 #' @details
-#' According to Carrasco et al. (2010), if V ~ Beta(γ, δ+1), then:
-#'
+#' The generation method relies on the transformation property: if
+#' \eqn{V \sim \mathrm{Beta}(\gamma, \delta+1)}, then the random variable \code{X}
+#' defined as
 #' \deqn{
-#' X = \{1 - [1 - V^{1/\lambda}]^{1/\beta}\}^{1/\alpha}
+#' X = \left\{ 1 - \left[ 1 - V^{1/\lambda} \right]^{1/\beta} \right\}^{1/\alpha}
 #' }
+#' follows the GKw(\eqn{\alpha, \beta, \gamma, \delta, \lambda}) distribution.
 #'
-#' follows a GKw(α, β, γ, δ, λ) distribution.
-#'
-#' The random generation algorithm implements this transformation method:
+#' The algorithm proceeds as follows:
 #' \enumerate{
-#'   \item Generate V ~ Beta(γ, δ+1)
-#'   \item Compute v = V^(1/λ)
-#'   \item Compute tmp = 1 - v
-#'   \item Compute tmp2 = tmp^(1/β)
-#'   \item Compute x = (1 - tmp2)^(1/α)
+#'   \item Generate \code{V} from \code{stats::rbeta(n, shape1 = gamma, shape2 = delta + 1)}.
+#'   \item Calculate \eqn{\code{v = V^{1/\lambda}}}.
+#'   \item Calculate \eqn{\code{w = (1 - v)^{1/\beta}}}.
+#'   \item Calculate \eqn{\code{x = (1 - w)^{1/\alpha}}}.
 #' }
-#'
-#' This implementation includes several optimizations:
-#' \itemize{
-#'   \item Special cases for α=1, β=1, or λ=1 are handled directly to improve efficiency
-#'   \item Boundary cases are checked at each step to maintain numerical stability
-#'   \item Safe power transformations prevent numerical issues with extreme values
-#'   \item Full support for vectorized parameters with appropriate broadcasting
-#' }
+#' Parameters (\code{alpha}, \code{beta}, \code{gamma}, \code{delta}, \code{lambda})
+#' are recycled to match the length required by \code{n}. Numerical stability is
+#' maintained by handling potential edge cases during the transformations.
 #'
 #' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}},
+#' \code{\link[stats]{rbeta}}, \code{\link[base]{set.seed}}
 #'
 #' @examples
 #' \dontrun{
-#' # Generate 1000 random values from a GKw(2,3,1,0,1)
-#' x <- rgkw(1000, 2, 3, 1, 0, 1)
+#' set.seed(1234) # for reproducibility
 #'
-#' # Histogram of generated values
-#' hist(x, breaks = 30, probability = TRUE,
-#'      main = "Histogram of GKw(2,3,1,0,1) Random Values")
+#' # Generate 1000 random values from a specific GKw distribution (Kw case)
+#' x_sample <- rgkw(1000, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+#' summary(x_sample)
 #'
-#' # Add the theoretical density curve
-#' curve(dgkw(x, 2, 3, 1, 0, 1), add = TRUE, col = "red", lwd = 2)
+#' # Histogram of generated values compared to theoretical density
+#' hist(x_sample, breaks = 30, freq = FALSE, # freq=FALSE for density scale
+#'      main = "Histogram of GKw(2,3,1,0,1) Sample", xlab = "x", ylim = c(0, 2.5))
+#' curve(dgkw(x, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1),
+#'       add = TRUE, col = "red", lwd = 2, n = 201)
+#' legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2, bty = "n")
 #'
-#' # Comparing empirical and theoretical quantiles
-#' prob_points <- seq(0.1, 0.9, by = 0.1)
-#' theo_quantiles <- qgkw(prob_points, 2, 3, 1, 0, 1)
-#' emp_quantiles <- quantile(x, prob_points)
-#' plot(theo_quantiles, emp_quantiles,
+#' # Comparing empirical and theoretical quantiles (Q-Q plot)
+#' prob_points <- seq(0.01, 0.99, by = 0.01)
+#' theo_quantiles <- qgkw(prob_points, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
+#' emp_quantiles <- quantile(x_sample, prob_points)
+#'
+#' plot(theo_quantiles, emp_quantiles, pch = 16, cex = 0.8,
 #'      main = "Q-Q Plot for GKw(2,3,1,0,1)",
-#'      xlab = "Theoretical Quantiles",
-#'      ylab = "Empirical Quantiles")
-#' abline(0, 1, col = "blue")
+#'      xlab = "Theoretical Quantiles", ylab = "Empirical Quantiles (n=1000)")
+#' abline(a = 0, b = 1, col = "blue", lty = 2)
 #'
-#' # Using vectorized parameters
-#' alphas <- c(0.5, 1.0, 2.0)
-#' samples <- rgkw(300, alphas, 2, 1, 0, 1)  # 100 samples from each configuration
-#' hist(samples, breaks = 30, probability = TRUE,
-#'      main = "Mixed GKw Samples with Different Alpha Values")
-#' }
+#' # Using vectorized parameters: generate 1 value for each alpha
+#' alphas_vec <- c(0.5, 1.0, 2.0)
+#' n_param <- length(alphas_vec)
+#' samples_vec <- rgkw(n_param, alpha = alphas_vec, beta = 2, gamma = 1, delta = 0, lambda = 1)
+#' print(samples_vec) # One sample for each alpha value
+#' # Result length matches n=3, parameters alpha recycled accordingly
 #'
+#' # Example with invalid parameters (should produce NaN)
+#' invalid_sample <- rgkw(1, alpha = -1, beta = 2, gamma = 1, delta = 0, lambda = 1)
+#' print(invalid_sample)
+#'}
 #' @export
 rgkw <- function(n, alpha = as.numeric( c(1.0)), beta = as.numeric( c(1.0)), gamma = as.numeric( c(1.0)), delta = as.numeric( c(0.0)), lambda = as.numeric( c(1.0))) {
     .Call(`_gkwreg_rgkw`, n, alpha, beta, gamma, delta, lambda)
 }
 
-#' @title Log-Likelihood Function for Generalized Kumaraswamy Distribution
+#' @title Negative Log-Likelihood for the Generalized Kumaraswamy Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize
 #'
 #' @description
-#' Calculates the negative log-likelihood for the Generalized Kumaraswamy distribution
-#' GKw(α, β, γ, δ, λ) given a vector of observations. This function is primarily used
-#' in maximum likelihood estimation and model fitting procedures.
+#' Computes the negative log-likelihood function for the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution given a vector of observations.
+#' This function is designed for use in optimization routines (e.g., maximum
+#' likelihood estimation).
 #'
-#' @param par NumericVector of length 5 containing parameters (α, β, γ, δ, λ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 5 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return The negative log-likelihood value as a double, or -Inf if any parameters or data values
-#'         are invalid (parameters ≤ 0 or data outside (0,1)).
+#' @return Returns a single \code{double} value representing the negative
+#'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns a large positive
+#'   value (e.g., \code{Inf}) if any parameter values in \code{par} are invalid
+#'   according to their constraints, or if any value in \code{data} is not in
+#'   the interval (0, 1).
 #'
 #' @details
-#' The probability density function of the GKw distribution is:
-#'
+#' The probability density function (PDF) of the GKw distribution is given in
+#' \code{\link{dgkw}}. The log-likelihood function \eqn{\ell(\theta)} for a sample
+#' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is:
 #' \deqn{
-#' f(x; \alpha, \beta, \gamma, \delta, \lambda) =
-#'   \frac{\lambda \alpha \beta x^{\alpha-1}(1-x^{\alpha})^{\beta-1}}
-#'        {B(\gamma, \delta+1)}
-#'   [1-(1-x^{\alpha})^{\beta}]^{\gamma\lambda-1}
-#'   [1-[1-(1-x^{\alpha})^{\beta}]^{\lambda}]^{\delta}
-#' }
-#'
-#' The corresponding log-likelihood function is:
-#'
-#' \deqn{
-#' \ell(\theta) = n\ln(\lambda\alpha\beta) - n\ln B(\gamma,\delta+1) +
+#' \ell(\theta | \mathbf{x}) = n\ln(\lambda\alpha\beta) - n\ln B(\gamma,\delta+1) +
 #'   \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\gamma\lambda-1)\ln(w_i) + \delta\ln(z_i)]
 #' }
-#'
-#' where:
+#' where \eqn{\theta = (\alpha, \beta, \gamma, \delta, \lambda)}, \eqn{B(a,b)}
+#' is the Beta function (\code{\link[base]{beta}}), and:
 #' \itemize{
-#'   \item \deqn{v_i = 1 - x_i^{\alpha}}
-#'   \item \deqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
-#'   \item \deqn{z_i = 1 - w_i^{\lambda} = 1 - (1-(1-x_i^{\alpha})^{\beta})^{\lambda}}
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+#' }
+#' This function computes \eqn{-\ell(\theta|\mathbf{x})}.
+#'
+#' Numerical stability is prioritized using:
+#' \itemize{
+#'   \item \code{\link[base]{lbeta}} function for the log-Beta term.
+#'   \item Log-transformations of intermediate terms (\eqn{v_i, w_i, z_i}) and
+#'         use of \code{\link[base]{log1p}} where appropriate to handle values
+#'         close to 0 or 1 accurately.
+#'   \item Checks for invalid parameters and data.
 #' }
 #'
-#' The implementation uses several techniques for numerical stability:
-#' \itemize{
-#'   \item R's lbeta function for calculating log(B(γ, δ+1))
-#'   \item log1p for calculating log(1-x) when x is close to zero
-#'   \item Careful handling of intermediate values to avoid underflow/overflow
-#' }
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
-#' Note that this function returns the negative log-likelihood (rather than the log-likelihood),
-#' making it suitable for minimization in optimization procedures.
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}},
+#' \code{\link{grgkw}}, \code{\link{hsgkw}} (gradient and Hessian functions, if available),
+#' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}, \code{\link[base]{log1p}}
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a GKw distribution
+#' # Generate sample data from a known GKw distribution
 #' set.seed(123)
-#' x <- rgkw(100, 2, 3, 1.0, 0.5, 0.5)
-#' hist(x, breaks = 20, main = "GKw(2, 3, 1.0, 0.5, 0.5) Sample")
+#' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
+#' sample_data <- rgkw(100, alpha = true_par[1], beta = true_par[2],
+#'                    gamma = true_par[3], delta = true_par[4], lambda = true_par[5])
+#' hist(sample_data, breaks = 20, main = "Sample GKw Data")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5, 0.5, 0.5), llgkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Maximum Likelihood Estimation using optim ---
+#' # Initial parameter guess (can be crucial)
+#' start_par <- c(1.5, 2.5, 1.2, 0.3, 0.6)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llgkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llgkw, x = result$par, data = x)
+#' # Perform optimization (minimizing negative log-likelihood)
+#' # Ensure data is passed correctly to llgkw
+#' mle_result <- stats::optim(par = start_par,
+#'                            fn = llgkw,
+#'                            method = "BFGS", # Method supporting bounds might be safer
+#'                            hessian = TRUE,
+#'                            data = sample_data)
 #'
-#' ana_grad <- grgkw(result$par, data = x)
-#' ana_hess <- hsgkw(result$par, data = x)
+#' # Check convergence and results
+#' if (mle_result$convergence == 0) {
+#'   print("Optimization converged successfully.")
+#'   mle_par <- mle_result$par
+#'   print("Estimated parameters:")
+#'   print(mle_par)
+#'   print("True parameters:")
+#'   print(true_par)
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'   # Standard errors from Hessian (optional)
+#'   # fisher_info <- solve(mle_result$hessian) # Need positive definite Hessian
+#'   # std_errors <- sqrt(diag(fisher_info))
+#'   # print("Approximate Standard Errors:")
+#'   # print(std_errors)
 #'
+#' } else {
+#'   warning("Optimization did not converge!")
+#'   print(mle_result$message)
 #' }
 #'
-#' @seealso
-#' \code{\link[gkwreg]{dgkw}} for the GKw density function,
-#' \code{\link[gkwreg]{pgkw}} for the GKw cumulative distribution function,
-#' \code{\link[gkwreg]{hsgkw}} for the analytic Hessian of the GKw log-likelihood,
+#' # --- Compare numerical and analytical derivatives (if available) ---
+#' # Requires the 'numDeriv' package and analytical functions 'grgkw', 'hsgkw'
+#' if (requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("grgkw") && exists("hsgkw") && mle_result$convergence == 0) {
 #'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#'   cat("\nComparing Derivatives at MLE estimates:\n")
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#'   # Numerical derivatives
+#'   num_grad <- numDeriv::grad(func = llgkw, x = mle_par, data = sample_data)
+#'   num_hess <- numDeriv::hessian(func = llgkw, x = mle_par, data = sample_data)
+#'
+#'   # Analytical derivatives (assuming they exist)
+#'   # Note: grgkw/hsgkw might compute derivatives of log-likelihood,
+#'   # while llgkw is negative log-likelihood. Adjust signs if needed.
+#'   # Assuming grgkw/hsgkw compute derivatives of NEGATIVE log-likelihood here:
+#'   ana_grad <- grgkw(par = mle_par, data = sample_data)
+#'   ana_hess <- hsgkw(par = mle_par, data = sample_data)
+#'
+#'   # Check differences (should be small if analytical functions are correct)
+#'   cat("Difference between numerical and analytical gradient:\n")
+#'   print(summary(abs(num_grad - ana_grad)))
+#'
+#'   cat("Difference between numerical and analytical Hessian:\n")
+#'   print(summary(abs(num_hess - ana_hess)))
+#'
+#' } else {
+#'    cat("\nSkipping derivative comparison.\n")
+#'    cat("Requires 'numDeriv' package and functions 'grgkw', 'hsgkw'.\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 llgkw <- function(par, data) {
     .Call(`_gkwreg_llgkw`, par, data)
 }
 
-#' @title Gradient Function for Generalized Kumaraswamy Log-Likelihood
+#' @title Gradient of the Negative Log-Likelihood for the GKw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize gradient
 #'
 #' @description
-#' Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-#' function for the Generalized Kumaraswamy (GKw) distribution. This function provides
-#' the exact gradient needed for efficient optimization in maximum likelihood estimation.
+#' Computes the gradient vector (vector of partial derivatives) of the negative
+#' log-likelihood function for the five-parameter Generalized Kumaraswamy (GKw)
+#' distribution. This provides the analytical gradient, often used for efficient
+#' optimization via maximum likelihood estimation.
 #'
-#' @param par NumericVector of length 5 containing parameters (α, β, γ, δ, λ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 5 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericVector of length 5 containing the gradient components (partial derivatives)
-#'         of the negative log-likelihood with respect to each parameter (α, β, γ, δ, λ).
-#'         Returns a vector of NaN values if any parameters or data values are invalid.
+#' @return Returns a numeric vector of length 5 containing the partial derivatives
+#'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+#'   respect to each parameter:
+#'   \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \gamma, -\partial \ell/\partial \delta, -\partial \ell/\partial \lambda)}.
+#'   Returns a vector of \code{NaN} if any parameter values are invalid according
+#'   to their constraints, or if any value in \code{data} is not in the
+#'   interval (0, 1).
 #'
 #' @details
-#' The gradient vector contains the following partial derivatives of the negative log-likelihood:
+#' The components of the gradient vector of the negative log-likelihood
+#' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) are:
 #'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \alpha} = \frac{n}{\alpha} + \sum_{i=1}^{n}\log(x_i) -
-#' \sum_{i=1}^{n}\left[x_i^{\alpha} \log(x_i) \left(\frac{\beta-1}{v_i} -
+#' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i) +
+#' \sum_{i=1}^{n}\left[x_i^{\alpha} \ln(x_i) \left(\frac{\beta-1}{v_i} -
 #' \frac{(\gamma\lambda-1) \beta v_i^{\beta-1}}{w_i} +
 #' \frac{\delta \lambda \beta v_i^{\beta-1} w_i^{\lambda-1}}{z_i}\right)\right]
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \beta} = \frac{n}{\beta} + \sum_{i=1}^{n}\log(v_i) -
-#' \sum_{i=1}^{n}\left[v_i^{\beta} \log(v_i) \left(\frac{\gamma\lambda-1}{w_i} -
+#' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - \sum_{i=1}^{n}\ln(v_i) +
+#' \sum_{i=1}^{n}\left[v_i^{\beta} \ln(v_i) \left(\frac{\gamma\lambda-1}{w_i} -
 #' \frac{\delta \lambda w_i^{\lambda-1}}{z_i}\right)\right]
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \gamma} = -n[\psi(\gamma) - \psi(\gamma+\delta+1)] +
-#' \lambda\sum_{i=1}^{n}\log(w_i)
+#' -\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma) - \psi(\gamma+\delta+1)] -
+#' \lambda\sum_{i=1}^{n}\ln(w_i)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \delta} = -n[\psi(\delta+1) - \psi(\gamma+\delta+1)] +
-#' \sum_{i=1}^{n}\log(z_i)
+#' -\frac{\partial \ell}{\partial \delta} = n[\psi(\delta+1) - \psi(\gamma+\delta+1)] -
+#' \sum_{i=1}^{n}\ln(z_i)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \lambda} = \frac{n}{\lambda} +
-#' \gamma\sum_{i=1}^{n}\log(w_i) - \delta\sum_{i=1}^{n}\frac{w_i^{\lambda}\log(w_i)}{z_i}
+#' -\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} -
+#' \gamma\sum_{i=1}^{n}\ln(w_i) + \delta\sum_{i=1}^{n}\frac{w_i^{\lambda}\ln(w_i)}{z_i}
 #' }
 #'
 #' where:
 #' \itemize{
-#'   \item \deqn{v_i = 1 - x_i^{\alpha}}
-#'   \item \deqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
-#'   \item \deqn{z_i = 1 - w_i^{\lambda} = 1 - (1-(1-x_i^{\alpha})^{\beta})^{\lambda}}
-#'   \item \deqn{\psi} is the digamma function (derivative of the log-gamma function)
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+#'   \item \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
 #' }
 #'
-#' The implementation includes several numerical safeguards:
-#' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Clamping of intermediate values to avoid numerical underflow/overflow
-#'   \item Efficient vector operations using Armadillo C++ library
-#' }
+#' Numerical stability is ensured through careful implementation, including checks
+#' for valid inputs and handling of intermediate calculations involving potentially
+#' small or large numbers, often leveraging the Armadillo C++ library for efficiency.
 #'
-#' The returned gradient is negated to align with minimization of negative log-likelihood
-#' in optimization routines.
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#' (Note: Specific gradient formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{llgkw}} (negative log-likelihood),
+#' \code{\link{hsgkw}} (Hessian matrix),
+#' \code{\link{dgkw}} (density),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+#' \code{\link[base]{digamma}}
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a GKw distribution
+#' # Generate sample data from a known GKw distribution
 #' set.seed(123)
-#' x <- rgkw(100, 2, 3, 1.0, 0.5, 0.5)
-#' hist(x, breaks = 20, main = "GKw(2, 3, 1.0, 0.5, 0.5) Sample")
+#' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
+#' sample_data <- rgkw(100, alpha = true_par[1], beta = true_par[2],
+#'                    gamma = true_par[3], delta = true_par[4], lambda = true_par[5])
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5, 0.5, 0.5), llgkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Use in Optimization (e.g., with optim using analytical gradient) ---
+#' start_par <- c(1.5, 2.5, 1.2, 0.3, 0.6) # Initial guess
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llgkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llgkw, x = result$par, data = x)
+#' # Optimization using analytical gradient
+#' mle_result_gr <- stats::optim(par = start_par,
+#'                               fn = llgkw,  # Objective function (Negative LL)
+#'                               gr = grgkw,  # Gradient function
+#'                               method = "BFGS", # Method using gradient
+#'                               hessian = TRUE,
+#'                               data = sample_data)
 #'
-#' ana_grad <- grgkw(result$par, data = x)
-#' ana_hess <- hsgkw(result$par, data = x)
-#'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
-#'
+#' if (mle_result_gr$convergence == 0) {
+#'   print("Optimization with analytical gradient converged.")
+#'   mle_par_gr <- mle_result_gr$par
+#'   print("Estimated parameters:")
+#'   print(mle_par_gr)
+#' } else {
+#'   warning("Optimization with analytical gradient failed!")
 #' }
 #'
-#' @seealso
-#' \code{\link[gkwreg]{llgkw}} for the negative log-likelihood function,
-#' \code{\link[gkwreg]{hsgkw}} for the Hessian matrix of the GKw log-likelihood,
-#' \code{\link[gkwreg]{dgkw}} for the GKw density function,
+#' # --- Compare analytical gradient to numerical gradient ---
+#' # Requires the 'numDeriv' package
+#' if (requireNamespace("numDeriv", quietly = TRUE) && mle_result_gr$convergence == 0) {
 #'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#'   cat("\nComparing Gradients at MLE estimates:\n")
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#'   # Numerical gradient of the negative log-likelihood function
+#'   num_grad <- numDeriv::grad(func = llgkw, x = mle_par_gr, data = sample_data)
+#'
+#'   # Analytical gradient (output of grgkw)
+#'   ana_grad <- grgkw(par = mle_par_gr, data = sample_data)
+#'
+#'   cat("Numerical Gradient:\n")
+#'   print(num_grad)
+#'   cat("Analytical Gradient:\n")
+#'   print(ana_grad)
+#'
+#'   # Check differences (should be small)
+#'   cat("Max absolute difference between gradients:\n")
+#'   print(max(abs(num_grad - ana_grad)))
+#'
+#' } else {
+#'   cat("\nSkipping gradient comparison (requires 'numDeriv' package or convergence).\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 grgkw <- function(par, data) {
     .Call(`_gkwreg_grgkw`, par, data)
 }
 
-#' @title Analytic Hessian Matrix for Generalized Kumaraswamy Distribution
+#' @title Hessian Matrix of the Negative Log-Likelihood for the GKw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize hessian
 #'
 #' @description
-#' Computes the analytic Hessian matrix of the log-likelihood function for
-#' the Generalized Kumaraswamy (GKw) distribution. This function provides
-#' exact second derivatives needed for optimization and inference.
+#' Computes the analytic Hessian matrix (matrix of second partial derivatives)
+#' of the negative log-likelihood function for the five-parameter Generalized
+#' Kumaraswamy (GKw) distribution. This is typically used to estimate standard
+#' errors of maximum likelihood estimates or in optimization algorithms.
 #'
-#' @param par Numeric vector of length 5 containing the parameters
-#'        (α, β, γ, δ, λ) in that order. All parameters must be positive.
-#' @param data Numeric vector of observations, where all values must be
-#'        in the open interval (0,1).
+#' @param par A numeric vector of length 5 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return A 5×5 numeric matrix representing the Hessian of the negative
-#'         log-likelihood function. If parameters or data are invalid
-#'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
-#'         NaN values.
+#' @return Returns a 5x5 numeric matrix representing the Hessian matrix of the
+#'   negative log-likelihood function, i.e., the matrix of second partial
+#'   derivatives \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)}.
+#'   Returns a 5x5 matrix populated with \code{NaN} if any parameter values are
+#'   invalid according to their constraints, or if any value in \code{data} is
+#'   not in the interval (0, 1).
 #'
 #' @details
-#' The log-likelihood for the generalized Kumaraswamy distribution is:
-#'
+#' This function calculates the analytic second partial derivatives of the
+#' negative log-likelihood function based on the GKw PDF (see \code{\link{dgkw}}).
+#' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} is given by:
 #' \deqn{
-#' \ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta) - n \ln B(\gamma, \delta+1)
-#' + (\alpha-1) \sum \ln(x_i)
-#' + (\beta-1) \sum \ln(1 - x_i^\alpha)
-#' + (\gamma\lambda - 1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
-#' + \delta \sum \ln\{1 - \{1 - (1 - x_i^\alpha)^\beta\}^\lambda\}
+#' \ell(\theta) = n \ln(\lambda\alpha\beta) - n \ln B(\gamma, \delta+1)
+#' + \sum_{i=1}^{n} [(\alpha-1) \ln(x_i)
+#' + (\beta-1) \ln(v_i)
+#' + (\gamma\lambda - 1) \ln(w_i)
+#' + \delta \ln(z_i)]
 #' }
-#'
-#' where B refers to the Beta function.
-#'
-#' The implementation computes all second derivatives analytically for each term.
-#' For computational efficiency, the following transformations are used:
+#' where \eqn{\theta = (\alpha, \beta, \gamma, \delta, \lambda)}, \eqn{B(a,b)}
+#' is the Beta function (\code{\link[base]{beta}}), and intermediate terms are:
 #' \itemize{
-#'   \item \deqn{A = x^α} and derivatives
-#'   \item \deqn{v = 1 - A}
-#'   \item \deqn{w = 1 - v^β}
-#'   \item \deqn{z = 1 - w^λ}
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
 #' }
+#' The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}.
 #'
-#' The returned Hessian matrix has the following structure:
+#' Key properties of the returned matrix:
 #' \itemize{
-#'   \item Rows/columns 1-5 correspond to α, β, γ, δ, λ respectively
-#'   \item The matrix is symmetric (as expected for a Hessian)
-#'   \item The matrix represents second derivatives of the negative log-likelihood
+#'   \item Dimensions: 5x5.
+#'   \item Symmetry: The matrix is symmetric.
+#'   \item Ordering: Rows and columns correspond to the parameters in the order
+#'     \eqn{\alpha, \beta, \gamma, \delta, \lambda}.
+#'   \item Content: Analytic second derivatives of the *negative* log-likelihood.
 #' }
+#' The exact analytical formulas for the second derivatives are implemented
+#' directly (often derived using symbolic differentiation) for accuracy and
+#' efficiency, typically using C++.
 #'
-#' This function is implemented in C++ for computational efficiency.
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{llgkw}} (negative log-likelihood function),
+#' \code{\link{grgkw}} (gradient vector),
+#' \code{\link{dgkw}} (density function),
+#' \code{\link{gkwreg}} (if provides regression fitting),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a GKw distribution
+#' # Generate sample data from a known GKw distribution
 #' set.seed(123)
-#' x <- rgkw(100, 2, 3, 1.0, 0.5, 0.5)
-#' hist(x, breaks = 20, main = "GKw(2, 3, 1.0, 0.5, 0.5) Sample")
+#' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
+#' sample_data <- rgkw(100, alpha = true_par[1], beta = true_par[2],
+#'                    gamma = true_par[3], delta = true_par[4], lambda = true_par[5])
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5, 0.5, 0.5), llgkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates (e.g., using optim) ---
+#' start_par <- c(1.5, 2.5, 1.2, 0.3, 0.6) # Initial guess
+#' mle_result <- stats::optim(par = start_par,
+#'                            fn = llgkw,
+#'                            method = "BFGS",
+#'                            hessian = TRUE, # Ask optim for numerical Hessian
+#'                            data = sample_data)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llgkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llgkw, x = result$par, data = x)
+#' if (mle_result$convergence == 0) {
+#'   mle_par <- mle_result$par
+#'   print("MLE parameters found:")
+#'   print(mle_par)
 #'
-#' ana_grad <- grgkw(result$par, data = x)
-#' ana_hess <- hsgkw(result$par, data = x)
+#'   # --- Compare analytical Hessian to numerical Hessian ---
+#'   # Requires the 'numDeriv' package
+#'   if (requireNamespace("numDeriv", quietly = TRUE)) {
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'     cat("\nComparing Hessians at MLE estimates:\n")
 #'
+#'     # Numerical Hessian from numDeriv applied to negative LL function
+#'     num_hess <- numDeriv::hessian(func = llgkw, x = mle_par, data = sample_data)
+#'
+#'     # Analytical Hessian (output of hsgkw)
+#'     ana_hess <- hsgkw(par = mle_par, data = sample_data)
+#'
+#'     cat("Numerical Hessian (from numDeriv):\n")
+#'     print(round(num_hess, 4))
+#'     cat("Analytical Hessian (from hsgkw):\n")
+#'     print(round(ana_hess, 4))
+#'
+#'     # Check differences (should be small)
+#'     cat("Max absolute difference between Hessians:\n")
+#'     print(max(abs(num_hess - ana_hess)))
+#'
+#'     # Optional: Use analytical Hessian to estimate standard errors
+#'     # Ensure Hessian is positive definite before inverting
+#'     # fisher_info_analytic <- ana_hess # Hessian of negative LL
+#'     # tryCatch({
+#'     #   cov_matrix <- solve(fisher_info_analytic)
+#'     #   std_errors <- sqrt(diag(cov_matrix))
+#'     #   cat("Std. Errors from Analytical Hessian:\n")
+#'     #   print(std_errors)
+#'     # }, error = function(e) {
+#'     #   warning("Could not invert analytical Hessian to get standard errors: ", e$message)
+#'     # })
+#'
+#'   } else {
+#'     cat("\nSkipping Hessian comparison (requires 'numDeriv' package).\n")
+#'   }
+#' } else {
+#'   warning("Optimization did not converge. Hessian comparison skipped.")
 #' }
 #'
-#' @seealso
-#' \code{\link[gkwreg]{dgkw}} for the GKw density function,
-#' \code{\link[gkwreg]{gkwreg}} for fitting GKw regression models,
-#' \code{\link[gkwreg]{pgkw}} for the GKw cumulative distribution function
-#'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
-#'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' } # End of \dontrun block
 #'
 #' @export
 hsgkw <- function(par, data) {
     .Call(`_gkwreg_hsgkw`, par, data)
 }
 
-#' @title Density of the KwKw Distribution
+#' @title Density of the Kumaraswamy-Kumaraswamy (kkw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution density
 #'
 #' @description
-#' Computes the PDF of the KwKw(\eqn{\alpha, \beta, \delta, \lambda}) distribution, which
-#' is the GKw distribution restricted to \eqn{\gamma=1}.
+#' Computes the probability density function (PDF) for the Kumaraswamy-Kumaraswamy
+#' (kkw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+#' This distribution is defined on the interval (0, 1).
 #'
-#' @param x Vector of quantiles in \eqn{(0,1)}.
-#' @param alpha \eqn{\alpha > 0}.
-#' @param beta \eqn{\beta > 0}.
-#' @param delta \eqn{\delta \ge 0}.
-#' @param lambda \eqn{\lambda > 0}.
-#' @param log_prob Logical; if \code{TRUE}, returns log-PDF, else PDF.
+#' @param x Vector of quantiles (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param log_prob Logical; if \code{TRUE}, the logarithm of the density is
+#'   returned (\eqn{\log(f(x))}). Default: \code{FALSE}.
 #'
-#' @return Vector of densities (or log-densities) of the same length as the broadcast of inputs.
+#' @return A vector of density values (\eqn{f(x)}) or log-density values
+#'   (\eqn{\log(f(x))}). The length of the result is determined by the recycling
+#'   rule applied to the arguments (\code{x}, \code{alpha}, \code{beta},
+#'   \code{delta}, \code{lambda}). Returns \code{0} (or \code{-Inf} if
+#'   \code{log_prob = TRUE}) for \code{x} outside the interval (0, 1), or
+#'   \code{NaN} if parameters are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0},
+#'   \code{delta < 0}, \code{lambda <= 0}).
 #'
 #' @details
-#' The PDF is
+#' The Kumaraswamy-Kumaraswamy (kkw) distribution is a special case of the
+#' five-parameter Generalized Kumaraswamy distribution (\code{\link{dgkw}})
+#' obtained by setting the parameter \eqn{\gamma = 1}.
+#'
+#' The probability density function is given by:
 #' \deqn{
-#'   f(x) = \lambda \,\alpha \,\beta \,(\delta + 1)\; x^{\alpha - 1}\, (1 - x^\alpha)^{\beta - 1}\,
-#'          \bigl[1 - (1 - x^\alpha)^\beta\bigr]^{\lambda - 1}\,
-#'          \bigl\{1 - \bigl[1 - (1 - x^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta},
-#'   \quad 0 < x < 1.
+#' f(x; \alpha, \beta, \delta, \lambda) = (\delta + 1) \lambda \alpha \beta x^{\alpha - 1} (1 - x^\alpha)^{\beta - 1} \bigl[1 - (1 - x^\alpha)^\beta\bigr]^{\lambda - 1} \bigl\{1 - \bigl[1 - (1 - x^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta}
 #' }
+#' for \eqn{0 < x < 1}. Note that \eqn{1/(\delta+1)} corresponds to the Beta function
+#' term \eqn{B(1, \delta+1)} when \eqn{\gamma=1}.
+#'
+#' Numerical evaluation follows similar stability considerations as \code{\link{dgkw}}.
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{dgkw}} (parent distribution density),
+#' \code{\link{pkkw}}, \code{\link{qkkw}}, \code{\link{rkkw}} (if they exist),
+#' \code{\link[stats]{dbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' x_vals <- c(0.2, 0.5, 0.8)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#' delta_par <- 0.5
+#' lambda_par <- 1.5
+#'
+#' # Calculate density
+#' densities <- dkkw(x_vals, alpha_par, beta_par, delta_par, lambda_par)
+#' print(densities)
+#'
+#' # Calculate log-density
+#' log_densities <- dkkw(x_vals, alpha_par, beta_par, delta_par, lambda_par,
+#'                        log_prob = TRUE)
+#' print(log_densities)
+#' # Check: should match log(densities)
+#' print(log(densities))
+#'
+#' # Compare with dgkw setting gamma = 1
+#' densities_gkw <- dgkw(x_vals, alpha_par, beta_par, gamma = 1.0,
+#'                       delta_par, lambda_par)
+#' print(paste("Max difference:", max(abs(densities - densities_gkw)))) # Should be near zero
+#'
+#' # Plot the density
+#' curve_x <- seq(0.01, 0.99, length.out = 200)
+#' curve_y <- dkkw(curve_x, alpha_par, beta_par, delta_par, lambda_par)
+#' plot(curve_x, curve_y, type = "l", main = "kkw Density Example",
+#'      xlab = "x", ylab = "f(x)", col = "blue")
+#'
+#' # Vectorized parameters
+#' alphas_vec <- c(1.5, 2.0, 2.5)
+#' densities_vec <- dkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
+#' print(densities_vec) # Density at x=0.5 for 3 different alpha values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 dkkw <- function(x, alpha, beta, delta, lambda, log_prob = FALSE) {
     .Call(`_gkwreg_dkkw`, x, alpha, beta, delta, lambda, log_prob)
 }
 
-#' @title CDF of the KwKw Distribution
+#' @title Cumulative Distribution Function (CDF) of the kkw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution cumulative
 #'
 #' @description
-#' Computes the CDF for KwKw(\eqn{\alpha, \beta, \delta, \lambda}), i.e. P(X≤x).
+#' Computes the cumulative distribution function (CDF), \eqn{P(X \le q)}, for the
+#' Kumaraswamy-Kumaraswamy (kkw) distribution with parameters \code{alpha}
+#' (\eqn{\alpha}), \code{beta} (\eqn{\beta}), \code{delta} (\eqn{\delta}),
+#' and \code{lambda} (\eqn{\lambda}). This distribution is defined on the
+#' interval (0, 1).
 #'
-#' @param q Vector of quantiles in \eqn{(0,1)}.
-#' @param alpha \eqn{\alpha > 0}.
-#' @param beta \eqn{\beta > 0}.
-#' @param delta \eqn{\delta \ge 0}.
-#' @param lambda \eqn{\lambda > 0}.
-#' @param lower_tail Logical; if TRUE (default), returns F(q)=P(X≤q), else 1-F(q).
-#' @param log_p Logical; if TRUE, returns log of the probability.
+#' @param q Vector of quantiles (values generally between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are
+#'   \eqn{P(X \le q)}, otherwise, \eqn{P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of probabilities, \eqn{F(q)}, or their logarithms/complements
+#'   depending on \code{lower_tail} and \code{log_p}. The length of the result
+#'   is determined by the recycling rule applied to the arguments (\code{q},
+#'   \code{alpha}, \code{beta}, \code{delta}, \code{lambda}). Returns \code{0}
+#'   (or \code{-Inf} if \code{log_p = TRUE}) for \code{q <= 0} and \code{1}
+#'   (or \code{0} if \code{log_p = TRUE}) for \code{q >= 1}. Returns \code{NaN}
+#'   for invalid parameters.
 #'
 #' @details
-#' The CDF is
+#' The Kumaraswamy-Kumaraswamy (kkw) distribution is a special case of the
+#' five-parameter Generalized Kumaraswamy distribution (\code{\link{pgkw}})
+#' obtained by setting the shape parameter \eqn{\gamma = 1}.
+#'
+#' The CDF of the GKw distribution is \eqn{F_{GKw}(q) = I_{y(q)}(\gamma, \delta+1)},
+#' where \eqn{y(q) = [1-(1-q^{\alpha})^{\beta}]^{\lambda}} and \eqn{I_x(a,b)}
+#' is the regularized incomplete beta function (\code{\link[stats]{pbeta}}).
+#' Setting \eqn{\gamma=1} utilizes the property \eqn{I_x(1, b) = 1 - (1-x)^b},
+#' yielding the kkw CDF:
 #' \deqn{
-#'   F(x) = 1 - \bigl\{1 - \bigl[1 - (1 - x^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta + 1}.
+#' F(q; \alpha, \beta, \delta, \lambda) = 1 - \bigl\{1 - \bigl[1 - (1 - q^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta + 1}
 #' }
+#' for \eqn{0 < q < 1}.
+#'
+#' The implementation uses this closed-form expression for efficiency and handles
+#' \code{lower_tail} and \code{log_p} arguments appropriately.
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{pgkw}} (parent distribution CDF),
+#' \code{\link{dkkw}}, \code{\link{qkkw}}, \code{\link{rkkw}},
+#' \code{\link[stats]{pbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' q_vals <- c(0.2, 0.5, 0.8)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#' delta_par <- 0.5
+#' lambda_par <- 1.5
+#'
+#' # Calculate CDF P(X <= q)
+#' probs <- pkkw(q_vals, alpha_par, beta_par, delta_par, lambda_par)
+#' print(probs)
+#'
+#' # Calculate upper tail P(X > q)
+#' probs_upper <- pkkw(q_vals, alpha_par, beta_par, delta_par, lambda_par,
+#'                      lower_tail = FALSE)
+#' print(probs_upper)
+#' # Check: probs + probs_upper should be 1
+#' print(probs + probs_upper)
+#'
+#' # Calculate log CDF
+#' log_probs <- pkkw(q_vals, alpha_par, beta_par, delta_par, lambda_par,
+#'                    log_p = TRUE)
+#' print(log_probs)
+#' # Check: should match log(probs)
+#' print(log(probs))
+#'
+#' # Compare with pgkw setting gamma = 1
+#' probs_gkw <- pgkw(q_vals, alpha_par, beta_par, gamma = 1.0,
+#'                   delta_par, lambda_par)
+#' print(paste("Max difference:", max(abs(probs - probs_gkw)))) # Should be near zero
+#'
+#' # Plot the CDF
+#' curve_q <- seq(0.01, 0.99, length.out = 200)
+#' curve_p <- pkkw(curve_q, alpha_par, beta_par, delta_par, lambda_par)
+#' plot(curve_q, curve_p, type = "l", main = "kkw CDF Example",
+#'      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
+#'
+#' # Vectorized parameters
+#' alphas_vec <- c(1.5, 2.0, 2.5)
+#' probs_vec <- pkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
+#' print(probs_vec) # CDF at q=0.5 for 3 different alpha values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 pkkw <- function(q, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_pkkw`, q, alpha, beta, delta, lambda, lower_tail, log_p)
 }
 
-#' @title Quantile Function of the KwKw Distribution
+#' @title Quantile Function of the Kumaraswamy-Kumaraswamy (kkw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution quantile
 #'
 #' @description
-#' Computes the quantiles for KwKw(\eqn{\alpha, \beta, \delta, \lambda}).
+#' Computes the quantile function (inverse CDF) for the Kumaraswamy-Kumaraswamy
+#' (kkw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+#' It finds the value \code{q} such that \eqn{P(X \le q) = p}. This distribution
+#' is a special case of the Generalized Kumaraswamy (GKw) distribution where
+#' the parameter \eqn{\gamma = 1}.
 #'
-#' @param p Vector of probabilities in (0,1).
-#' @param alpha \eqn{\alpha > 0}.
-#' @param beta \eqn{\beta > 0}.
-#' @param delta \eqn{\delta \ge 0}.
-#' @param lambda \eqn{\lambda > 0}.
-#' @param lower_tail Logical; if TRUE, p is F(x). If FALSE, p is 1-F(x).
-#' @param log_p Logical; if TRUE, p is given as log(p).
+#' @param p Vector of probabilities (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are \eqn{p = P(X \le q)},
+#'   otherwise, probabilities are \eqn{p = P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \code{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of quantiles corresponding to the given probabilities \code{p}.
+#'   The length of the result is determined by the recycling rule applied to
+#'   the arguments (\code{p}, \code{alpha}, \code{beta}, \code{delta},
+#'   \code{lambda}). Returns:
+#'   \itemize{
+#'     \item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+#'     \item \code{NaN} for invalid parameters (e.g., \code{alpha <= 0},
+#'           \code{beta <= 0}, \code{delta < 0}, \code{lambda <= 0}).
+#'   }
+#'   Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 #'
 #' @details
-#' Invert the CDF
-#' \eqn{
-#'   F(x)= 1 - [1 - (1 - x^α)^β]^λ)^(δ+1).
-#' }
-#' The resulting formula is
+#' The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(q)}. The CDF
+#' for the kkw (\eqn{\gamma=1}) distribution is (see \code{\link{pkkw}}):
 #' \deqn{
-#'   Q(p)= \Bigl\{1 - \Bigl[1 - \Bigl(1 - p\Bigr)^{\frac{1}{\delta+1}}\Bigr]^{\frac{1}{\lambda}}\Bigr\}^{\frac{1}{\beta}}\Bigr\}^{\frac{1}{\alpha}}.
+#' F(q) = 1 - \bigl\{1 - \bigl[1 - (1 - q^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta + 1}
 #' }
+#' Inverting this equation for \eqn{q} yields the quantile function:
+#' \deqn{
+#' Q(p) = \left[ 1 - \left\{ 1 - \left[ 1 - (1 - p)^{1/(\delta+1)} \right]^{1/\lambda} \right\}^{1/\beta} \right]^{1/\alpha}
+#' }
+#' The function uses this closed-form expression and correctly handles the
+#' \code{lower_tail} and \code{log_p} arguments by transforming \code{p}
+#' appropriately before applying the formula.
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{qgkw}} (parent distribution quantile function),
+#' \code{\link{dkkw}}, \code{\link{pkkw}}, \code{\link{rkkw}},
+#' \code{\link[stats]{qbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' p_vals <- c(0.1, 0.5, 0.9)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#' delta_par <- 0.5
+#' lambda_par <- 1.5
+#'
+#' # Calculate quantiles
+#' quantiles <- qkkw(p_vals, alpha_par, beta_par, delta_par, lambda_par)
+#' print(quantiles)
+#'
+#' # Calculate quantiles for upper tail probabilities P(X > q) = p
+#' # e.g., for p=0.1, find q such that P(X > q) = 0.1 (90th percentile)
+#' quantiles_upper <- qkkw(p_vals, alpha_par, beta_par, delta_par, lambda_par,
+#'                          lower_tail = FALSE)
+#' print(quantiles_upper)
+#' # Check: qkkw(p, ..., lt=F) == qkkw(1-p, ..., lt=T)
+#' print(qkkw(1 - p_vals, alpha_par, beta_par, delta_par, lambda_par))
+#'
+#' # Calculate quantiles from log probabilities
+#' log_p_vals <- log(p_vals)
+#' quantiles_logp <- qkkw(log_p_vals, alpha_par, beta_par, delta_par, lambda_par,
+#'                         log_p = TRUE)
+#' print(quantiles_logp)
+#' # Check: should match original quantiles
+#' print(quantiles)
+#'
+#' # Compare with qgkw setting gamma = 1
+#' quantiles_gkw <- qgkw(p_vals, alpha_par, beta_par, gamma = 1.0,
+#'                       delta_par, lambda_par)
+#' print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be near zero
+#'
+#' # Verify inverse relationship with pkkw
+#' p_check <- 0.75
+#' q_calc <- qkkw(p_check, alpha_par, beta_par, delta_par, lambda_par)
+#' p_recalc <- pkkw(q_calc, alpha_par, beta_par, delta_par, lambda_par)
+#' print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
+#' # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
+#'
+#' # Boundary conditions
+#' print(qkkw(c(0, 1), alpha_par, beta_par, delta_par, lambda_par)) # Should be 0, 1
+#' print(qkkw(c(-Inf, 0), alpha_par, beta_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 qkkw <- function(p, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_qkkw`, p, alpha, beta, delta, lambda, lower_tail, log_p)
 }
 
-#' @title Random Generation from KwKw Distribution
+#' @title Random Number Generation for the kkw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution random
 #'
 #' @description
-#' Generates \code{n} samples from the KwKw(\eqn{\alpha, \beta, \delta, \lambda}) distribution.
+#' Generates random deviates from the Kumaraswamy-Kumaraswamy (kkw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+#' This distribution is a special case of the Generalized Kumaraswamy (GKw)
+#' distribution where the parameter \eqn{\gamma = 1}.
 #'
-#' @param n Integer number of samples.
-#' @param alpha \eqn{\alpha > 0}.
-#' @param beta \eqn{\beta > 0}.
-#' @param delta \eqn{\delta \ge 0}.
-#' @param lambda \eqn{\lambda > 0}.
+#' @param n Number of observations. If \code{length(n) > 1}, the length is
+#'   taken to be the number required. Must be a non-negative integer.
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#'
+#' @return A vector of length \code{n} containing random deviates from the kkw
+#'   distribution. The length of the result is determined by \code{n} and the
+#'   recycling rule applied to the parameters (\code{alpha}, \code{beta},
+#'   \code{delta}, \code{lambda}). Returns \code{NaN} if parameters
+#'   are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0}, \code{delta < 0},
+#'   \code{lambda <= 0}).
 #'
 #' @details
-#' The table suggests: if \eqn{V ~ Unif(0,1)}, define
-#' \eqn{U = 1 - (1 - V)^{1/(\delta+1)}}, then
-#' \eqn{X = \{1 - [1 - U^{1/\lambda}]^{1/\beta}\}^{1/\alpha}}.
+#' The generation method uses the inverse transform method based on the quantile
+#' function (\code{\link{qkkw}}). The kkw quantile function is:
+#' \deqn{
+#' Q(p) = \left[ 1 - \left\{ 1 - \left[ 1 - (1 - p)^{1/(\delta+1)} \right]^{1/\lambda} \right\}^{1/\beta} \right]^{1/\alpha}
+#' }
+#' Random deviates are generated by evaluating \eqn{Q(p)} where \eqn{p} is a
+#' random variable following the standard Uniform distribution on (0, 1)
+#' (\code{\link[stats]{runif}}).
+#'
+#' This is equivalent to the general method for the GKw distribution
+#' (\code{\link{rgkw}}) specialized for \eqn{\gamma=1}. The GKw method generates
+#' \eqn{W \sim \mathrm{Beta}(\gamma, \delta+1)} and then applies transformations.
+#' When \eqn{\gamma=1}, \eqn{W \sim \mathrm{Beta}(1, \delta+1)}, which can be
+#' generated via \eqn{W = 1 - V^{1/(\delta+1)}} where \eqn{V \sim \mathrm{Unif}(0,1)}.
+#' Substituting this \eqn{W} into the GKw transformation yields the same result
+#' as evaluating \eqn{Q(1-V)} above (noting \eqn{p = 1-V} is also Uniform).
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
+#' (General methods for random variate generation).
+#'
+#' @seealso
+#' \code{\link{rgkw}} (parent distribution random generation),
+#' \code{\link{dkkw}}, \code{\link{pkkw}}, \code{\link{qkkw}},
+#' \code{\link[stats]{runif}}, \code{\link[stats]{rbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(2025) # for reproducibility
+#'
+#' # Generate 1000 random values from a specific kkw distribution
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#' delta_par <- 0.5
+#' lambda_par <- 1.5
+#'
+#' x_sample_kkw <- rkkw(1000, alpha = alpha_par, beta = beta_par,
+#'                        delta = delta_par, lambda = lambda_par)
+#' summary(x_sample_kkw)
+#'
+#' # Histogram of generated values compared to theoretical density
+#' hist(x_sample_kkw, breaks = 30, freq = FALSE, # freq=FALSE for density
+#'      main = "Histogram of kkw Sample", xlab = "x", ylim = c(0, 3.5))
+#' curve(dkkw(x, alpha = alpha_par, beta = beta_par, delta = delta_par,
+#'             lambda = lambda_par),
+#'       add = TRUE, col = "red", lwd = 2, n = 201)
+#' legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2, bty = "n")
+#'
+#' # Comparing empirical and theoretical quantiles (Q-Q plot)
+#' prob_points <- seq(0.01, 0.99, by = 0.01)
+#' theo_quantiles <- qkkw(prob_points, alpha = alpha_par, beta = beta_par,
+#'                         delta = delta_par, lambda = lambda_par)
+#' emp_quantiles <- quantile(x_sample_kkw, prob_points, type = 7) # type 7 is default
+#'
+#' plot(theo_quantiles, emp_quantiles, pch = 16, cex = 0.8,
+#'      main = "Q-Q Plot for kkw Distribution",
+#'      xlab = "Theoretical Quantiles", ylab = "Empirical Quantiles (n=1000)")
+#' abline(a = 0, b = 1, col = "blue", lty = 2)
+#'
+#' # Compare summary stats with rgkw(..., gamma=1, ...)
+#' # Note: individual values will differ due to randomness
+#' x_sample_gkw <- rgkw(1000, alpha = alpha_par, beta = beta_par, gamma = 1.0,
+#'                      delta = delta_par, lambda = lambda_par)
+#' print("Summary stats for rkkw sample:")
+#' print(summary(x_sample_kkw))
+#' print("Summary stats for rgkw(gamma=1) sample:")
+#' print(summary(x_sample_gkw)) # Should be similar
+#'
+#' # Vectorized parameters: generate 1 value for each alpha
+#' alphas_vec <- c(1.5, 2.0, 2.5)
+#' n_param <- length(alphas_vec)
+#' samples_vec <- rkkw(n_param, alpha = alphas_vec, beta = beta_par,
+#'                       delta = delta_par, lambda = lambda_par)
+#' print(samples_vec) # One sample for each alpha value
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 rkkw <- function(n, alpha, beta, delta, lambda) {
     .Call(`_gkwreg_rkkw`, n, alpha, beta, delta, lambda)
 }
 
-#' @title Negative Log-Likelihood of KwKw Distribution
+#' @title Negative Log-Likelihood for the kkw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize
 #'
 #' @description
-#' Computes the negative log-likelihood for \eqn{\mathrm{KwKw}(\alpha,\beta,\delta,\lambda)}
-#' given a data vector in (0,1).
+#' Computes the negative log-likelihood function for the Kumaraswamy-Kumaraswamy
+#' (kkw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}),
+#' given a vector of observations. This distribution is a special case of the
+#' Generalized Kumaraswamy (GKw) distribution where \eqn{\gamma = 1}.
 #'
-#' @param par NumericVector of length 4, \eqn{( \alpha,\beta,\delta,\lambda )}.
-#' @param data NumericVector of observations, each in \eqn{(0,1)}.
+#' @param par A numeric vector of length 4 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{delta} (\eqn{\delta \ge 0}), \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
+#'
+#' @return Returns a single \code{double} value representing the negative
+#'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+#'   if any parameter values in \code{par} are invalid according to their
+#'   constraints, or if any value in \code{data} is not in the interval (0, 1).
 #'
 #' @details
-#' The PDF is
+#' The kkw distribution is the GKw distribution (\code{\link{dgkw}}) with \eqn{\gamma=1}.
+#' Its probability density function (PDF) is:
 #' \deqn{
-#'   f(x) = \lambda\,\alpha\,\beta\,(\delta+1)\, x^{\alpha-1}\,(1-x^\alpha)^{\beta-1}\,
-#'          [1 - (1 - x^\alpha)^\beta]^{\lambda-1}\,\{1 - [1 - (1-x^\alpha)^\beta]^\lambda\}^\delta.
+#' f(x | \theta) = (\delta + 1) \lambda \alpha \beta x^{\alpha - 1} (1 - x^\alpha)^{\beta - 1} \bigl[1 - (1 - x^\alpha)^\beta\bigr]^{\lambda - 1} \bigl\{1 - \bigl[1 - (1 - x^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta}
 #' }
-#' The log-likelihood is the sum of \eqn{\log(f(x_i))}. This function returns the negative
-#' log-likelihood (i.e. \eqn{-\ell(\theta)}).
+#' for \eqn{0 < x < 1} and \eqn{\theta = (\alpha, \beta, \delta, \lambda)}.
+#' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+#' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+#' \deqn{
+#' \ell(\theta | \mathbf{x}) = n[\ln(\delta+1) + \ln(\lambda) + \ln(\alpha) + \ln(\beta)]
+#' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i) + \delta\ln(z_i)]
+#' }
+#' where:
+#' \itemize{
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+#' }
+#' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+#' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+#' Numerical stability is maintained similarly to \code{\link{llgkw}}.
 #'
-#' @return A single numeric value. \code{Inf} if invalid data or parameters.
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' @seealso
+#' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+#' \code{\link{dkkw}}, \code{\link{pkkw}}, \code{\link{qkkw}}, \code{\link{rkkw}},
+#' \code{\link{grkkw}} (gradient, if available),
+#' \code{\link{hskkw}} (Hessian, if available),
+#' \code{\link[stats]{optim}}
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a KKw distribution
+#' # Assuming existence of rkkw, grkkw, hskkw functions for kkw distribution
+#'
+#' # Generate sample data from a known kkw distribution
 #' set.seed(123)
-#' x <- rkkw(100, 2, 3, 1.5, 0.5)
-#' hist(x, breaks = 20, main = "KKw(2, 3, 1.5, 0.5) Sample")
-#'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5, 0.5), llkkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
-#'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llkkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llkkw, x = result$par, data = x)
-#'
-#' ana_grad <- grkkw(result$par, data = x)
-#' ana_hess <- hskkw(result$par, data = x)
-#'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
-#'
+#' true_par_kkw <- c(alpha = 2, beta = 3, delta = 1.5, lambda = 0.5)
+#' # Use rkkw if it exists, otherwise use rgkw with gamma=1
+#' if (exists("rkkw")) {
+#'   sample_data_kkw <- rkkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+#'                          delta = true_par_kkw[3], lambda = true_par_kkw[4])
+#' } else {
+#'   sample_data_kkw <- rgkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+#'                          gamma = 1, delta = true_par_kkw[3], lambda = true_par_kkw[4])
 #' }
+#' hist(sample_data_kkw, breaks = 20, main = "kkw(2, 3, 1.5, 0.5) Sample")
+#'
+#' # --- Maximum Likelihood Estimation using optim ---
+#' # Initial parameter guess
+#' start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
+#'
+#' # Perform optimization (minimizing negative log-likelihood)
+#' mle_result_kkw <- stats::optim(par = start_par_kkw,
+#'                                fn = llkkw, # Use the kkw neg-log-likelihood
+#'                                method = "BFGS",
+#'                                hessian = TRUE,
+#'                                data = sample_data_kkw)
+#'
+#' # Check convergence and results
+#' if (mle_result_kkw$convergence == 0) {
+#'   print("Optimization converged successfully.")
+#'   mle_par_kkw <- mle_result_kkw$par
+#'   print("Estimated kkw parameters:")
+#'   print(mle_par_kkw)
+#'   print("True kkw parameters:")
+#'   print(true_par_kkw)
+#' } else {
+#'   warning("Optimization did not converge!")
+#'   print(mle_result_kkw$message)
+#' }
+#'
+#' # --- Compare numerical and analytical derivatives (if available) ---
+#' # Requires 'numDeriv' package and analytical functions 'grkkw', 'hskkw'
+#' if (mle_result_kkw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("grkkw") && exists("hskkw")) {
+#'
+#'   cat("\nComparing Derivatives at kkw MLE estimates:\n")
+#'
+#'   # Numerical derivatives of llkkw
+#'   num_grad_kkw <- numDeriv::grad(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
+#'   num_hess_kkw <- numDeriv::hessian(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
+#'
+#'   # Analytical derivatives (assuming they return derivatives of negative LL)
+#'   ana_grad_kkw <- grkkw(par = mle_par_kkw, data = sample_data_kkw)
+#'   ana_hess_kkw <- hskkw(par = mle_par_kkw, data = sample_data_kkw)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between gradients:\n")
+#'   print(max(abs(num_grad_kkw - ana_grad_kkw)))
+#'   cat("Max absolute difference between Hessians:\n")
+#'   print(max(abs(num_hess_kkw - ana_hess_kkw)))
+#'
+#' } else {
+#'    cat("\nSkipping derivative comparison for kkw.\n")
+#'    cat("Requires convergence, 'numDeriv' package and functions 'grkkw', 'hskkw'.\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 llkkw <- function(par, data) {
     .Call(`_gkwreg_llkkw`, par, data)
 }
 
-#' @title Gradient Function for Kumaraswamy-Kumaraswamy Log-Likelihood
+#' @title Gradient of the Negative Log-Likelihood for the kkw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize gradient
 #'
 #' @description
-#' Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-#' function for the Kumaraswamy-Kumaraswamy (KwKw) distribution. This function provides
-#' the exact gradient needed for efficient optimization in maximum likelihood estimation.
-#' The KwKw is a submodel of GKw with γ = 1 fixed.
+#' Computes the gradient vector (vector of first partial derivatives) of the
+#' negative log-likelihood function for the Kumaraswamy-Kumaraswamy (kkw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+#' This distribution is the special case of the Generalized Kumaraswamy (GKw)
+#' distribution where \eqn{\gamma = 1}. The gradient is typically used in
+#' optimization algorithms for maximum likelihood estimation.
 #'
-#' @param par NumericVector of length 4 containing parameters (α, β, δ, λ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 4 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{delta} (\eqn{\delta \ge 0}), \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericVector of length 4 containing the gradient components (partial derivatives)
-#'         of the negative log-likelihood with respect to each parameter (α, β, δ, λ).
-#'         Returns a vector of NaN values if any parameters or data values are invalid.
+#' @return Returns a numeric vector of length 4 containing the partial derivatives
+#'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+#'   respect to each parameter:
+#'   \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \delta, -\partial \ell/\partial \lambda)}.
+#'   Returns a vector of \code{NaN} if any parameter values are invalid according
+#'   to their constraints, or if any value in \code{data} is not in the
+#'   interval (0, 1).
 #'
 #' @details
-#' The gradient vector contains the following partial derivatives of the negative log-likelihood:
+#' The components of the gradient vector of the negative log-likelihood
+#' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the kkw (\eqn{\gamma=1}) model are:
 #'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \alpha} = \frac{n}{\alpha} + \sum_{i=1}^{n}\log(x_i) -
-#' (\beta-1)\sum_{i=1}^{n}\frac{x_i^{\alpha}\log(x_i)}{1-x_i^{\alpha}} +
-#' (\lambda-1)\sum_{i=1}^{n}\frac{\beta(1-x_i^{\alpha})^{\beta-1}x_i^{\alpha}\log(x_i)}{1-(1-x_i^{\alpha})^{\beta}} -
-#' \delta\sum_{i=1}^{n}\frac{\lambda[1-(1-x_i^{\alpha})^{\beta}]^{\lambda-1}\beta(1-x_i^{\alpha})^{\beta-1}x_i^{\alpha}\log(x_i)}{1-[1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+#' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
+#' + (\beta-1)\sum_{i=1}^{n}\frac{x_i^{\alpha}\ln(x_i)}{v_i}
+#' - (\lambda-1)\sum_{i=1}^{n}\frac{\beta v_i^{\beta-1} x_i^{\alpha}\ln(x_i)}{w_i}
+#' + \delta\sum_{i=1}^{n}\frac{\lambda w_i^{\lambda-1} \beta v_i^{\beta-1} x_i^{\alpha}\ln(x_i)}{z_i}
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \beta} = \frac{n}{\beta} + \sum_{i=1}^{n}\log(1-x_i^{\alpha}) -
-#' (\lambda-1)\sum_{i=1}^{n}\frac{(1-x_i^{\alpha})^{\beta}\log(1-x_i^{\alpha})}{1-(1-x_i^{\alpha})^{\beta}} +
-#' \delta\sum_{i=1}^{n}\frac{\lambda[1-(1-x_i^{\alpha})^{\beta}]^{\lambda-1}(1-x_i^{\alpha})^{\beta}\log(1-x_i^{\alpha})}{1-[1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+#' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - \sum_{i=1}^{n}\ln(v_i)
+#' + (\lambda-1)\sum_{i=1}^{n}\frac{v_i^{\beta}\ln(v_i)}{w_i}
+#' - \delta\sum_{i=1}^{n}\frac{\lambda w_i^{\lambda-1} v_i^{\beta}\ln(v_i)}{z_i}
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \delta} = \frac{n}{\delta+1} +
-#' \sum_{i=1}^{n}\log(1-[1-(1-x_i^{\alpha})^{\beta}]^{\lambda})
+#' -\frac{\partial \ell}{\partial \delta} = -\frac{n}{\delta+1} - \sum_{i=1}^{n}\ln(z_i)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \lambda} = \frac{n}{\lambda} +
-#' \sum_{i=1}^{n}\log(1-(1-x_i^{\alpha})^{\beta}) -
-#' \delta\sum_{i=1}^{n}\frac{[1-(1-x_i^{\alpha})^{\beta}]^{\lambda}\log(1-(1-x_i^{\alpha})^{\beta})}{1-[1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+#' -\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \sum_{i=1}^{n}\ln(w_i)
+#' + \delta\sum_{i=1}^{n}\frac{w_i^{\lambda}\ln(w_i)}{z_i}
 #' }
 #'
 #' where:
 #' \itemize{
-#'   \item \deqn{v_i = 1 - x_i^{\alpha}}
-#'   \item \deqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
-#'   \item \deqn{z_i = 1 - w_i^{\lambda} = 1 - (1-(1-x_i^{\alpha})^{\beta})^{\lambda}}
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
 #' }
+#' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+#' minimizing the negative log-likelihood. They correspond to the general GKw
+#' gradient (\code{\link{grgkw}}) components for \eqn{\alpha, \beta, \delta, \lambda}
+#' evaluated at \eqn{\gamma=1}. Note that the component for \eqn{\gamma} is omitted.
+#' Numerical stability is maintained through careful implementation.
 #'
-#' The implementation includes several numerical safeguards:
-#' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Clamping of intermediate values to avoid numerical underflow/overflow
-#'   \item Efficient vector operations using Armadillo C++ library
-#' }
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
-#' The returned gradient is negated to align with minimization of negative log-likelihood
-#' in optimization routines.
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#' (Note: Specific gradient formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{grgkw}} (parent distribution gradient),
+#' \code{\link{llkkw}} (negative log-likelihood for kkw),
+#' \code{\link{hskkw}} (Hessian for kkw),
+#' \code{\link{dkkw}} (density for kkw),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a KKw distribution
+#' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rkkw(100, 2, 3, 1.5, 0.5)
-#' hist(x, breaks = 20, main = "KKw(2, 3, 1.5, 0.5) Sample")
-#'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5, 0.5), llkkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
-#'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llkkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llkkw, x = result$par, data = x)
-#'
-#' ana_grad <- grkkw(result$par, data = x)
-#' ana_hess <- hskkw(result$par, data = x)
-#'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#' true_par_kkw <- c(alpha = 2, beta = 3, delta = 1.5, lambda = 0.5)
+#' if (exists("rkkw")) {
+#'   sample_data_kkw <- rkkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+#'                          delta = true_par_kkw[3], lambda = true_par_kkw[4])
+#' } else {
+#'   sample_data_kkw <- rgkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+#'                          gamma = 1, delta = true_par_kkw[3], lambda = true_par_kkw[4])
 #' }
 #'
-#' @seealso
-#' \code{\link[gkwreg]{llkkw}} for the negative log-likelihood function,
-#' \code{\link[gkwreg]{hskkw}} for the Hessian matrix of the KwKw log-likelihood,
-#' \code{\link[gkwreg]{dkkw}} for the KwKw density function,
+#' # --- Find MLE estimates ---
+#' start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
+#' mle_result_kkw <- stats::optim(par = start_par_kkw,
+#'                                fn = llkkw,
+#'                                gr = grkkw, # Use analytical gradient for kkw
+#'                                method = "BFGS",
+#'                                hessian = TRUE,
+#'                                data = sample_data_kkw)
 #'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#' # --- Compare analytical gradient to numerical gradient ---
+#' if (mle_result_kkw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE)) {
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#'   mle_par_kkw <- mle_result_kkw$par
+#'   cat("\nComparing Gradients for kkw at MLE estimates:\n")
+#'
+#'   # Numerical gradient of llkkw
+#'   num_grad_kkw <- numDeriv::grad(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
+#'
+#'   # Analytical gradient from grkkw
+#'   ana_grad_kkw <- grkkw(par = mle_par_kkw, data = sample_data_kkw)
+#'
+#'   cat("Numerical Gradient (kkw):\n")
+#'   print(num_grad_kkw)
+#'   cat("Analytical Gradient (kkw):\n")
+#'   print(ana_grad_kkw)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between kkw gradients:\n")
+#'   print(max(abs(num_grad_kkw - ana_grad_kkw)))
+#'
+#' } else {
+#'   cat("\nSkipping kkw gradient comparison.\n")
+#' }
+#'
+#' # --- Optional: Compare with relevant components of GKw gradient ---
+#' # Requires grgkw function
+#' if (mle_result_kkw$convergence == 0 && exists("grgkw")) {
+#'   # Create 5-param vector for grgkw (insert gamma=1)
+#'   mle_par_gkw_equiv <- c(mle_par_kkw[1:2], gamma = 1.0, mle_par_kkw[3:4])
+#'   ana_grad_gkw <- grgkw(par = mle_par_gkw_equiv, data = sample_data_kkw)
+#'   # Extract components corresponding to alpha, beta, delta, lambda
+#'   ana_grad_gkw_subset <- ana_grad_gkw[c(1, 2, 4, 5)]
+#'
+#'   cat("\nComparison with relevant components of GKw gradient:\n")
+#'   cat("Max absolute difference:\n")
+#'   print(max(abs(ana_grad_kkw - ana_grad_gkw_subset))) # Should be very small
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 grkkw <- function(par, data) {
     .Call(`_gkwreg_grkkw`, par, data)
 }
 
-#' @title Analytic Hessian Matrix for Kumaraswamy-Kumaraswamy Distribution
+#' @title Hessian Matrix of the Negative Log-Likelihood for the kkw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize hessian
 #'
 #' @description
-#' Computes the analytic Hessian matrix of the log-likelihood function for
-#' the Kumaraswamy-Kumaraswamy (KKw) distribution. This function provides
-#' exact second derivatives needed for optimization and inference.
+#' Computes the analytic 4x4 Hessian matrix (matrix of second partial derivatives)
+#' of the negative log-likelihood function for the Kumaraswamy-Kumaraswamy (kkw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+#' This distribution is the special case of the Generalized Kumaraswamy (GKw)
+#' distribution where \eqn{\gamma = 1}. The Hessian is useful for estimating
+#' standard errors and in optimization algorithms.
 #'
-#' @param par Numeric vector of length 4 containing the parameters
-#'        (α, β, δ, λ) in that order. All parameters must be positive.
-#' @param data Numeric vector of observations, where all values must be
-#'        in the open interval (0,1).
+#' @param par A numeric vector of length 4 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{delta} (\eqn{\delta \ge 0}), \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return A 4×4 numeric matrix representing the Hessian of the negative
-#'         log-likelihood function. If parameters or data are invalid
-#'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
-#'         NaN values.
+#' @return Returns a 4x4 numeric matrix representing the Hessian matrix of the
+#'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+#'   where \eqn{\theta = (\alpha, \beta, \delta, \lambda)}.
+#'   Returns a 4x4 matrix populated with \code{NaN} if any parameter values are
+#'   invalid according to their constraints, or if any value in \code{data} is
+#'   not in the interval (0, 1).
 #'
 #' @details
-#' The log-likelihood for the Kumaraswamy-Kumaraswamy distribution is:
-#'
+#' This function calculates the analytic second partial derivatives of the
+#' negative log-likelihood function based on the kkw log-likelihood
+#' (\eqn{\gamma=1} case of GKw, see \code{\link{llkkw}}):
 #' \deqn{
-#' \ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta) + n \ln(\delta+1)
-#' + (\alpha-1) \sum \ln(x_i)
-#' + (\beta-1) \sum \ln(1 - x_i^\alpha)
-#' + (\lambda-1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
-#' + \delta \sum \ln\{1 - \{1 - (1 - x_i^\alpha)^\beta\}^\lambda\}
+#' \ell(\theta | \mathbf{x}) = n[\ln(\delta+1) + \ln(\lambda) + \ln(\alpha) + \ln(\beta)]
+#' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i) + \delta\ln(z_i)]
 #' }
-#'
-#' where γ is fixed at 1 for this distribution.
-#'
-#' The implementation computes all second derivatives analytically for each term.
-#' For computational efficiency, the following transformations are used:
+#' where \eqn{\theta = (\alpha, \beta, \delta, \lambda)} and intermediate terms are:
 #' \itemize{
-#'   \item \deqn{A = x^α} and derivatives
-#'   \item \deqn{v = 1 - A}
-#'   \item \deqn{w = 1 - v^β}
-#'   \item \deqn{z = 1 - w^λ}
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
 #' }
+#' The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}
+#' for \eqn{\theta_i, \theta_j \in \{\alpha, \beta, \delta, \lambda\}}.
 #'
-#' The returned Hessian matrix has the following structure:
+#' Key properties of the returned matrix:
 #' \itemize{
-#'   \item Rows/columns 1-4 correspond to α, β, δ, λ respectively
-#'   \item The matrix is symmetric (as expected for a Hessian)
-#'   \item The matrix represents second derivatives of the negative log-likelihood
+#'   \item Dimensions: 4x4.
+#'   \item Symmetry: The matrix is symmetric.
+#'   \item Ordering: Rows and columns correspond to the parameters in the order
+#'     \eqn{\alpha, \beta, \delta, \lambda}.
+#'   \item Content: Analytic second derivatives of the *negative* log-likelihood.
 #' }
+#' This corresponds to the relevant submatrix of the 5x5 GKw Hessian (\code{\link{hsgkw}})
+#' evaluated at \eqn{\gamma=1}. The exact analytical formulas are implemented directly.
 #'
-#' This function is implemented in C++ for computational efficiency.
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{hsgkw}} (parent distribution Hessian),
+#' \code{\link{llkkw}} (negative log-likelihood for kkw),
+#' \code{\link{grkkw}} (gradient for kkw),
+#' \code{\link{dkkw}} (density for kkw),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a KKw distribution
+#' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rkkw(100, 2, 3, 1.5, 0.5)
-#' hist(x, breaks = 20, main = "KKw(2, 3, 1.5, 0.5) Sample")
-#'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5, 0.5), llkkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
-#'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llkkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llkkw, x = result$par, data = x)
-#'
-#' ana_grad <- grkkw(result$par, data = x)
-#' ana_hess <- hskkw(result$par, data = x)
-#'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#' true_par_kkw <- c(alpha = 2, beta = 3, delta = 1.5, lambda = 0.5)
+#' if (exists("rkkw")) {
+#'   sample_data_kkw <- rkkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+#'                          delta = true_par_kkw[3], lambda = true_par_kkw[4])
+#' } else {
+#'   sample_data_kkw <- rgkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+#'                          gamma = 1, delta = true_par_kkw[3], lambda = true_par_kkw[4])
 #' }
 #'
+#' # --- Find MLE estimates ---
+#' start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
+#' mle_result_kkw <- stats::optim(par = start_par_kkw,
+#'                                fn = llkkw,
+#'                                gr = if (exists("grkkw")) grkkw else NULL, # Use gradient if available
+#'                                method = "BFGS",
+#'                                hessian = TRUE, # Ask optim for numerical Hessian at solution
+#'                                data = sample_data_kkw)
 #'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#' # --- Compare analytical Hessian to numerical Hessian ---
+#' if (mle_result_kkw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("hskkw")) {
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#'   mle_par_kkw <- mle_result_kkw$par
+#'   cat("\nComparing Hessians for kkw at MLE estimates:\n")
+#'
+#'   # Numerical Hessian of llkkw
+#'   num_hess_kkw <- numDeriv::hessian(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
+#'
+#'   # Analytical Hessian from hskkw
+#'   ana_hess_kkw <- hskkw(par = mle_par_kkw, data = sample_data_kkw)
+#'
+#'   cat("Numerical Hessian (kkw):\n")
+#'   print(round(num_hess_kkw, 4))
+#'   cat("Analytical Hessian (kkw):\n")
+#'   print(round(ana_hess_kkw, 4))
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between kkw Hessians:\n")
+#'   print(max(abs(num_hess_kkw - ana_hess_kkw)))
+#'
+#'   # Optional: Use analytical Hessian for Standard Errors
+#'   # tryCatch({
+#'   #   cov_matrix_kkw <- solve(ana_hess_kkw)
+#'   #   std_errors_kkw <- sqrt(diag(cov_matrix_kkw))
+#'   #   cat("Std. Errors from Analytical kkw Hessian:\n")
+#'   #   print(std_errors_kkw)
+#'   # }, error = function(e) {
+#'   #   warning("Could not invert analytical kkw Hessian: ", e$message)
+#'   # })
+#'
+#' } else {
+#'   cat("\nSkipping kkw Hessian comparison.\n")
+#'   cat("Requires convergence, 'numDeriv' package, and function 'hskkw'.\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 hskkw <- function(par, data) {
     .Call(`_gkwreg_hskkw`, par, data)
 }
 
-#' @title Density Function for Beta-Kumaraswamy Distribution
+#' @title Density of the Beta-Kumaraswamy (BKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution density
 #'
 #' @description
-#' Computes the PDF of the Beta-Kumaraswamy distribution BKw(α, β, γ, δ) for x in (0, 1).
-#' Optionally returns the log of the PDF.
+#' Computes the probability density function (PDF) for the Beta-Kumaraswamy
+#' (BKw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}).
+#' This distribution is defined on the interval (0, 1).
 #'
-#' @param x Vector of quantiles in (0,1).
-#' @param alpha Shape parameter α > 0.
-#' @param beta Shape parameter β > 0.
-#' @param gamma Shape parameter γ > 0.
-#' @param delta Shape parameter δ ≥ 0.
-#' @param log_prob Logical; if TRUE, returns log(f(x)).
+#' @param x Vector of quantiles (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param log_prob Logical; if \code{TRUE}, the logarithm of the density is
+#'   returned (\eqn{\log(f(x))}). Default: \code{FALSE}.
 #'
-#' @return A vector of length max(length(x), lengths of parameters) with computed densities
-#'         or log-densities. Values of x outside (0,1) yield 0 or -Inf (log-scale).
+#' @return A vector of density values (\eqn{f(x)}) or log-density values
+#'   (\eqn{\log(f(x))}). The length of the result is determined by the recycling
+#'   rule applied to the arguments (\code{x}, \code{alpha}, \code{beta},
+#'   \code{gamma}, \code{delta}). Returns \code{0} (or \code{-Inf} if
+#'   \code{log_prob = TRUE}) for \code{x} outside the interval (0, 1), or
+#'   \code{NaN} if parameters are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0},
+#'   \code{gamma <= 0}, \code{delta < 0}).
 #'
 #' @details
-#' The PDF is given by
+#' The probability density function (PDF) of the Beta-Kumaraswamy (BKw)
+#' distribution is given by:
 #' \deqn{
-#'   f(x) = \frac{\alpha \beta}{B(\gamma, \delta+1)} \; x^{\alpha - 1} \; \bigl(1 - x^\alpha\bigr)^{\beta(\delta+1) - 1}\;
-#'          \bigl[1 - \bigl(1 - x^\alpha\bigr)^\beta\bigr]^{\gamma - 1}, \quad 0<x<1.
+#' f(x; \alpha, \beta, \gamma, \delta) = \frac{\alpha \beta}{B(\gamma, \delta+1)} x^{\alpha - 1} \bigl(1 - x^\alpha\bigr)^{\beta(\delta+1) - 1} \bigl[1 - \bigl(1 - x^\alpha\bigr)^\beta\bigr]^{\gamma - 1}
 #' }
+#' for \eqn{0 < x < 1}, where \eqn{B(a,b)} is the Beta function
+#' (\code{\link[base]{beta}}).
 #'
-#' Note that BKw is a special case of the Generalized Kumaraswamy (GKw) with \eqn{\lambda=1}.
+#' The BKw distribution is a special case of the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution (\code{\link{dgkw}}) obtained
+#' by setting the parameter \eqn{\lambda = 1}.
+#' Numerical evaluation is performed using algorithms similar to those for `dgkw`,
+#' ensuring stability.
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{dgkw}} (parent distribution density),
+#' \code{\link{pbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}} (other BKw functions),
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' x_vals <- c(0.2, 0.5, 0.8)
+#' alpha_par <- 2.0
+#' beta_par <- 1.5
+#' gamma_par <- 1.0 # Equivalent to Kw when gamma=1
+#' delta_par <- 0.5
+#'
+#' # Calculate density
+#' densities <- dbkw(x_vals, alpha_par, beta_par, gamma_par, delta_par)
+#' print(densities)
+#'
+#' # Calculate log-density
+#' log_densities <- dbkw(x_vals, alpha_par, beta_par, gamma_par, delta_par,
+#'                       log_prob = TRUE)
+#' print(log_densities)
+#' # Check: should match log(densities)
+#' print(log(densities))
+#'
+#' # Compare with dgkw setting lambda = 1
+#' densities_gkw <- dgkw(x_vals, alpha_par, beta_par, gamma = gamma_par,
+#'                       delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference:", max(abs(densities - densities_gkw)))) # Should be near zero
+#'
+#' # Plot the density for different gamma values
+#' curve_x <- seq(0.01, 0.99, length.out = 200)
+#' curve_y1 <- dbkw(curve_x, alpha = 2, beta = 3, gamma = 0.5, delta = 1)
+#' curve_y2 <- dbkw(curve_x, alpha = 2, beta = 3, gamma = 1.0, delta = 1)
+#' curve_y3 <- dbkw(curve_x, alpha = 2, beta = 3, gamma = 2.0, delta = 1)
+#'
+#' plot(curve_x, curve_y1, type = "l", main = "BKw Density Examples (alpha=2, beta=3, delta=1)",
+#'      xlab = "x", ylab = "f(x)", col = "blue", ylim = range(0, curve_y1, curve_y2, curve_y3))
+#' lines(curve_x, curve_y2, col = "red")
+#' lines(curve_x, curve_y3, col = "green")
+#' legend("topright", legend = c("gamma=0.5", "gamma=1.0", "gamma=2.0"),
+#'        col = c("blue", "red", "green"), lty = 1, bty = "n")
+#'
+#' # Vectorized parameters
+#' gammas_vec <- c(0.5, 1.0, 2.0)
+#' densities_vec <- dbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
+#' print(densities_vec) # Density at x=0.5 for 3 different gamma values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 dbkw <- function(x, alpha, beta, gamma, delta, log_prob = FALSE) {
     .Call(`_gkwreg_dbkw`, x, alpha, beta, gamma, delta, log_prob)
 }
 
-#' @title CDF of Beta-Kumaraswamy Distribution
+#' @title Cumulative Distribution Function (CDF) of the Beta-Kumaraswamy (BKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution cumulative
 #'
 #' @description
-#' Computes the cumulative distribution function for BKw(α, β, γ, δ).
+#' Computes the cumulative distribution function (CDF), \eqn{P(X \le q)}, for the
+#' Beta-Kumaraswamy (BKw) distribution with parameters \code{alpha} (\eqn{\alpha}),
+#' \code{beta} (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta}
+#' (\eqn{\delta}). This distribution is defined on the interval (0, 1) and is
+#' a special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\lambda = 1}.
 #'
-#' @param q Vector of quantiles in (0,1).
-#' @param alpha Shape parameter α > 0.
-#' @param beta Shape parameter β > 0.
-#' @param gamma Shape parameter γ > 0.
-#' @param delta Shape parameter δ ≥ 0.
-#' @param lower_tail Logical; if TRUE (default), returns F(q)=P(X≤q), else 1-F(q).
-#' @param log_p Logical; if TRUE, returns log-probabilities.
+#' @param q Vector of quantiles (values generally between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are
+#'   \eqn{P(X \le q)}, otherwise, \eqn{P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of probabilities, \eqn{F(q)}, or their logarithms/complements
+#'   depending on \code{lower_tail} and \code{log_p}. The length of the result
+#'   is determined by the recycling rule applied to the arguments (\code{q},
+#'   \code{alpha}, \code{beta}, \code{gamma}, \code{delta}). Returns \code{0}
+#'   (or \code{-Inf} if \code{log_p = TRUE}) for \code{q <= 0} and \code{1}
+#'   (or \code{0} if \code{log_p = TRUE}) for \code{q >= 1}. Returns \code{NaN}
+#'   for invalid parameters.
 #'
 #' @details
-#' CDF: \eqn{F(x) = I_{1 - (1 - x^α)^β}(\gamma, \delta+1)}, where \eqn{I_z(a,b)} is the
-#' regularized incomplete beta function.
+#' The Beta-Kumaraswamy (BKw) distribution is a special case of the
+#' five-parameter Generalized Kumaraswamy distribution (\code{\link{pgkw}})
+#' obtained by setting the shape parameter \eqn{\lambda = 1}.
 #'
-#' @return A vector of probabilities, matching the length of the broadcast inputs.
+#' The CDF of the GKw distribution is \eqn{F_{GKw}(q) = I_{y(q)}(\gamma, \delta+1)},
+#' where \eqn{y(q) = [1-(1-q^{\alpha})^{\beta}]^{\lambda}} and \eqn{I_x(a,b)}
+#' is the regularized incomplete beta function (\code{\link[stats]{pbeta}}).
+#' Setting \eqn{\lambda=1} simplifies \eqn{y(q)} to \eqn{1 - (1 - q^\alpha)^\beta},
+#' yielding the BKw CDF:
+#' \deqn{
+#' F(q; \alpha, \beta, \gamma, \delta) = I_{1 - (1 - q^\alpha)^\beta}(\gamma, \delta+1)
+#' }
+#' This is evaluated using the \code{\link[stats]{pbeta}} function.
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{pgkw}} (parent distribution CDF),
+#' \code{\link{dbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}} (other BKw functions),
+#' \code{\link[stats]{pbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' q_vals <- c(0.2, 0.5, 0.8)
+#' alpha_par <- 2.0
+#' beta_par <- 1.5
+#' gamma_par <- 1.0
+#' delta_par <- 0.5
+#'
+#' # Calculate CDF P(X <= q)
+#' probs <- pbkw(q_vals, alpha_par, beta_par, gamma_par, delta_par)
+#' print(probs)
+#'
+#' # Calculate upper tail P(X > q)
+#' probs_upper <- pbkw(q_vals, alpha_par, beta_par, gamma_par, delta_par,
+#'                     lower_tail = FALSE)
+#' print(probs_upper)
+#' # Check: probs + probs_upper should be 1
+#' print(probs + probs_upper)
+#'
+#' # Calculate log CDF
+#' log_probs <- pbkw(q_vals, alpha_par, beta_par, gamma_par, delta_par,
+#'                   log_p = TRUE)
+#' print(log_probs)
+#' # Check: should match log(probs)
+#' print(log(probs))
+#'
+#' # Compare with pgkw setting lambda = 1
+#' probs_gkw <- pgkw(q_vals, alpha_par, beta_par, gamma = gamma_par,
+#'                  delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference:", max(abs(probs - probs_gkw)))) # Should be near zero
+#'
+#' # Plot the CDF
+#' curve_q <- seq(0.01, 0.99, length.out = 200)
+#' curve_p <- pbkw(curve_q, alpha = 2, beta = 3, gamma = 0.5, delta = 1)
+#' plot(curve_q, curve_p, type = "l", main = "BKw CDF Example",
+#'      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
+#'
+#' # Vectorized parameters
+#' gammas_vec <- c(0.5, 1.0, 2.0)
+#' probs_vec <- pbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
+#' print(probs_vec) # CDF at q=0.5 for 3 different gamma values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 pbkw <- function(q, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_pbkw`, q, alpha, beta, gamma, delta, lower_tail, log_p)
 }
 
-#' @title Quantile Function of Beta-Kumaraswamy Distribution
+#' @title Quantile Function of the Beta-Kumaraswamy (BKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution quantile
 #'
 #' @description
-#' Computes the quantile function for BKw(α, β, γ, δ). For p in (0,1), returns x such that
-#' P(X ≤ x) = p under the BKw distribution.
+#' Computes the quantile function (inverse CDF) for the Beta-Kumaraswamy (BKw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}).
+#' It finds the value \code{q} such that \eqn{P(X \le q) = p}. This distribution
+#' is a special case of the Generalized Kumaraswamy (GKw) distribution where
+#' the parameter \eqn{\lambda = 1}.
 #'
-#' @param p Vector of probabilities in (0,1).
-#' @param alpha Shape parameter α > 0.
-#' @param beta Shape parameter β > 0.
-#' @param gamma Shape parameter γ > 0.
-#' @param delta Shape parameter δ ≥ 0.
-#' @param lower_tail Logical; if TRUE (default), p is F(x)=P(X≤x), otherwise p=1-F(x).
-#' @param log_p Logical; if TRUE, p is given as log(p).
+#' @param p Vector of probabilities (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are \eqn{p = P(X \le q)},
+#'   otherwise, probabilities are \eqn{p = P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \code{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of quantiles corresponding to the given probabilities \code{p}.
+#'   The length of the result is determined by the recycling rule applied to
+#'   the arguments (\code{p}, \code{alpha}, \code{beta}, \code{gamma}, \code{delta}).
+#'   Returns:
+#'   \itemize{
+#'     \item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+#'     \item \code{NaN} for invalid parameters (e.g., \code{alpha <= 0},
+#'           \code{beta <= 0}, \code{gamma <= 0}, \code{delta < 0}).
+#'   }
+#'   Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 #'
 #' @details
-#' Inversion approach using \eqn{Q(p) = \{1 - [1 - qbeta(p, γ, δ+1)]^(1/β)\}^{1/\alpha}}.
+#' The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(q)}. The CDF
+#' for the BKw (\eqn{\lambda=1}) distribution is \eqn{F(q) = I_{y(q)}(\gamma, \delta+1)},
+#' where \eqn{y(q) = 1 - (1 - q^\alpha)^\beta} and \eqn{I_z(a,b)} is the
+#' regularized incomplete beta function (see \code{\link{pbkw}}).
 #'
-#' @return A vector of quantiles of the same length as the broadcast of p and parameters.
+#' To find the quantile \eqn{q}, we first invert the outer Beta part: let
+#' \eqn{y = I^{-1}_{p}(\gamma, \delta+1)}, where \eqn{I^{-1}_p(a,b)} is the
+#' inverse of the regularized incomplete beta function, computed via
+#' \code{\link[stats]{qbeta}}. Then, we invert the inner Kumaraswamy part:
+#' \eqn{y = 1 - (1 - q^\alpha)^\beta}, which leads to \eqn{q = \{1 - (1-y)^{1/\beta}\}^{1/\alpha}}.
+#' Substituting \eqn{y} gives the quantile function:
+#' \deqn{
+#' Q(p) = \left\{ 1 - \left[ 1 - I^{-1}_{p}(\gamma, \delta+1) \right]^{1/\beta} \right\}^{1/\alpha}
+#' }
+#' The function uses this formula, calculating \eqn{I^{-1}_{p}(\gamma, \delta+1)}
+#' via \code{qbeta(p, gamma, delta + 1, ...)} while respecting the
+#' \code{lower_tail} and \code{log_p} arguments.
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{qgkw}} (parent distribution quantile function),
+#' \code{\link{dbkw}}, \code{\link{pbkw}}, \code{\link{rbkw}} (other BKw functions),
+#' \code{\link[stats]{qbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' p_vals <- c(0.1, 0.5, 0.9)
+#' alpha_par <- 2.0
+#' beta_par <- 1.5
+#' gamma_par <- 1.0
+#' delta_par <- 0.5
+#'
+#' # Calculate quantiles
+#' quantiles <- qbkw(p_vals, alpha_par, beta_par, gamma_par, delta_par)
+#' print(quantiles)
+#'
+#' # Calculate quantiles for upper tail probabilities P(X > q) = p
+#' quantiles_upper <- qbkw(p_vals, alpha_par, beta_par, gamma_par, delta_par,
+#'                         lower_tail = FALSE)
+#' print(quantiles_upper)
+#' # Check: qbkw(p, ..., lt=F) == qbkw(1-p, ..., lt=T)
+#' print(qbkw(1 - p_vals, alpha_par, beta_par, gamma_par, delta_par))
+#'
+#' # Calculate quantiles from log probabilities
+#' log_p_vals <- log(p_vals)
+#' quantiles_logp <- qbkw(log_p_vals, alpha_par, beta_par, gamma_par, delta_par,
+#'                        log_p = TRUE)
+#' print(quantiles_logp)
+#' # Check: should match original quantiles
+#' print(quantiles)
+#'
+#' # Compare with qgkw setting lambda = 1
+#' quantiles_gkw <- qgkw(p_vals, alpha_par, beta_par, gamma = gamma_par,
+#'                      delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be near zero
+#'
+#' # Verify inverse relationship with pbkw
+#' p_check <- 0.75
+#' q_calc <- qbkw(p_check, alpha_par, beta_par, gamma_par, delta_par)
+#' p_recalc <- pbkw(q_calc, alpha_par, beta_par, gamma_par, delta_par)
+#' print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
+#' # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
+#'
+#' # Boundary conditions
+#' print(qbkw(c(0, 1), alpha_par, beta_par, gamma_par, delta_par)) # Should be 0, 1
+#' print(qbkw(c(-Inf, 0), alpha_par, beta_par, gamma_par, delta_par, log_p = TRUE)) # Should be 0, 1
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 qbkw <- function(p, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_qbkw`, p, alpha, beta, gamma, delta, lower_tail, log_p)
 }
 
-#' @title Random Generation from Beta-Kumaraswamy Distribution
+#' @title Random Number Generation for the Beta-Kumaraswamy (BKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution random
 #'
 #' @description
-#' Generates n samples from BKw(α, β, γ, δ) using the transformation:
-#'   \eqn{V ~ Beta(γ, δ+1) => X = {1 - (1 - V)^(1/β)}^(1/α)}.
+#' Generates random deviates from the Beta-Kumaraswamy (BKw) distribution
+#' with parameters \code{alpha} (\eqn{\alpha}), \code{beta} (\eqn{\beta}),
+#' \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}). This distribution
+#' is a special case of the Generalized Kumaraswamy (GKw) distribution where
+#' the parameter \eqn{\lambda = 1}.
 #'
-#' @param n Integer number of observations to generate.
-#' @param alpha Shape parameter α > 0.
-#' @param beta Shape parameter β > 0.
-#' @param gamma Shape parameter γ > 0.
-#' @param delta Shape parameter δ ≥ 0.
+#' @param n Number of observations. If \code{length(n) > 1}, the length is
+#'   taken to be the number required. Must be a non-negative integer.
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
 #'
-#' @return A numeric vector of length n with random draws from the BKw distribution.
+#' @return A vector of length \code{n} containing random deviates from the BKw
+#'   distribution. The length of the result is determined by \code{n} and the
+#'   recycling rule applied to the parameters (\code{alpha}, \code{beta},
+#'   \code{gamma}, \code{delta}). Returns \code{NaN} if parameters
+#'   are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0}, \code{gamma <= 0},
+#'   \code{delta < 0}).
+#'
+#' @details
+#' The generation method uses the relationship between the GKw distribution and the
+#' Beta distribution. The general procedure for GKw (\code{\link{rgkw}}) is:
+#' If \eqn{W \sim \mathrm{Beta}(\gamma, \delta+1)}, then
+#' \eqn{X = \{1 - [1 - W^{1/\lambda}]^{1/\beta}\}^{1/\alpha}} follows the
+#' GKw(\eqn{\alpha, \beta, \gamma, \delta, \lambda}) distribution.
+#'
+#' For the BKw distribution, \eqn{\lambda=1}. Therefore, the algorithm simplifies to:
+#' \enumerate{
+#'   \item Generate \eqn{V \sim \mathrm{Beta}(\gamma, \delta+1)} using
+#'         \code{\link[stats]{rbeta}}.
+#'   \item Compute the BKw variate \eqn{X = \{1 - (1 - V)^{1/\beta}\}^{1/\alpha}}.
+#' }
+#' This procedure is implemented efficiently, handling parameter recycling as needed.
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
+#' (General methods for random variate generation).
+#'
+#' @seealso
+#' \code{\link{rgkw}} (parent distribution random generation),
+#' \code{\link{dbkw}}, \code{\link{pbkw}}, \code{\link{qbkw}} (other BKw functions),
+#' \code{\link[stats]{rbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(2026) # for reproducibility
+#'
+#' # Generate 1000 random values from a specific BKw distribution
+#' alpha_par <- 2.0
+#' beta_par <- 1.5
+#' gamma_par <- 1.0
+#' delta_par <- 0.5
+#'
+#' x_sample_bkw <- rbkw(1000, alpha = alpha_par, beta = beta_par,
+#'                      gamma = gamma_par, delta = delta_par)
+#' summary(x_sample_bkw)
+#'
+#' # Histogram of generated values compared to theoretical density
+#' hist(x_sample_bkw, breaks = 30, freq = FALSE, # freq=FALSE for density
+#'      main = "Histogram of BKw Sample", xlab = "x", ylim = c(0, 2.5))
+#' curve(dbkw(x, alpha = alpha_par, beta = beta_par, gamma = gamma_par,
+#'            delta = delta_par),
+#'       add = TRUE, col = "red", lwd = 2, n = 201)
+#' legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2, bty = "n")
+#'
+#' # Comparing empirical and theoretical quantiles (Q-Q plot)
+#' prob_points <- seq(0.01, 0.99, by = 0.01)
+#' theo_quantiles <- qbkw(prob_points, alpha = alpha_par, beta = beta_par,
+#'                        gamma = gamma_par, delta = delta_par)
+#' emp_quantiles <- quantile(x_sample_bkw, prob_points, type = 7)
+#'
+#' plot(theo_quantiles, emp_quantiles, pch = 16, cex = 0.8,
+#'      main = "Q-Q Plot for BKw Distribution",
+#'      xlab = "Theoretical Quantiles", ylab = "Empirical Quantiles (n=1000)")
+#' abline(a = 0, b = 1, col = "blue", lty = 2)
+#'
+#' # Compare summary stats with rgkw(..., lambda=1, ...)
+#' # Note: individual values will differ due to randomness
+#' x_sample_gkw <- rgkw(1000, alpha = alpha_par, beta = beta_par, gamma = gamma_par,
+#'                      delta = delta_par, lambda = 1.0)
+#' print("Summary stats for rbkw sample:")
+#' print(summary(x_sample_bkw))
+#' print("Summary stats for rgkw(lambda=1) sample:")
+#' print(summary(x_sample_gkw)) # Should be similar
+#'
+#' # Vectorized parameters: generate 1 value for each gamma
+#' gammas_vec <- c(0.5, 1.0, 2.0)
+#' n_param <- length(gammas_vec)
+#' samples_vec <- rbkw(n_param, alpha = alpha_par, beta = beta_par,
+#'                     gamma = gammas_vec, delta = delta_par)
+#' print(samples_vec) # One sample for each gamma value
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 rbkw <- function(n, alpha, beta, gamma, delta) {
     .Call(`_gkwreg_rbkw`, n, alpha, beta, gamma, delta)
 }
 
-#' @title Negative Log-Likelihood for Beta-Kumaraswamy Distribution
+#' @title Negative Log-Likelihood for Beta-Kumaraswamy (BKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize
 #'
 #' @description
-#' Computes the negative log-likelihood of the BKw(α, β, γ, δ) model given data in (0,1).
+#' Computes the negative log-likelihood function for the Beta-Kumaraswamy (BKw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}),
+#' given a vector of observations. This distribution is the special case of the
+#' Generalized Kumaraswamy (GKw) distribution where \eqn{\lambda = 1}. This function
+#' is typically used for maximum likelihood estimation via numerical optimization.
 #'
-#' @param par NumericVector of length 4, \eqn{(α, β, γ, δ)}.
-#' @param data NumericVector of observations, each in (0,1).
+#' @param par A numeric vector of length 4 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
+#'
+#' @return Returns a single \code{double} value representing the negative
+#'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+#'   if any parameter values in \code{par} are invalid according to their
+#'   constraints, or if any value in \code{data} is not in the interval (0, 1).
 #'
 #' @details
-#' The PDF is
+#' The Beta-Kumaraswamy (BKw) distribution is the GKw distribution (\code{\link{dgkw}})
+#' with \eqn{\lambda=1}. Its probability density function (PDF) is:
 #' \deqn{
-#'   f(x)=\frac{\alpha \beta}{B(\gamma, \delta+1)} x^{\alpha-1} (1-x^\alpha)^{\beta(\delta+1)-1} [1-(1-x^\alpha)^\beta]^{\gamma-1}.
+#' f(x | \theta) = \frac{\alpha \beta}{B(\gamma, \delta+1)} x^{\alpha - 1} \bigl(1 - x^\alpha\bigr)^{\beta(\delta+1) - 1} \bigl[1 - \bigl(1 - x^\alpha\bigr)^\beta\bigr]^{\gamma - 1}
 #' }
-#' The log-likelihood \eqn{\ell(\theta)} is the sum of log(f(x_i)) for i=1..n. We return
-#' the negative log-likelihood for convenience in optimization.
+#' for \eqn{0 < x < 1}, \eqn{\theta = (\alpha, \beta, \gamma, \delta)}, and \eqn{B(a,b)}
+#' is the Beta function (\code{\link[base]{beta}}).
+#' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+#' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+#' \deqn{
+#' \ell(\theta | \mathbf{x}) = n[\ln(\alpha) + \ln(\beta) - \ln B(\gamma, \delta+1)]
+#' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta(\delta+1)-1)\ln(v_i) + (\gamma-1)\ln(w_i)]
+#' }
+#' where:
+#' \itemize{
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#' }
+#' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+#' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+#' Numerical stability is maintained similarly to \code{\link{llgkw}}.
 #'
-#' @return A single numeric value (the negative log-likelihood). Returns \code{-Inf} if
-#'         parameters are invalid or if any data point is outside (0,1).
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+#' \code{\link{dbkw}}, \code{\link{pbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}},
+#' \code{grbkw} (gradient, if available),
+#' \code{hsbkw} (Hessian, if available),
+#' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming existence of rbkw, grbkw, hsbkw functions for BKw distribution
+#'
+#' # Generate sample data from a known BKw distribution
+#' set.seed(124)
+#' true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.0, delta = 0.5)
+#' # Use rbkw if it exists, otherwise use rgkw with lambda=1
+#' if (exists("rbkw")) {
+#'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+#'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
+#' } else {
+#'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+#'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
+#' }
+#' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.0, 0.5) Sample")
+#'
+#' # --- Maximum Likelihood Estimation using optim ---
+#' # Initial parameter guess
+#' start_par_bkw <- c(1.8, 1.2, 1.1, 0.3)
+#'
+#' # Perform optimization (minimizing negative log-likelihood)
+#' mle_result_bkw <- stats::optim(par = start_par_bkw,
+#'                                fn = llbkw, # Use the BKw neg-log-likelihood
+#'                                method = "BFGS", # Needs parameters > 0, consider L-BFGS-B
+#'                                hessian = TRUE,
+#'                                data = sample_data_bkw)
+#'
+#' # Check convergence and results
+#' if (mle_result_bkw$convergence == 0) {
+#'   print("Optimization converged successfully.")
+#'   mle_par_bkw <- mle_result_bkw$par
+#'   print("Estimated BKw parameters:")
+#'   print(mle_par_bkw)
+#'   print("True BKw parameters:")
+#'   print(true_par_bkw)
+#' } else {
+#'   warning("Optimization did not converge!")
+#'   print(mle_result_bkw$message)
+#' }
+#'
+#' # --- Compare numerical and analytical derivatives (if available) ---
+#' # Requires 'numDeriv' package and analytical functions 'grbkw', 'hsbkw'
+#' if (mle_result_bkw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("grbkw") && exists("hsbkw")) {
+#'
+#'   cat("\nComparing Derivatives at BKw MLE estimates:\n")
+#'
+#'   # Numerical derivatives of llbkw
+#'   num_grad_bkw <- numDeriv::grad(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+#'   num_hess_bkw <- numDeriv::hessian(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+#'
+#'   # Analytical derivatives (assuming they return derivatives of negative LL)
+#'   ana_grad_bkw <- grbkw(par = mle_par_bkw, data = sample_data_bkw)
+#'   ana_hess_bkw <- hsbkw(par = mle_par_bkw, data = sample_data_bkw)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between gradients:\n")
+#'   print(max(abs(num_grad_bkw - ana_grad_bkw)))
+#'   cat("Max absolute difference between Hessians:\n")
+#'   print(max(abs(num_hess_bkw - ana_hess_bkw)))
+#'
+#' } else {
+#'    cat("\nSkipping derivative comparison for BKw.\n")
+#'    cat("Requires convergence, 'numDeriv' package and functions 'grbkw', 'hsbkw'.\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 llbkw <- function(par, data) {
     .Call(`_gkwreg_llbkw`, par, data)
 }
 
-#' @title Gradient Function for Beta-Kumaraswamy Log-Likelihood
+#' @title Gradient of the Negative Log-Likelihood for the BKw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize gradient
 #'
 #' @description
-#' Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-#' function for the Beta-Kumaraswamy (BKw) distribution. This function provides
-#' the exact gradient needed for efficient optimization in maximum likelihood estimation.
-#' The BKw is a submodel of GKw with λ = 1 fixed.
+#' Computes the gradient vector (vector of first partial derivatives) of the
+#' negative log-likelihood function for the Beta-Kumaraswamy (BKw) distribution
+#' with parameters \code{alpha} (\eqn{\alpha}), \code{beta} (\eqn{\beta}),
+#' \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}). This distribution
+#' is the special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\lambda = 1}. The gradient is typically used in optimization algorithms
+#' for maximum likelihood estimation.
 #'
-#' @param par NumericVector of length 4 containing parameters (α, β, γ, δ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 4 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericVector of length 4 containing the gradient components (partial derivatives)
-#'         of the negative log-likelihood with respect to each parameter (α, β, γ, δ).
-#'         Returns a vector of NaN values if any parameters or data values are invalid.
+#' @return Returns a numeric vector of length 4 containing the partial derivatives
+#'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+#'   respect to each parameter:
+#'   \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \gamma, -\partial \ell/\partial \delta)}.
+#'   Returns a vector of \code{NaN} if any parameter values are invalid according
+#'   to their constraints, or if any value in \code{data} is not in the
+#'   interval (0, 1).
 #'
 #' @details
-#' The gradient vector contains the following partial derivatives of the negative log-likelihood:
+#' The components of the gradient vector of the negative log-likelihood
+#' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the BKw (\eqn{\lambda=1}) model are:
 #'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \alpha} = \frac{n}{\alpha} + \sum_{i=1}^{n}\log(x_i) -
-#' \sum_{i=1}^{n}\left[x_i^{\alpha} \log(x_i) \left(\frac{\beta(\delta+1)-1}{v_i} -
+#' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
+#' + \sum_{i=1}^{n}\left[x_i^{\alpha} \ln(x_i) \left(\frac{\beta(\delta+1)-1}{v_i} -
 #' \frac{(\gamma-1) \beta v_i^{\beta-1}}{w_i}\right)\right]
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \beta} = \frac{n}{\beta} + (\delta+1)\sum_{i=1}^{n}\log(v_i) -
-#' \sum_{i=1}^{n}\left[v_i^{\beta} \log(v_i) \frac{\gamma-1}{w_i}\right]
+#' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - (\delta+1)\sum_{i=1}^{n}\ln(v_i)
+#' + \sum_{i=1}^{n}\left[\frac{(\gamma-1) v_i^{\beta} \ln(v_i)}{w_i}\right]
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \gamma} = -n[\psi(\gamma) - \psi(\gamma+\delta+1)] +
-#' \sum_{i=1}^{n}\log(w_i)
+#' -\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma) - \psi(\gamma+\delta+1)] -
+#' \sum_{i=1}^{n}\ln(w_i)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \delta} = -n[\psi(\delta+1) - \psi(\gamma+\delta+1)] +
-#' \beta\sum_{i=1}^{n}\log(v_i)
+#' -\frac{\partial \ell}{\partial \delta} = n[\psi(\delta+1) - \psi(\gamma+\delta+1)] -
+#' \beta\sum_{i=1}^{n}\ln(v_i)
 #' }
 #'
 #' where:
 #' \itemize{
-#'   \item \deqn{v_i = 1 - x_i^{\alpha}}
-#'   \item \deqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
-#'   \item \deqn{\psi} is the digamma function (derivative of the log-gamma function)
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#'   \item \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
 #' }
+#' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+#' minimizing the negative log-likelihood. They correspond to the general GKw
+#' gradient (\code{\link{grgkw}}) components for \eqn{\alpha, \beta, \gamma, \delta}
+#' evaluated at \eqn{\lambda=1}. Note that the component for \eqn{\lambda} is omitted.
+#' Numerical stability is maintained through careful implementation.
 #'
-#' The implementation includes several numerical safeguards:
-#' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Clamping of intermediate values to avoid numerical underflow/overflow
-#'   \item Efficient vector operations using Armadillo C++ library
-#' }
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
-#' The returned gradient is negated to align with minimization of negative log-likelihood
-#' in optimization routines.
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#' (Note: Specific gradient formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{grgkw}} (parent distribution gradient),
+#' \code{\link{llbkw}} (negative log-likelihood for BKw),
+#' \code{\link{hsbkw}} (Hessian for BKw, if available),
+#' \code{\link{dbkw}} (density for BKw),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+#' \code{\link[base]{digamma}}.
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a BKw distribution
+#' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rbkw(100, 2, 3, 1, 0.5)
-#' hist(x, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
+#' true_par_bkw <- c(alpha = 2, beta = 3, gamma = 1, delta = 0.5)
+#' if (exists("rbkw")) {
+#'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+#'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
+#' } else {
+#'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+#'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
+#' }
+#' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5, 0.5), llbkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_bkw <- c(1.5, 2.5, 0.8, 0.3)
+#' mle_result_bkw <- stats::optim(par = start_par_bkw,
+#'                                fn = llbkw,
+#'                                gr = grbkw, # Use analytical gradient for BKw
+#'                                method = "BFGS",
+#'                                hessian = TRUE,
+#'                                data = sample_data_bkw)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llbkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llbkw, x = result$par, data = x)
+#' # --- Compare analytical gradient to numerical gradient ---
+#' if (mle_result_bkw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE)) {
 #'
-#' ana_grad <- grbkw(result$par, data = x)
-#' ana_hess <- hsbkw(result$par, data = x)
+#'   mle_par_bkw <- mle_result_bkw$par
+#'   cat("\nComparing Gradients for BKw at MLE estimates:\n")
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'   # Numerical gradient of llbkw
+#'   num_grad_bkw <- numDeriv::grad(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
 #'
+#'   # Analytical gradient from grbkw
+#'   ana_grad_bkw <- grbkw(par = mle_par_bkw, data = sample_data_bkw)
+#'
+#'   cat("Numerical Gradient (BKw):\n")
+#'   print(num_grad_bkw)
+#'   cat("Analytical Gradient (BKw):\n")
+#'   print(ana_grad_bkw)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between BKw gradients:\n")
+#'   print(max(abs(num_grad_bkw - ana_grad_bkw)))
+#'
+#' } else {
+#'   cat("\nSkipping BKw gradient comparison.\n")
 #' }
 #'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#' # --- Optional: Compare with relevant components of GKw gradient ---
+#' # Requires grgkw function
+#' if (mle_result_bkw$convergence == 0 && exists("grgkw")) {
+#'   # Create 5-param vector for grgkw (insert lambda=1)
+#'   mle_par_gkw_equiv <- c(mle_par_bkw[1:4], lambda = 1.0)
+#'   ana_grad_gkw <- grgkw(par = mle_par_gkw_equiv, data = sample_data_bkw)
+#'   # Extract components corresponding to alpha, beta, gamma, delta
+#'   ana_grad_gkw_subset <- ana_grad_gkw[c(1, 2, 3, 4)]
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#'   cat("\nComparison with relevant components of GKw gradient:\n")
+#'   cat("Max absolute difference:\n")
+#'   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 grbkw <- function(par, data) {
     .Call(`_gkwreg_grbkw`, par, data)
 }
 
-#' @title Analytic Hessian Matrix for Beta-Kumaraswamy Distribution
+#' @title Hessian Matrix of the Negative Log-Likelihood for the BKw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize hessian
 #'
 #' @description
-#' Computes the analytic Hessian matrix of the log-likelihood function for
-#' the Beta-Kumaraswamy (BKw) distribution. This function provides
-#' exact second derivatives needed for optimization and inference.
+#' Computes the analytic 4x4 Hessian matrix (matrix of second partial derivatives)
+#' of the negative log-likelihood function for the Beta-Kumaraswamy (BKw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}).
+#' This distribution is the special case of the Generalized Kumaraswamy (GKw)
+#' distribution where \eqn{\lambda = 1}. The Hessian is useful for estimating
+#' standard errors and in optimization algorithms.
 #'
-#' @param par Numeric vector of length 4 containing the parameters
-#'        (α, β, γ, δ) in that order. All parameters must be positive.
-#' @param data Numeric vector of observations, where all values must be
-#'        in the open interval (0,1).
+#' @param par A numeric vector of length 4 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return A 4×4 numeric matrix representing the Hessian of the negative
-#'         log-likelihood function. If parameters or data are invalid
-#'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
-#'         NaN values.
+#' @return Returns a 4x4 numeric matrix representing the Hessian matrix of the
+#'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+#'   where \eqn{\theta = (\alpha, \beta, \gamma, \delta)}.
+#'   Returns a 4x4 matrix populated with \code{NaN} if any parameter values are
+#'   invalid according to their constraints, or if any value in \code{data} is
+#'   not in the interval (0, 1).
 #'
 #' @details
-#' The log-likelihood for the Beta-Kumaraswamy distribution is:
-#'
+#' This function calculates the analytic second partial derivatives of the
+#' negative log-likelihood function based on the BKw log-likelihood
+#' (\eqn{\lambda=1} case of GKw, see \code{\link{llbkw}}):
 #' \deqn{
-#' \ell(\theta) = n \ln(\alpha) + n \ln(\beta) - n \ln B(\gamma, \delta+1)
-#' + (\alpha-1) \sum \ln(x_i)
-#' + (\beta(\delta+1)-1) \sum \ln(1 - x_i^\alpha)
-#' + (\gamma-1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
+#' \ell(\theta | \mathbf{x}) = n[\ln(\alpha) + \ln(\beta) - \ln B(\gamma, \delta+1)]
+#' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta(\delta+1)-1)\ln(v_i) + (\gamma-1)\ln(w_i)]
 #' }
-#'
-#' where λ is fixed at 1 for this distribution.
-#'
-#' The implementation computes all second derivatives analytically for each term.
-#' For computational efficiency, the following transformations are used:
+#' where \eqn{\theta = (\alpha, \beta, \gamma, \delta)}, \eqn{B(a,b)}
+#' is the Beta function (\code{\link[base]{beta}}), and intermediate terms are:
 #' \itemize{
-#'   \item \deqn{A = x^α} and derivatives
-#'   \item \deqn{v = 1 - A}
-#'   \item \deqn{w = 1 - v^β}
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
 #' }
+#' The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}
+#' for \eqn{\theta_i, \theta_j \in \{\alpha, \beta, \gamma, \delta\}}.
 #'
-#' The returned Hessian matrix has the following structure:
+#' Key properties of the returned matrix:
 #' \itemize{
-#'   \item Rows/columns 1-4 correspond to α, β, γ, δ respectively
-#'   \item The matrix is symmetric (as expected for a Hessian)
-#'   \item The matrix represents second derivatives of the negative log-likelihood
+#'   \item Dimensions: 4x4.
+#'   \item Symmetry: The matrix is symmetric.
+#'   \item Ordering: Rows and columns correspond to the parameters in the order
+#'     \eqn{\alpha, \beta, \gamma, \delta}.
+#'   \item Content: Analytic second derivatives of the *negative* log-likelihood.
 #' }
+#' This corresponds to the relevant 4x4 submatrix of the 5x5 GKw Hessian (\code{\link{hsgkw}})
+#' evaluated at \eqn{\lambda=1}. The exact analytical formulas are implemented directly.
 #'
-#' This function is implemented in C++ for computational efficiency.
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{hsgkw}} (parent distribution Hessian),
+#' \code{\link{llbkw}} (negative log-likelihood for BKw),
+#' \code{\link{grbkw}} (gradient for BKw, if available),
+#' \code{\link{dbkw}} (density for BKw),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a BKw distribution
+#' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rbkw(100, 2, 3, 1, 0.5)
-#' hist(x, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
+#' true_par_bkw <- c(alpha = 2, beta = 3, gamma = 1, delta = 0.5)
+#' if (exists("rbkw")) {
+#'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+#'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
+#' } else {
+#'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+#'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
+#' }
+#' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5, 0.5), llbkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_bkw <- c(1.5, 2.5, 0.8, 0.3)
+#' mle_result_bkw <- stats::optim(par = start_par_bkw,
+#'                                fn = llbkw,
+#'                                gr = if (exists("grbkw")) grbkw else NULL,
+#'                                method = "BFGS",
+#'                                hessian = TRUE, # Ask optim for numerical Hessian
+#'                                data = sample_data_bkw)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llbkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llbkw, x = result$par, data = x)
+#' # --- Compare analytical Hessian to numerical Hessian ---
+#' if (mle_result_bkw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("hsbkw")) {
 #'
-#' ana_grad <- grbkw(result$par, data = x)
-#' ana_hess <- hsbkw(result$par, data = x)
+#'   mle_par_bkw <- mle_result_bkw$par
+#'   cat("\nComparing Hessians for BKw at MLE estimates:\n")
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'   # Numerical Hessian of llbkw
+#'   num_hess_bkw <- numDeriv::hessian(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
 #'
+#'   # Analytical Hessian from hsbkw
+#'   ana_hess_bkw <- hsbkw(par = mle_par_bkw, data = sample_data_bkw)
+#'
+#'   cat("Numerical Hessian (BKw):\n")
+#'   print(round(num_hess_bkw, 4))
+#'   cat("Analytical Hessian (BKw):\n")
+#'   print(round(ana_hess_bkw, 4))
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between BKw Hessians:\n")
+#'   print(max(abs(num_hess_bkw - ana_hess_bkw)))
+#'
+#'   # Optional: Use analytical Hessian for Standard Errors
+#'   # tryCatch({
+#'   #   cov_matrix_bkw <- solve(ana_hess_bkw)
+#'   #   std_errors_bkw <- sqrt(diag(cov_matrix_bkw))
+#'   #   cat("Std. Errors from Analytical BKw Hessian:\n")
+#'   #   print(std_errors_bkw)
+#'   # }, error = function(e) {
+#'   #   warning("Could not invert analytical BKw Hessian: ", e$message)
+#'   # })
+#'
+#' } else {
+#'   cat("\nSkipping BKw Hessian comparison.\n")
+#'   cat("Requires convergence, 'numDeriv' package, and function 'hsbkw'.\n")
 #' }
 #'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
-#'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' } # End of \dontrun block
 #'
 #' @export
 hsbkw <- function(par, data) {
     .Call(`_gkwreg_hsbkw`, par, data)
 }
 
-#' @title Density for Exponentiated Kumaraswamy Distribution
+#' @title Density of the Exponentiated Kumaraswamy (EKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution density
 #'
 #' @description
-#' Computes the PDF of EKw(α, β, λ), where \eqn{\alpha, β, λ > 0}.
+#' Computes the probability density function (PDF) for the Exponentiated
+#' Kumaraswamy (EKw) distribution with parameters \code{alpha} (\eqn{\alpha}),
+#' \code{beta} (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}).
+#' This distribution is defined on the interval (0, 1).
 #'
-#' @param x Vector of quantiles in (0,1).
-#' @param alpha Shape parameter \eqn{\alpha > 0}.
-#' @param beta Shape parameter \eqn{\beta > 0}.
-#' @param lambda Shape parameter \eqn{\lambda > 0}.
-#' @param log_prob Logical; if TRUE, returns log-density, else density.
+#' @param x Vector of quantiles (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lambda Shape parameter \code{lambda} > 0 (exponent parameter).
+#'   Can be a scalar or a vector. Default: 1.0.
+#' @param log_prob Logical; if \code{TRUE}, the logarithm of the density is
+#'   returned (\eqn{\log(f(x))}). Default: \code{FALSE}.
+#'
+#' @return A vector of density values (\eqn{f(x)}) or log-density values
+#'   (\eqn{\log(f(x))}). The length of the result is determined by the recycling
+#'   rule applied to the arguments (\code{x}, \code{alpha}, \code{beta},
+#'   \code{lambda}). Returns \code{0} (or \code{-Inf} if
+#'   \code{log_prob = TRUE}) for \code{x} outside the interval (0, 1), or
+#'   \code{NaN} if parameters are invalid (e.g., \code{alpha <= 0},
+#'   \code{beta <= 0}, \code{lambda <= 0}).
 #'
 #' @details
-#' The PDF is
+#' The probability density function (PDF) of the Exponentiated Kumaraswamy (EKw)
+#' distribution is given by:
 #' \deqn{
-#'   f(x) = \lambda\,\alpha\,\beta \; x^{\alpha-1} (1 - x^α)^{\beta-1} \;
-#'          [1 - (1 - x^α)^\beta ]^{\lambda - 1}, \quad 0<x<1.
+#' f(x; \alpha, \beta, \lambda) = \lambda \alpha \beta x^{\alpha-1} (1 - x^\alpha)^{\beta-1} \bigl[1 - (1 - x^\alpha)^\beta \bigr]^{\lambda - 1}
 #' }
-#' This follows from the GKw distribution with \eqn{\gamma=1,\;\delta=0}.
+#' for \eqn{0 < x < 1}.
 #'
-#' @return A vector of the same length as the broadcast of (x, alpha, beta, lambda).
+#' The EKw distribution is a special case of the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution (\code{\link{dgkw}}) obtained
+#' by setting the parameters \eqn{\gamma = 1} and \eqn{\delta = 0}.
+#' When \eqn{\lambda = 1}, the EKw distribution reduces to the standard
+#' Kumaraswamy distribution.
+#'
+#' @references
+#' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+#' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{dgkw}} (parent distribution density),
+#' \code{\link{pekw}}, \code{\link{qekw}}, \code{\link{rekw}} (other EKw functions),
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' x_vals <- c(0.2, 0.5, 0.8)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#' lambda_par <- 1.5 # Exponent parameter
+#'
+#' # Calculate density
+#' densities <- dekw(x_vals, alpha_par, beta_par, lambda_par)
+#' print(densities)
+#'
+#' # Calculate log-density
+#' log_densities <- dekw(x_vals, alpha_par, beta_par, lambda_par, log_prob = TRUE)
+#' print(log_densities)
+#' # Check: should match log(densities)
+#' print(log(densities))
+#'
+#' # Compare with dgkw setting gamma = 1, delta = 0
+#' densities_gkw <- dgkw(x_vals, alpha_par, beta_par, gamma = 1.0, delta = 0.0,
+#'                       lambda = lambda_par)
+#' print(paste("Max difference:", max(abs(densities - densities_gkw)))) # Should be near zero
+#'
+#' # Plot the density for different lambda values
+#' curve_x <- seq(0.01, 0.99, length.out = 200)
+#' curve_y1 <- dekw(curve_x, alpha = 2, beta = 3, lambda = 0.5) # less peaked
+#' curve_y2 <- dekw(curve_x, alpha = 2, beta = 3, lambda = 1.0) # standard Kw
+#' curve_y3 <- dekw(curve_x, alpha = 2, beta = 3, lambda = 2.0) # more peaked
+#'
+#' plot(curve_x, curve_y2, type = "l", main = "EKw Density Examples (alpha=2, beta=3)",
+#'      xlab = "x", ylab = "f(x)", col = "red", ylim = range(0, curve_y1, curve_y2, curve_y3))
+#' lines(curve_x, curve_y1, col = "blue")
+#' lines(curve_x, curve_y3, col = "green")
+#' legend("topright", legend = c("lambda=0.5", "lambda=1.0 (Kw)", "lambda=2.0"),
+#'        col = c("blue", "red", "green"), lty = 1, bty = "n")
+#'
+#' # Vectorized parameters
+#' lambdas_vec <- c(0.5, 1.0, 2.0)
+#' densities_vec <- dekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
+#' print(densities_vec) # Density at x=0.5 for 3 different lambda values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 dekw <- function(x, alpha, beta, lambda, log_prob = FALSE) {
     .Call(`_gkwreg_dekw`, x, alpha, beta, lambda, log_prob)
 }
 
-#' @title CDF for Exponentiated Kumaraswamy Distribution
+#' @title Cumulative Distribution Function (CDF) of the EKw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution cumulative
 #'
 #' @description
-#' Computes F(x)= P(X ≤ x) for EKw(α, β, λ).
+#' Computes the cumulative distribution function (CDF), \eqn{P(X \le q)}, for the
+#' Exponentiated Kumaraswamy (EKw) distribution with parameters \code{alpha}
+#' (\eqn{\alpha}), \code{beta} (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}).
+#' This distribution is defined on the interval (0, 1) and is a special case
+#' of the Generalized Kumaraswamy (GKw) distribution where \eqn{\gamma = 1}
+#' and \eqn{\delta = 0}.
 #'
-#' @param q Vector of quantiles in (0,1).
-#' @param alpha Shape parameter \eqn{\alpha > 0}.
-#' @param beta Shape parameter \eqn{\beta > 0}.
-#' @param lambda Shape parameter \eqn{\lambda > 0}.
-#' @param lower_tail Logical; if TRUE, returns F(q); else 1-F(q).
-#' @param log_p Logical; if TRUE, returns log(F(q)) or log(1-F(q)).
+#' @param q Vector of quantiles (values generally between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lambda Shape parameter \code{lambda} > 0 (exponent parameter).
+#'   Can be a scalar or a vector. Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are
+#'   \eqn{P(X \le q)}, otherwise, \eqn{P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of probabilities, \eqn{F(q)}, or their logarithms/complements
+#'   depending on \code{lower_tail} and \code{log_p}. The length of the result
+#'   is determined by the recycling rule applied to the arguments (\code{q},
+#'   \code{alpha}, \code{beta}, \code{lambda}). Returns \code{0} (or \code{-Inf}
+#'   if \code{log_p = TRUE}) for \code{q <= 0} and \code{1} (or \code{0} if
+#'   \code{log_p = TRUE}) for \code{q >= 1}. Returns \code{NaN} for invalid
+#'   parameters.
 #'
 #' @details
-#' The CDF is
-#' \deqn{
-#'   F(x)= [1 - (1 - x^α)^β ]^λ, \quad 0<x<1.
-#' }
+#' The Exponentiated Kumaraswamy (EKw) distribution is a special case of the
+#' five-parameter Generalized Kumaraswamy distribution (\code{\link{pgkw}})
+#' obtained by setting parameters \eqn{\gamma = 1} and \eqn{\delta = 0}.
 #'
-#' @return A vector of probabilities of the same length as the broadcast of inputs.
+#' The CDF of the GKw distribution is \eqn{F_{GKw}(q) = I_{y(q)}(\gamma, \delta+1)},
+#' where \eqn{y(q) = [1-(1-q^{\alpha})^{\beta}]^{\lambda}} and \eqn{I_x(a,b)}
+#' is the regularized incomplete beta function (\code{\link[stats]{pbeta}}).
+#' Setting \eqn{\gamma=1} and \eqn{\delta=0} gives \eqn{I_{y(q)}(1, 1)}. Since
+#' \eqn{I_x(1, 1) = x}, the CDF simplifies to \eqn{y(q)}:
+#' \deqn{
+#' F(q; \alpha, \beta, \lambda) = \bigl[1 - (1 - q^\alpha)^\beta \bigr]^\lambda
+#' }
+#' for \eqn{0 < q < 1}.
+#' The implementation uses this closed-form expression for efficiency and handles
+#' \code{lower_tail} and \code{log_p} arguments appropriately.
+#'
+#' @references
+#' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+#' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{pgkw}} (parent distribution CDF),
+#' \code{\link{dekw}}, \code{\link{qekw}}, \code{\link{rekw}} (other EKw functions),
+#' \code{\link[stats]{pkumar}} (if available)
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' q_vals <- c(0.2, 0.5, 0.8)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#' lambda_par <- 1.5
+#'
+#' # Calculate CDF P(X <= q)
+#' probs <- pekw(q_vals, alpha_par, beta_par, lambda_par)
+#' print(probs)
+#'
+#' # Calculate upper tail P(X > q)
+#' probs_upper <- pekw(q_vals, alpha_par, beta_par, lambda_par,
+#'                     lower_tail = FALSE)
+#' print(probs_upper)
+#' # Check: probs + probs_upper should be 1
+#' print(probs + probs_upper)
+#'
+#' # Calculate log CDF
+#' log_probs <- pekw(q_vals, alpha_par, beta_par, lambda_par, log_p = TRUE)
+#' print(log_probs)
+#' # Check: should match log(probs)
+#' print(log(probs))
+#'
+#' # Compare with pgkw setting gamma = 1, delta = 0
+#' probs_gkw <- pgkw(q_vals, alpha_par, beta_par, gamma = 1.0, delta = 0.0,
+#'                  lambda = lambda_par)
+#' print(paste("Max difference:", max(abs(probs - probs_gkw)))) # Should be near zero
+#'
+#' # Plot the CDF for different lambda values
+#' curve_q <- seq(0.01, 0.99, length.out = 200)
+#' curve_p1 <- pekw(curve_q, alpha = 2, beta = 3, lambda = 0.5)
+#' curve_p2 <- pekw(curve_q, alpha = 2, beta = 3, lambda = 1.0) # standard Kw
+#' curve_p3 <- pekw(curve_q, alpha = 2, beta = 3, lambda = 2.0)
+#'
+#' plot(curve_q, curve_p2, type = "l", main = "EKw CDF Examples (alpha=2, beta=3)",
+#'      xlab = "q", ylab = "F(q)", col = "red", ylim = c(0, 1))
+#' lines(curve_q, curve_p1, col = "blue")
+#' lines(curve_q, curve_p3, col = "green")
+#' legend("bottomright", legend = c("lambda=0.5", "lambda=1.0 (Kw)", "lambda=2.0"),
+#'        col = c("blue", "red", "green"), lty = 1, bty = "n")
+#'
+#' # Vectorized parameters
+#' lambdas_vec <- c(0.5, 1.0, 2.0)
+#' probs_vec <- pekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
+#' print(probs_vec) # CDF at q=0.5 for 3 different lambda values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 pekw <- function(q, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_pekw`, q, alpha, beta, lambda, lower_tail, log_p)
 }
 
-#' @title Quantile Function for Exponentiated Kumaraswamy
+#' @title Quantile Function of the Exponentiated Kumaraswamy (EKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution quantile
 #'
 #' @description
-#' Computes the quantiles x = Q(p) for EKw(α, β, λ).
+#' Computes the quantile function (inverse CDF) for the Exponentiated
+#' Kumaraswamy (EKw) distribution with parameters \code{alpha} (\eqn{\alpha}),
+#' \code{beta} (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}).
+#' It finds the value \code{q} such that \eqn{P(X \le q) = p}. This distribution
+#' is a special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\gamma = 1} and \eqn{\delta = 0}.
 #'
-#' @param p Vector of probabilities in (0,1).
-#' @param alpha Shape parameter \eqn{\alpha > 0}.
-#' @param beta Shape parameter \eqn{\beta > 0}.
-#' @param lambda Shape parameter \eqn{\lambda > 0}.
-#' @param lower_tail Logical; if TRUE, p is F(x). If FALSE, p=1-F(x).
-#' @param log_p Logical; if TRUE, p is given as log(p).
+#' @param p Vector of probabilities (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lambda Shape parameter \code{lambda} > 0 (exponent parameter).
+#'   Can be a scalar or a vector. Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are \eqn{p = P(X \le q)},
+#'   otherwise, probabilities are \eqn{p = P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \code{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of quantiles corresponding to the given probabilities \code{p}.
+#'   The length of the result is determined by the recycling rule applied to
+#'   the arguments (\code{p}, \code{alpha}, \code{beta}, \code{lambda}).
+#'   Returns:
+#'   \itemize{
+#'     \item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+#'     \item \code{NaN} for invalid parameters (e.g., \code{alpha <= 0},
+#'           \code{beta <= 0}, \code{lambda <= 0}).
+#'   }
+#'   Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 #'
 #' @details
-#' The inverse of \eqn{F(x)= [1 - (1 - x^\alpha)^\beta ]^\lambda} is
+#' The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(q)}. The CDF
+#' for the EKw (\eqn{\gamma=1, \delta=0}) distribution is \eqn{F(q) = [1 - (1 - q^\alpha)^\beta ]^\lambda}
+#' (see \code{\link{pekw}}). Inverting this equation for \eqn{q} yields the
+#' quantile function:
 #' \deqn{
-#'   Q(p)= \Bigl\{1 - \bigl[1 - p^{1/\lambda}\bigr]^{1/\beta}\Bigr\}^{1/\alpha}.
+#' Q(p) = \left\{ 1 - \left[ 1 - p^{1/\lambda} \right]^{1/\beta} \right\}^{1/\alpha}
 #' }
-#' if lower_tail=TRUE. Adjust accordingly if \code{lower_tail=FALSE} or \code{log_p=TRUE}.
+#' The function uses this closed-form expression and correctly handles the
+#' \code{lower_tail} and \code{log_p} arguments by transforming \code{p}
+#' appropriately before applying the formula. This is equivalent to the general
+#' GKw quantile function (\code{\link{qgkw}}) evaluated with \eqn{\gamma=1, \delta=0}.
+#'
+#' @references
+#' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+#' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{qgkw}} (parent distribution quantile function),
+#' \code{\link{dekw}}, \code{\link{pekw}}, \code{\link{rekw}} (other EKw functions),
+#' \code{\link[stats]{qunif}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' p_vals <- c(0.1, 0.5, 0.9)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#' lambda_par <- 1.5
+#'
+#' # Calculate quantiles
+#' quantiles <- qekw(p_vals, alpha_par, beta_par, lambda_par)
+#' print(quantiles)
+#'
+#' # Calculate quantiles for upper tail probabilities P(X > q) = p
+#' quantiles_upper <- qekw(p_vals, alpha_par, beta_par, lambda_par,
+#'                         lower_tail = FALSE)
+#' print(quantiles_upper)
+#' # Check: qekw(p, ..., lt=F) == qekw(1-p, ..., lt=T)
+#' print(qekw(1 - p_vals, alpha_par, beta_par, lambda_par))
+#'
+#' # Calculate quantiles from log probabilities
+#' log_p_vals <- log(p_vals)
+#' quantiles_logp <- qekw(log_p_vals, alpha_par, beta_par, lambda_par,
+#'                        log_p = TRUE)
+#' print(quantiles_logp)
+#' # Check: should match original quantiles
+#' print(quantiles)
+#'
+#' # Compare with qgkw setting gamma = 1, delta = 0
+#' quantiles_gkw <- qgkw(p_vals, alpha = alpha_par, beta = beta_par,
+#'                      gamma = 1.0, delta = 0.0, lambda = lambda_par)
+#' print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be near zero
+#'
+#' # Verify inverse relationship with pekw
+#' p_check <- 0.75
+#' q_calc <- qekw(p_check, alpha_par, beta_par, lambda_par)
+#' p_recalc <- pekw(q_calc, alpha_par, beta_par, lambda_par)
+#' print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
+#' # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
+#'
+#' # Boundary conditions
+#' print(qekw(c(0, 1), alpha_par, beta_par, lambda_par)) # Should be 0, 1
+#' print(qekw(c(-Inf, 0), alpha_par, beta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
+#'
+#' # Vectorized parameters
+#' lambdas_vec <- c(0.5, 1.0, 2.0)
+#' quantiles_vec <- qekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
+#' print(quantiles_vec) # Median for 3 different lambda values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 qekw <- function(p, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_qekw`, p, alpha, beta, lambda, lower_tail, log_p)
 }
 
-#' @title Random Generation for Exponentiated Kumaraswamy Distribution
+#' @title Random Number Generation for the Exponentiated Kumaraswamy (EKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution random
 #'
 #' @description
-#' Generates n samples from EKw(α, β, λ).
+#' Generates random deviates from the Exponentiated Kumaraswamy (EKw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}). This distribution is a
+#' special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\gamma = 1} and \eqn{\delta = 0}.
 #'
-#' @param n Integer number of observations.
-#' @param alpha Shape parameter \eqn{\alpha > 0}.
-#' @param beta Shape parameter \eqn{\beta > 0}.
-#' @param lambda Shape parameter \eqn{\lambda > 0}.
+#' @param n Number of observations. If \code{length(n) > 1}, the length is
+#'   taken to be the number required. Must be a non-negative integer.
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lambda Shape parameter \code{lambda} > 0 (exponent parameter).
+#'   Can be a scalar or a vector. Default: 1.0.
+#'
+#' @return A vector of length \code{n} containing random deviates from the EKw
+#'   distribution. The length of the result is determined by \code{n} and the
+#'   recycling rule applied to the parameters (\code{alpha}, \code{beta},
+#'   \code{lambda}). Returns \code{NaN} if parameters
+#'   are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0}, \code{lambda <= 0}).
 #'
 #' @details
-#' Implementation via the quantile method:  X = Q(U),  U ~ Uniform(0,1).
-#' The quantile is
+#' The generation method uses the inverse transform (quantile) method.
+#' That is, if \eqn{U} is a random variable following a standard Uniform
+#' distribution on (0, 1), then \eqn{X = Q(U)} follows the EKw distribution,
+#' where \eqn{Q(u)} is the EKw quantile function (\code{\link{qekw}}):
 #' \deqn{
-#'   Q(u)= \Bigl\{1 - \bigl[1 - u^{1/\lambda}\bigr]^{1/\beta}\Bigr\}^{1/\alpha}.
+#' Q(u) = \left\{ 1 - \left[ 1 - u^{1/\lambda} \right]^{1/\beta} \right\}^{1/\alpha}
 #' }
+#' This is computationally equivalent to the general GKw generation method
+#' (\code{\link{rgkw}}) when specialized for \eqn{\gamma=1, \delta=0}, as the
+#' required Beta(1, 1) random variate is equivalent to a standard Uniform(0, 1)
+#' variate. The implementation generates \eqn{U} using \code{\link[stats]{runif}}
+#' and applies the transformation above.
+#'
+#' @references
+#' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+#' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
+#' (General methods for random variate generation).
+#'
+#' @seealso
+#' \code{\link{rgkw}} (parent distribution random generation),
+#' \code{\link{dekw}}, \code{\link{pekw}}, \code{\link{qekw}} (other EKw functions),
+#' \code{\link[stats]{runif}}
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(2027) # for reproducibility
+#'
+#' # Generate 1000 random values from a specific EKw distribution
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#' lambda_par <- 1.5
+#'
+#' x_sample_ekw <- rekw(1000, alpha = alpha_par, beta = beta_par, lambda = lambda_par)
+#' summary(x_sample_ekw)
+#'
+#' # Histogram of generated values compared to theoretical density
+#' hist(x_sample_ekw, breaks = 30, freq = FALSE, # freq=FALSE for density
+#'      main = "Histogram of EKw Sample", xlab = "x", ylim = c(0, 3.0))
+#' curve(dekw(x, alpha = alpha_par, beta = beta_par, lambda = lambda_par),
+#'       add = TRUE, col = "red", lwd = 2, n = 201)
+#' legend("topright", legend = "Theoretical PDF", col = "red", lwd = 2, bty = "n")
+#'
+#' # Comparing empirical and theoretical quantiles (Q-Q plot)
+#' prob_points <- seq(0.01, 0.99, by = 0.01)
+#' theo_quantiles <- qekw(prob_points, alpha = alpha_par, beta = beta_par,
+#'                        lambda = lambda_par)
+#' emp_quantiles <- quantile(x_sample_ekw, prob_points, type = 7)
+#'
+#' plot(theo_quantiles, emp_quantiles, pch = 16, cex = 0.8,
+#'      main = "Q-Q Plot for EKw Distribution",
+#'      xlab = "Theoretical Quantiles", ylab = "Empirical Quantiles (n=1000)")
+#' abline(a = 0, b = 1, col = "blue", lty = 2)
+#'
+#' # Compare summary stats with rgkw(..., gamma=1, delta=0, ...)
+#' # Note: individual values will differ due to randomness
+#' x_sample_gkw <- rgkw(1000, alpha = alpha_par, beta = beta_par, gamma = 1.0,
+#'                      delta = 0.0, lambda = lambda_par)
+#' print("Summary stats for rekw sample:")
+#' print(summary(x_sample_ekw))
+#' print("Summary stats for rgkw(gamma=1, delta=0) sample:")
+#' print(summary(x_sample_gkw)) # Should be similar
+#'
+#' # Vectorized parameters: generate 1 value for each lambda
+#' lambdas_vec <- c(0.5, 1.0, 2.0)
+#' n_param <- length(lambdas_vec)
+#' samples_vec <- rekw(n_param, alpha = alpha_par, beta = beta_par,
+#'                     lambda = lambdas_vec)
+#' print(samples_vec) # One sample for each lambda value
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 rekw <- function(n, alpha, beta, lambda) {
     .Call(`_gkwreg_rekw`, n, alpha, beta, lambda)
 }
 
-#' @title Negative Log-Likelihood for Exponentiated Kumaraswamy
+#' @title Negative Log-Likelihood for the Exponentiated Kumaraswamy (EKw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize
 #'
 #' @description
-#' Computes the negative log-likelihood of EKw(α, β, λ), for data in (0,1).
+#' Computes the negative log-likelihood function for the Exponentiated
+#' Kumaraswamy (EKw) distribution with parameters \code{alpha} (\eqn{\alpha}),
+#' \code{beta} (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}), given a vector
+#' of observations. This distribution is the special case of the Generalized
+#' Kumaraswamy (GKw) distribution where \eqn{\gamma = 1} and \eqn{\delta = 0}.
+#' This function is suitable for maximum likelihood estimation.
 #'
-#' @param par NumericVector of length 3, (α, β, λ).
-#' @param data NumericVector of observations, each in (0,1).
+#' @param par A numeric vector of length 3 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
+#'
+#' @return Returns a single \code{double} value representing the negative
+#'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+#'   if any parameter values in \code{par} are invalid according to their
+#'   constraints, or if any value in \code{data} is not in the interval (0, 1).
 #'
 #' @details
-#' The PDF is
+#' The Exponentiated Kumaraswamy (EKw) distribution is the GKw distribution
+#' (\code{\link{dekw}}) with \eqn{\gamma=1} and \eqn{\delta=0}. Its probability
+#' density function (PDF) is:
 #' \deqn{
-#'  f(x)= \lambda\,\alpha\,\beta \, x^{\alpha-1}\,(1-x^\alpha)^{\beta-1}\,[1-(1-x^\alpha)^\beta]^{\lambda-1}.
+#' f(x | \theta) = \lambda \alpha \beta x^{\alpha-1} (1 - x^\alpha)^{\beta-1} \bigl[1 - (1 - x^\alpha)^\beta \bigr]^{\lambda - 1}
 #' }
-#' The log-likelihood is the sum of log(f(x_i)). We return the negative log-likelihood.
+#' for \eqn{0 < x < 1} and \eqn{\theta = (\alpha, \beta, \lambda)}.
+#' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+#' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+#' \deqn{
+#' \ell(\theta | \mathbf{x}) = n[\ln(\lambda) + \ln(\alpha) + \ln(\beta)]
+#' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i)]
+#' }
+#' where:
+#' \itemize{
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#' }
+#' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+#' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+#' Numerical stability is maintained similarly to \code{\link{llgkw}}.
 #'
-#' @return A double value: the negative log-likelihood. \code{Inf} if invalid.
+#' @references
+#' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+#' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+#' \code{\link{dekw}}, \code{\link{pekw}}, \code{\link{qekw}}, \code{\link{rekw}},
+#' \code{grekw} (gradient, if available),
+#' \code{hsekw} (Hessian, if available),
+#' \code{\link[stats]{optim}}
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from an EKw distribution
+#' # Assuming existence of rekw, grekw, hsekw functions for EKw distribution
+#'
+#' # Generate sample data from a known EKw distribution
 #' set.seed(123)
-#' x <- rekw(100, 2, 3, 0.5)
-#' hist(x, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
-#'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llekw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
-#'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llekw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llekw, x = result$par, data = x)
-#'
-#' ana_grad <- grekw(result$par, data = x)
-#' ana_hess <- hsekw(result$par, data = x)
-#'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#' true_par_ekw <- c(alpha = 2, beta = 3, lambda = 0.5)
+#' # Use rekw if it exists, otherwise use rgkw with gamma=1, delta=0
+#' if (exists("rekw")) {
+#'   sample_data_ekw <- rekw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+#'                           lambda = true_par_ekw[3])
+#' } else {
+#'   sample_data_ekw <- rgkw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+#'                          gamma = 1, delta = 0, lambda = true_par_ekw[3])
 #' }
+#' hist(sample_data_ekw, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+#'
+#' # --- Maximum Likelihood Estimation using optim ---
+#' # Initial parameter guess
+#' start_par_ekw <- c(1.5, 2.5, 0.8)
+#'
+#' # Perform optimization (minimizing negative log-likelihood)
+#' # Use method="L-BFGS-B" for box constraints if needed (all params > 0)
+#' mle_result_ekw <- stats::optim(par = start_par_ekw,
+#'                                fn = llekw, # Use the EKw neg-log-likelihood
+#'                                method = "BFGS", # Or "L-BFGS-B" with lower=1e-6
+#'                                hessian = TRUE,
+#'                                data = sample_data_ekw)
+#'
+#' # Check convergence and results
+#' if (mle_result_ekw$convergence == 0) {
+#'   print("Optimization converged successfully.")
+#'   mle_par_ekw <- mle_result_ekw$par
+#'   print("Estimated EKw parameters:")
+#'   print(mle_par_ekw)
+#'   print("True EKw parameters:")
+#'   print(true_par_ekw)
+#' } else {
+#'   warning("Optimization did not converge!")
+#'   print(mle_result_ekw$message)
+#' }
+#'
+#' # --- Compare numerical and analytical derivatives (if available) ---
+#' # Requires 'numDeriv' package and analytical functions 'grekw', 'hsekw'
+#' if (mle_result_ekw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("grekw") && exists("hsekw")) {
+#'
+#'   cat("\nComparing Derivatives at EKw MLE estimates:\n")
+#'
+#'   # Numerical derivatives of llekw
+#'   num_grad_ekw <- numDeriv::grad(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+#'   num_hess_ekw <- numDeriv::hessian(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+#'
+#'   # Analytical derivatives (assuming they return derivatives of negative LL)
+#'   ana_grad_ekw <- grekw(par = mle_par_ekw, data = sample_data_ekw)
+#'   ana_hess_ekw <- hsekw(par = mle_par_ekw, data = sample_data_ekw)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between gradients:\n")
+#'   print(max(abs(num_grad_ekw - ana_grad_ekw)))
+#'   cat("Max absolute difference between Hessians:\n")
+#'   print(max(abs(num_hess_ekw - ana_hess_ekw)))
+#'
+#' } else {
+#'    cat("\nSkipping derivative comparison for EKw.\n")
+#'    cat("Requires convergence, 'numDeriv' package and functions 'grekw', 'hsekw'.\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 llekw <- function(par, data) {
     .Call(`_gkwreg_llekw`, par, data)
 }
 
-#' @title Gradient Function for Exponentiated Kumaraswamy Log-Likelihood
+#' @title Gradient of the Negative Log-Likelihood for the EKw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize gradient
 #'
 #' @description
-#' Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-#' function for the Exponentiated Kumaraswamy (EKw) distribution. This function provides
-#' the exact gradient needed for efficient optimization in maximum likelihood estimation.
+#' Computes the gradient vector (vector of first partial derivatives) of the
+#' negative log-likelihood function for the Exponentiated Kumaraswamy (EKw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}). This distribution is the
+#' special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\gamma = 1} and \eqn{\delta = 0}. The gradient is useful for optimization.
 #'
-#' @param par NumericVector of length 3 containing parameters (α, β, λ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 3 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericVector of length 3 containing the gradient components (partial derivatives)
-#'         of the negative log-likelihood with respect to each parameter (α, β, λ).
-#'         Returns a vector of NaN values if any parameters or data values are invalid.
+#' @return Returns a numeric vector of length 3 containing the partial derivatives
+#'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+#'   respect to each parameter: \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \lambda)}.
+#'   Returns a vector of \code{NaN} if any parameter values are invalid according
+#'   to their constraints, or if any value in \code{data} is not in the
+#'   interval (0, 1).
 #'
 #' @details
-#' The gradient vector contains the following partial derivatives of the negative log-likelihood:
+#' The components of the gradient vector of the negative log-likelihood
+#' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the EKw (\eqn{\gamma=1, \delta=0})
+#' model are:
 #'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \alpha} = \frac{n}{\alpha} + \sum_{i=1}^{n}\log(x_i) -
-#' \sum_{i=1}^{n}\left[x_i^{\alpha} \log(x_i) \left(\frac{\beta-1}{v_i} -
+#' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
+#' + \sum_{i=1}^{n}\left[x_i^{\alpha} \ln(x_i) \left(\frac{\beta-1}{v_i} -
 #' \frac{(\lambda-1) \beta v_i^{\beta-1}}{w_i}\right)\right]
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \beta} = \frac{n}{\beta} + \sum_{i=1}^{n}\log(v_i) -
-#' \sum_{i=1}^{n}\left[v_i^{\beta} \log(v_i) \frac{\lambda-1}{w_i}\right]
+#' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - \sum_{i=1}^{n}\ln(v_i)
+#' + \sum_{i=1}^{n}\left[\frac{(\lambda-1) v_i^{\beta} \ln(v_i)}{w_i}\right]
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \lambda} = \frac{n}{\lambda} +
-#' \sum_{i=1}^{n}\log(w_i)
+#' -\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \sum_{i=1}^{n}\ln(w_i)
 #' }
 #'
 #' where:
 #' \itemize{
-#'   \item \deqn{v_i = 1 - x_i^{\alpha}}
-#'   \item \deqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
 #' }
-#' @examples
-#' \dontrun{
-#' # Generate sample data from an EKw distribution
-#' set.seed(123)
-#' x <- rekw(100, 2, 3, 0.5)
-#' hist(x, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
-#'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llekw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
-#'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llekw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llekw, x = result$par, data = x)
-#'
-#' ana_grad <- grekw(result$par, data = x)
-#' ana_hess <- hsekw(result$par, data = x)
-#'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
-#' }
+#' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+#' minimizing the negative log-likelihood. They correspond to the relevant components
+#' of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\gamma=1, \delta=0}.
 #'
 #' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+#' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#' (Note: Specific gradient formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{grgkw}} (parent distribution gradient),
+#' \code{\link{llekw}} (negative log-likelihood for EKw),
+#' \code{hsekw} (Hessian for EKw, if available),
+#' \code{\link{dekw}} (density for EKw),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
+#'
+#' # Generate sample data
+#' set.seed(123)
+#' true_par_ekw <- c(alpha = 2, beta = 3, lambda = 0.5)
+#' if (exists("rekw")) {
+#'   sample_data_ekw <- rekw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+#'                           lambda = true_par_ekw[3])
+#' } else {
+#'   sample_data_ekw <- rgkw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+#'                           gamma = 1, delta = 0, lambda = true_par_ekw[3])
+#' }
+#' hist(sample_data_ekw, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+#'
+#' # --- Find MLE estimates ---
+#' start_par_ekw <- c(1.5, 2.5, 0.8)
+#' mle_result_ekw <- stats::optim(par = start_par_ekw,
+#'                                fn = llekw,
+#'                                gr = grekw, # Use analytical gradient for EKw
+#'                                method = "BFGS",
+#'                                hessian = TRUE,
+#'                                data = sample_data_ekw)
+#'
+#' # --- Compare analytical gradient to numerical gradient ---
+#' if (mle_result_ekw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE)) {
+#'
+#'   mle_par_ekw <- mle_result_ekw$par
+#'   cat("\nComparing Gradients for EKw at MLE estimates:\n")
+#'
+#'   # Numerical gradient of llekw
+#'   num_grad_ekw <- numDeriv::grad(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+#'
+#'   # Analytical gradient from grekw
+#'   ana_grad_ekw <- grekw(par = mle_par_ekw, data = sample_data_ekw)
+#'
+#'   cat("Numerical Gradient (EKw):\n")
+#'   print(num_grad_ekw)
+#'   cat("Analytical Gradient (EKw):\n")
+#'   print(ana_grad_ekw)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between EKw gradients:\n")
+#'   print(max(abs(num_grad_ekw - ana_grad_ekw)))
+#'
+#' } else {
+#'   cat("\nSkipping EKw gradient comparison.\n")
+#' }
+#'
+#' # Example with Hessian comparison (if hsekw exists)
+#' if (mle_result_ekw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) && exists("hsekw")) {
+#'
+#'   num_hess_ekw <- numDeriv::hessian(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+#'   ana_hess_ekw <- hsekw(par = mle_par_ekw, data = sample_data_ekw)
+#'   cat("\nMax absolute difference between EKw Hessians:\n")
+#'   print(max(abs(num_hess_ekw - ana_hess_ekw)))
+#'
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 grekw <- function(par, data) {
     .Call(`_gkwreg_grekw`, par, data)
 }
 
-#' @title Analytic Hessian Matrix for Exponentiated Kumaraswamy Distribution
+#' @title Hessian Matrix of the Negative Log-Likelihood for the EKw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize hessian
 #'
 #' @description
-#' Computes the analytic Hessian matrix of the log-likelihood function for
-#' the Exponentiated Kumaraswamy (EKw) distribution. This function provides
-#' exact second derivatives needed for optimization and inference.
+#' Computes the analytic 3x3 Hessian matrix (matrix of second partial derivatives)
+#' of the negative log-likelihood function for the Exponentiated Kumaraswamy (EKw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+#' (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}). This distribution is the
+#' special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\gamma = 1} and \eqn{\delta = 0}. The Hessian is useful for estimating
+#' standard errors and in optimization algorithms.
 #'
-#' @param par Numeric vector of length 3 containing the parameters
-#'        (α, β, λ) in that order. All parameters must be positive.
-#' @param data Numeric vector of observations, where all values must be
-#'        in the open interval (0,1).
+#' @param par A numeric vector of length 3 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return A 3×3 numeric matrix representing the Hessian of the negative
-#'         log-likelihood function. If parameters or data are invalid
-#'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
-#'         NaN values.
+#' @return Returns a 3x3 numeric matrix representing the Hessian matrix of the
+#'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+#'   where \eqn{\theta = (\alpha, \beta, \lambda)}.
+#'   Returns a 3x3 matrix populated with \code{NaN} if any parameter values are
+#'   invalid according to their constraints, or if any value in \code{data} is
+#'   not in the interval (0, 1).
 #'
 #' @details
-#' The log-likelihood for the Exponentiated Kumaraswamy distribution is:
-#'
+#' This function calculates the analytic second partial derivatives of the
+#' negative log-likelihood function based on the EKw log-likelihood
+#' (\eqn{\gamma=1, \delta=0} case of GKw, see \code{\link{llekw}}):
 #' \deqn{
-#' \ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta)
-#' + (\alpha-1) \sum \ln(x_i)
-#' + (\beta-1) \sum \ln(1 - x_i^\alpha)
-#' + (\lambda-1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
+#' \ell(\theta | \mathbf{x}) = n[\ln(\lambda) + \ln(\alpha) + \ln(\beta)]
+#' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i)]
 #' }
-#'
-#' The implementation computes all second derivatives analytically for each term.
-#' For computational efficiency, the following transformations are used:
+#' where \eqn{\theta = (\alpha, \beta, \lambda)} and intermediate terms are:
 #' \itemize{
-#'   \item \deqn{A = x^α} and derivatives
-#'   \item \deqn{v = 1 - A}
-#'   \item \deqn{w = 1 - v^β}
+#'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+#'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
 #' }
+#' The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}
+#' for \eqn{\theta_i, \theta_j \in \{\alpha, \beta, \lambda\}}.
 #'
-#' The returned Hessian matrix has the following structure:
+#' Key properties of the returned matrix:
 #' \itemize{
-#'   \item Rows/columns 1-3 correspond to α, β, λ respectively
-#'   \item The matrix is symmetric (as expected for a Hessian)
-#'   \item The matrix represents second derivatives of the negative log-likelihood
+#'   \item Dimensions: 3x3.
+#'   \item Symmetry: The matrix is symmetric.
+#'   \item Ordering: Rows and columns correspond to the parameters in the order
+#'     \eqn{\alpha, \beta, \lambda}.
+#'   \item Content: Analytic second derivatives of the *negative* log-likelihood.
 #' }
+#' This corresponds to the relevant 3x3 submatrix of the 5x5 GKw Hessian (\code{\link{hsgkw}})
+#' evaluated at \eqn{\gamma=1, \delta=0}. The exact analytical formulas are implemented directly.
 #'
-#' This function is implemented in C++ for computational efficiency.
+#' @references
+#' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+#' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{hsgkw}} (parent distribution Hessian),
+#' \code{\link{llekw}} (negative log-likelihood for EKw),
+#' \code{grekw} (gradient for EKw, if available),
+#' \code{\link{dekw}} (density for EKw),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from an EKw distribution
+#' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rekw(100, 2, 3, 0.5)
-#' hist(x, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+#' true_par_ekw <- c(alpha = 2, beta = 3, lambda = 0.5)
+#' if (exists("rekw")) {
+#'   sample_data_ekw <- rekw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+#'                           lambda = true_par_ekw[3])
+#' } else {
+#'   sample_data_ekw <- rgkw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+#'                          gamma = 1, delta = 0, lambda = true_par_ekw[3])
+#' }
+#' hist(sample_data_ekw, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llekw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_ekw <- c(1.5, 2.5, 0.8)
+#' mle_result_ekw <- stats::optim(par = start_par_ekw,
+#'                                fn = llekw,
+#'                                gr = if (exists("grekw")) grekw else NULL,
+#'                                method = "BFGS",
+#'                                hessian = TRUE, # Ask optim for numerical Hessian
+#'                                data = sample_data_ekw)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llekw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llekw, x = result$par, data = x)
+#' # --- Compare analytical Hessian to numerical Hessian ---
+#' if (mle_result_ekw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("hsekw")) {
 #'
-#' ana_grad <- grekw(result$par, data = x)
-#' ana_hess <- hsekw(result$par, data = x)
+#'   mle_par_ekw <- mle_result_ekw$par
+#'   cat("\nComparing Hessians for EKw at MLE estimates:\n")
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'   # Numerical Hessian of llekw
+#'   num_hess_ekw <- numDeriv::hessian(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
 #'
+#'   # Analytical Hessian from hsekw
+#'   ana_hess_ekw <- hsekw(par = mle_par_ekw, data = sample_data_ekw)
+#'
+#'   cat("Numerical Hessian (EKw):\n")
+#'   print(round(num_hess_ekw, 4))
+#'   cat("Analytical Hessian (EKw):\n")
+#'   print(round(ana_hess_ekw, 4))
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between EKw Hessians:\n")
+#'   print(max(abs(num_hess_ekw - ana_hess_ekw)))
+#'
+#'   # Optional: Use analytical Hessian for Standard Errors
+#'   # tryCatch({
+#'   #   cov_matrix_ekw <- solve(ana_hess_ekw)
+#'   #   std_errors_ekw <- sqrt(diag(cov_matrix_ekw))
+#'   #   cat("Std. Errors from Analytical EKw Hessian:\n")
+#'   #   print(std_errors_ekw)
+#'   # }, error = function(e) {
+#'   #   warning("Could not invert analytical EKw Hessian: ", e$message)
+#'   # })
+#'
+#' } else {
+#'   cat("\nSkipping EKw Hessian comparison.\n")
+#'   cat("Requires convergence, 'numDeriv' package, and function 'hsekw'.\n")
 #' }
 #'
-#'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
-#'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' } # End of \dontrun block
 #'
 #' @export
 hsekw <- function(par, data) {
     .Call(`_gkwreg_hsekw`, par, data)
 }
 
-#' @title Density of the Beta Power Distribution
+#' @title Density of the McDonald (Mc)/Beta Power Distribution Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution density mcdonald
 #'
 #' @description
-#' Computes the PDF of the Beta Power (BP or MC) distribution with parameters \eqn{γ, δ, λ}.
+#' Computes the probability density function (PDF) for the McDonald (Mc)
+#' distribution (also previously referred to as Beta Power) with parameters
+#' \code{gamma} (\eqn{\gamma}), \code{delta} (\eqn{\delta}), and \code{lambda}
+#' (\eqn{\lambda}). This distribution is defined on the interval (0, 1).
 #'
-#' @param x Vector of quantiles in (0,1).
-#' @param gamma Shape parameter \eqn{γ > 0}.
-#' @param delta Shape parameter \eqn{δ \ge 0}.
-#' @param lambda Shape parameter \eqn{λ > 0}.
-#' @param log_prob Logical; if TRUE, returns log-density.
+#' @param x Vector of quantiles (values between 0 and 1).
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param log_prob Logical; if \code{TRUE}, the logarithm of the density is
+#'   returned (\eqn{\log(f(x))}). Default: \code{FALSE}.
+#'
+#' @return A vector of density values (\eqn{f(x)}) or log-density values
+#'   (\eqn{\log(f(x))}). The length of the result is determined by the recycling
+#'   rule applied to the arguments (\code{x}, \code{gamma}, \code{delta},
+#'   \code{lambda}). Returns \code{0} (or \code{-Inf} if
+#'   \code{log_prob = TRUE}) for \code{x} outside the interval (0, 1), or
+#'   \code{NaN} if parameters are invalid (e.g., \code{gamma <= 0},
+#'   \code{delta < 0}, \code{lambda <= 0}).
 #'
 #' @details
-#' The PDF is
+#' The probability density function (PDF) of the McDonald (Mc) distribution
+#' is given by:
 #' \deqn{
-#'   f(x) = \frac{\lambda}{B(\gamma,\delta+1)} \; x^{\gamma \lambda - 1} \; (1 - x^\lambda)^\delta, \quad 0<x<1.
+#' f(x; \gamma, \delta, \lambda) = \frac{\lambda}{B(\gamma,\delta+1)} x^{\gamma \lambda - 1} (1 - x^\lambda)^\delta
 #' }
-#' with \eqn{B(\gamma,\delta+1)} the Beta function. This sub-family arises
-#' from the Generalized Kumaraswamy (GKw) by setting \eqn{\alpha=1,\beta=1}.
+#' for \eqn{0 < x < 1}, where \eqn{B(a,b)} is the Beta function
+#' (\code{\link[base]{beta}}).
 #'
-#' @return A vector of densities or log-densities, the same length as the broadcast of inputs.
+#' The Mc distribution is a special case of the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution (\code{\link{dgkw}}) obtained
+#' by setting the parameters \eqn{\alpha = 1} and \eqn{\beta = 1}.
+#' It was introduced by McDonald (1984) and is related to the Generalized Beta
+#' distribution of the first kind (GB1). When \eqn{\lambda=1}, it simplifies
+#' to the standard Beta distribution with parameters \eqn{\gamma} and
+#' \eqn{\delta+1}.
+#'
+#' @references
+#' McDonald, J. B. (1984). Some generalized functions for the size distribution
+#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{dgkw}} (parent distribution density),
+#' \code{\link{pmc}}, \code{\link{qmc}}, \code{\link{rmc}} (other Mc functions),
+#' \code{\link[stats]{dbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' x_vals <- c(0.2, 0.5, 0.8)
+#' gamma_par <- 2.0
+#' delta_par <- 1.5
+#' lambda_par <- 1.0 # Equivalent to Beta(gamma, delta+1)
+#'
+#' # Calculate density using dmc
+#' densities <- dmc(x_vals, gamma_par, delta_par, lambda_par)
+#' print(densities)
+#' # Compare with Beta density
+#' print(stats::dbeta(x_vals, shape1 = gamma_par, shape2 = delta_par + 1))
+#'
+#' # Calculate log-density
+#' log_densities <- dmc(x_vals, gamma_par, delta_par, lambda_par, log_prob = TRUE)
+#' print(log_densities)
+#'
+#' # Compare with dgkw setting alpha = 1, beta = 1
+#' densities_gkw <- dgkw(x_vals, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+#'                       delta = delta_par, lambda = lambda_par)
+#' print(paste("Max difference:", max(abs(densities - densities_gkw)))) # Should be near zero
+#'
+#' # Plot the density for different lambda values
+#' curve_x <- seq(0.01, 0.99, length.out = 200)
+#' curve_y1 <- dmc(curve_x, gamma = 2, delta = 3, lambda = 0.5)
+#' curve_y2 <- dmc(curve_x, gamma = 2, delta = 3, lambda = 1.0) # Beta(2, 4)
+#' curve_y3 <- dmc(curve_x, gamma = 2, delta = 3, lambda = 2.0)
+#'
+#' plot(curve_x, curve_y2, type = "l", main = "McDonald (Mc) Density (gamma=2, delta=3)",
+#'      xlab = "x", ylab = "f(x)", col = "red", ylim = range(0, curve_y1, curve_y2, curve_y3))
+#' lines(curve_x, curve_y1, col = "blue")
+#' lines(curve_x, curve_y3, col = "green")
+#' legend("topright", legend = c("lambda=0.5", "lambda=1.0 (Beta)", "lambda=2.0"),
+#'        col = c("blue", "red", "green"), lty = 1, bty = "n")
+#'
+#' # Vectorized parameters
+#' lambdas_vec <- c(0.5, 1.0, 2.0)
+#' densities_vec <- dmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
+#' print(densities_vec) # Density at x=0.5 for 3 different lambda values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 dmc <- function(x, gamma, delta, lambda, log_prob = FALSE) {
     .Call(`_gkwreg_dmc`, x, gamma, delta, lambda, log_prob)
 }
 
-#' @title CDF of the Beta Power Distribution
+#' @title CDF of the McDonald (Mc)/Beta Power Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution cumulative mcdonald
 #'
 #' @description
-#' Computes \eqn{F(q)= P(X ≤ q) for BP(γ, δ, λ)}.
+#' Computes the cumulative distribution function (CDF), \eqn{F(q) = P(X \le q)},
+#' for the McDonald (Mc) distribution (also known as Beta Power) with
+#' parameters \code{gamma} (\eqn{\gamma}), \code{delta} (\eqn{\delta}), and
+#' \code{lambda} (\eqn{\lambda}). This distribution is defined on the interval
+#' (0, 1) and is a special case of the Generalized Kumaraswamy (GKw)
+#' distribution where \eqn{\alpha = 1} and \eqn{\beta = 1}.
 #'
-#' @param q Vector of quantiles in (0,1).
-#' @param gamma Shape parameter \eqn{γ > 0}.
-#' @param delta Shape parameter \eqn{δ \ge 0}.
-#' @param lambda Shape parameter \eqn{λ > 0}.
-#' @param lower_tail Logical; if TRUE, returns F(q), else 1-F(q).
-#' @param log_p Logical; if TRUE, returns log-probabilities.
+#' @param q Vector of quantiles (values generally between 0 and 1).
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are
+#'   \eqn{P(X \le q)}, otherwise, \eqn{P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of probabilities, \eqn{F(q)}, or their logarithms/complements
+#'   depending on \code{lower_tail} and \code{log_p}. The length of the result
+#'   is determined by the recycling rule applied to the arguments (\code{q},
+#'   \code{gamma}, \code{delta}, \code{lambda}). Returns \code{0} (or \code{-Inf}
+#'   if \code{log_p = TRUE}) for \code{q <= 0} and \code{1} (or \code{0} if
+#'   \code{log_p = TRUE}) for \code{q >= 1}. Returns \code{NaN} for invalid
+#'   parameters.
 #'
 #' @details
+#' The McDonald (Mc) distribution is a special case of the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution (\code{\link{pgkw}}) obtained
+#' by setting parameters \eqn{\alpha = 1} and \eqn{\beta = 1}.
+#'
+#' The CDF of the GKw distribution is \eqn{F_{GKw}(q) = I_{y(q)}(\gamma, \delta+1)},
+#' where \eqn{y(q) = [1-(1-q^{\alpha})^{\beta}]^{\lambda}} and \eqn{I_x(a,b)}
+#' is the regularized incomplete beta function (\code{\link[stats]{pbeta}}).
+#' Setting \eqn{\alpha=1} and \eqn{\beta=1} simplifies \eqn{y(q)} to \eqn{q^\lambda},
+#' yielding the Mc CDF:
 #' \deqn{
-#'   F(x)= I_{x^\lambda}(\gamma, \delta+1) \;=\; \mathrm{pbeta}(x^\lambda,\;\gamma,\;\delta+1).
+#' F(q; \gamma, \delta, \lambda) = I_{q^\lambda}(\gamma, \delta+1)
 #' }
-#' The incomplete Beta approach is used for stable evaluation.
+#' This is evaluated using the \code{\link[stats]{pbeta}} function as
+#' \code{pbeta(q^lambda, shape1 = gamma, shape2 = delta + 1)}.
+#'
+#' @references
+#' McDonald, J. B. (1984). Some generalized functions for the size distribution
+#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{pgkw}} (parent distribution CDF),
+#' \code{\link{dmc}}, \code{\link{qmc}}, \code{\link{rmc}} (other Mc functions),
+#' \code{\link[stats]{pbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' q_vals <- c(0.2, 0.5, 0.8)
+#' gamma_par <- 2.0
+#' delta_par <- 1.5
+#' lambda_par <- 1.0 # Equivalent to Beta(gamma, delta+1)
+#'
+#' # Calculate CDF P(X <= q) using pmc
+#' probs <- pmc(q_vals, gamma_par, delta_par, lambda_par)
+#' print(probs)
+#' # Compare with Beta CDF
+#' print(stats::pbeta(q_vals, shape1 = gamma_par, shape2 = delta_par + 1))
+#'
+#' # Calculate upper tail P(X > q)
+#' probs_upper <- pmc(q_vals, gamma_par, delta_par, lambda_par,
+#'                    lower_tail = FALSE)
+#' print(probs_upper)
+#' # Check: probs + probs_upper should be 1
+#' print(probs + probs_upper)
+#'
+#' # Calculate log CDF
+#' log_probs <- pmc(q_vals, gamma_par, delta_par, lambda_par, log_p = TRUE)
+#' print(log_probs)
+#' # Check: should match log(probs)
+#' print(log(probs))
+#'
+#' # Compare with pgkw setting alpha = 1, beta = 1
+#' probs_gkw <- pgkw(q_vals, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+#'                   delta = delta_par, lambda = lambda_par)
+#' print(paste("Max difference:", max(abs(probs - probs_gkw)))) # Should be near zero
+#'
+#' # Plot the CDF for different lambda values
+#' curve_q <- seq(0.01, 0.99, length.out = 200)
+#' curve_p1 <- pmc(curve_q, gamma = 2, delta = 3, lambda = 0.5)
+#' curve_p2 <- pmc(curve_q, gamma = 2, delta = 3, lambda = 1.0) # Beta(2, 4)
+#' curve_p3 <- pmc(curve_q, gamma = 2, delta = 3, lambda = 2.0)
+#'
+#' plot(curve_q, curve_p2, type = "l", main = "Mc/Beta Power CDF (gamma=2, delta=3)",
+#'      xlab = "q", ylab = "F(q)", col = "red", ylim = c(0, 1))
+#' lines(curve_q, curve_p1, col = "blue")
+#' lines(curve_q, curve_p3, col = "green")
+#' legend("bottomright", legend = c("lambda=0.5", "lambda=1.0 (Beta)", "lambda=2.0"),
+#'        col = c("blue", "red", "green"), lty = 1, bty = "n")
+#'
+#' # Vectorized parameters
+#' lambdas_vec <- c(0.5, 1.0, 2.0)
+#' probs_vec <- pmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
+#' print(probs_vec) # CDF at q=0.5 for 3 different lambda values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 pmc <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_pmc`, q, gamma, delta, lambda, lower_tail, log_p)
 }
 
-#' @title Quantile Function of the Beta Power Distribution
+#' @title Quantile Function of the McDonald (Mc)/Beta Power Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution quantile mcdonald
 #'
 #' @description
-#' Computes \eqn{x = Q(p)}, the quantile function for \eqn{BP(γ, δ, λ)}.
+#' Computes the quantile function (inverse CDF) for the McDonald (Mc) distribution
+#' (also known as Beta Power) with parameters \code{gamma} (\eqn{\gamma}),
+#' \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). It finds the
+#' value \code{q} such that \eqn{P(X \le q) = p}. This distribution is a special
+#' case of the Generalized Kumaraswamy (GKw) distribution where \eqn{\alpha = 1}
+#' and \eqn{\beta = 1}.
 #'
-#' @param p Vector of probabilities in (0,1) (or in log scale if log_p=TRUE).
-#' @param gamma Shape parameter \eqn{γ > 0}.
-#' @param delta Shape parameter \eqn{δ \ge 0}.
-#' @param lambda Shape parameter \eqn{λ > 0}.
-#' @param lower_tail Logical; if TRUE, p=F(x). If FALSE, p=1-F(x).
-#' @param log_p Logical; if TRUE, p is log(p).
+#' @param p Vector of probabilities (values between 0 and 1).
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are \eqn{p = P(X \le q)},
+#'   otherwise, probabilities are \eqn{p = P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \code{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of quantiles corresponding to the given probabilities \code{p}.
+#'   The length of the result is determined by the recycling rule applied to
+#'   the arguments (\code{p}, \code{gamma}, \code{delta}, \code{lambda}).
+#'   Returns:
+#'   \itemize{
+#'     \item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+#'     \item \code{NaN} for invalid parameters (e.g., \code{gamma <= 0},
+#'           \code{delta < 0}, \code{lambda <= 0}).
+#'   }
+#'   Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 #'
 #' @details
-#' The quantile function is
+#' The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(q)}. The CDF
+#' for the Mc (\eqn{\alpha=1, \beta=1}) distribution is \eqn{F(q) = I_{q^\lambda}(\gamma, \delta+1)},
+#' where \eqn{I_z(a,b)} is the regularized incomplete beta function (see \code{\link{pmc}}).
+#'
+#' To find the quantile \eqn{q}, we first invert the Beta function part: let
+#' \eqn{y = I^{-1}_{p}(\gamma, \delta+1)}, where \eqn{I^{-1}_p(a,b)} is the
+#' inverse computed via \code{\link[stats]{qbeta}}. We then solve \eqn{q^\lambda = y}
+#' for \eqn{q}, yielding the quantile function:
 #' \deqn{
-#'   Q(p) = \Bigl[\mathrm{qbeta}(p,\;\gamma,\;\delta+1)\Bigr]^{1/\lambda}.
+#' Q(p) = \left[ I^{-1}_{p}(\gamma, \delta+1) \right]^{1/\lambda}
 #' }
-#' if lower_tail=TRUE and log_p=FALSE. Adjust for tails or logs accordingly.
+#' The function uses this formula, calculating \eqn{I^{-1}_{p}(\gamma, \delta+1)}
+#' via \code{qbeta(p, gamma, delta + 1, ...)} while respecting the
+#' \code{lower_tail} and \code{log_p} arguments. This is equivalent to the general
+#' GKw quantile function (\code{\link{qgkw}}) evaluated with \eqn{\alpha=1, \beta=1}.
+#'
+#' @references
+#' McDonald, J. B. (1984). Some generalized functions for the size distribution
+#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{qgkw}} (parent distribution quantile function),
+#' \code{\link{dmc}}, \code{\link{pmc}}, \code{\link{rmc}} (other Mc functions),
+#' \code{\link[stats]{qbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' p_vals <- c(0.1, 0.5, 0.9)
+#' gamma_par <- 2.0
+#' delta_par <- 1.5
+#' lambda_par <- 1.0 # Equivalent to Beta(gamma, delta+1)
+#'
+#' # Calculate quantiles using qmc
+#' quantiles <- qmc(p_vals, gamma_par, delta_par, lambda_par)
+#' print(quantiles)
+#' # Compare with Beta quantiles
+#' print(stats::qbeta(p_vals, shape1 = gamma_par, shape2 = delta_par + 1))
+#'
+#' # Calculate quantiles for upper tail probabilities P(X > q) = p
+#' quantiles_upper <- qmc(p_vals, gamma_par, delta_par, lambda_par,
+#'                        lower_tail = FALSE)
+#' print(quantiles_upper)
+#' # Check: qmc(p, ..., lt=F) == qmc(1-p, ..., lt=T)
+#' print(qmc(1 - p_vals, gamma_par, delta_par, lambda_par))
+#'
+#' # Calculate quantiles from log probabilities
+#' log_p_vals <- log(p_vals)
+#' quantiles_logp <- qmc(log_p_vals, gamma_par, delta_par, lambda_par, log_p = TRUE)
+#' print(quantiles_logp)
+#' # Check: should match original quantiles
+#' print(quantiles)
+#'
+#' # Compare with qgkw setting alpha = 1, beta = 1
+#' quantiles_gkw <- qgkw(p_vals, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+#'                       delta = delta_par, lambda = lambda_par)
+#' print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be near zero
+#'
+#' # Verify inverse relationship with pmc
+#' p_check <- 0.75
+#' q_calc <- qmc(p_check, gamma_par, delta_par, lambda_par = 1.5) # Use lambda != 1
+#' p_recalc <- pmc(q_calc, gamma_par, delta_par, lambda_par = 1.5)
+#' print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
+#' # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
+#'
+#' # Boundary conditions
+#' print(qmc(c(0, 1), gamma_par, delta_par, lambda_par)) # Should be 0, 1
+#' print(qmc(c(-Inf, 0), gamma_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
+#'
+#' # Vectorized parameters
+#' lambdas_vec <- c(0.5, 1.0, 2.0)
+#' quantiles_vec <- qmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
+#' print(quantiles_vec) # Median for 3 different lambda values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 qmc <- function(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_qmc`, p, gamma, delta, lambda, lower_tail, log_p)
 }
 
-#' @title Random Generation from Beta Power Distribution
+#' @title Random Number Generation for the McDonald (Mc)/Beta Power Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution random mcdonald
 #'
 #' @description
-#' Generates n samples from BP(γ, δ, λ) by drawing U ~ Beta(γ, δ+1) then X= U^(1/λ).
+#' Generates random deviates from the McDonald (Mc) distribution (also known as
+#' Beta Power) with parameters \code{gamma} (\eqn{\gamma}), \code{delta}
+#' (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). This distribution is a
+#' special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\alpha = 1} and \eqn{\beta = 1}.
 #'
-#' @param n Integer number of observations.
-#' @param gamma Shape parameter \eqn{γ > 0}.
-#' @param delta Shape parameter \eqn{δ \ge 0}.
-#' @param lambda Shape parameter \eqn{λ > 0}.
+#' @param n Number of observations. If \code{length(n) > 1}, the length is
+#'   taken to be the number required. Must be a non-negative integer.
+#' @param gamma Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param delta Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+#'   Default: 0.0.
+#' @param lambda Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
 #'
-#' @return A numeric vector of length n with random draws in (0,1).
+#' @return A vector of length \code{n} containing random deviates from the Mc
+#'   distribution, with values in (0, 1). The length of the result is determined
+#'   by \code{n} and the recycling rule applied to the parameters (\code{gamma},
+#'   \code{delta}, \code{lambda}). Returns \code{NaN} if parameters
+#'   are invalid (e.g., \code{gamma <= 0}, \code{delta < 0}, \code{lambda <= 0}).
 #'
 #' @details
-#' The distribution arises from GKw with \eqn{\alpha=1,\beta=1}. This is sometimes
-#' also called the Beta-Power distribution in the literature.
+#' The generation method uses the relationship between the GKw distribution and the
+#' Beta distribution. The general procedure for GKw (\code{\link{rgkw}}) is:
+#' If \eqn{W \sim \mathrm{Beta}(\gamma, \delta+1)}, then
+#' \eqn{X = \{1 - [1 - W^{1/\lambda}]^{1/\beta}\}^{1/\alpha}} follows the
+#' GKw(\eqn{\alpha, \beta, \gamma, \delta, \lambda}) distribution.
+#'
+#' For the Mc distribution, \eqn{\alpha=1} and \eqn{\beta=1}. Therefore, the
+#' algorithm simplifies significantly:
+#' \enumerate{
+#'   \item Generate \eqn{U \sim \mathrm{Beta}(\gamma, \delta+1)} using
+#'         \code{\link[stats]{rbeta}}.
+#'   \item Compute the Mc variate \eqn{X = U^{1/\lambda}}.
+#' }
+#' This procedure is implemented efficiently, handling parameter recycling as needed.
+#'
+#' @references
+#' McDonald, J. B. (1984). Some generalized functions for the size distribution
+#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
+#' (General methods for random variate generation).
+#'
+#' @seealso
+#' \code{\link{rgkw}} (parent distribution random generation),
+#' \code{\link{dmc}}, \code{\link{pmc}}, \code{\link{qmc}} (other Mc functions),
+#' \code{\link[stats]{rbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(2028) # for reproducibility
+#'
+#' # Generate 1000 random values from a specific Mc distribution
+#' gamma_par <- 2.0
+#' delta_par <- 1.5
+#' lambda_par <- 1.0 # Equivalent to Beta(gamma, delta+1)
+#'
+#' x_sample_mc <- rmc(1000, gamma = gamma_par, delta = delta_par,
+#'                    lambda = lambda_par)
+#' summary(x_sample_mc)
+#'
+#' # Histogram of generated values compared to theoretical density
+#' hist(x_sample_mc, breaks = 30, freq = FALSE, # freq=FALSE for density
+#'      main = "Histogram of Mc Sample (Beta Case)", xlab = "x")
+#' curve(dmc(x, gamma = gamma_par, delta = delta_par, lambda = lambda_par),
+#'       add = TRUE, col = "red", lwd = 2, n = 201)
+#' curve(stats::dbeta(x, gamma_par, delta_par + 1), add=TRUE, col="blue", lty=2)
+#' legend("topright", legend = c("Theoretical Mc PDF", "Theoretical Beta PDF"),
+#'        col = c("red", "blue"), lwd = c(2,1), lty=c(1,2), bty = "n")
+#'
+#' # Comparing empirical and theoretical quantiles (Q-Q plot)
+#' lambda_par_qq <- 0.7 # Use lambda != 1 for non-Beta case
+#' x_sample_mc_qq <- rmc(1000, gamma = gamma_par, delta = delta_par,
+#'                       lambda = lambda_par_qq)
+#' prob_points <- seq(0.01, 0.99, by = 0.01)
+#' theo_quantiles <- qmc(prob_points, gamma = gamma_par, delta = delta_par,
+#'                       lambda = lambda_par_qq)
+#' emp_quantiles <- quantile(x_sample_mc_qq, prob_points, type = 7)
+#'
+#' plot(theo_quantiles, emp_quantiles, pch = 16, cex = 0.8,
+#'      main = "Q-Q Plot for Mc Distribution",
+#'      xlab = "Theoretical Quantiles", ylab = "Empirical Quantiles (n=1000)")
+#' abline(a = 0, b = 1, col = "blue", lty = 2)
+#'
+#' # Compare summary stats with rgkw(..., alpha=1, beta=1, ...)
+#' # Note: individual values will differ due to randomness
+#' x_sample_gkw <- rgkw(1000, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+#'                      delta = delta_par, lambda = lambda_par_qq)
+#' print("Summary stats for rmc sample:")
+#' print(summary(x_sample_mc_qq))
+#' print("Summary stats for rgkw(alpha=1, beta=1) sample:")
+#' print(summary(x_sample_gkw)) # Should be similar
+#'
+#' # Vectorized parameters: generate 1 value for each lambda
+#' lambdas_vec <- c(0.5, 1.0, 2.0)
+#' n_param <- length(lambdas_vec)
+#' samples_vec <- rmc(n_param, gamma = gamma_par, delta = delta_par,
+#'                    lambda = lambdas_vec)
+#' print(samples_vec) # One sample for each lambda value
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 rmc <- function(n, gamma, delta, lambda) {
     .Call(`_gkwreg_rmc`, n, gamma, delta, lambda)
 }
 
-#' @title Negative Log-Likelihood for Beta Power Distribution
+#' @title Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize mcdonald
 #'
 #' @description
-#' Computes -log-likelihood for BP(γ, δ, λ) given data in (0,1).
+#' Computes the negative log-likelihood function for the McDonald (Mc)
+#' distribution (also known as Beta Power) with parameters \code{gamma}
+#' (\eqn{\gamma}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}),
+#' given a vector of observations. This distribution is the special case of the
+#' Generalized Kumaraswamy (GKw) distribution where \eqn{\alpha = 1} and
+#' \eqn{\beta = 1}. This function is suitable for maximum likelihood estimation.
 #'
-#' @param par NumericVector of length 3: (γ, δ, λ).
-#' @param data NumericVector of observations in (0,1).
+#' @param par A numeric vector of length 3 containing the distribution parameters
+#'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
+#'
+#' @return Returns a single \code{double} value representing the negative
+#'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+#'   if any parameter values in \code{par} are invalid according to their
+#'   constraints, or if any value in \code{data} is not in the interval (0, 1).
 #'
 #' @details
-#' The PDF is
+#' The McDonald (Mc) distribution is the GKw distribution (\code{\link{dmc}})
+#' with \eqn{\alpha=1} and \eqn{\beta=1}. Its probability density function (PDF) is:
 #' \deqn{
-#'   f(x)= \frac{\lambda}{B(\gamma,\delta+1)} x^{\gamma\lambda -1} (1 - x^\lambda)^\delta.
+#' f(x | \theta) = \frac{\lambda}{B(\gamma,\delta+1)} x^{\gamma \lambda - 1} (1 - x^\lambda)^\delta
 #' }
-#' The log-likelihood is the sum of log(f(x_i)). We return the negative of that sum.
+#' for \eqn{0 < x < 1}, \eqn{\theta = (\gamma, \delta, \lambda)}, and \eqn{B(a,b)}
+#' is the Beta function (\code{\link[base]{beta}}).
+#' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+#' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+#' \deqn{
+#' \ell(\theta | \mathbf{x}) = n[\ln(\lambda) - \ln B(\gamma, \delta+1)]
+#' + \sum_{i=1}^{n} [(\gamma\lambda - 1)\ln(x_i) + \delta\ln(1 - x_i^\lambda)]
+#' }
+#' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+#' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+#' Numerical stability is maintained, including using the log-gamma function
+#' (\code{\link[base]{lgamma}}) for the Beta function term.
 #'
-#' @return A single numeric value. \code{+Inf} if invalid parameters or data out of (0,1).
+#' @references
+#' McDonald, J. B. (1984). Some generalized functions for the size distribution
+#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
+#' @seealso
+#' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+#' \code{\link{dmc}}, \code{\link{pmc}}, \code{\link{qmc}}, \code{\link{rmc}},
+#' \code{grmc} (gradient, if available),
+#' \code{hsmc} (Hessian, if available),
+#' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a BP distribution
+#' # Assuming existence of rmc, grmc, hsmc functions for Mc distribution
+#'
+#' # Generate sample data from a known Mc distribution
 #' set.seed(123)
-#' x <- rmc(100, 2, 3, 0.5)
-#' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
+#' true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+#' # Use rmc for data generation
+#' sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+#'                       lambda = true_par_mc[3])
+#' hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Maximum Likelihood Estimation using optim ---
+#' # Initial parameter guess
+#' start_par_mc <- c(1.5, 2.5, 0.8)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
+#' # Perform optimization (minimizing negative log-likelihood)
+#' mle_result_mc <- stats::optim(par = start_par_mc,
+#'                               fn = llmc, # Use the Mc neg-log-likelihood
+#'                               method = "BFGS", # Or "L-BFGS-B" with lower=1e-6
+#'                               hessian = TRUE,
+#'                               data = sample_data_mc)
 #'
-#' ana_grad <- grmc(result$par, data = x)
-#' ana_hess <- hsmc(result$par, data = x)
-#'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#' # Check convergence and results
+#' if (mle_result_mc$convergence == 0) {
+#'   print("Optimization converged successfully.")
+#'   mle_par_mc <- mle_result_mc$par
+#'   print("Estimated Mc parameters:")
+#'   print(mle_par_mc)
+#'   print("True Mc parameters:")
+#'   print(true_par_mc)
+#' } else {
+#'   warning("Optimization did not converge!")
+#'   print(mle_result_mc$message)
 #' }
+#'
+#' # --- Compare numerical and analytical derivatives (if available) ---
+#' # Requires 'numDeriv' package and analytical functions 'grmc', 'hsmc'
+#' if (mle_result_mc$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("grmc") && exists("hsmc")) {
+#'
+#'   cat("\nComparing Derivatives at Mc MLE estimates:\n")
+#'
+#'   # Numerical derivatives of llmc
+#'   num_grad_mc <- numDeriv::grad(func = llmc, x = mle_par_mc, data = sample_data_mc)
+#'   num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+#'
+#'   # Analytical derivatives (assuming they return derivatives of negative LL)
+#'   ana_grad_mc <- grmc(par = mle_par_mc, data = sample_data_mc)
+#'   ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between gradients:\n")
+#'   print(max(abs(num_grad_mc - ana_grad_mc)))
+#'   cat("Max absolute difference between Hessians:\n")
+#'   print(max(abs(num_hess_mc - ana_hess_mc)))
+#'
+#' } else {
+#'    cat("\nSkipping derivative comparison for Mc.\n")
+#'    cat("Requires convergence, 'numDeriv' package and functions 'grmc', 'hsmc'.\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 llmc <- function(par, data) {
     .Call(`_gkwreg_llmc`, par, data)
 }
 
-#' @title Gradient Function for Beta Power Log-Likelihood
+#' @title Gradient of the Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize gradient mcdonald
 #'
 #' @description
-#' Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-#' function for the Beta Power (BP) distribution, also known as McDonald distribution.
-#' This function provides the exact gradient needed for efficient optimization in
-#' maximum likelihood estimation. The BP is a submodel of GKw with α = 1 and β = 1 fixed.
+#' Computes the gradient vector (vector of first partial derivatives) of the
+#' negative log-likelihood function for the McDonald (Mc) distribution (also
+#' known as Beta Power) with parameters \code{gamma} (\eqn{\gamma}), \code{delta}
+#' (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). This distribution is the
+#' special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\alpha = 1} and \eqn{\beta = 1}. The gradient is useful for optimization.
 #'
-#' @param par NumericVector of length 3 containing parameters (γ, δ, λ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 3 containing the distribution parameters
+#'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericVector of length 3 containing the gradient components (partial derivatives)
-#'         of the negative log-likelihood with respect to each parameter (γ, δ, λ).
-#'         Returns a vector of NaN values if any parameters or data values are invalid.
+#' @return Returns a numeric vector of length 3 containing the partial derivatives
+#'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+#'   respect to each parameter:
+#'   \eqn{(-\partial \ell/\partial \gamma, -\partial \ell/\partial \delta, -\partial \ell/\partial \lambda)}.
+#'   Returns a vector of \code{NaN} if any parameter values are invalid according
+#'   to their constraints, or if any value in \code{data} is not in the
+#'   interval (0, 1).
 #'
 #' @details
-#' The gradient vector contains the following partial derivatives of the negative log-likelihood:
+#' The components of the gradient vector of the negative log-likelihood
+#' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the Mc (\eqn{\alpha=1, \beta=1})
+#' model are:
 #'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \gamma} = -n[\psi(\gamma+\delta+1) - \psi(\gamma)] -
-#' \lambda\sum_{i=1}^{n}\log(x_i)
+#' -\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma+\delta+1) - \psi(\gamma)] -
+#' \lambda\sum_{i=1}^{n}\ln(x_i)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \delta} = -n[\psi(\gamma+\delta+1) - \psi(\delta+1)] -
-#' \sum_{i=1}^{n}\log(1-x_i^{\lambda})
+#' -\frac{\partial \ell}{\partial \delta} = n[\psi(\gamma+\delta+1) - \psi(\delta+1)] -
+#' \sum_{i=1}^{n}\ln(1-x_i^{\lambda})
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \gamma\sum_{i=1}^{n}\log(x_i) +
-#' \delta\sum_{i=1}^{n}\frac{x_i^{\lambda}\log(x_i)}{1-x_i^{\lambda}}
+#' -\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \gamma\sum_{i=1}^{n}\ln(x_i) +
+#' \delta\sum_{i=1}^{n}\frac{x_i^{\lambda}\ln(x_i)}{1-x_i^{\lambda}}
 #' }
 #'
-#' where:
-#' \itemize{
-#'   \item \deqn{\psi} is the digamma function (derivative of the log-gamma function)
-#' }
+#' where \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
+#' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+#' minimizing the negative log-likelihood. They correspond to the relevant components
+#' of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\alpha=1, \beta=1}.
 #'
-#' The implementation includes several numerical safeguards:
-#' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Clamping of intermediate values to avoid numerical underflow/overflow
-#'   \item Efficient vector operations using Armadillo C++ library
-#' }
+#' @references
+#' McDonald, J. B. (1984). Some generalized functions for the size distribution
+#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
 #'
-#' The returned gradient is negated to align with minimization of negative log-likelihood
-#' in optimization routines.
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#' (Note: Specific gradient formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{grgkw}} (parent distribution gradient),
+#' \code{\link{llmc}} (negative log-likelihood for Mc),
+#' \code{hsmc} (Hessian for Mc, if available),
+#' \code{\link{dmc}} (density for Mc),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+#' \code{\link[base]{digamma}}.
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a BP distribution
+#' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rmc(100, 2, 3, 0.5)
-#' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
+#' true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+#' sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+#'                       lambda = true_par_mc[3])
+#' hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_mc <- c(1.5, 2.5, 0.8)
+#' mle_result_mc <- stats::optim(par = start_par_mc,
+#'                               fn = llmc,
+#'                               gr = grmc, # Use analytical gradient for Mc
+#'                               method = "BFGS",
+#'                               hessian = TRUE,
+#'                               data = sample_data_mc)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
+#' # --- Compare analytical gradient to numerical gradient ---
+#' if (mle_result_mc$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE)) {
 #'
-#' ana_grad <- grmc(result$par, data = x)
-#' ana_hess <- hsmc(result$par, data = x)
+#'   mle_par_mc <- mle_result_mc$par
+#'   cat("\nComparing Gradients for Mc at MLE estimates:\n")
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'   # Numerical gradient of llmc
+#'   num_grad_mc <- numDeriv::grad(func = llmc, x = mle_par_mc, data = sample_data_mc)
+#'
+#'   # Analytical gradient from grmc
+#'   ana_grad_mc <- grmc(par = mle_par_mc, data = sample_data_mc)
+#'
+#'   cat("Numerical Gradient (Mc):\n")
+#'   print(num_grad_mc)
+#'   cat("Analytical Gradient (Mc):\n")
+#'   print(ana_grad_mc)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between Mc gradients:\n")
+#'   print(max(abs(num_grad_mc - ana_grad_mc)))
+#'
+#' } else {
+#'   cat("\nSkipping Mc gradient comparison.\n")
 #' }
 #'
-#' @seealso
-#' \code{\link[gkwreg]{llmc}} for the negative log-likelihood function,
-#' \code{\link[gkwreg]{hsmc}} for the Hessian matrix of the BP log-likelihood,
-#' \code{\link[gkwreg]{dmc}} for the BP density function,
+#' # Example with Hessian comparison (if hsmc exists)
+#' if (mle_result_mc$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) && exists("hsmc")) {
 #'
-#' @references
-#' McDonald, J. B. (1984). Some generalized functions for the size distribution of income.
-#' Econometrica, 52(3), 647-665.
+#'   num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+#'   ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+#'   cat("\nMax absolute difference between Mc Hessians:\n")
+#'   print(max(abs(num_hess_mc - ana_hess_mc)))
 #'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 grmc <- function(par, data) {
     .Call(`_gkwreg_grmc`, par, data)
 }
 
-#' @title Hessian Matrix Function for Beta Power (McDonald) Log-Likelihood
+#' @title Hessian Matrix of the Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize hessian mcdonald
 #'
 #' @description
-#' Calculates the Hessian matrix (second-order partial derivatives) of the negative log-likelihood
-#' function for the Beta Power (BP) distribution, also known as McDonald distribution.
-#' This function provides the exact Hessian needed for efficient optimization in maximum likelihood
-#' estimation and for asymptotic inference. The BP is a submodel of GKw with α = 1 and β = 1 fixed.
+#' Computes the analytic 3x3 Hessian matrix (matrix of second partial derivatives)
+#' of the negative log-likelihood function for the McDonald (Mc) distribution
+#' (also known as Beta Power) with parameters \code{gamma} (\eqn{\gamma}),
+#' \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). This distribution
+#' is the special case of the Generalized Kumaraswamy (GKw) distribution where
+#' \eqn{\alpha = 1} and \eqn{\beta = 1}. The Hessian is useful for estimating
+#' standard errors and in optimization algorithms.
 #'
-#' @param par NumericVector of length 3 containing parameters (γ, δ, λ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 3 containing the distribution parameters
+#'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+#'   \code{lambda} (\eqn{\lambda > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericMatrix of dimensions 3x3 containing the Hessian components (second derivatives)
-#'         of the negative log-likelihood with respect to each parameter pair (γ, δ, λ).
-#'         Returns a matrix of NaN values if any parameters or data values are invalid.
+#' @return Returns a 3x3 numeric matrix representing the Hessian matrix of the
+#'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+#'   where \eqn{\theta = (\gamma, \delta, \lambda)}.
+#'   Returns a 3x3 matrix populated with \code{NaN} if any parameter values are
+#'   invalid according to their constraints, or if any value in \code{data} is
+#'   not in the interval (0, 1).
 #'
 #' @details
-#' The Hessian matrix contains the following second derivatives of the negative log-likelihood:
+#' This function calculates the analytic second partial derivatives of the
+#' negative log-likelihood function (\eqn{-\ell(\theta|\mathbf{x})}).
+#' The components are based on the second derivatives of the log-likelihood \eqn{\ell}
+#' (derived from the PDF in \code{\link{dmc}}).
+#'
+#' **Note:** The formulas below represent the second derivatives of the positive
+#' log-likelihood (\eqn{\ell}). The function returns the **negative** of these values.
+#' Users should verify these formulas independently if using for critical applications.
 #'
 #' \deqn{
-#' \frac{\partial^2 \ell}{\partial \gamma^2} = -n[\psi'(\gamma+\delta+1) - \psi'(\gamma)]
+#' \frac{\partial^2 \ell}{\partial \gamma^2} = -n[\psi'(\gamma) - \psi'(\gamma+\delta+1)]
 #' }
-#'
 #' \deqn{
 #' \frac{\partial^2 \ell}{\partial \gamma \partial \delta} = -n\psi'(\gamma+\delta+1)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial^2 \ell}{\partial \gamma \partial \lambda} = -\sum_{i=1}^{n}\log(x_i)
+#' \frac{\partial^2 \ell}{\partial \gamma \partial \lambda} = \sum_{i=1}^{n}\ln(x_i)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial^2 \ell}{\partial \delta^2} = -n[\psi'(\gamma+\delta+1) - \psi'(\delta+1)]
+#' \frac{\partial^2 \ell}{\partial \delta^2} = -n[\psi'(\delta+1) - \psi'(\gamma+\delta+1)]
 #' }
-#'
 #' \deqn{
-#' \frac{\partial^2 \ell}{\partial \delta \partial \lambda} = \sum_{i=1}^{n}\frac{x_i^{\lambda}\log(x_i)}{1-x_i^{\lambda}}
+#' \frac{\partial^2 \ell}{\partial \delta \partial \lambda} = -\sum_{i=1}^{n}\frac{x_i^{\lambda}\ln(x_i)}{1-x_i^{\lambda}}
 #' }
-#'
 #' \deqn{
-#' \frac{\partial^2 \ell}{\partial \lambda^2} = \frac{n}{\lambda^2} + \gamma^2\sum_{i=1}^{n}[\log(x_i)]^2 +
-#' \delta\sum_{i=1}^{n}\frac{x_i^{\lambda}[\log(x_i)]^2}{1-x_i^{\lambda}}\left(1 + \frac{x_i^{\lambda}}{1-x_i^{\lambda}}\right)
+#' \frac{\partial^2 \ell}{\partial \lambda^2} = -\frac{n}{\lambda^2} -
+#' \delta\sum_{i=1}^{n}\frac{x_i^{\lambda}[\ln(x_i)]^2}{(1-x_i^{\lambda})^2}
 #' }
 #'
-#' where:
-#' \itemize{
-#'   \item \deqn{\psi'} is the trigamma function (second derivative of the log-gamma function)
-#' }
+#' where \eqn{\psi'(\cdot)} is the trigamma function (\code{\link[base]{trigamma}}).
+#' (*Note: The formula for \eqn{\partial^2 \ell / \partial \lambda^2} provided in the source
+#' comment was different and potentially related to the expected information matrix;
+#' the formula shown here is derived from the gradient provided earlier. Verification
+#' is recommended.*)
 #'
-#' The implementation includes several numerical safeguards:
-#' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Clamping of intermediate values to avoid numerical underflow/overflow
-#'   \item Symmetry of the Hessian matrix is guaranteed by construction
-#'   \item Efficient vector operations using Armadillo C++ library
-#' }
+#' The returned matrix is symmetric, with rows/columns corresponding to
+#' \eqn{\gamma, \delta, \lambda}.
 #'
-#' The returned Hessian is negated to align with minimization of negative log-likelihood
-#' in optimization routines.
+#' @references
+#' McDonald, J. B. (1984). Some generalized functions for the size distribution
+#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{hsgkw}} (parent distribution Hessian),
+#' \code{\link{llmc}} (negative log-likelihood for Mc),
+#' \code{\link{grmc}} (gradient for Mc, if available),
+#' \code{\link{dmc}} (density for Mc),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison),
+#' \code{\link[base]{trigamma}}.
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a BP distribution
+#' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rmc(100, 2, 3, 0.5)
-#' hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
+#' true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+#' sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+#'                       lambda = true_par_mc[3])
+#' hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_mc <- c(1.5, 2.5, 0.8)
+#' mle_result_mc <- stats::optim(par = start_par_mc,
+#'                               fn = llmc,
+#'                               gr = if (exists("grmc")) grmc else NULL,
+#'                               method = "BFGS",
+#'                               hessian = TRUE, # Ask optim for numerical Hessian
+#'                               data = sample_data_mc)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
+#' # --- Compare analytical Hessian to numerical Hessian ---
+#' if (mle_result_mc$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("hsmc")) {
 #'
-#' ana_grad <- grmc(result$par, data = x)
-#' ana_hess <- hsmc(result$par, data = x)
+#'   mle_par_mc <- mle_result_mc$par
+#'   cat("\nComparing Hessians for Mc at MLE estimates:\n")
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'   # Numerical Hessian of llmc
+#'   num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+#'
+#'   # Analytical Hessian from hsmc
+#'   ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+#'
+#'   cat("Numerical Hessian (Mc):\n")
+#'   print(round(num_hess_mc, 4))
+#'   cat("Analytical Hessian (Mc):\n")
+#'   print(round(ana_hess_mc, 4))
+#'
+#'   # Check differences (monitor sign consistency)
+#'   cat("Max absolute difference between Mc Hessians:\n")
+#'   print(max(abs(num_hess_mc - ana_hess_mc)))
+#'
+#'   # Optional: Use analytical Hessian for Standard Errors
+#'   # tryCatch({
+#'   #   cov_matrix_mc <- solve(ana_hess_mc) # ana_hess_mc is already Hessian of negative LL
+#'   #   std_errors_mc <- sqrt(diag(cov_matrix_mc))
+#'   #   cat("Std. Errors from Analytical Mc Hessian:\n")
+#'   #   print(std_errors_mc)
+#'   # }, error = function(e) {
+#'   #   warning("Could not invert analytical Mc Hessian: ", e$message)
+#'   # })
+#'
+#' } else {
+#'   cat("\nSkipping Mc Hessian comparison.\n")
+#'   cat("Requires convergence, 'numDeriv' package, and function 'hsmc'.\n")
 #' }
 #'
-#' @seealso
-#' \code{\link[gkwreg]{llmc}} for the negative log-likelihood function,
-#' \code{\link[gkwreg]{grmc}} for the gradient of the BP log-likelihood,
-#' \code{\link[gkwreg]{dmc}} for the BP density function,
-#'
-#' @references
-#' McDonald, J. B. (1984). Some generalized functions for the size distribution of income.
-#' Econometrica, 52(3), 647-665.
-#'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' Journal of Statistical Computation and Simulation, 81(7), 883-898.
+#' } # End of \dontrun block
 #'
 #' @export
 hsmc <- function(par, data) {
     .Call(`_gkwreg_hsmc`, par, data)
 }
 
-#' @title PDF of the Kumaraswamy Distribution
+#' @title Density of the Kumaraswamy (Kw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution density kumaraswamy
 #'
 #' @description
-#' Computes the PDF of Kw(\eqn{\alpha,\beta}) at values x in (0,1).
+#' Computes the probability density function (PDF) for the two-parameter
+#' Kumaraswamy (Kw) distribution with shape parameters \code{alpha} (\eqn{\alpha})
+#' and \code{beta} (\eqn{\beta}). This distribution is defined on the interval (0, 1).
 #'
-#' @param x Vector of quantiles in (0,1).
-#' @param alpha Shape parameter \eqn{\alpha>0}.
-#' @param beta Shape parameter \eqn{\beta>0}.
-#' @param log_prob If TRUE, returns log of the PDF.
+#' @param x Vector of quantiles (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param log_prob Logical; if \code{TRUE}, the logarithm of the density is
+#'   returned (\eqn{\log(f(x))}). Default: \code{FALSE}.
 #'
-#' @return A vector of (log-)densities, same length as broadcast of x and parameters.
+#' @return A vector of density values (\eqn{f(x)}) or log-density values
+#'   (\eqn{\log(f(x))}). The length of the result is determined by the recycling
+#'   rule applied to the arguments (\code{x}, \code{alpha}, \code{beta}).
+#'   Returns \code{0} (or \code{-Inf} if \code{log_prob = TRUE}) for \code{x}
+#'   outside the interval (0, 1), or \code{NaN} if parameters are invalid
+#'   (e.g., \code{alpha <= 0}, \code{beta <= 0}).
 #'
 #' @details
-#' PDF: \eqn{f(x)= \alpha\,\beta \; x^{\alpha-1}\,(1 - x^\alpha)^{\beta-1}}, for 0<x<1.
+#' The probability density function (PDF) of the Kumaraswamy (Kw) distribution
+#' is given by:
+#' \deqn{
+#' f(x; \alpha, \beta) = \alpha \beta x^{\alpha-1} (1 - x^\alpha)^{\beta-1}
+#' }
+#' for \eqn{0 < x < 1}, \eqn{\alpha > 0}, and \eqn{\beta > 0}.
+#'
+#' The Kumaraswamy distribution is identical to the Generalized Kumaraswamy (GKw)
+#' distribution (\code{\link{dgkw}}) with parameters \eqn{\gamma = 1},
+#' \eqn{\delta = 0}, and \eqn{\lambda = 1}. It is also a special case of the
+#' Exponentiated Kumaraswamy (\code{\link{dekw}}) with \eqn{\lambda = 1}, and
+#' the Kumaraswamy-Kumaraswamy (\code{\link{dkkw}}) with \eqn{\delta = 0}
+#' and \eqn{\lambda = 1}.
+#'
+#' @references
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
+#' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
+#' \doi{10.1016/j.stamet.2008.04.001}
+#'
+#' @seealso
+#' \code{\link{dgkw}} (parent distribution density),
+#' \code{\link{dekw}}, \code{\link{dkkw}},
+#' \code{\link{pkw}}, \code{\link{qkw}}, \code{\link{rkw}} (other Kw functions),
+#' \code{\link[stats]{dbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' x_vals <- c(0.2, 0.5, 0.8)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#'
+#' # Calculate density using dkw
+#' densities <- dkw(x_vals, alpha_par, beta_par)
+#' print(densities)
+#'
+#' # Calculate log-density
+#' log_densities <- dkw(x_vals, alpha_par, beta_par, log_prob = TRUE)
+#' print(log_densities)
+#' # Check: should match log(densities)
+#' print(log(densities))
+#'
+#' # Compare with dgkw setting gamma = 1, delta = 0, lambda = 1
+#' densities_gkw <- dgkw(x_vals, alpha_par, beta_par, gamma = 1.0, delta = 0.0,
+#'                       lambda = 1.0)
+#' print(paste("Max difference:", max(abs(densities - densities_gkw)))) # Should be near zero
+#'
+#' # Plot the density for different shape parameter combinations
+#' curve_x <- seq(0.001, 0.999, length.out = 200)
+#' plot(curve_x, dkw(curve_x, alpha = 2, beta = 3), type = "l",
+#'      main = "Kumaraswamy Density Examples", xlab = "x", ylab = "f(x)",
+#'      col = "blue", ylim = c(0, 4))
+#' lines(curve_x, dkw(curve_x, alpha = 3, beta = 2), col = "red")
+#' lines(curve_x, dkw(curve_x, alpha = 0.5, beta = 0.5), col = "green") # U-shaped
+#' lines(curve_x, dkw(curve_x, alpha = 5, beta = 1), col = "purple") # J-shaped
+#' lines(curve_x, dkw(curve_x, alpha = 1, beta = 3), col = "orange") # J-shaped (reversed)
+#' legend("top", legend = c("a=2, b=3", "a=3, b=2", "a=0.5, b=0.5", "a=5, b=1", "a=1, b=3"),
+#'        col = c("blue", "red", "green", "purple", "orange"), lty = 1, bty = "n", ncol = 2)
+#'
+#' # Vectorized parameters
+#' alphas_vec <- c(1.5, 2.0, 2.5)
+#' densities_vec <- dkw(0.5, alpha = alphas_vec, beta = 3.0)
+#' print(densities_vec) # Density at x=0.5 for 3 different alpha values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 dkw <- function(x, alpha, beta, log_prob = FALSE) {
     .Call(`_gkwreg_dkw`, x, alpha, beta, log_prob)
 }
 
-#' @title CDF of the Kumaraswamy Distribution
+#' @title Cumulative Distribution Function (CDF) of the Kumaraswamy (Kw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution cumulative kumaraswamy
 #'
 #' @description
-#' Computes \eqn{F(q)= P(X ≤ q)} for Kw(\eqn{\alpha,\beta}).
+#' Computes the cumulative distribution function (CDF), \eqn{P(X \le q)}, for the
+#' two-parameter Kumaraswamy (Kw) distribution with shape parameters \code{alpha}
+#' (\eqn{\alpha}) and \code{beta} (\eqn{\beta}). This distribution is defined
+#' on the interval (0, 1).
 #'
-#' @param q Vector of quantiles in (0,1).
-#' @param alpha Shape parameter \eqn{\alpha>0}.
-#' @param beta Shape parameter \eqn{\beta>0}.
-#' @param lower_tail If TRUE (default), returns \eqn{F(q)=P(X≤q)}. If FALSE, 1-F(q).
-#' @param log_p If TRUE, returns log probabilities.
+#' @param q Vector of quantiles (values generally between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are
+#'   \eqn{P(X \le q)}, otherwise, \eqn{P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
 #'
-#' @return Vector of probabilities or log-probabilities, matching broadcast of q and parameters.
+#' @return A vector of probabilities, \eqn{F(q)}, or their logarithms/complements
+#'   depending on \code{lower_tail} and \code{log_p}. The length of the result
+#'   is determined by the recycling rule applied to the arguments (\code{q},
+#'   \code{alpha}, \code{beta}). Returns \code{0} (or \code{-Inf} if
+#'   \code{log_p = TRUE}) for \code{q <= 0} and \code{1} (or \code{0} if
+#'   \code{log_p = TRUE}) for \code{q >= 1}. Returns \code{NaN} for invalid
+#'   parameters.
 #'
 #' @details
-#' \eqn{F(x)= 1 - (1 - x^\alpha)^\beta}, for 0<x<1.
+#' The cumulative distribution function (CDF) of the Kumaraswamy (Kw)
+#' distribution is given by:
+#' \deqn{
+#' F(x; \alpha, \beta) = 1 - (1 - x^\alpha)^\beta
+#' }
+#' for \eqn{0 < x < 1}, \eqn{\alpha > 0}, and \eqn{\beta > 0}.
+#'
+#' The Kw distribution is a special case of several generalized distributions:
+#' \itemize{
+#'  \item Generalized Kumaraswamy (\code{\link{pgkw}}) with \eqn{\gamma=1, \delta=0, \lambda=1}.
+#'  \item Exponentiated Kumaraswamy (\code{\link{pekw}}) with \eqn{\lambda=1}.
+#'  \item Kumaraswamy-Kumaraswamy (\code{\link{pkkw}}) with \eqn{\delta=0, \lambda=1}.
+#' }
+#' The implementation uses the closed-form expression for efficiency.
+#'
+#' @references
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
+#' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
+#' \doi{10.1016/j.stamet.2008.04.001}
+#'
+#' @seealso
+#' \code{\link{pgkw}}, \code{\link{pekw}}, \code{\link{pkkw}} (related generalized CDFs),
+#' \code{\link{dkw}}, \code{\link{qkw}}, \code{\link{rkw}} (other Kw functions),
+#' \code{\link[stats]{pbeta}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' q_vals <- c(0.2, 0.5, 0.8)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#'
+#' # Calculate CDF P(X <= q) using pkw
+#' probs <- pkw(q_vals, alpha_par, beta_par)
+#' print(probs)
+#'
+#' # Calculate upper tail P(X > q)
+#' probs_upper <- pkw(q_vals, alpha_par, beta_par, lower_tail = FALSE)
+#' print(probs_upper)
+#' # Check: probs + probs_upper should be 1
+#' print(probs + probs_upper)
+#'
+#' # Calculate log CDF
+#' log_probs <- pkw(q_vals, alpha_par, beta_par, log_p = TRUE)
+#' print(log_probs)
+#' # Check: should match log(probs)
+#' print(log(probs))
+#'
+#' # Compare with pgkw setting gamma = 1, delta = 0, lambda = 1
+#' probs_gkw <- pgkw(q_vals, alpha_par, beta_par, gamma = 1.0, delta = 0.0,
+#'                   lambda = 1.0)
+#' print(paste("Max difference:", max(abs(probs - probs_gkw)))) # Should be near zero
+#'
+#' # Plot the CDF for different shape parameter combinations
+#' curve_q <- seq(0.001, 0.999, length.out = 200)
+#' plot(curve_q, pkw(curve_q, alpha = 2, beta = 3), type = "l",
+#'      main = "Kumaraswamy CDF Examples", xlab = "q", ylab = "F(q)",
+#'      col = "blue", ylim = c(0, 1))
+#' lines(curve_q, pkw(curve_q, alpha = 3, beta = 2), col = "red")
+#' lines(curve_q, pkw(curve_q, alpha = 0.5, beta = 0.5), col = "green")
+#' lines(curve_q, pkw(curve_q, alpha = 5, beta = 1), col = "purple")
+#' lines(curve_q, pkw(curve_q, alpha = 1, beta = 3), col = "orange")
+#' legend("bottomright", legend = c("a=2, b=3", "a=3, b=2", "a=0.5, b=0.5", "a=5, b=1", "a=1, b=3"),
+#'        col = c("blue", "red", "green", "purple", "orange"), lty = 1, bty = "n", ncol = 2)
+#'
+#' # Vectorized parameters
+#' alphas_vec <- c(1.5, 2.0, 2.5)
+#' probs_vec <- pkw(0.5, alpha = alphas_vec, beta = 3.0)
+#' print(probs_vec) # CDF at q=0.5 for 3 different alpha values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 pkw <- function(q, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_pkw`, q, alpha, beta, lower_tail, log_p)
 }
 
-#' @title Quantile Function of the Kumaraswamy Distribution
+#' @title Quantile Function of the Kumaraswamy (Kw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution quantile kumaraswamy
 #'
 #' @description
-#' For p in (0,1), returns x=Q(p) such that F(x)=p, where F is Kw(\eqn{\alpha,\beta}).
+#' Computes the quantile function (inverse CDF) for the two-parameter
+#' Kumaraswamy (Kw) distribution with shape parameters \code{alpha} (\eqn{\alpha})
+#' and \code{beta} (\eqn{\beta}). It finds the value \code{q} such that
+#' \eqn{P(X \le q) = p}.
 #'
-#' @param p Vector of probabilities in (0,1) (or log scale if log_p=TRUE).
-#' @param alpha Shape parameter \eqn{\alpha>0}.
-#' @param beta Shape parameter \eqn{\beta>0}.
-#' @param lower_tail If TRUE, p=F(x); if FALSE, p=1-F(x).
-#' @param log_p If TRUE, p is log(p).
+#' @param p Vector of probabilities (values between 0 and 1).
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are \eqn{p = P(X \le q)},
+#'   otherwise, probabilities are \eqn{p = P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \code{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
+#'
+#' @return A vector of quantiles corresponding to the given probabilities \code{p}.
+#'   The length of the result is determined by the recycling rule applied to
+#'   the arguments (\code{p}, \code{alpha}, \code{beta}).
+#'   Returns:
+#'   \itemize{
+#'     \item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+#'     \item \code{NaN} for invalid parameters (e.g., \code{alpha <= 0},
+#'           \code{beta <= 0}).
+#'   }
+#'   Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 #'
 #' @details
-#' \eqn{Q(p)= {1 - [1 - p]^(1/\beta)}^(1/\alpha)}
+#' The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(q)}. The CDF
+#' for the Kumaraswamy distribution is \eqn{F(q) = 1 - (1 - q^\alpha)^\beta}
+#' (see \code{\link{pkw}}). Inverting this equation for \eqn{q} yields the
+#' quantile function:
+#' \deqn{
+#' Q(p) = \left\{ 1 - (1 - p)^{1/\beta} \right\}^{1/\alpha}
+#' }
+#' The function uses this closed-form expression and correctly handles the
+#' \code{lower_tail} and \code{log_p} arguments by transforming \code{p}
+#' appropriately before applying the formula. This is equivalent to the general
+#' GKw quantile function (\code{\link{qgkw}}) evaluated with \eqn{\gamma=1, \delta=0, \lambda=1}.
+#'
+#' @references
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
+#' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
+#' \doi{10.1016/j.stamet.2008.04.001}
+#'
+#' @seealso
+#' \code{\link{qgkw}} (parent distribution quantile function),
+#' \code{\link{dkw}}, \code{\link{pkw}}, \code{\link{rkw}} (other Kw functions),
+#' \code{\link[stats]{qbeta}}, \code{\link[stats]{qunif}}
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' p_vals <- c(0.1, 0.5, 0.9)
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#'
+#' # Calculate quantiles using qkw
+#' quantiles <- qkw(p_vals, alpha_par, beta_par)
+#' print(quantiles)
+#'
+#' # Calculate quantiles for upper tail probabilities P(X > q) = p
+#' quantiles_upper <- qkw(p_vals, alpha_par, beta_par, lower_tail = FALSE)
+#' print(quantiles_upper)
+#' # Check: qkw(p, ..., lt=F) == qkw(1-p, ..., lt=T)
+#' print(qkw(1 - p_vals, alpha_par, beta_par))
+#'
+#' # Calculate quantiles from log probabilities
+#' log_p_vals <- log(p_vals)
+#' quantiles_logp <- qkw(log_p_vals, alpha_par, beta_par, log_p = TRUE)
+#' print(quantiles_logp)
+#' # Check: should match original quantiles
+#' print(quantiles)
+#'
+#' # Compare with qgkw setting gamma = 1, delta = 0, lambda = 1
+#' quantiles_gkw <- qgkw(p_vals, alpha = alpha_par, beta = beta_par,
+#'                      gamma = 1.0, delta = 0.0, lambda = 1.0)
+#' print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be near zero
+#'
+#' # Verify inverse relationship with pkw
+#' p_check <- 0.75
+#' q_calc <- qkw(p_check, alpha_par, beta_par)
+#' p_recalc <- pkw(q_calc, alpha_par, beta_par)
+#' print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
+#' # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
+#'
+#' # Boundary conditions
+#' print(qkw(c(0, 1), alpha_par, beta_par)) # Should be 0, 1
+#' print(qkw(c(-Inf, 0), alpha_par, beta_par, log_p = TRUE)) # Should be 0, 1
+#'
+#' # Vectorized parameters
+#' alphas_vec <- c(1.5, 2.0, 2.5)
+#' quantiles_vec <- qkw(0.5, alpha = alphas_vec, beta = 3.0)
+#' print(quantiles_vec) # Median for 3 different alpha values
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 qkw <- function(p, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_qkw`, p, alpha, beta, lower_tail, log_p)
 }
 
-#' @title Random Generation from the Kumaraswamy Distribution
+#' @title Random Number Generation for the Kumaraswamy (Kw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution random kumaraswamy
 #'
 #' @description
-#' Generates n samples from Kw(\eqn{\alpha,\beta}), using the transformation from Uniform(0,1).
+#' Generates random deviates from the two-parameter Kumaraswamy (Kw)
+#' distribution with shape parameters \code{alpha} (\eqn{\alpha}) and
+#' \code{beta} (\eqn{\beta}).
 #'
-#' @param n Integer number of observations.
-#' @param alpha Shape parameter \eqn{\alpha>0}.
-#' @param beta Shape parameter \eqn{\beta>0}.
+#' @param n Number of observations. If \code{length(n) > 1}, the length is
+#'   taken to be the number required. Must be a non-negative integer.
+#' @param alpha Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
+#' @param beta Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+#'   Default: 1.0.
 #'
-#' @return A vector of length n with samples in (0,1).
+#' @return A vector of length \code{n} containing random deviates from the Kw
+#'   distribution, with values in (0, 1). The length of the result is determined
+#'   by \code{n} and the recycling rule applied to the parameters (\code{alpha},
+#'   \code{beta}). Returns \code{NaN} if parameters are invalid (e.g.,
+#'   \code{alpha <= 0}, \code{beta <= 0}).
 #'
 #' @details
-#' If V ~ Uniform(0,1), then
-#' \eqn{X= \{1 - [1 - V]^{1/\beta}\}^{1/\alpha}}.
+#' The generation method uses the inverse transform (quantile) method.
+#' That is, if \eqn{U} is a random variable following a standard Uniform
+#' distribution on (0, 1), then \eqn{X = Q(U)} follows the Kw distribution,
+#' where \eqn{Q(p)} is the Kw quantile function (\code{\link{qkw}}):
+#' \deqn{
+#' Q(p) = \left\{ 1 - (1 - p)^{1/\beta} \right\}^{1/\alpha}
+#' }
+#' The implementation generates \eqn{U} using \code{\link[stats]{runif}}
+#' and applies this transformation. This is equivalent to the general GKw
+#' generation method (\code{\link{rgkw}}) evaluated at \eqn{\gamma=1, \delta=0, \lambda=1}.
+#'
+#' @references
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
+#' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
+#' \doi{10.1016/j.stamet.2008.04.001}
+#'
+#' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
+#' (General methods for random variate generation).
+#'
+#' @seealso
+#' \code{\link{rgkw}} (parent distribution random generation),
+#' \code{\link{dkw}}, \code{\link{pkw}}, \code{\link{qkw}} (other Kw functions),
+#' \code{\link[stats]{runif}}
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(2029) # for reproducibility
+#'
+#' # Generate 1000 random values from a specific Kw distribution
+#' alpha_par <- 2.0
+#' beta_par <- 3.0
+#'
+#' x_sample_kw <- rkw(1000, alpha = alpha_par, beta = beta_par)
+#' summary(x_sample_kw)
+#'
+#' # Histogram of generated values compared to theoretical density
+#' hist(x_sample_kw, breaks = 30, freq = FALSE, # freq=FALSE for density
+#'      main = "Histogram of Kw Sample", xlab = "x", ylim = c(0, 2.5))
+#' curve(dkw(x, alpha = alpha_par, beta = beta_par),
+#'       add = TRUE, col = "red", lwd = 2, n = 201)
+#' legend("top", legend = "Theoretical PDF", col = "red", lwd = 2, bty = "n")
+#'
+#' # Comparing empirical and theoretical quantiles (Q-Q plot)
+#' prob_points <- seq(0.01, 0.99, by = 0.01)
+#' theo_quantiles <- qkw(prob_points, alpha = alpha_par, beta = beta_par)
+#' emp_quantiles <- quantile(x_sample_kw, prob_points, type = 7)
+#'
+#' plot(theo_quantiles, emp_quantiles, pch = 16, cex = 0.8,
+#'      main = "Q-Q Plot for Kw Distribution",
+#'      xlab = "Theoretical Quantiles", ylab = "Empirical Quantiles (n=1000)")
+#' abline(a = 0, b = 1, col = "blue", lty = 2)
+#'
+#' # Compare summary stats with rgkw(..., gamma=1, delta=0, lambda=1)
+#' # Note: individual values will differ due to randomness
+#' x_sample_gkw <- rgkw(1000, alpha = alpha_par, beta = beta_par, gamma = 1.0,
+#'                      delta = 0.0, lambda = 1.0)
+#' print("Summary stats for rkw sample:")
+#' print(summary(x_sample_kw))
+#' print("Summary stats for rgkw(gamma=1, delta=0, lambda=1) sample:")
+#' print(summary(x_sample_gkw)) # Should be similar
+#'
+#' # Vectorized parameters: generate 1 value for each alpha
+#' alphas_vec <- c(1.5, 2.0, 2.5)
+#' n_param <- length(alphas_vec)
+#' samples_vec <- rkw(n_param, alpha = alphas_vec, beta = beta_par)
+#' print(samples_vec) # One sample for each alpha value
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 rkw <- function(n, alpha, beta) {
     .Call(`_gkwreg_rkw`, n, alpha, beta)
 }
 
-#' @title Negative Log-Likelihood of the Kumaraswamy Distribution
+#' @title Negative Log-Likelihood of the Kumaraswamy (Kw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize kumaraswamy
 #'
 #' @description
-#' Computes the negative log-likelihood for Kw(\eqn{\alpha,\beta}) given data in (0,1).
+#' Computes the negative log-likelihood function for the two-parameter
+#' Kumaraswamy (Kw) distribution with parameters \code{alpha} (\eqn{\alpha})
+#' and \code{beta} (\eqn{\beta}), given a vector of observations. This function
+#' is suitable for maximum likelihood estimation.
 #'
-#' @param par NumericVector of length 2: (alpha, beta).
-#' @param data NumericVector of observations in (0,1).
+#' @param par A numeric vector of length 2 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return A single numeric value. \code{+Inf} if invalid parameters or data.
+#' @return Returns a single \code{double} value representing the negative
+#'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+#'   if any parameter values in \code{par} are invalid according to their
+#'   constraints, or if any value in \code{data} is not in the interval (0, 1).
 #'
 #' @details
-#' The PDF is
-#' \eqn{ f(x)= \alpha\,\beta\,x^{\alpha-1}\,(1 - x^\alpha)^{\beta-1} }.
-#' Summation of log gives the log-likelihood; we return the negative of that sum.
+#' The Kumaraswamy (Kw) distribution's probability density function (PDF) is
+#' (see \code{\link{dkw}}):
+#' \deqn{
+#' f(x | \theta) = \alpha \beta x^{\alpha-1} (1 - x^\alpha)^{\beta-1}
+#' }
+#' for \eqn{0 < x < 1} and \eqn{\theta = (\alpha, \beta)}.
+#' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+#' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+#' \deqn{
+#' \ell(\theta | \mathbf{x}) = n[\ln(\alpha) + \ln(\beta)]
+#' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i)]
+#' }
+#' where \eqn{v_i = 1 - x_i^{\alpha}}.
+#' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+#' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+#' It is equivalent to the negative log-likelihood of the GKw distribution
+#' (\code{\link{llgkw}}) evaluated at \eqn{\gamma=1, \delta=0, \lambda=1}.
+#'
+#' @references
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
+#' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
+#' \doi{10.1016/j.stamet.2008.04.001}
+#'
+#' @seealso
+#' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+#' \code{\link{dkw}}, \code{\link{pkw}}, \code{\link{qkw}}, \code{\link{rkw}},
+#' \code{grkw} (gradient, if available),
+#' \code{hskw} (Hessian, if available),
+#' \code{\link[stats]{optim}}
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a Kw distribution
+#' # Assuming existence of rkw, grkw, hskw functions for Kw distribution
+#'
+#' # Generate sample data from a known Kw distribution
 #' set.seed(123)
-#' x <- rkw(100, 2, 3)
-#' hist(x, breaks = 20, main = "Kw(2, 3) Sample")
+#' true_par_kw <- c(alpha = 2, beta = 3)
+#' sample_data_kw <- rkw(100, alpha = true_par_kw[1], beta = true_par_kw[2])
+#' hist(sample_data_kw, breaks = 20, main = "Kw(2, 3) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5), llkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Maximum Likelihood Estimation using optim ---
+#' # Initial parameter guess
+#' start_par_kw <- c(1.5, 2.5)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llkw, x = result$par, data = x)
+#' # Perform optimization (minimizing negative log-likelihood)
+#' # Use method="L-BFGS-B" for box constraints (params > 0)
+#' mle_result_kw <- stats::optim(par = start_par_kw,
+#'                               fn = llkw, # Use the Kw neg-log-likelihood
+#'                               method = "L-BFGS-B",
+#'                               lower = c(1e-6, 1e-6), # Lower bounds > 0
+#'                               hessian = TRUE,
+#'                               data = sample_data_kw)
 #'
-#' ana_grad <- grkw(result$par, data = x)
-#' ana_hess <- hskw(result$par, data = x)
-#'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#' # Check convergence and results
+#' if (mle_result_kw$convergence == 0) {
+#'   print("Optimization converged successfully.")
+#'   mle_par_kw <- mle_result_kw$par
+#'   print("Estimated Kw parameters:")
+#'   print(mle_par_kw)
+#'   print("True Kw parameters:")
+#'   print(true_par_kw)
+#' } else {
+#'   warning("Optimization did not converge!")
+#'   print(mle_result_kw$message)
 #' }
+#'
+#' # --- Compare numerical and analytical derivatives (if available) ---
+#' # Requires 'numDeriv' package and analytical functions 'grkw', 'hskw'
+#' if (mle_result_kw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("grkw") && exists("hskw")) {
+#'
+#'   cat("\nComparing Derivatives at Kw MLE estimates:\n")
+#'
+#'   # Numerical derivatives of llkw
+#'   num_grad_kw <- numDeriv::grad(func = llkw, x = mle_par_kw, data = sample_data_kw)
+#'   num_hess_kw <- numDeriv::hessian(func = llkw, x = mle_par_kw, data = sample_data_kw)
+#'
+#'   # Analytical derivatives (assuming they return derivatives of negative LL)
+#'   ana_grad_kw <- grkw(par = mle_par_kw, data = sample_data_kw)
+#'   ana_hess_kw <- hskw(par = mle_par_kw, data = sample_data_kw)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between gradients:\n")
+#'   print(max(abs(num_grad_kw - ana_grad_kw)))
+#'   cat("Max absolute difference between Hessians:\n")
+#'   print(max(abs(num_hess_kw - ana_hess_kw)))
+#'
+#' } else {
+#'    cat("\nSkipping derivative comparison for Kw.\n")
+#'    cat("Requires convergence, 'numDeriv' package and functions 'grkw', 'hskw'.\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 llkw <- function(par, data) {
     .Call(`_gkwreg_llkw`, par, data)
 }
 
-#' @title Gradient Function for Kumaraswamy Log-Likelihood
+#' @title Gradient of the Negative Log-Likelihood for the Kumaraswamy (Kw) Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize gradient kumaraswamy
 #'
 #' @description
-#' Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-#' function for the Kumaraswamy (Kw) distribution. This function provides the exact
-#' gradient needed for efficient optimization in maximum likelihood estimation.
-#' The Kw is a submodel of GKw with γ = 1, δ = 0, and λ = 1 fixed.
+#' Computes the gradient vector (vector of first partial derivatives) of the
+#' negative log-likelihood function for the two-parameter Kumaraswamy (Kw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}) and \code{beta}
+#' (\eqn{\beta}). This provides the analytical gradient often used for efficient
+#' optimization via maximum likelihood estimation.
 #'
-#' @param par NumericVector of length 2 containing parameters (α, β) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 2 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericVector of length 2 containing the gradient components (partial derivatives)
-#'         of the negative log-likelihood with respect to each parameter (α, β).
-#'         Returns a vector of NaN values if any parameters or data values are invalid.
+#' @return Returns a numeric vector of length 2 containing the partial derivatives
+#'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+#'   respect to each parameter: \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta)}.
+#'   Returns a vector of \code{NaN} if any parameter values are invalid according
+#'   to their constraints, or if any value in \code{data} is not in the
+#'   interval (0, 1).
 #'
 #' @details
-#' The gradient vector contains the following partial derivatives of the negative log-likelihood:
+#' The components of the gradient vector of the negative log-likelihood
+#' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the Kw model are:
 #'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \alpha} = \frac{n}{\alpha} + \sum_{i=1}^{n}\log(x_i) -
-#' \sum_{i=1}^{n}\left[\frac{(\beta-1)x_i^{\alpha}\log(x_i)}{1-x_i^{\alpha}}\right]
+#' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
+#' + (\beta-1)\sum_{i=1}^{n}\frac{x_i^{\alpha}\ln(x_i)}{v_i}
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \beta} = \frac{n}{\beta} + \sum_{i=1}^{n}\log(1-x_i^{\alpha})
+#' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - \sum_{i=1}^{n}\ln(v_i)
 #' }
 #'
-#' The implementation includes several numerical safeguards:
-#' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Clamping of intermediate values to avoid numerical underflow/overflow
-#'   \item Efficient vector operations using Armadillo C++ library
-#' }
+#' where \eqn{v_i = 1 - x_i^{\alpha}}.
+#' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+#' minimizing the negative log-likelihood. They correspond to the relevant components
+#' of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\gamma=1, \delta=0, \lambda=1}.
 #'
-#' The returned gradient is negated to align with minimization of negative log-likelihood
-#' in optimization routines.
+#' @references
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
+#' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
+#' \doi{10.1016/j.stamet.2008.04.001}
+#' (Note: Specific gradient formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{grgkw}} (parent distribution gradient),
+#' \code{\link{llkw}} (negative log-likelihood for Kw),
+#' \code{hskw} (Hessian for Kw, if available),
+#' \code{\link{dkw}} (density for Kw),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a Kw distribution
+#' # Assuming existence of rkw, llkw, grkw, hskw functions for Kw
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rkw(100, 2, 3)
-#' hist(x, breaks = 20, main = "Kw(2, 3) Sample")
+#' true_par_kw <- c(alpha = 2, beta = 3)
+#' sample_data_kw <- rkw(100, alpha = true_par_kw[1], beta = true_par_kw[2])
+#' hist(sample_data_kw, breaks = 20, main = "Kw(2, 3) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5), llkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_kw <- c(1.5, 2.5)
+#' mle_result_kw <- stats::optim(par = start_par_kw,
+#'                               fn = llkw,
+#'                               gr = grkw, # Use analytical gradient for Kw
+#'                               method = "L-BFGS-B", # Recommended for bounds
+#'                               lower = c(1e-6, 1e-6),
+#'                               hessian = TRUE,
+#'                               data = sample_data_kw)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llkw, x = result$par, data = x)
+#' # --- Compare analytical gradient to numerical gradient ---
+#' if (mle_result_kw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE)) {
 #'
-#' ana_grad <- grkw(result$par, data = x)
-#' ana_hess <- hskw(result$par, data = x)
+#'   mle_par_kw <- mle_result_kw$par
+#'   cat("\nComparing Gradients for Kw at MLE estimates:\n")
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'   # Numerical gradient of llkw
+#'   num_grad_kw <- numDeriv::grad(func = llkw, x = mle_par_kw, data = sample_data_kw)
+#'
+#'   # Analytical gradient from grkw
+#'   ana_grad_kw <- grkw(par = mle_par_kw, data = sample_data_kw)
+#'
+#'   cat("Numerical Gradient (Kw):\n")
+#'   print(num_grad_kw)
+#'   cat("Analytical Gradient (Kw):\n")
+#'   print(ana_grad_kw)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between Kw gradients:\n")
+#'   print(max(abs(num_grad_kw - ana_grad_kw)))
+#'
+#' } else {
+#'   cat("\nSkipping Kw gradient comparison.\n")
 #' }
 #'
-#' @seealso
-#' \code{\link[gkwreg]{llkw}} for the negative log-likelihood function,
-#' \code{\link[gkwreg]{hskw}} for the Hessian matrix of the Kw log-likelihood,
-#' \code{\link[gkwreg]{dkw}} for the Kw density function,
+#' # Example with Hessian comparison (if hskw exists)
+#' if (mle_result_kw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) && exists("hskw")) {
 #'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
+#'   num_hess_kw <- numDeriv::hessian(func = llkw, x = mle_par_kw, data = sample_data_kw)
+#'   ana_hess_kw <- hskw(par = mle_par_kw, data = sample_data_kw)
+#'   cat("\nMax absolute difference between Kw Hessians:\n")
+#'   print(max(abs(num_hess_kw - ana_hess_kw)))
 #'
-#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution with some tractability advantages.
-#' Statistical Methodology, 6(1), 70-81.
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 grkw <- function(par, data) {
     .Call(`_gkwreg_grkw`, par, data)
 }
 
-#' @title Hessian Matrix Function for Kumaraswamy Log-Likelihood
+#' @title Hessian Matrix of the Negative Log-Likelihood for the Kw Distribution
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize hessian kumaraswamy
 #'
 #' @description
-#' Calculates the Hessian matrix (second-order partial derivatives) of the negative log-likelihood
-#' function for the Kumaraswamy (Kw) distribution. This function provides the exact Hessian needed
-#' for efficient optimization in maximum likelihood estimation and for asymptotic inference.
-#' The Kw is a submodel of GKw with γ = 1, δ = 0, and λ = 1 fixed.
+#' Computes the analytic 2x2 Hessian matrix (matrix of second partial derivatives)
+#' of the negative log-likelihood function for the two-parameter Kumaraswamy (Kw)
+#' distribution with parameters \code{alpha} (\eqn{\alpha}) and \code{beta}
+#' (\eqn{\beta}). The Hessian is useful for estimating standard errors and in
+#' optimization algorithms.
 #'
-#' @param par NumericVector of length 2 containing parameters (α, β) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 2 containing the distribution parameters
+#'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericMatrix of dimensions 2x2 containing the Hessian components (second derivatives)
-#'         of the negative log-likelihood with respect to each parameter pair (α, β).
-#'         Returns a matrix of NaN values if any parameters or data values are invalid.
+#' @return Returns a 2x2 numeric matrix representing the Hessian matrix of the
+#'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+#'   where \eqn{\theta = (\alpha, \beta)}.
+#'   Returns a 2x2 matrix populated with \code{NaN} if any parameter values are
+#'   invalid according to their constraints, or if any value in \code{data} is
+#'   not in the interval (0, 1).
 #'
 #' @details
-#' The Hessian matrix contains the following second derivatives of the negative log-likelihood:
+#' This function calculates the analytic second partial derivatives of the
+#' negative log-likelihood function (\eqn{-\ell(\theta|\mathbf{x})}). The components
+#' are the negative of the second derivatives of the log-likelihood \eqn{\ell}
+#' (derived from the PDF in \code{\link{dkw}}).
 #'
+#' Let \eqn{v_i = 1 - x_i^{\alpha}}. The second derivatives of the positive log-likelihood (\eqn{\ell}) are:
 #' \deqn{
 #' \frac{\partial^2 \ell}{\partial \alpha^2} = -\frac{n}{\alpha^2} -
-#' \sum_{i=1}^{n}\left[\frac{(\beta-1)x_i^{\alpha}(\log(x_i))^2}{1-x_i^{\alpha}}\left(1 + \frac{x_i^{\alpha}}{1-x_i^{\alpha}}\right)\right]
+#' (\beta-1)\sum_{i=1}^{n}\frac{x_i^{\alpha}(\ln(x_i))^2}{v_i^2}
 #' }
-#'
 #' \deqn{
 #' \frac{\partial^2 \ell}{\partial \alpha \partial \beta} = -
-#' \sum_{i=1}^{n}\left[\frac{x_i^{\alpha}\log(x_i)}{1-x_i^{\alpha}}\right]
+#' \sum_{i=1}^{n}\frac{x_i^{\alpha}\ln(x_i)}{v_i}
 #' }
-#'
 #' \deqn{
 #' \frac{\partial^2 \ell}{\partial \beta^2} = -\frac{n}{\beta^2}
 #' }
+#' The function returns the Hessian matrix containing the negative of these values.
 #'
-#' The implementation includes several numerical safeguards:
+#' Key properties of the returned matrix:
 #' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Clamping of intermediate values to avoid numerical underflow/overflow
-#'   \item Symmetry of the Hessian matrix is guaranteed by construction
-#'   \item Efficient vector operations using Armadillo C++ library
+#'   \item Dimensions: 2x2.
+#'   \item Symmetry: The matrix is symmetric.
+#'   \item Ordering: Rows and columns correspond to the parameters in the order
+#'     \eqn{\alpha, \beta}.
+#'   \item Content: Analytic second derivatives of the *negative* log-likelihood.
 #' }
+#' This corresponds to the relevant 2x2 submatrix of the 5x5 GKw Hessian (\code{\link{hsgkw}})
+#' evaluated at \eqn{\gamma=1, \delta=0, \lambda=1}.
 #'
-#' The returned Hessian is negated to align with minimization of negative log-likelihood
-#' in optimization routines.
+#' @references
+#' Kumaraswamy, P. (1980). A generalized probability density function for
+#' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+#' \doi{10.1016/0022-1694(80)90036-0}
+#'
+#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
+#' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
+#' \doi{10.1016/j.stamet.2008.04.001}
+#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{hsgkw}} (parent distribution Hessian),
+#' \code{\link{llkw}} (negative log-likelihood for Kw),
+#' \code{grkw} (gradient for Kw, if available),
+#' \code{\link{dkw}} (density for Kw),
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a Kw distribution
+#' # Assuming existence of rkw, llkw, grkw, hskw functions for Kw
+#'
+#' # Generate sample data
 #' set.seed(123)
-#' x <- rkw(100, 2, 3)
-#' hist(x, breaks = 20, main = "Kw(2, 3) Sample")
+#' true_par_kw <- c(alpha = 2, beta = 3)
+#' sample_data_kw <- rkw(100, alpha = true_par_kw[1], beta = true_par_kw[2])
+#' hist(sample_data_kw, breaks = 20, main = "Kw(2, 3) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5), llkw, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_kw <- c(1.5, 2.5)
+#' mle_result_kw <- stats::optim(par = start_par_kw,
+#'                               fn = llkw,
+#'                               gr = if (exists("grkw")) grkw else NULL,
+#'                               method = "L-BFGS-B",
+#'                               lower = c(1e-6, 1e-6),
+#'                               hessian = TRUE, # Ask optim for numerical Hessian
+#'                               data = sample_data_kw)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llkw, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llkw, x = result$par, data = x)
+#' # --- Compare analytical Hessian to numerical Hessian ---
+#' if (mle_result_kw$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("hskw")) {
 #'
-#' ana_grad <- grkw(result$par, data = x)
-#' ana_hess <- hskw(result$par, data = x)
+#'   mle_par_kw <- mle_result_kw$par
+#'   cat("\nComparing Hessians for Kw at MLE estimates:\n")
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#'   # Numerical Hessian of llkw
+#'   num_hess_kw <- numDeriv::hessian(func = llkw, x = mle_par_kw, data = sample_data_kw)
+#'
+#'   # Analytical Hessian from hskw
+#'   ana_hess_kw <- hskw(par = mle_par_kw, data = sample_data_kw)
+#'
+#'   cat("Numerical Hessian (Kw):\n")
+#'   print(round(num_hess_kw, 4))
+#'   cat("Analytical Hessian (Kw):\n")
+#'   print(round(ana_hess_kw, 4))
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between Kw Hessians:\n")
+#'   print(max(abs(num_hess_kw - ana_hess_kw)))
+#'
+#'   # Optional: Use analytical Hessian for Standard Errors
+#'   # tryCatch({
+#'   #   cov_matrix_kw <- solve(ana_hess_kw) # ana_hess_kw is already Hessian of negative LL
+#'   #   std_errors_kw <- sqrt(diag(cov_matrix_kw))
+#'   #   cat("Std. Errors from Analytical Kw Hessian:\n")
+#'   #   print(std_errors_kw)
+#'   # }, error = function(e) {
+#'   #   warning("Could not invert analytical Kw Hessian: ", e$message)
+#'   # })
+#'
+#' } else {
+#'   cat("\nSkipping Kw Hessian comparison.\n")
+#'   cat("Requires convergence, 'numDeriv' package, and function 'hskw'.\n")
 #' }
 #'
-#' @seealso
-#' \code{\link[gkwreg]{llkw}} for the negative log-likelihood function,
-#' \code{\link[gkwreg]{grkw}} for the gradient of the Kw log-likelihood,
-#' \code{\link[gkwreg]{dkw}} for the Kw density function,
-#'
-#' @references
-#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-#' Journal of Hydrology, 46(1-2), 79-88.
-#'
-#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution with some tractability advantages.
-#' Statistical Methodology, 6(1), 70-81.
+#' } # End of \dontrun block
 #'
 #' @export
 hskw <- function(par, data) {
     .Call(`_gkwreg_hskw`, par, data)
 }
 
-#' @title Density of the Beta Distribution
+#' @title Density of the Beta Distribution (gamma, delta+1 Parameterization)
+#' @author Lopes, J. E.
+#' @keywords distribution density beta
 #'
 #' @description
-#' Computes the PDF of Beta(\code{gamma, delta}) for x in (0,1).
+#' Computes the probability density function (PDF) for the standard Beta
+#' distribution, using a parameterization common in generalized distribution
+#' families. The distribution is parameterized by \code{gamma} (\eqn{\gamma}) and
+#' \code{delta} (\eqn{\delta}), corresponding to the standard Beta distribution
+#' with shape parameters \code{shape1 = gamma} and \code{shape2 = delta + 1}.
+#' The distribution is defined on the interval (0, 1).
 #'
-#' @param x Vector of quantiles in (0,1).
-#' @param gamma First shape parameter > 0.
-#' @param delta Second shape parameter > 0.
-#' @param log_prob If TRUE, returns log-density.
+#' @param x Vector of quantiles (values between 0 and 1).
+#' @param gamma First shape parameter (\code{shape1}), \eqn{\gamma > 0}. Can be a
+#'   scalar or a vector. Default: 1.0.
+#' @param delta Second shape parameter is \code{delta + 1} (\code{shape2}), requires
+#'   \eqn{\delta \ge 0} so that \code{shape2 >= 1}. Can be a scalar or a vector.
+#'   Default: 0.0 (leading to \code{shape2 = 1}).
+#' @param log_prob Logical; if \code{TRUE}, the logarithm of the density is
+#'   returned (\eqn{\log(f(x))}). Default: \code{FALSE}.
+#'
+#' @return A vector of density values (\eqn{f(x)}) or log-density values
+#'   (\eqn{\log(f(x))}). The length of the result is determined by the recycling
+#'   rule applied to the arguments (\code{x}, \code{gamma}, \code{delta}).
+#'   Returns \code{0} (or \code{-Inf} if \code{log_prob = TRUE}) for \code{x}
+#'   outside the interval (0, 1), or \code{NaN} if parameters are invalid
+#'   (e.g., \code{gamma <= 0}, \code{delta < 0}).
 #'
 #' @details
-#' The PDF is
+#' The probability density function (PDF) calculated by this function corresponds
+#' to a standard Beta distribution \eqn{Beta(\gamma, \delta+1)}:
 #' \deqn{
-#'   f(x) = \frac{x^{\gamma-1}\,(1-x)^{\delta}}
-#'              {B(\gamma, \delta+1)}, \quad 0<x<1.
+#' f(x; \gamma, \delta) = \frac{x^{\gamma-1} (1-x)^{(\delta+1)-1}}{B(\gamma, \delta+1)} = \frac{x^{\gamma-1} (1-x)^{\delta}}{B(\gamma, \delta+1)}
 #' }
+#' for \eqn{0 < x < 1}, where \eqn{B(a,b)} is the Beta function
+#' (\code{\link[base]{beta}}).
 #'
-#' @return A vector of densities (or log-densities).
+#' This specific parameterization arises as a special case of the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution (\code{\link{dgkw}}) obtained
+#' by setting the parameters \eqn{\alpha = 1}, \eqn{\beta = 1}, and \eqn{\lambda = 1}.
+#' It is therefore equivalent to the McDonald (Mc)/Beta Power distribution
+#' (\code{\link{dmc}}) with \eqn{\lambda = 1}.
+#'
+#' Note the difference in the second parameter compared to \code{\link[stats]{dbeta}},
+#' where \code{dbeta(x, shape1, shape2)} uses \code{shape2} directly. Here,
+#' \code{shape1 = gamma} and \code{shape2 = delta + 1}.
+#'
+#' @references
+#' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). *Continuous Univariate
+#' Distributions, Volume 2* (2nd ed.). Wiley.
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' @seealso
+#' \code{\link[stats]{dbeta}} (standard R implementation),
+#' \code{\link{dgkw}} (parent distribution density),
+#' \code{\link{dmc}} (McDonald/Beta Power density),
+#' \code{pbeta_}, \code{qbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' x_vals <- c(0.2, 0.5, 0.8)
+#' gamma_par <- 2.0 # Corresponds to shape1
+#' delta_par <- 3.0 # Corresponds to shape2 - 1
+#' shape1 <- gamma_par
+#' shape2 <- delta_par + 1
+#'
+#' # Calculate density using dbeta_
+#' densities <- dbeta_(x_vals, gamma_par, delta_par)
+#' print(densities)
+#'
+#' # Compare with stats::dbeta
+#' densities_stats <- stats::dbeta(x_vals, shape1 = shape1, shape2 = shape2)
+#' print(paste("Max difference vs stats::dbeta:", max(abs(densities - densities_stats))))
+#'
+#' # Compare with dgkw setting alpha=1, beta=1, lambda=1
+#' densities_gkw <- dgkw(x_vals, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+#'                       delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference vs dgkw:", max(abs(densities - densities_gkw))))
+#'
+#' # Compare with dmc setting lambda=1
+#' densities_mc <- dmc(x_vals, gamma = gamma_par, delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference vs dmc:", max(abs(densities - densities_mc))))
+#'
+#' # Calculate log-density
+#' log_densities <- dbeta_(x_vals, gamma_par, delta_par, log_prob = TRUE)
+#' print(log_densities)
+#' print(stats::dbeta(x_vals, shape1 = shape1, shape2 = shape2, log = TRUE))
+#'
+#' # Plot the density
+#' curve_x <- seq(0.001, 0.999, length.out = 200)
+#' curve_y <- dbeta_(curve_x, gamma = 2, delta = 3) # Beta(2, 4)
+#' plot(curve_x, curve_y, type = "l", main = "Beta(2, 4) Density via dbeta_",
+#'      xlab = "x", ylab = "f(x)", col = "blue")
+#' curve(stats::dbeta(x, 2, 4), add=TRUE, col="red", lty=2)
+#' legend("topright", legend=c("dbeta_(gamma=2, delta=3)", "stats::dbeta(shape1=2, shape2=4)"),
+#'        col=c("blue", "red"), lty=c(1,2), bty="n")
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 dbeta_ <- function(x, gamma, delta, log_prob = FALSE) {
     .Call(`_gkwreg_dbeta_`, x, gamma, delta, log_prob)
 }
 
-#' @title CDF of the Beta Distribution
+#' @title CDF of the Beta Distribution (gamma, delta+1 Parameterization)
+#' @author Lopes, J. E.
+#' @keywords distribution cumulative beta
 #'
 #' @description
-#' Computes F(q) = pbeta(q, gamma, delta+1) in (0,1).
+#' Computes the cumulative distribution function (CDF), \eqn{F(q) = P(X \le q)},
+#' for the standard Beta distribution, using a parameterization common in
+#' generalized distribution families. The distribution is parameterized by
+#' \code{gamma} (\eqn{\gamma}) and \code{delta} (\eqn{\delta}), corresponding to
+#' the standard Beta distribution with shape parameters \code{shape1 = gamma}
+#' and \code{shape2 = delta + 1}.
 #'
-#' @param q Vector of quantiles in (0,1).
-#' @param gamma First shape parameter > 0.
-#' @param delta Second shape parameter > 0.
-#' @param lower_tail If TRUE, returns F(q)=P(X≤q). If FALSE, 1-F(q).
-#' @param log_p If TRUE, returns log of the probability.
+#' @param q Vector of quantiles (values generally between 0 and 1).
+#' @param gamma First shape parameter (\code{shape1}), \eqn{\gamma > 0}. Can be a
+#'   scalar or a vector. Default: 1.0.
+#' @param delta Second shape parameter is \code{delta + 1} (\code{shape2}), requires
+#'   \eqn{\delta \ge 0} so that \code{shape2 >= 1}. Can be a scalar or a vector.
+#'   Default: 0.0 (leading to \code{shape2 = 1}).
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are
+#'   \eqn{P(X \le q)}, otherwise, \eqn{P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
 #'
-#' @return A vector of probabilities or log-probabilities, matching broadcast.
+#' @return A vector of probabilities, \eqn{F(q)}, or their logarithms/complements
+#'   depending on \code{lower_tail} and \code{log_p}. The length of the result
+#'   is determined by the recycling rule applied to the arguments (\code{q},
+#'   \code{gamma}, \code{delta}). Returns \code{0} (or \code{-Inf} if
+#'   \code{log_p = TRUE}) for \code{q <= 0} and \code{1} (or \code{0} if
+#'   \code{log_p = TRUE}) for \code{q >= 1}. Returns \code{NaN} for invalid
+#'   parameters.
 #'
 #' @details
-#' This is a wrapper calling R's \code{pbeta} internally with appropriate parameter
-#' adjustment for the GKw family's Beta parameterization. We replicate the vectorized
-#' approach for consistency with the GKw family style.
+#' This function computes the CDF of a Beta distribution with parameters
+#' \code{shape1 = gamma} and \code{shape2 = delta + 1}. It is equivalent to
+#' calling \code{stats::pbeta(q, shape1 = gamma, shape2 = delta + 1,
+#' lower.tail = lower_tail, log.p = log_p)}.
+#'
+#' This distribution arises as a special case of the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution (\code{\link{pgkw}}) obtained
+#' by setting \eqn{\alpha = 1}, \eqn{\beta = 1}, and \eqn{\lambda = 1}.
+#' It is therefore also equivalent to the McDonald (Mc)/Beta Power distribution
+#' (\code{\link{pmc}}) with \eqn{\lambda = 1}.
+#'
+#' The function likely calls R's underlying \code{pbeta} function but ensures
+#' consistent parameter recycling and handling within the C++ environment,
+#' matching the style of other functions in the related families.
+#'
+#' @references
+#' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). *Continuous Univariate
+#' Distributions, Volume 2* (2nd ed.). Wiley.
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' @seealso
+#' \code{\link[stats]{pbeta}} (standard R implementation),
+#' \code{\link{pgkw}} (parent distribution CDF),
+#' \code{\link{pmc}} (McDonald/Beta Power CDF),
+#' \code{dbeta_}, \code{qbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' q_vals <- c(0.2, 0.5, 0.8)
+#' gamma_par <- 2.0 # Corresponds to shape1
+#' delta_par <- 3.0 # Corresponds to shape2 - 1
+#' shape1 <- gamma_par
+#' shape2 <- delta_par + 1
+#'
+#' # Calculate CDF using pbeta_
+#' probs <- pbeta_(q_vals, gamma_par, delta_par)
+#' print(probs)
+#'
+#' # Compare with stats::pbeta
+#' probs_stats <- stats::pbeta(q_vals, shape1 = shape1, shape2 = shape2)
+#' print(paste("Max difference vs stats::pbeta:", max(abs(probs - probs_stats))))
+#'
+#' # Compare with pgkw setting alpha=1, beta=1, lambda=1
+#' probs_gkw <- pgkw(q_vals, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+#'                   delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference vs pgkw:", max(abs(probs - probs_gkw))))
+#'
+#' # Compare with pmc setting lambda=1
+#' probs_mc <- pmc(q_vals, gamma = gamma_par, delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference vs pmc:", max(abs(probs - probs_mc))))
+#'
+#' # Calculate upper tail P(X > q)
+#' probs_upper <- pbeta_(q_vals, gamma_par, delta_par, lower_tail = FALSE)
+#' print(probs_upper)
+#' print(stats::pbeta(q_vals, shape1, shape2, lower.tail = FALSE))
+#'
+#' # Calculate log CDF
+#' log_probs <- pbeta_(q_vals, gamma_par, delta_par, log_p = TRUE)
+#' print(log_probs)
+#' print(stats::pbeta(q_vals, shape1, shape2, log.p = TRUE))
+#'
+#' # Plot the CDF
+#' curve_q <- seq(0.001, 0.999, length.out = 200)
+#' curve_p <- pbeta_(curve_q, gamma = 2, delta = 3) # Beta(2, 4)
+#' plot(curve_q, curve_p, type = "l", main = "Beta(2, 4) CDF via pbeta_",
+#'      xlab = "q", ylab = "F(q)", col = "blue")
+#' curve(stats::pbeta(x, 2, 4), add=TRUE, col="red", lty=2)
+#' legend("bottomright", legend=c("pbeta_(gamma=2, delta=3)", "stats::pbeta(shape1=2, shape2=4)"),
+#'        col=c("blue", "red"), lty=c(1,2), bty="n")
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 pbeta_ <- function(q, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_pbeta_`, q, gamma, delta, lower_tail, log_p)
 }
 
-#' @title Quantile Function of the Beta Distribution
+#' @title Quantile Function of the Beta Distribution (gamma, delta+1 Parameterization)
+#' @author Lopes, J. E.
+#' @keywords distribution quantile beta
 #'
 #' @description
-#' For p in (0,1), returns x = Q(p) = qbeta(p, gamma, delta+1).
+#' Computes the quantile function (inverse CDF) for the standard Beta
+#' distribution, using a parameterization common in generalized distribution
+#' families. It finds the value \code{q} such that \eqn{P(X \le q) = p}. The
+#' distribution is parameterized by \code{gamma} (\eqn{\gamma}) and \code{delta}
+#' (\eqn{\delta}), corresponding to the standard Beta distribution with shape
+#' parameters \code{shape1 = gamma} and \code{shape2 = delta + 1}.
 #'
-#' @param p Vector of probabilities in (0,1) or log scale if log_p=TRUE.
-#' @param gamma First shape parameter > 0.
-#' @param delta Second shape parameter > 0.
-#' @param lower_tail If TRUE, p=F(x). If FALSE, p=1-F(x).
-#' @param log_p If TRUE, p is log(p).
+#' @param p Vector of probabilities (values between 0 and 1).
+#' @param gamma First shape parameter (\code{shape1}), \eqn{\gamma > 0}. Can be a
+#'   scalar or a vector. Default: 1.0.
+#' @param delta Second shape parameter is \code{delta + 1} (\code{shape2}), requires
+#'   \eqn{\delta \ge 0} so that \code{shape2 >= 1}. Can be a scalar or a vector.
+#'   Default: 0.0 (leading to \code{shape2 = 1}).
+#' @param lower_tail Logical; if \code{TRUE} (default), probabilities are \eqn{p = P(X \le q)},
+#'   otherwise, probabilities are \eqn{p = P(X > q)}.
+#' @param log_p Logical; if \code{TRUE}, probabilities \code{p} are given as
+#'   \eqn{\log(p)}. Default: \code{FALSE}.
 #'
-#' @return A vector of quantiles, same length as broadcast.
+#' @return A vector of quantiles corresponding to the given probabilities \code{p}.
+#'   The length of the result is determined by the recycling rule applied to
+#'   the arguments (\code{p}, \code{gamma}, \code{delta}).
+#'   Returns:
+#'   \itemize{
+#'     \item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE},
+#'           when \code{lower_tail = TRUE}).
+#'     \item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+#'     \item \code{NaN} for invalid parameters (e.g., \code{gamma <= 0},
+#'           \code{delta < 0}).
+#'   }
+#'   Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 #'
 #' @details
-#' Wrapper around R's \code{qbeta} with parameter adjustment for GKw-style Beta.
-#' Uses vectorized approach for consistency with GKw family style.
-#' We handle boundaries (p=0 => Q=0, p=1 => Q=1) manually.
+#' This function computes the quantiles of a Beta distribution with parameters
+#' \code{shape1 = gamma} and \code{shape2 = delta + 1}. It is equivalent to
+#' calling \code{stats::qbeta(p, shape1 = gamma, shape2 = delta + 1,
+#' lower.tail = lower_tail, log.p = log_p)}.
+#'
+#' This distribution arises as a special case of the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution (\code{\link{qgkw}}) obtained
+#' by setting \eqn{\alpha = 1}, \eqn{\beta = 1}, and \eqn{\lambda = 1}.
+#' It is therefore also equivalent to the McDonald (Mc)/Beta Power distribution
+#' (\code{\link{qmc}}) with \eqn{\lambda = 1}.
+#'
+#' The function likely calls R's underlying \code{qbeta} function but ensures
+#' consistent parameter recycling and handling within the C++ environment,
+#' matching the style of other functions in the related families. Boundary
+#' conditions (p=0, p=1) are handled explicitly.
+#'
+#' @references
+#' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). *Continuous Univariate
+#' Distributions, Volume 2* (2nd ed.). Wiley.
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' @seealso
+#' \code{\link[stats]{qbeta}} (standard R implementation),
+#' \code{\link{qgkw}} (parent distribution quantile function),
+#' \code{\link{qmc}} (McDonald/Beta Power quantile function),
+#' \code{dbeta_}, \code{pbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
+#'
+#' @examples
+#' \dontrun{
+#' # Example values
+#' p_vals <- c(0.1, 0.5, 0.9)
+#' gamma_par <- 2.0 # Corresponds to shape1
+#' delta_par <- 3.0 # Corresponds to shape2 - 1
+#' shape1 <- gamma_par
+#' shape2 <- delta_par + 1
+#'
+#' # Calculate quantiles using qbeta_
+#' quantiles <- qbeta_(p_vals, gamma_par, delta_par)
+#' print(quantiles)
+#'
+#' # Compare with stats::qbeta
+#' quantiles_stats <- stats::qbeta(p_vals, shape1 = shape1, shape2 = shape2)
+#' print(paste("Max difference vs stats::qbeta:", max(abs(quantiles - quantiles_stats))))
+#'
+#' # Compare with qgkw setting alpha=1, beta=1, lambda=1
+#' quantiles_gkw <- qgkw(p_vals, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+#'                       delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference vs qgkw:", max(abs(quantiles - quantiles_gkw))))
+#'
+#' # Compare with qmc setting lambda=1
+#' quantiles_mc <- qmc(p_vals, gamma = gamma_par, delta = delta_par, lambda = 1.0)
+#' print(paste("Max difference vs qmc:", max(abs(quantiles - quantiles_mc))))
+#'
+#' # Calculate quantiles for upper tail
+#' quantiles_upper <- qbeta_(p_vals, gamma_par, delta_par, lower_tail = FALSE)
+#' print(quantiles_upper)
+#' print(stats::qbeta(p_vals, shape1, shape2, lower.tail = FALSE))
+#'
+#' # Calculate quantiles from log probabilities
+#' log_p_vals <- log(p_vals)
+#' quantiles_logp <- qbeta_(log_p_vals, gamma_par, delta_par, log_p = TRUE)
+#' print(quantiles_logp)
+#' print(stats::qbeta(log_p_vals, shape1, shape2, log.p = TRUE))
+#'
+#' # Verify inverse relationship with pbeta_
+#' p_check <- 0.75
+#' q_calc <- qbeta_(p_check, gamma_par, delta_par)
+#' p_recalc <- pbeta_(q_calc, gamma_par, delta_par)
+#' print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
+#' # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
+#'
+#' # Boundary conditions
+#' print(qbeta_(c(0, 1), gamma_par, delta_par)) # Should be 0, 1
+#' print(qbeta_(c(-Inf, 0), gamma_par, delta_par, log_p = TRUE)) # Should be 0, 1
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 qbeta_ <- function(p, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
     .Call(`_gkwreg_qbeta_`, p, gamma, delta, lower_tail, log_p)
 }
 
-#' @title Random Generation for the Beta Distribution
+#' @title Random Generation for the Beta Distribution (gamma, delta+1 Parameterization)
+#' @author Lopes, J. E.
+#' @keywords distribution random beta
 #'
 #' @description
-#' Generates n samples from Beta(\code{gamma, delta}), wrapping R's \code{rbeta} with
-#' vectorized style to match GKw family approach.
+#' Generates random deviates from the standard Beta distribution, using a
+#' parameterization common in generalized distribution families. The distribution
+#' is parameterized by \code{gamma} (\eqn{\gamma}) and \code{delta} (\eqn{\delta}),
+#' corresponding to the standard Beta distribution with shape parameters
+#' \code{shape1 = gamma} and \code{shape2 = delta + 1}. This is a special case
+#' of the Generalized Kumaraswamy (GKw) distribution where \eqn{\alpha = 1},
+#' \eqn{\beta = 1}, and \eqn{\lambda = 1}.
 #'
-#' @param n Number of samples.
-#' @param gamma First shape parameter > 0.
-#' @param delta Second shape parameter > 0.
+#' @param n Number of observations. If \code{length(n) > 1}, the length is
+#'   taken to be the number required. Must be a non-negative integer.
+#' @param gamma First shape parameter (\code{shape1}), \eqn{\gamma > 0}. Can be a
+#'   scalar or a vector. Default: 1.0.
+#' @param delta Second shape parameter is \code{delta + 1} (\code{shape2}), requires
+#'   \eqn{\delta \ge 0} so that \code{shape2 >= 1}. Can be a scalar or a vector.
+#'   Default: 0.0 (leading to \code{shape2 = 1}, i.e., Uniform).
 #'
-#' @return A numeric vector of length n, each in (0,1).
+#' @return A numeric vector of length \code{n} containing random deviates from the
+#'   Beta(\eqn{\gamma, \delta+1}) distribution, with values in (0, 1). The length
+#'   of the result is determined by \code{n} and the recycling rule applied to
+#'   the parameters (\code{gamma}, \code{delta}). Returns \code{NaN} if parameters
+#'   are invalid (e.g., \code{gamma <= 0}, \code{delta < 0}).
 #'
 #' @details
-#' This function generates samples from the GKw family parameterization of the Beta
-#' distribution. The parameters are adjusted to call R's rbeta function correctly.
+#' This function generates samples from a Beta distribution with parameters
+#' \code{shape1 = gamma} and \code{shape2 = delta + 1}. It is equivalent to
+#' calling \code{stats::rbeta(n, shape1 = gamma, shape2 = delta + 1)}.
+#'
+#' This distribution arises as a special case of the five-parameter
+#' Generalized Kumaraswamy (GKw) distribution (\code{\link{rgkw}}) obtained
+#' by setting \eqn{\alpha = 1}, \eqn{\beta = 1}, and \eqn{\lambda = 1}.
+#' It is therefore also equivalent to the McDonald (Mc)/Beta Power distribution
+#' (\code{\link{rmc}}) with \eqn{\lambda = 1}.
+#'
+#' The function likely calls R's underlying \code{rbeta} function but ensures
+#' consistent parameter recycling and handling within the C++ environment,
+#' matching the style of other functions in the related families.
+#'
+#' @references
+#' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). *Continuous Univariate
+#' Distributions, Volume 2* (2nd ed.). Wiley.
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
+#'
+#' @seealso
+#' \code{\link[stats]{rbeta}} (standard R implementation),
+#' \code{\link{rgkw}} (parent distribution random generation),
+#' \code{\link{rmc}} (McDonald/Beta Power random generation),
+#' \code{dbeta_}, \code{pbeta_}, \code{qbeta_} (other functions for this parameterization, if they exist).
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(2030) # for reproducibility
+#'
+#' # Generate 1000 samples using rbeta_
+#' gamma_par <- 2.0 # Corresponds to shape1
+#' delta_par <- 3.0 # Corresponds to shape2 - 1
+#' shape1 <- gamma_par
+#' shape2 <- delta_par + 1
+#'
+#' x_sample <- rbeta_(1000, gamma = gamma_par, delta = delta_par)
+#' summary(x_sample)
+#'
+#' # Compare with stats::rbeta
+#' x_sample_stats <- stats::rbeta(1000, shape1 = shape1, shape2 = shape2)
+#' # Visually compare histograms or QQ-plots
+#' par(mfrow=c(1,2))
+#' hist(x_sample, main="rbeta_ Sample", freq=FALSE, breaks=30)
+#' curve(dbeta_(x, gamma_par, delta_par), add=TRUE, col="red", lwd=2)
+#' hist(x_sample_stats, main="stats::rbeta Sample", freq=FALSE, breaks=30)
+#' curve(stats::dbeta(x, shape1, shape2), add=TRUE, col="blue", lwd=2)
+#' par(mfrow=c(1,1))
+#' # Compare summary stats (should be similar due to randomness)
+#' print(summary(x_sample))
+#' print(summary(x_sample_stats))
+#'
+#' # Compare summary stats with rgkw(alpha=1, beta=1, lambda=1)
+#' x_sample_gkw <- rgkw(1000, alpha = 1.0, beta = 1.0, gamma = gamma_par,
+#'                      delta = delta_par, lambda = 1.0)
+#' print("Summary stats for rgkw(a=1,b=1,l=1) sample:")
+#' print(summary(x_sample_gkw))
+#'
+#' # Compare summary stats with rmc(lambda=1)
+#' x_sample_mc <- rmc(1000, gamma = gamma_par, delta = delta_par, lambda = 1.0)
+#' print("Summary stats for rmc(l=1) sample:")
+#' print(summary(x_sample_mc))
+#'
+#' # Vectorized parameters (e.g., generating from Beta(g, 4) for different g)
+#' gammas_vec <- c(1.0, 2.0, 3.0)
+#' n_param <- length(gammas_vec)
+#' samples_vec <- rbeta_(n_param, gamma = gammas_vec, delta = 3.0)
+#' print(samples_vec) # One sample for each gamma value
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 rbeta_ <- function(n, gamma, delta) {
     .Call(`_gkwreg_rbeta_`, n, gamma, delta)
 }
 
-#' @title Negative Log-Likelihood for the Beta Distribution
+#' @title Negative Log-Likelihood for the Beta Distribution (gamma, delta+1 Parameterization)
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize beta
 #'
 #' @description
-#' Computes \eqn{-\ell(\theta)} for Beta(\code{gamma, delta}), given data x in (0,1).
+#' Computes the negative log-likelihood function for the standard Beta
+#' distribution, using a parameterization common in generalized distribution
+#' families. The distribution is parameterized by \code{gamma} (\eqn{\gamma}) and
+#' \code{delta} (\eqn{\delta}), corresponding to the standard Beta distribution
+#' with shape parameters \code{shape1 = gamma} and \code{shape2 = delta + 1}.
+#' This function is suitable for maximum likelihood estimation.
 #'
-#' @param par NumericVector of length 2: (gamma, delta).
-#' @param data NumericVector of observations in (0,1).
+#' @param par A numeric vector of length 2 containing the distribution parameters
+#'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return A single numeric value. +Inf if invalid parameters or data out of domain.
+#' @return Returns a single \code{double} value representing the negative
+#'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+#'   if any parameter values in \code{par} are invalid according to their
+#'   constraints, or if any value in \code{data} is not in the interval (0, 1).
 #'
 #' @details
-#' If \eqn{f(x)= x^{\gamma-1}(1-x)^{\delta}/B(\gamma,\delta+1)}, the log-likelihood is
-#' \eqn{\sum_i [(\gamma-1)\ln x_i + \delta\ln(1-x_i)] - n \ln B(\gamma,\delta+1)}.
-#' We return its negative for optimization usage.
+#' This function calculates the negative log-likelihood for a Beta distribution
+#' with parameters \code{shape1 = gamma} (\eqn{\gamma}) and \code{shape2 = delta + 1} (\eqn{\delta+1}).
+#' The probability density function (PDF) is:
+#' \deqn{
+#' f(x | \gamma, \delta) = \frac{x^{\gamma-1} (1-x)^{\delta}}{B(\gamma, \delta+1)}
+#' }
+#' for \eqn{0 < x < 1}, where \eqn{B(a,b)} is the Beta function (\code{\link[base]{beta}}).
+#' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+#' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+#' \deqn{
+#' \ell(\theta | \mathbf{x}) = \sum_{i=1}^{n} [(\gamma-1)\ln(x_i) + \delta\ln(1-x_i)] - n \ln B(\gamma, \delta+1)
+#' }
+#' where \eqn{\theta = (\gamma, \delta)}.
+#' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+#' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+#' It is equivalent to the negative log-likelihood of the GKw distribution
+#' (\code{\link{llgkw}}) evaluated at \eqn{\alpha=1, \beta=1, \lambda=1}, and also
+#' to the negative log-likelihood of the McDonald distribution (\code{\link{llmc}})
+#' evaluated at \eqn{\lambda=1}. The term \eqn{\ln B(\gamma, \delta+1)} is typically
+#' computed using log-gamma functions (\code{\link[base]{lgamma}}) for numerical stability.
+#'
+#' @references
+#' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). *Continuous Univariate
+#' Distributions, Volume 2* (2nd ed.). Wiley.
+#'
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
+#' @seealso
+#' \code{\link{llgkw}}, \code{\link{llmc}} (related negative log-likelihoods),
+#' \code{dbeta_}, \code{pbeta_}, \code{qbeta_}, \code{rbeta_},
+#' \code{grbeta} (gradient, if available),
+#' \code{hsbeta} (Hessian, if available),
+#' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}.
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a Beta distribution
+#' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
+#'
+#' # Generate sample data from a Beta(2, 4) distribution
+#' # (gamma=2, delta=3 in this parameterization)
 #' set.seed(123)
-#' x <- rbeta_(100, 2, 3)
-#' hist(x, breaks = 20, main = "Beta(2, 3) Sample")
+#' true_par_beta <- c(gamma = 2, delta = 3)
+#' sample_data_beta <- rbeta_(100, gamma = true_par_beta[1], delta = true_par_beta[2])
+#' hist(sample_data_beta, breaks = 20, main = "Beta(2, 4) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5), llbeta, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Maximum Likelihood Estimation using optim ---
+#' # Initial parameter guess
+#' start_par_beta <- c(1.5, 2.5)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llbeta, x = result$par, data = x)
-#' num_hess <- numDeriv::hessian(llbeta, x = result$par, data = x)
+#' # Perform optimization (minimizing negative log-likelihood)
+#' # Use method="L-BFGS-B" for box constraints (params > 0 / >= 0)
+#' mle_result_beta <- stats::optim(par = start_par_beta,
+#'                                fn = llbeta, # Use the custom Beta neg-log-likelihood
+#'                                method = "L-BFGS-B",
+#'                                lower = c(1e-6, 1e-6), # Bounds: gamma>0, delta>=0
+#'                                hessian = TRUE,
+#'                                data = sample_data_beta)
 #'
-#' ana_grad <- grbeta(result$par, data = x)
-#' ana_hess <- hsbeta(result$par, data = x)
+#' # Check convergence and results
+#' if (mle_result_beta$convergence == 0) {
+#'   print("Optimization converged successfully.")
+#'   mle_par_beta <- mle_result_beta$par
+#'   print("Estimated Beta parameters (gamma, delta):")
+#'   print(mle_par_beta)
+#'   print("True Beta parameters (gamma, delta):")
+#'   print(true_par_beta)
+#'   cat(sprintf("MLE corresponds approx to Beta(%.2f, %.2f)\n",
+#'       mle_par_beta[1], mle_par_beta[2] + 1))
 #'
-#' # Check differences (should be very small)
-#' round(num_grad - ana_grad, 4)
-#' round(num_hess - ana_hess, 4)
+#' } else {
+#'   warning("Optimization did not converge!")
+#'   print(mle_result_beta$message)
 #' }
+#'
+#' # --- Compare numerical and analytical derivatives (if available) ---
+#' # Requires 'numDeriv' package and analytical functions 'grbeta', 'hsbeta'
+#' if (mle_result_beta$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("grbeta") && exists("hsbeta")) {
+#'
+#'   cat("\nComparing Derivatives at Beta MLE estimates:\n")
+#'
+#'   # Numerical derivatives of llbeta
+#'   num_grad_beta <- numDeriv::grad(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+#'   num_hess_beta <- numDeriv::hessian(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+#'
+#'   # Analytical derivatives (assuming they return derivatives of negative LL)
+#'   ana_grad_beta <- grbeta(par = mle_par_beta, data = sample_data_beta)
+#'   ana_hess_beta <- hsbeta(par = mle_par_beta, data = sample_data_beta)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between gradients:\n")
+#'   print(max(abs(num_grad_beta - ana_grad_beta)))
+#'   cat("Max absolute difference between Hessians:\n")
+#'   print(max(abs(num_hess_beta - ana_hess_beta)))
+#'
+#' } else {
+#'    cat("\nSkipping derivative comparison for Beta.\n")
+#'    cat("Requires convergence, 'numDeriv' pkg & functions 'grbeta', 'hsbeta'.\n")
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 llbeta <- function(par, data) {
     .Call(`_gkwreg_llbeta`, par, data)
 }
 
-#' @title Gradient Function for Beta Log-Likelihood
+#' @title Gradient of the Negative Log-Likelihood for the Beta Distribution (gamma, delta+1 Parameterization)
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize gradient beta
 #'
 #' @description
-#' Calculates the gradient vector (partial derivatives) of the negative log-likelihood
-#' function for the Beta distribution. This function provides the exact gradient needed
-#' for efficient optimization in maximum likelihood estimation.
-#' The Beta is a submodel of GKw with α = 1, β = 1, and λ = 1 fixed.
+#' Computes the gradient vector (vector of first partial derivatives) of the
+#' negative log-likelihood function for the standard Beta distribution, using
+#' a parameterization common in generalized distribution families. The
+#' distribution is parameterized by \code{gamma} (\eqn{\gamma}) and \code{delta}
+#' (\eqn{\delta}), corresponding to the standard Beta distribution with shape
+#' parameters \code{shape1 = gamma} and \code{shape2 = delta + 1}.
+#' The gradient is useful for optimization algorithms.
 #'
-#' @param par NumericVector of length 2 containing parameters (γ, δ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 2 containing the distribution parameters
+#'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericVector of length 2 containing the gradient components (partial derivatives)
-#'         of the negative log-likelihood with respect to each parameter (γ, δ).
-#'         Returns a vector of NaN values if any parameters or data values are invalid.
+#' @return Returns a numeric vector of length 2 containing the partial derivatives
+#'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+#'   respect to each parameter: \eqn{(-\partial \ell/\partial \gamma, -\partial \ell/\partial \delta)}.
+#'   Returns a vector of \code{NaN} if any parameter values are invalid according
+#'   to their constraints, or if any value in \code{data} is not in the
+#'   interval (0, 1).
 #'
 #' @details
-#' The gradient vector contains the following partial derivatives of the negative log-likelihood:
+#' This function calculates the gradient of the negative log-likelihood for a
+#' Beta distribution with parameters \code{shape1 = gamma} (\eqn{\gamma}) and
+#' \code{shape2 = delta + 1} (\eqn{\delta+1}). The components of the gradient
+#' vector (\eqn{-\nabla \ell(\theta | \mathbf{x})}) are:
 #'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma+\delta+1) - \psi(\gamma)] -
-#' \sum_{i=1}^{n}\log(x_i)
+#' -\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma) - \psi(\gamma+\delta+1)] -
+#' \sum_{i=1}^{n}\ln(x_i)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial \ell}{\partial \delta} = n[\psi(\gamma+\delta+1) - \psi(\delta+1)] -
-#' \sum_{i=1}^{n}\log(1-x_i)
+#' -\frac{\partial \ell}{\partial \delta} = n[\psi(\delta+1) - \psi(\gamma+\delta+1)] -
+#' \sum_{i=1}^{n}\ln(1-x_i)
 #' }
 #'
-#' where:
-#' \itemize{
-#'   \item \deqn{\psi} is the digamma function (derivative of the log-gamma function)
-#' }
+#' where \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
+#' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+#' minimizing the negative log-likelihood. They correspond to the relevant components
+#' of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\alpha=1, \beta=1, \lambda=1}.
+#' Note the parameterization: the standard Beta shape parameters are \eqn{\gamma} and \eqn{\delta+1}.
 #'
-#' Note that this implementation works with the GKw family parameterization of the Beta
-#' distribution where shape1=γ and shape2=δ+1 in standard statistical notation.
+#' @references
+#' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). *Continuous Univariate
+#' Distributions, Volume 2* (2nd ed.). Wiley.
 #'
-#' The implementation includes several numerical safeguards:
-#' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Efficient vector operations using Armadillo C++ library
-#' }
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#' (Note: Specific gradient formulas might be derived or sourced from additional references).
 #'
-#' The returned gradient is for the negative log-likelihood to align with minimization
-#' in optimization routines.
+#' @seealso
+#' \code{\link{grgkw}}, \code{\link{grmc}} (related gradients),
+#' \code{\link{llbeta}} (negative log-likelihood function),
+#' \code{hsbeta} (Hessian, if available),
+#' \code{dbeta_}, \code{pbeta_}, \code{qbeta_}, \code{rbeta_},
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+#' \code{\link[base]{digamma}}.
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a Beta distribution
+#' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
+#'
+#' # Generate sample data from a Beta(2, 4) distribution
+#' # (gamma=2, delta=3 in this parameterization)
 #' set.seed(123)
-#' x <- rbeta_(100, 2, 3)
-#' hist(x, breaks = 20, main = "Beta(2, 3) Sample")
+#' true_par_beta <- c(gamma = 2, delta = 3)
+#' sample_data_beta <- rbeta_(100, gamma = true_par_beta[1], delta = true_par_beta[2])
+#' hist(sample_data_beta, breaks = 20, main = "Beta(2, 4) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5), llbeta, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_beta <- c(1.5, 2.5)
+#' mle_result_beta <- stats::optim(par = start_par_beta,
+#'                                fn = llbeta,
+#'                                gr = grbeta, # Use analytical gradient
+#'                                method = "L-BFGS-B",
+#'                                lower = c(1e-6, 1e-6), # Bounds: gamma>0, delta>=0
+#'                                hessian = TRUE,
+#'                                data = sample_data_beta)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_grad <- numDeriv::grad(llbeta, x = result$par, data = x)
-#' ana_grad <- grbeta(result$par, data = x)
-#' round(num_grad - ana_grad, 4)
+#' # --- Compare analytical gradient to numerical gradient ---
+#' if (mle_result_beta$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE)) {
+#'
+#'   mle_par_beta <- mle_result_beta$par
+#'   cat("\nComparing Gradients for Beta at MLE estimates:\n")
+#'
+#'   # Numerical gradient of llbeta
+#'   num_grad_beta <- numDeriv::grad(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+#'
+#'   # Analytical gradient from grbeta
+#'   ana_grad_beta <- grbeta(par = mle_par_beta, data = sample_data_beta)
+#'
+#'   cat("Numerical Gradient (Beta):\n")
+#'   print(num_grad_beta)
+#'   cat("Analytical Gradient (Beta):\n")
+#'   print(ana_grad_beta)
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between Beta gradients:\n")
+#'   print(max(abs(num_grad_beta - ana_grad_beta)))
+#'
+#' } else {
+#'   cat("\nSkipping Beta gradient comparison.\n")
 #' }
+#'
+#' # Example with Hessian comparison (if hsbeta exists)
+#' if (mle_result_beta$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) && exists("hsbeta")) {
+#'
+#'   num_hess_beta <- numDeriv::hessian(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+#'   ana_hess_beta <- hsbeta(par = mle_par_beta, data = sample_data_beta)
+#'   cat("\nMax absolute difference between Beta Hessians:\n")
+#'   print(max(abs(num_hess_beta - ana_hess_beta)))
+#'
+#' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 grbeta <- function(par, data) {
     .Call(`_gkwreg_grbeta`, par, data)
 }
 
-#' @title Hessian Matrix Function for Beta Log-Likelihood
+#' @title Hessian Matrix of the Negative Log-Likelihood for the Beta Distribution (gamma, delta+1 Parameterization)
+#' @author Lopes, J. E.
+#' @keywords distribution likelihood optimize hessian beta
 #'
 #' @description
-#' Calculates the Hessian matrix (second-order partial derivatives) of the negative log-likelihood
-#' function for the Beta distribution. This function provides the exact Hessian needed for
-#' efficient optimization in maximum likelihood estimation and for asymptotic inference.
-#' The Beta is a submodel of GKw with α = 1, β = 1, and λ = 1 fixed.
+#' Computes the analytic 2x2 Hessian matrix (matrix of second partial derivatives)
+#' of the negative log-likelihood function for the standard Beta distribution,
+#' using a parameterization common in generalized distribution families. The
+#' distribution is parameterized by \code{gamma} (\eqn{\gamma}) and \code{delta}
+#' (\eqn{\delta}), corresponding to the standard Beta distribution with shape
+#' parameters \code{shape1 = gamma} and \code{shape2 = delta + 1}. The Hessian
+#' is useful for estimating standard errors and in optimization algorithms.
 #'
-#' @param par NumericVector of length 2 containing parameters (γ, δ) in that order.
-#'        All parameters must be positive.
-#' @param data NumericVector of observations, where all values must be in the open interval (0,1).
+#' @param par A numeric vector of length 2 containing the distribution parameters
+#'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+#' @param data A numeric vector of observations. All values must be strictly
+#'   between 0 and 1 (exclusive).
 #'
-#' @return NumericMatrix of dimensions 2x2 containing the Hessian components (second derivatives)
-#'         of the negative log-likelihood with respect to each parameter pair (γ, δ).
-#'         Returns a matrix of NaN values if any parameters or data values are invalid.
+#' @return Returns a 2x2 numeric matrix representing the Hessian matrix of the
+#'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+#'   where \eqn{\theta = (\gamma, \delta)}.
+#'   Returns a 2x2 matrix populated with \code{NaN} if any parameter values are
+#'   invalid according to their constraints, or if any value in \code{data} is
+#'   not in the interval (0, 1).
 #'
 #' @details
-#' The Hessian matrix contains the following second derivatives of the negative log-likelihood:
+#' This function calculates the analytic second partial derivatives of the
+#' negative log-likelihood function (\eqn{-\ell(\theta|\mathbf{x})}) for a Beta
+#' distribution with parameters \code{shape1 = gamma} (\eqn{\gamma}) and
+#' \code{shape2 = delta + 1} (\eqn{\delta+1}). The components of the Hessian
+#' matrix (\eqn{-\mathbf{H}(\theta)}) are:
 #'
 #' \deqn{
-#' \frac{\partial^2 \ell}{\partial \gamma^2} = n[\psi'(\gamma) - \psi'(\gamma+\delta+1)]
+#' -\frac{\partial^2 \ell}{\partial \gamma^2} = n[\psi'(\gamma) - \psi'(\gamma+\delta+1)]
 #' }
-#'
 #' \deqn{
-#' \frac{\partial^2 \ell}{\partial \gamma \partial \delta} = -n\psi'(\gamma+\delta+1)
+#' -\frac{\partial^2 \ell}{\partial \gamma \partial \delta} = -n\psi'(\gamma+\delta+1)
 #' }
-#'
 #' \deqn{
-#' \frac{\partial^2 \ell}{\partial \delta^2} = n[\psi'(\delta+1) - \psi'(\gamma+\delta+1)]
+#' -\frac{\partial^2 \ell}{\partial \delta^2} = n[\psi'(\delta+1) - \psi'(\gamma+\delta+1)]
 #' }
 #'
-#' where:
-#' \itemize{
-#'   \item \deqn{\psi'} is the trigamma function (second derivative of the log-gamma function)
-#' }
+#' where \eqn{\psi'(\cdot)} is the trigamma function (\code{\link[base]{trigamma}}).
+#' These formulas represent the second derivatives of \eqn{-\ell(\theta)},
+#' consistent with minimizing the negative log-likelihood. They correspond to
+#' the relevant 2x2 submatrix of the general GKw Hessian (\code{\link{hsgkw}})
+#' evaluated at \eqn{\alpha=1, \beta=1, \lambda=1}. Note the parameterization
+#' difference from the standard Beta distribution (\code{shape2 = delta + 1}).
 #'
-#' Note that this implementation works with the GKw family parameterization of the Beta
-#' distribution where shape1=γ and shape2=δ+1 in standard statistical notation.
+#' The returned matrix is symmetric.
 #'
-#' The implementation includes several numerical safeguards:
-#' \itemize{
-#'   \item Parameter and data validation with appropriate error handling
-#'   \item Symmetry of the Hessian matrix is guaranteed by construction
-#' }
+#' @references
+#' Johnson, N. L., Kotz, S., & Balakrishnan, N. (1995). *Continuous Univariate
+#' Distributions, Volume 2* (2nd ed.). Wiley.
 #'
-#' The returned Hessian is for the negative log-likelihood to align with minimization
-#' in optimization routines.
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+#' distributions. *Journal of Statistical Computation and Simulation*,
+#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+#'
+#' @seealso
+#' \code{\link{hsgkw}}, \code{\link{hsmc}} (related Hessians),
+#' \code{\link{llbeta}} (negative log-likelihood function),
+#' \code{grbeta} (gradient, if available),
+#' \code{dbeta_}, \code{pbeta_}, \code{qbeta_}, \code{rbeta_},
+#' \code{\link[stats]{optim}},
+#' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison),
+#' \code{\link[base]{trigamma}}.
 #'
 #' @examples
 #' \dontrun{
-#' # Generate sample data from a Beta distribution
+#' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
+#'
+#' # Generate sample data from a Beta(2, 4) distribution
+#' # (gamma=2, delta=3 in this parameterization)
 #' set.seed(123)
-#' x <- rbeta_(100, 2, 3)
-#' hist(x, breaks = 20, main = "Beta(2, 3) Sample")
+#' true_par_beta <- c(gamma = 2, delta = 3)
+#' sample_data_beta <- rbeta_(100, gamma = true_par_beta[1], delta = true_par_beta[2])
+#' hist(sample_data_beta, breaks = 20, main = "Beta(2, 4) Sample")
 #'
-#' # Use in optimization with Hessian-based methods
-#' result <- optim(c(0.5, 0.5), llbeta, method = "BFGS",
-#'                 hessian = TRUE, data = x)
+#' # --- Find MLE estimates ---
+#' start_par_beta <- c(1.5, 2.5)
+#' mle_result_beta <- stats::optim(par = start_par_beta,
+#'                                fn = llbeta,
+#'                                gr = if (exists("grbeta")) grbeta else NULL,
+#'                                method = "L-BFGS-B",
+#'                                lower = c(1e-6, 1e-6), # Bounds: gamma>0, delta>=0
+#'                                hessian = TRUE, # Ask optim for numerical Hessian
+#'                                data = sample_data_beta)
 #'
-#' # Compare numerical and analytical derivatives
-#' num_hess <- numDeriv::hessian(llbeta, x = result$par, data = x)
-#' ana_hess <- hsbeta(result$par, data = x)
-#' round(num_hess - ana_hess, 4)
+#' # --- Compare analytical Hessian to numerical Hessian ---
+#' if (mle_result_beta$convergence == 0 &&
+#'     requireNamespace("numDeriv", quietly = TRUE) &&
+#'     exists("hsbeta")) {
+#'
+#'   mle_par_beta <- mle_result_beta$par
+#'   cat("\nComparing Hessians for Beta at MLE estimates:\n")
+#'
+#'   # Numerical Hessian of llbeta
+#'   num_hess_beta <- numDeriv::hessian(func = llbeta, x = mle_par_beta, data = sample_data_beta)
+#'
+#'   # Analytical Hessian from hsbeta
+#'   ana_hess_beta <- hsbeta(par = mle_par_beta, data = sample_data_beta)
+#'
+#'   cat("Numerical Hessian (Beta):\n")
+#'   print(round(num_hess_beta, 4))
+#'   cat("Analytical Hessian (Beta):\n")
+#'   print(round(ana_hess_beta, 4))
+#'
+#'   # Check differences
+#'   cat("Max absolute difference between Beta Hessians:\n")
+#'   print(max(abs(num_hess_beta - ana_hess_beta)))
+#'
+#'   # Optional: Use analytical Hessian for Standard Errors
+#'   # tryCatch({
+#'   #   cov_matrix_beta <- solve(ana_hess_beta) # ana_hess_beta is already Hessian of negative LL
+#'   #   std_errors_beta <- sqrt(diag(cov_matrix_beta))
+#'   #   cat("Std. Errors from Analytical Beta Hessian:\n")
+#'   #   print(std_errors_beta)
+#'   # }, error = function(e) {
+#'   #   warning("Could not invert analytical Beta Hessian: ", e$message)
+#'   # })
+#'
+#' } else {
+#'   cat("\nSkipping Beta Hessian comparison.\n")
+#'   cat("Requires convergence, 'numDeriv' package, and function 'hsbeta'.\n")
 #' }
+#'
+#' } # End of \dontrun block
 #'
 #' @export
 hsbeta <- function(par, data) {

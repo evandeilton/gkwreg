@@ -7,18 +7,19 @@
 \method{BIC}{gkwfit}(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"gkwfit"}, typically the result of a call to \code{\link{gkwfit}}.}
+\item{object}{An object of class \code{"gkwfit"}, typically the result of a call
+to \code{\link{gkwfit}}.}
 
 \item{...}{Optionally, more fitted model objects of class \code{"gkwfit"}.}
 }
 \value{
 \itemize{
-\item If only one \code{object} is provided: A single numeric value representing the calculated BIC.
+\item If only one \code{object} is provided: A single numeric value, the calculated BIC.
 \item If multiple objects are provided: A \code{data.frame} with rows corresponding
 to the models and columns for the degrees of freedom (\code{df}) and the
 calculated BIC value (named \code{BIC}). The data frame is sorted in
-ascending order based on the BIC values. Row names are derived from the
-deparsed calls of the fitted models.
+ascending order based on the BIC values. Row names are generated from the
+deparsed calls or the names of the arguments passed to BIC.
 }
 }
 \description{
@@ -33,32 +34,60 @@ model (degrees of freedom).
 
 It relies on the \code{\link{logLik.gkwfit}} method to extract the log-likelihood,
 the degrees of freedom (\code{df}), and the number of observations (\code{nobs})
-for each model.
+for each model. Ensure that \code{logLik.gkwfit} is defined and returns a valid
+\code{"logLik"} object with appropriate attributes.
 
 When comparing multiple models fitted to the \strong{same data}, the model with the
 lower BIC value is generally preferred, as BIC tends to penalize model complexity
 more heavily than AIC for larger sample sizes. The function returns a sorted
-data frame to facilitate this comparison when multiple objects are provided.
+data frame to facilitate this comparison when multiple objects are provided. A
+warning is issued if models were fitted to different numbers of observations.
 }
 \examples{
 \dontrun{
 # Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
 
 set.seed(123)
-sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
+# Generate sample data (use rkw if available, otherwise placeholder)
+# sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
+sample_data <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
+sample_data <- 1 - (1 - sample_data)^(1 / 2.5) # Placeholder
+sample_data <- pmax(1e-6, pmin(1 - 1e-6, sample_data)) # Ensure (0,1)
 
 # Fit different models to the same data
-fit1_kw <- gkwfit(sample_data, family = "kw", silent = TRUE)
-fit2_bkw <- gkwfit(sample_data, family = "bkw", silent = TRUE) # Assuming bkw fits
-fit3_gkw <- gkwfit(sample_data, family = "gkw", silent = TRUE) # Assuming gkw fits
+fit1_kw <- tryCatch(gkwfit(sample_data, family = "kw", silent = TRUE),
+  error = function(e) NULL
+)
+fit2_bkw <- tryCatch(gkwfit(sample_data, family = "bkw", silent = TRUE),
+  error = function(e) NULL
+) # Assuming bkw fits
+fit3_gkw <- tryCatch(gkwfit(sample_data, family = "gkw", silent = TRUE),
+  error = function(e) NULL
+) # Assuming gkw fits
 
-# Calculate BIC for a single model
-bic1 <- BIC(fit1_kw)
-print(bic1)
+# Ensure fits were successful before proceeding
+fit_list <- Filter(Negate(is.null), list(
+  fit1_kw = fit1_kw,
+  fit2_bkw = fit2_bkw, fit3_gkw = fit3_gkw
+))
 
-# Compare BIC values for multiple models
-bic_comparison <- BIC(fit1_kw, fit2_bkw, fit3_gkw)
-print(bic_comparison) # Sorted by BIC
+if (length(fit_list) > 0) {
+  # Calculate BIC for a single model (if fit1_kw exists)
+  if (!is.null(fit1_kw)) {
+    bic1 <- BIC(fit1_kw)
+    print(bic1)
+  }
+
+  # Compare BIC values for multiple models (if more than one fit exists)
+  if (length(fit_list) > 1) {
+    # Pass models individually using do.call
+    bic_comparison <- do.call(BIC, fit_list)
+    # Or if saved in a list: BIC(fit_list[[1]], fit_list[[2]], ...)
+    print(bic_comparison) # Sorted by BIC
+  }
+} else {
+  print("No models fitted successfully.")
+}
 }
 
 }
@@ -66,7 +95,8 @@ print(bic_comparison) # Sorted by BIC
 \code{\link{gkwfit}}, \code{\link[stats]{BIC}}, \code{\link{logLik.gkwfit}}, \code{\link{AIC.gkwfit}}
 }
 \author{
-Lopes, J. E.
+Lopes, J. E. (with refinements)
 }
 \keyword{methods}
 \keyword{models}
+\keyword{stats}

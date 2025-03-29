@@ -4,7 +4,7 @@
 \alias{predict.gkwreg}
 \title{Predictions from a Fitted Generalized Kumaraswamy Regression Model}
 \usage{
-predict.gkwreg(
+\method{predict}{gkwreg}(
   object,
   newdata = NULL,
   type = c("response", "link", "parameter", "alpha", "beta", "gamma", "delta", "lambda",

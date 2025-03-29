@@ -2,37 +2,120 @@
 % Please edit documentation in R/RcppExports.R
 \name{dbkw}
 \alias{dbkw}
-\title{Density Function for Beta-Kumaraswamy Distribution}
+\title{Density of the Beta-Kumaraswamy (BKw) Distribution}
 \usage{
 dbkw(x, alpha, beta, gamma, delta, log_prob = FALSE)
 }
 \arguments{
-\item{x}{Vector of quantiles in (0,1).}
+\item{x}{Vector of quantiles (values between 0 and 1).}
 
-\item{alpha}{Shape parameter α > 0.}
+\item{alpha}{Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{beta}{Shape parameter β > 0.}
+\item{beta}{Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{gamma}{Shape parameter γ > 0.}
+\item{gamma}{Shape parameter \code{gamma} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{Shape parameter δ ≥ 0.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 
-\item{log_prob}{Logical; if TRUE, returns log(f(x)).}
+\item{log_prob}{Logical; if \code{TRUE}, the logarithm of the density is
+returned (\eqn{\log(f(x))}). Default: \code{FALSE}.}
 }
 \value{
-A vector of length max(length(x), lengths of parameters) with computed densities
-or log-densities. Values of x outside (0,1) yield 0 or -Inf (log-scale).
+A vector of density values (\eqn{f(x)}) or log-density values
+(\eqn{\log(f(x))}). The length of the result is determined by the recycling
+rule applied to the arguments (\code{x}, \code{alpha}, \code{beta},
+\code{gamma}, \code{delta}). Returns \code{0} (or \code{-Inf} if
+\code{log_prob = TRUE}) for \code{x} outside the interval (0, 1), or
+\code{NaN} if parameters are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0},
+\code{gamma <= 0}, \code{delta < 0}).
 }
 \description{
-Computes the PDF of the Beta-Kumaraswamy distribution BKw(α, β, γ, δ) for x in (0, 1).
-Optionally returns the log of the PDF.
+Computes the probability density function (PDF) for the Beta-Kumaraswamy
+(BKw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}).
+This distribution is defined on the interval (0, 1).
 }
 \details{
-The PDF is given by
+The probability density function (PDF) of the Beta-Kumaraswamy (BKw)
+distribution is given by:
 \deqn{
-  f(x) = \frac{\alpha \beta}{B(\gamma, \delta+1)} \; x^{\alpha - 1} \; \bigl(1 - x^\alpha\bigr)^{\beta(\delta+1) - 1}\;
-         \bigl[1 - \bigl(1 - x^\alpha\bigr)^\beta\bigr]^{\gamma - 1}, \quad 0<x<1.
+f(x; \alpha, \beta, \gamma, \delta) = \frac{\alpha \beta}{B(\gamma, \delta+1)} x^{\alpha - 1} \bigl(1 - x^\alpha\bigr)^{\beta(\delta+1) - 1} \bigl[1 - \bigl(1 - x^\alpha\bigr)^\beta\bigr]^{\gamma - 1}
 }
+for \eqn{0 < x < 1}, where \eqn{B(a,b)} is the Beta function
+(\code{\link[base]{beta}}).
 
-Note that BKw is a special case of the Generalized Kumaraswamy (GKw) with \eqn{\lambda=1}.
+The BKw distribution is a special case of the five-parameter
+Generalized Kumaraswamy (GKw) distribution (\code{\link{dgkw}}) obtained
+by setting the parameter \eqn{\lambda = 1}.
+Numerical evaluation is performed using algorithms similar to those for \code{dgkw},
+ensuring stability.
 }
+\examples{
+\dontrun{
+# Example values
+x_vals <- c(0.2, 0.5, 0.8)
+alpha_par <- 2.0
+beta_par <- 1.5
+gamma_par <- 1.0 # Equivalent to Kw when gamma=1
+delta_par <- 0.5
+
+# Calculate density
+densities <- dbkw(x_vals, alpha_par, beta_par, gamma_par, delta_par)
+print(densities)
+
+# Calculate log-density
+log_densities <- dbkw(x_vals, alpha_par, beta_par, gamma_par, delta_par,
+                      log_prob = TRUE)
+print(log_densities)
+# Check: should match log(densities)
+print(log(densities))
+
+# Compare with dgkw setting lambda = 1
+densities_gkw <- dgkw(x_vals, alpha_par, beta_par, gamma = gamma_par,
+                      delta = delta_par, lambda = 1.0)
+print(paste("Max difference:", max(abs(densities - densities_gkw)))) # Should be near zero
+
+# Plot the density for different gamma values
+curve_x <- seq(0.01, 0.99, length.out = 200)
+curve_y1 <- dbkw(curve_x, alpha = 2, beta = 3, gamma = 0.5, delta = 1)
+curve_y2 <- dbkw(curve_x, alpha = 2, beta = 3, gamma = 1.0, delta = 1)
+curve_y3 <- dbkw(curve_x, alpha = 2, beta = 3, gamma = 2.0, delta = 1)
+
+plot(curve_x, curve_y1, type = "l", main = "BKw Density Examples (alpha=2, beta=3, delta=1)",
+     xlab = "x", ylab = "f(x)", col = "blue", ylim = range(0, curve_y1, curve_y2, curve_y3))
+lines(curve_x, curve_y2, col = "red")
+lines(curve_x, curve_y3, col = "green")
+legend("topright", legend = c("gamma=0.5", "gamma=1.0", "gamma=2.0"),
+       col = c("blue", "red", "green"), lty = 1, bty = "n")
+
+# Vectorized parameters
+gammas_vec <- c(0.5, 1.0, 2.0)
+densities_vec <- dbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
+print(densities_vec) # Density at x=0.5 for 3 different gamma values
+
+} # End of \dontrun block
+
+}
+\references{
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+}
+\seealso{
+\code{\link{dgkw}} (parent distribution density),
+\code{\link{pbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}} (other BKw functions),
+\code{\link[stats]{dbeta}}, \code{\link[stats]{dkumar}} (if available)
+}
+\author{
+Lopes, J. E.
+}
+\keyword{density}
+\keyword{distribution}

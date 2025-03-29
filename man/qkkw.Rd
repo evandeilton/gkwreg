@@ -2,35 +2,133 @@
 % Please edit documentation in R/RcppExports.R
 \name{qkkw}
 \alias{qkkw}
-\title{Quantile Function of the KwKw Distribution}
+\title{Quantile Function of the Kumaraswamy-Kumaraswamy (KwKw) Distribution}
 \usage{
 qkkw(p, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
-\item{p}{Vector of probabilities in (0,1).}
+\item{p}{Vector of probabilities (values between 0 and 1).}
 
-\item{alpha}{\eqn{\alpha > 0}.}
+\item{alpha}{Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{beta}{\eqn{\beta > 0}.}
+\item{beta}{Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{\eqn{\delta \ge 0}.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 
-\item{lambda}{\eqn{\lambda > 0}.}
+\item{lambda}{Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{lower_tail}{Logical; if TRUE, p is F(x). If FALSE, p is 1-F(x).}
+\item{lower_tail}{Logical; if \code{TRUE} (default), probabilities are \eqn{p = P(X \le q)},
+otherwise, probabilities are \eqn{p = P(X > q)}.}
 
-\item{log_p}{Logical; if TRUE, p is given as log(p).}
+\item{log_p}{Logical; if \code{TRUE}, probabilities \code{p} are given as
+\eqn{\log(p)}. Default: \code{FALSE}.}
+}
+\value{
+A vector of quantiles corresponding to the given probabilities \code{p}.
+The length of the result is determined by the recycling rule applied to
+the arguments (\code{p}, \code{alpha}, \code{beta}, \code{delta},
+\code{lambda}). Returns:
+\itemize{
+\item \code{0} for \code{p = 0} (or \code{p = -Inf} if \code{log_p = TRUE},
+when \code{lower_tail = TRUE}).
+\item \code{1} for \code{p = 1} (or \code{p = 0} if \code{log_p = TRUE},
+when \code{lower_tail = TRUE}).
+\item \code{NaN} for \code{p < 0} or \code{p > 1} (or corresponding log scale).
+\item \code{NaN} for invalid parameters (e.g., \code{alpha <= 0},
+\code{beta <= 0}, \code{delta < 0}, \code{lambda <= 0}).
+}
+Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 }
 \description{
-Computes the quantiles for KwKw(\eqn{\alpha, \beta, \delta, \lambda}).
+Computes the quantile function (inverse CDF) for the Kumaraswamy-Kumaraswamy
+(KwKw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+It finds the value \code{q} such that \eqn{P(X \le q) = p}. This distribution
+is a special case of the Generalized Kumaraswamy (GKw) distribution where
+the parameter \eqn{\gamma = 1}.
 }
 \details{
-Invert the CDF
-\eqn{
-  F(x)= 1 - [1 - (1 - x^α)^β]^λ)^(δ+1).
-}
-The resulting formula is
+The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(q)}. The CDF
+for the KwKw (\eqn{\gamma=1}) distribution is (see \code{\link{pkwkw}}):
 \deqn{
-  Q(p)= \Bigl\{1 - \Bigl[1 - \Bigl(1 - p\Bigr)^{\frac{1}{\delta+1}}\Bigr]^{\frac{1}{\lambda}}\Bigr\}^{\frac{1}{\beta}}\Bigr\}^{\frac{1}{\alpha}}.
+F(q) = 1 - \bigl\{1 - \bigl[1 - (1 - q^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta + 1}
 }
+Inverting this equation for \eqn{q} yields the quantile function:
+\deqn{
+Q(p) = \left[ 1 - \left\{ 1 - \left[ 1 - (1 - p)^{1/(\delta+1)} \right]^{1/\lambda} \right\}^{1/\beta} \right]^{1/\alpha}
 }
+The function uses this closed-form expression and correctly handles the
+\code{lower_tail} and \code{log_p} arguments by transforming \code{p}
+appropriately before applying the formula.
+}
+\examples{
+\dontrun{
+# Example values
+p_vals <- c(0.1, 0.5, 0.9)
+alpha_par <- 2.0
+beta_par <- 3.0
+delta_par <- 0.5
+lambda_par <- 1.5
+
+# Calculate quantiles
+quantiles <- qkwkw(p_vals, alpha_par, beta_par, delta_par, lambda_par)
+print(quantiles)
+
+# Calculate quantiles for upper tail probabilities P(X > q) = p
+# e.g., for p=0.1, find q such that P(X > q) = 0.1 (90th percentile)
+quantiles_upper <- qkwkw(p_vals, alpha_par, beta_par, delta_par, lambda_par,
+                         lower_tail = FALSE)
+print(quantiles_upper)
+# Check: qkwkw(p, ..., lt=F) == qkwkw(1-p, ..., lt=T)
+print(qkwkw(1 - p_vals, alpha_par, beta_par, delta_par, lambda_par))
+
+# Calculate quantiles from log probabilities
+log_p_vals <- log(p_vals)
+quantiles_logp <- qkwkw(log_p_vals, alpha_par, beta_par, delta_par, lambda_par,
+                        log_p = TRUE)
+print(quantiles_logp)
+# Check: should match original quantiles
+print(quantiles)
+
+# Compare with qgkw setting gamma = 1
+quantiles_gkw <- qgkw(p_vals, alpha_par, beta_par, gamma = 1.0,
+                      delta_par, lambda_par)
+print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be near zero
+
+# Verify inverse relationship with pkwkw
+p_check <- 0.75
+q_calc <- qkwkw(p_check, alpha_par, beta_par, delta_par, lambda_par)
+p_recalc <- pkwkw(q_calc, alpha_par, beta_par, delta_par, lambda_par)
+print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
+# abs(p_check - p_recalc) < 1e-9 # Should be TRUE
+
+# Boundary conditions
+print(qkwkw(c(0, 1), alpha_par, beta_par, delta_par, lambda_par)) # Should be 0, 1
+print(qkwkw(c(-Inf, 0), alpha_par, beta_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
+
+} # End of \dontrun block
+
+}
+\references{
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753}
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0}
+}
+\seealso{
+\code{\link{qgkw}} (parent distribution quantile function),
+\code{\link{dkwkw}}, \code{\link{pkwkw}}, \code{\link{rkwkw}},
+\code{\link[stats]{qbeta}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{quantile}

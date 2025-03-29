@@ -2,49 +2,140 @@
 % Please edit documentation in R/RcppExports.R
 \name{llmc}
 \alias{llmc}
-\title{Negative Log-Likelihood for Beta Power Distribution}
+\title{Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution}
 \usage{
 llmc(par, data)
 }
 \arguments{
-\item{par}{NumericVector of length 3: (γ, δ, λ).}
+\item{par}{A numeric vector of length 3 containing the distribution parameters
+in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+\code{lambda} (\eqn{\lambda > 0}).}
 
-\item{data}{NumericVector of observations in (0,1).}
+\item{data}{A numeric vector of observations. All values must be strictly
+between 0 and 1 (exclusive).}
 }
 \value{
-A single numeric value. \code{+Inf} if invalid parameters or data out of (0,1).
+Returns a single \code{double} value representing the negative
+log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+if any parameter values in \code{par} are invalid according to their
+constraints, or if any value in \code{data} is not in the interval (0, 1).
 }
 \description{
-Computes -log-likelihood for BP(γ, δ, λ) given data in (0,1).
+Computes the negative log-likelihood function for the McDonald (Mc)
+distribution (also known as Beta Power) with parameters \code{gamma}
+(\eqn{\gamma}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}),
+given a vector of observations. This distribution is the special case of the
+Generalized Kumaraswamy (GKw) distribution where \eqn{\alpha = 1} and
+\eqn{\beta = 1}. This function is suitable for maximum likelihood estimation.
 }
 \details{
-The PDF is
+The McDonald (Mc) distribution is the GKw distribution (\code{\link{dmc}})
+with \eqn{\alpha=1} and \eqn{\beta=1}. Its probability density function (PDF) is:
 \deqn{
-  f(x)= \frac{\lambda}{B(\gamma,\delta+1)} x^{\gamma\lambda -1} (1 - x^\lambda)^\delta.
+f(x | \theta) = \frac{\lambda}{B(\gamma,\delta+1)} x^{\gamma \lambda - 1} (1 - x^\lambda)^\delta
 }
-The log-likelihood is the sum of log(f(x_i)). We return the negative of that sum.
+for \eqn{0 < x < 1}, \eqn{\theta = (\gamma, \delta, \lambda)}, and \eqn{B(a,b)}
+is the Beta function (\code{\link[base]{beta}}).
+The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+\eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+\deqn{
+\ell(\theta | \mathbf{x}) = n[\ln(\lambda) - \ln B(\gamma, \delta+1)]
++ \sum_{i=1}^{n} [(\gamma\lambda - 1)\ln(x_i) + \delta\ln(1 - x_i^\lambda)]
+}
+This function computes and returns the \emph{negative} log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+Numerical stability is maintained, including using the log-gamma function
+(\code{\link[base]{lgamma}}) for the Beta function term.
 }
 \examples{
 \dontrun{
-# Generate sample data from a BP distribution
+# Assuming existence of rmc, grmc, hsmc functions for Mc distribution
+
+# Generate sample data from a known Mc distribution
 set.seed(123)
-x <- rmc(100, 2, 3, 0.5)
-hist(x, breaks = 20, main = "BP(2, 3, 0.5) Sample")
+true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+# Use rmc for data generation
+sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+                      lambda = true_par_mc[3])
+hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
 
-# Use in optimization with Hessian-based methods
-result <- optim(c(0.5, 0.5, 0.5), llmc, method = "BFGS",
-                hessian = TRUE, data = x)
+# --- Maximum Likelihood Estimation using optim ---
+# Initial parameter guess
+start_par_mc <- c(1.5, 2.5, 0.8)
 
-# Compare numerical and analytical derivatives
-num_grad <- numDeriv::grad(llmc, x = result$par, data = x)
-num_hess <- numDeriv::hessian(llmc, x = result$par, data = x)
+# Perform optimization (minimizing negative log-likelihood)
+mle_result_mc <- stats::optim(par = start_par_mc,
+                              fn = llmc, # Use the Mc neg-log-likelihood
+                              method = "BFGS", # Or "L-BFGS-B" with lower=1e-6
+                              hessian = TRUE,
+                              data = sample_data_mc)
 
-ana_grad <- grmc(result$par, data = x)
-ana_hess <- hsmc(result$par, data = x)
-
-# Check differences (should be very small)
-round(num_grad - ana_grad, 4)
-round(num_hess - ana_hess, 4)
+# Check convergence and results
+if (mle_result_mc$convergence == 0) {
+  print("Optimization converged successfully.")
+  mle_par_mc <- mle_result_mc$par
+  print("Estimated Mc parameters:")
+  print(mle_par_mc)
+  print("True Mc parameters:")
+  print(true_par_mc)
+} else {
+  warning("Optimization did not converge!")
+  print(mle_result_mc$message)
 }
 
+# --- Compare numerical and analytical derivatives (if available) ---
+# Requires 'numDeriv' package and analytical functions 'grmc', 'hsmc'
+if (mle_result_mc$convergence == 0 &&
+    requireNamespace("numDeriv", quietly = TRUE) &&
+    exists("grmc") && exists("hsmc")) {
+
+  cat("\nComparing Derivatives at Mc MLE estimates:\n")
+
+  # Numerical derivatives of llmc
+  num_grad_mc <- numDeriv::grad(func = llmc, x = mle_par_mc, data = sample_data_mc)
+  num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+
+  # Analytical derivatives (assuming they return derivatives of negative LL)
+  ana_grad_mc <- grmc(par = mle_par_mc, data = sample_data_mc)
+  ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+
+  # Check differences
+  cat("Max absolute difference between gradients:\n")
+  print(max(abs(num_grad_mc - ana_grad_mc)))
+  cat("Max absolute difference between Hessians:\n")
+  print(max(abs(num_hess_mc - ana_hess_mc)))
+
+} else {
+   cat("\nSkipping derivative comparison for Mc.\n")
+   cat("Requires convergence, 'numDeriv' package and functions 'grmc', 'hsmc'.\n")
 }
+
+} # End of \dontrun block
+
+}
+\references{
+McDonald, J. B. (1984). Some generalized functions for the size distribution
+of income. \emph{Econometrica}, 52(3), 647-663. \doi{10.2307/1913469}
+
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+}
+\seealso{
+\code{\link{llgkw}} (parent distribution negative log-likelihood),
+\code{\link{dmc}}, \code{\link{pmc}}, \code{\link{qmc}}, \code{\link{rmc}},
+\code{grmc} (gradient, if available),
+\code{hsmc} (Hessian, if available),
+\code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{distribution}
+\keyword{likelihood}
+\keyword{mcdonald}
+\keyword{optimize}

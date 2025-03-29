@@ -2,36 +2,112 @@
 % Please edit documentation in R/RcppExports.R
 \name{dkkw}
 \alias{dkkw}
-\title{Density of the KwKw Distribution}
+\title{Density of the Kumaraswamy-Kumaraswamy (KwKw) Distribution}
 \usage{
 dkkw(x, alpha, beta, delta, lambda, log_prob = FALSE)
 }
 \arguments{
-\item{x}{Vector of quantiles in \eqn{(0,1)}.}
+\item{x}{Vector of quantiles (values between 0 and 1).}
 
-\item{alpha}{\eqn{\alpha > 0}.}
+\item{alpha}{Shape parameter \code{alpha} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{beta}{\eqn{\beta > 0}.}
+\item{beta}{Shape parameter \code{beta} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{delta}{\eqn{\delta \ge 0}.}
+\item{delta}{Shape parameter \code{delta} >= 0. Can be a scalar or a vector.
+Default: 0.0.}
 
-\item{lambda}{\eqn{\lambda > 0}.}
+\item{lambda}{Shape parameter \code{lambda} > 0. Can be a scalar or a vector.
+Default: 1.0.}
 
-\item{log_prob}{Logical; if \code{TRUE}, returns log-PDF, else PDF.}
+\item{log_prob}{Logical; if \code{TRUE}, the logarithm of the density is
+returned (\eqn{\log(f(x))}). Default: \code{FALSE}.}
 }
 \value{
-Vector of densities (or log-densities) of the same length as the broadcast of inputs.
+A vector of density values (\eqn{f(x)}) or log-density values
+(\eqn{\log(f(x))}). The length of the result is determined by the recycling
+rule applied to the arguments (\code{x}, \code{alpha}, \code{beta},
+\code{delta}, \code{lambda}). Returns \code{0} (or \code{-Inf} if
+\code{log_prob = TRUE}) for \code{x} outside the interval (0, 1), or
+\code{NaN} if parameters are invalid (e.g., \code{alpha <= 0}, \code{beta <= 0},
+\code{delta < 0}, \code{lambda <= 0}).
 }
 \description{
-Computes the PDF of the KwKw(\eqn{\alpha, \beta, \delta, \lambda}) distribution, which
-is the GKw distribution restricted to \eqn{\gamma=1}.
+Computes the probability density function (PDF) for the Kumaraswamy-Kumaraswamy
+(KwKw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+This distribution is defined on the interval (0, 1).
 }
 \details{
-The PDF is
+The Kumaraswamy-Kumaraswamy (KwKw) distribution is a special case of the
+five-parameter Generalized Kumaraswamy distribution (\code{\link{dgkw}})
+obtained by setting the parameter \eqn{\gamma = 1}.
+
+The probability density function is given by:
 \deqn{
-  f(x) = \lambda \,\alpha \,\beta \,(\delta + 1)\; x^{\alpha - 1}\, (1 - x^\alpha)^{\beta - 1}\,
-         \bigl[1 - (1 - x^\alpha)^\beta\bigr]^{\lambda - 1}\,
-         \bigl\{1 - \bigl[1 - (1 - x^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta},
-  \quad 0 < x < 1.
+f(x; \alpha, \beta, \delta, \lambda) = (\delta + 1) \lambda \alpha \beta x^{\alpha - 1} (1 - x^\alpha)^{\beta - 1} \bigl[1 - (1 - x^\alpha)^\beta\bigr]^{\lambda - 1} \bigl\{1 - \bigl[1 - (1 - x^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta}
 }
+for \eqn{0 < x < 1}. Note that \eqn{1/(\delta+1)} corresponds to the Beta function
+term \eqn{B(1, \delta+1)} when \eqn{\gamma=1}.
+
+Numerical evaluation follows similar stability considerations as \code{\link{dgkw}}.
 }
+\examples{
+\dontrun{
+# Example values
+x_vals <- c(0.2, 0.5, 0.8)
+alpha_par <- 2.0
+beta_par <- 3.0
+delta_par <- 0.5
+lambda_par <- 1.5
+
+# Calculate density
+densities <- dkwkw(x_vals, alpha_par, beta_par, delta_par, lambda_par)
+print(densities)
+
+# Calculate log-density
+log_densities <- dkwkw(x_vals, alpha_par, beta_par, delta_par, lambda_par,
+                       log_prob = TRUE)
+print(log_densities)
+# Check: should match log(densities)
+print(log(densities))
+
+# Compare with dgkw setting gamma = 1
+densities_gkw <- dgkw(x_vals, alpha_par, beta_par, gamma = 1.0,
+                      delta_par, lambda_par)
+print(paste("Max difference:", max(abs(densities - densities_gkw)))) # Should be near zero
+
+# Plot the density
+curve_x <- seq(0.01, 0.99, length.out = 200)
+curve_y <- dkwkw(curve_x, alpha_par, beta_par, delta_par, lambda_par)
+plot(curve_x, curve_y, type = "l", main = "KwKw Density Example",
+     xlab = "x", ylab = "f(x)", col = "blue")
+
+# Vectorized parameters
+alphas_vec <- c(1.5, 2.0, 2.5)
+densities_vec <- dkwkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
+print(densities_vec) # Density at x=0.5 for 3 different alpha values
+
+} # End of \dontrun block
+
+}
+\references{
+Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+distributions. \emph{Journal of Statistical Computation and Simulation},
+\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753}
+
+Kumaraswamy, P. (1980). A generalized probability density function for
+double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
+\doi{10.1016/0022-1694(80)90036-0}
+}
+\seealso{
+\code{\link{dgkw}} (parent distribution density),
+\code{\link{pkwkw}}, \code{\link{qkwkw}}, \code{\link{rkwkw}} (if they exist),
+\code{\link[stats]{dbeta}}
+}
+\author{
+Lopes, J. E.
+}
+\keyword{density}
+\keyword{distribution}
