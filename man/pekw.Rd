@@ -125,7 +125,6 @@ double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79
 \seealso{
 \code{\link{pgkw}} (parent distribution CDF),
 \code{\link{dekw}}, \code{\link{qekw}}, \code{\link{rekw}} (other EKw functions),
-\code{\link[stats]{pkumar}} (if available)
 }
 \author{
 Lopes, J. E.
