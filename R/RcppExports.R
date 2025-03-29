@@ -1723,9 +1723,9 @@ grkkw <- function(par, data) {
 #' start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
 #' mle_result_kkw <- stats::optim(par = start_par_kkw,
 #'                                fn = llkkw,
-#'                                gr = if (exists("grkkw")) grkkw else NULL, # Use gradient if available
+#'                                gr = if (exists("grkkw")) grkkw else NULL,
 #'                                method = "BFGS",
-#'                                hessian = TRUE, # Ask optim for numerical Hessian at solution
+#'                                hessian = TRUE,
 #'                                data = sample_data_kkw)
 #'
 #' # --- Compare analytical Hessian to numerical Hessian ---
@@ -2839,7 +2839,6 @@ dekw <- function(x, alpha, beta, lambda, log_prob = FALSE) {
 #' @seealso
 #' \code{\link{pgkw}} (parent distribution CDF),
 #' \code{\link{dekw}}, \code{\link{qekw}}, \code{\link{rekw}} (other EKw functions),
-#' \code{\link[stats]{pkumar}} (if available)
 #'
 #' @examples
 #' \dontrun{
