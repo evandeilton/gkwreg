@@ -1,6 +1,6 @@
 Package: gkwreg
 Title: Generalized Kumaraswamy Regression Models for Bounded Data
-Version: 1.1.2
+Version: 1.1.3
 Authors@R: 
     person("Lopes", "J. L.", , "evandeilton@gmail.com", role = c("aut", "cre"))
 Description: gkwreg is an R package that implements regression models for bounded continuous data (0,1) using the five-parameter Generalized Kumaraswamy distribution. Supports modeling all distribution parameters (alpha, beta, gamma, delta, lambda) as functions of covariates through nine different link functions. Provides efficient maximum likelihood estimation via Template Model Builder (TMB), comprehensive diagnostics, model comparison tools, and simulation methods. Useful for analyzing proportions, rates, and other bounded response data with complex distributional features.

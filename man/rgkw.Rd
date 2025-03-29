@@ -56,9 +56,9 @@ follows the GKw(\eqn{\alpha, \beta, \gamma, \delta, \lambda}) distribution.
 The algorithm proceeds as follows:
 \enumerate{
 \item Generate \code{V} from \code{stats::rbeta(n, shape1 = gamma, shape2 = delta + 1)}.
-\item Calculate \eqn{\code{v = V^{1/\lambda}}}.
-\item Calculate \eqn{\code{w = (1 - v)^{1/\beta}}}.
-\item Calculate \eqn{\code{x = (1 - w)^{1/\alpha}}}.
+\item Calculate \eqn{v = V^{1/\lambda}}.
+\item Calculate \eqn{w = (1 - v)^{1/\beta}}.
+\item Calculate \eqn{x = (1 - w)^{1/\alpha}}.
 }
 Parameters (\code{alpha}, \code{beta}, \code{gamma}, \code{delta}, \code{lambda})
 are recycled to match the length required by \code{n}. Numerical stability is

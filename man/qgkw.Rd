@@ -72,9 +72,9 @@ function, which corresponds to the quantile function of the Beta distribution,
 The computation proceeds as follows:
 \enumerate{
 \item Calculate \code{y = stats::qbeta(p, shape1 = gamma, shape2 = delta + 1, lower.tail = lower_tail, log.p = log_p)}.
-\item Calculate \eqn{\code{v = y^{1/\lambda}}}.
-\item Calculate \eqn{\code{w = (1 - v)^{1/\beta}}}. Note: Requires \eqn{v \le 1}.
-\item Calculate \eqn{\code{q = (1 - w)^{1/\alpha}}}. Note: Requires \eqn{w \le 1}.
+\item Calculate \eqn{v = y^{1/\lambda}}.
+\item Calculate \eqn{w = (1 - v)^{1/\beta}}. Note: Requires \eqn{v \le 1}.
+\item Calculate \eqn{q = (1 - w)^{1/\alpha}}. Note: Requires \eqn{w \le 1}.
 }
 Numerical stability is maintained by handling boundary cases (\code{p = 0},
 \code{p = 1}) directly and checking intermediate results (e.g., ensuring
