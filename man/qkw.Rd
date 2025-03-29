@@ -107,11 +107,9 @@ print(quantiles_vec) # Median for 3 different alpha values
 \references{
 Kumaraswamy, P. (1980). A generalized probability density function for
 double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
-\doi{10.1016/0022-1694(80)90036-0}
 
 Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
 with some tractability advantages. \emph{Statistical Methodology}, \emph{6}(1), 70-81.
-\doi{10.1016/j.stamet.2008.04.001}
 }
 \seealso{
 \code{\link{qgkw}} (parent distribution quantile function),

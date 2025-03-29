@@ -198,11 +198,10 @@ if ("x2" \%in\% colnames(model$x$beta)) {
 \references{
 Dunn, P. K., & Smyth, G. K. (1996). Randomized Quantile Residuals.
 \emph{Journal of Computational and Graphical Statistics}, \strong{5}(3), 236-244.
-\doi{10.2307/1390802}
 
 Cox, D. R., & Snell, E. J. (1968). A General Definition of Residuals.
 \emph{Journal of the Royal Statistical Society, Series B (Methodological)},
-\strong{30}(2), 248-275. \doi{10.1111/j.2517-6161.1968.tb00724.x}
+\strong{30}(2), 248-275.
 
 McCullagh, P., & Nelder, J. A. (1989). \emph{Generalized Linear Models} (2nd ed.).
 Chapman and Hall/CRC.

@@ -72,11 +72,10 @@ gkwgetstartvalues <- function(x, n_starts = 5L) {
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' *81*(7), 883-898.
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}} (if these exist),
@@ -182,12 +181,10 @@ dgkw <- function(x, alpha = as.numeric( c(1.0)), beta = as.numeric( c(1.0)), gam
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{dgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}},
@@ -302,12 +299,10 @@ pgkw <- function(q, alpha = as.numeric( c(1.0)), beta = as.numeric( c(1.0)), gam
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{rgkw}},
@@ -410,12 +405,10 @@ qgkw <- function(p, alpha = as.numeric( c(1.0)), beta = as.numeric( c(1.0)), gam
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}},
@@ -513,12 +506,10 @@ rgkw <- function(n, alpha = as.numeric( c(1.0)), beta = as.numeric( c(1.0)), gam
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}},
@@ -670,13 +661,10 @@ llgkw <- function(par, data) {
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
-#' (Note: Specific gradient formulas might be derived or sourced from additional references).
 #'
 #' @seealso
 #' \code{\link{llgkw}} (negative log-likelihood),
@@ -804,14 +792,10 @@ grgkw <- function(par, data) {
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
-#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
-#'
 #' @seealso
 #' \code{\link{llgkw}} (negative log-likelihood function),
 #' \code{\link{grgkw}} (gradient vector),
@@ -934,12 +918,10 @@ hsgkw <- function(par, data) {
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{dgkw}} (parent distribution density),
@@ -1042,12 +1024,10 @@ dkkw <- function(x, alpha, beta, delta, lambda, log_prob = FALSE) {
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{pgkw}} (parent distribution CDF),
@@ -1162,11 +1142,9 @@ pkkw <- function(q, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{qgkw}} (parent distribution quantile function),
@@ -1274,12 +1252,10 @@ qkkw <- function(p, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
 #' (General methods for random variate generation).
@@ -1393,11 +1369,9 @@ rkkw <- function(n, alpha, beta, delta, lambda) {
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
 #'
 #' @seealso
 #' \code{\link{llgkw}} (parent distribution negative log-likelihood),
@@ -1546,13 +1520,9 @@ llkkw <- function(par, data) {
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
-#' (Note: Specific gradient formulas might be derived or sourced from additional references).
-#'
 #' @seealso
 #' \code{\link{grgkw}} (parent distribution gradient),
 #' \code{\link{llkkw}} (negative log-likelihood for kkw),
@@ -1688,13 +1658,10 @@ grkkw <- function(par, data) {
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
-#' (Note: Specific Hessian formulas might be derived or sourced from additional references).
 #'
 #' @seealso
 #' \code{\link{hsgkw}} (parent distribution Hessian),
@@ -1820,12 +1787,10 @@ hskkw <- function(par, data) {
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
 #'
 #' @seealso
 #' \code{\link{dgkw}} (parent distribution density),
@@ -1932,12 +1897,10 @@ dbkw <- function(x, alpha, beta, gamma, delta, log_prob = FALSE) {
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
 #'
 #' @seealso
 #' \code{\link{pgkw}} (parent distribution CDF),
@@ -2056,12 +2019,10 @@ pbkw <- function(q, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
 #'
 #' @seealso
 #' \code{\link{qgkw}} (parent distribution quantile function),
@@ -2166,11 +2127,10 @@ qbkw <- function(p, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
 #' (General methods for random variate generation).
@@ -2284,12 +2244,11 @@ rbkw <- function(n, alpha, beta, gamma, delta) {
 #'
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-#' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#' distributions. *Journal of Statistical Computation and Simulation*
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{llgkw}} (parent distribution negative log-likelihood),
@@ -2437,11 +2396,10 @@ llbkw <- function(par, data) {
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #' (Note: Specific gradient formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -2582,11 +2540,10 @@ grbkw <- function(par, data) {
 #' @references
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #' (Note: Specific Hessian formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -2668,6 +2625,7 @@ hsbkw <- function(par, data) {
 }
 
 #' @title Density of the Exponentiated Kumaraswamy (EKw) Distribution
+#'
 #' @author Lopes, J. E.
 #' @keywords distribution density
 #'
@@ -2712,15 +2670,14 @@ hsbkw <- function(par, data) {
 #' @references
 #' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
 #' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
-#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{dgkw}} (parent distribution density),
@@ -2826,15 +2783,14 @@ dekw <- function(x, alpha, beta, lambda, log_prob = FALSE) {
 #' @references
 #' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
 #' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
-#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{pgkw}} (parent distribution CDF),
@@ -2950,15 +2906,14 @@ pekw <- function(q, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' @references
 #' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
 #' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
-#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{qgkw}} (parent distribution quantile function),
@@ -3063,15 +3018,14 @@ qekw <- function(p, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' @references
 #' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
 #' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
-#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
 #' (General methods for random variate generation).
@@ -3183,15 +3137,14 @@ rekw <- function(n, alpha, beta, lambda) {
 #' @references
 #' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
 #' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
-#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{llgkw}} (parent distribution negative log-likelihood),
@@ -3331,15 +3284,15 @@ llekw <- function(par, data) {
 #' @references
 #' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
 #' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
-#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #' (Note: Specific gradient formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -3475,15 +3428,15 @@ grekw <- function(par, data) {
 #' @references
 #' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
 #' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
-#' 955-971. \doi{10.1016/j.jfranklin.2011.12.016}
+#'
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #' (Note: Specific Hessian formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -3611,15 +3564,15 @@ hsekw <- function(par, data) {
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution
-#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#' of income. *Econometrica*, 52(3), 647-663.
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{dgkw}} (parent distribution density),
@@ -3724,15 +3677,15 @@ dmc <- function(x, gamma, delta, lambda, log_prob = FALSE) {
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution
-#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#' of income. *Econometrica*, 52(3), 647-663.
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{pgkw}} (parent distribution CDF),
@@ -3854,15 +3807,15 @@ pmc <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution
-#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#' of income. *Econometrica*, 52(3), 647-663.
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{qgkw}} (parent distribution quantile function),
@@ -3969,15 +3922,15 @@ qmc <- function(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution
-#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#' of income. *Econometrica*, 52(3), 647-663.
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
 #' (General methods for random variate generation).
@@ -4090,15 +4043,15 @@ rmc <- function(n, gamma, delta, lambda) {
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution
-#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#' of income. *Econometrica*, 52(3), 647-663.
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+#'
 #'
 #' @seealso
 #' \code{\link{llgkw}} (parent distribution negative log-likelihood),
@@ -4228,11 +4181,11 @@ llmc <- function(par, data) {
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution
-#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#' of income. *Econometrica*, 52(3), 647-663.
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #' (Note: Specific gradient formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -4375,11 +4328,11 @@ grmc <- function(par, data) {
 #'
 #' @references
 #' McDonald, J. B. (1984). Some generalized functions for the size distribution
-#' of income. *Econometrica*, 52(3), 647-663. \doi{10.2307/1913469}
+#' of income. *Econometrica*, 52(3), 647-663.
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #' (Note: Specific Hessian formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -4498,11 +4451,11 @@ hsmc <- function(par, data) {
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
+#'
 #'
 #' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
 #' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
-#' \doi{10.1016/j.stamet.2008.04.001}
+#'
 #'
 #' @seealso
 #' \code{\link{dgkw}} (parent distribution density),
@@ -4603,11 +4556,11 @@ dkw <- function(x, alpha, beta, log_prob = FALSE) {
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
+#'
 #'
 #' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
 #' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
-#' \doi{10.1016/j.stamet.2008.04.001}
+#'
 #'
 #' @seealso
 #' \code{\link{pgkw}}, \code{\link{pekw}}, \code{\link{pkkw}} (related generalized CDFs),
@@ -4717,11 +4670,11 @@ pkw <- function(q, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
+#'
 #'
 #' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
 #' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
-#' \doi{10.1016/j.stamet.2008.04.001}
+#'
 #'
 #' @seealso
 #' \code{\link{qgkw}} (parent distribution quantile function),
@@ -4817,11 +4770,11 @@ qkw <- function(p, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
+#'
 #'
 #' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
 #' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
-#' \doi{10.1016/j.stamet.2008.04.001}
+#'
 #'
 #' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
 #' (General methods for random variate generation).
@@ -4923,11 +4876,11 @@ rkw <- function(n, alpha, beta) {
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
+#'
 #'
 #' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
 #' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
-#' \doi{10.1016/j.stamet.2008.04.001}
+#'
 #'
 #' @seealso
 #' \code{\link{llgkw}} (parent distribution negative log-likelihood),
@@ -5049,11 +5002,11 @@ llkw <- function(par, data) {
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
+#'
 #'
 #' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
 #' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
-#' \doi{10.1016/j.stamet.2008.04.001}
+#'
 #' (Note: Specific gradient formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -5185,11 +5138,11 @@ grkw <- function(par, data) {
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for
 #' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#' \doi{10.1016/0022-1694(80)90036-0}
+#'
 #'
 #' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution
 #' with some tractability advantages. *Statistical Methodology*, *6*(1), 70-81.
-#' \doi{10.1016/j.stamet.2008.04.001}
+#'
 #' (Note: Specific Hessian formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -5318,7 +5271,7 @@ hskw <- function(par, data) {
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' @seealso
 #' \code{\link[stats]{dbeta}} (standard R implementation),
@@ -5426,7 +5379,7 @@ dbeta_ <- function(x, gamma, delta, log_prob = FALSE) {
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' @seealso
 #' \code{\link[stats]{pbeta}} (standard R implementation),
@@ -5547,7 +5500,7 @@ pbeta_ <- function(q, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' @seealso
 #' \code{\link[stats]{qbeta}} (standard R implementation),
@@ -5658,7 +5611,7 @@ qbeta_ <- function(p, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' Devroye, L. (1986). *Non-Uniform Random Variate Generation*. Springer-Verlag.
 #'
@@ -5768,7 +5721,7 @@ rbeta_ <- function(n, gamma, delta) {
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #'
 #' @seealso
 #' \code{\link{llgkw}}, \code{\link{llmc}} (related negative log-likelihoods),
@@ -5903,7 +5856,7 @@ llbeta <- function(par, data) {
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #' (Note: Specific gradient formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -6037,7 +5990,7 @@ grbeta <- function(par, data) {
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 #' distributions. *Journal of Statistical Computation and Simulation*,
-#' *81*(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+#'
 #' (Note: Specific Hessian formulas might be derived or sourced from additional references).
 #'
 #' @seealso
@@ -6226,14 +6179,14 @@ hsbeta <- function(par, data) {
 #'
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-#' random processes. *Journal of Hydrology*, *46*(1-2), 79-88. \doi{10.1016/0022-1694(80)90036-0}
+#' random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
 #'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' *Journal of Statistical Computation and Simulation*, *81*(7), 883-898. \doi{10.1080/00949655.2010.483753}
+#' *Journal of Statistical Computation and Simulation*, *81*(7), 883-898.
 #'
-#' Fletcher, R. (1987). *Practical Methods of Optimization* (2nd ed.). John Wiley & Sons. \doi{10.1002/9781118723203}
+#' Fletcher, R. (1987). *Practical Methods of Optimization* (2nd ed.). John Wiley & Sons.
 #'
-#' Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer. \doi{10.1007/978-0-387-40065-5}
+#' Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer.
 #'
 #' @seealso
 #' Underlying functions used: \code{\link{llgkw}}, \code{\link{grgkw}}, \code{\link{hsgkw}},
@@ -6243,7 +6196,7 @@ hsbeta <- function(par, data) {
 #' \code{\link{llekw}}, \code{grekw}, \code{hsekw},
 #' \code{\link{llmc}}, \code{\link{grmc}}, \code{\link{hsmc}},
 #' \code{\link{llbeta}}, \code{\link{grbeta}}, \code{\link{hsbeta}}.
-#' General optimization: \code{\link[stats]{optim}}, \code{\link[stats]{nlm}}, \code{\link[stats]{mle}}.
+#' General optimization: \code{\link[stats]{optim}}, \code{\link[stats]{nlm}}.
 #'
 #' @examples
 #' \dontrun{

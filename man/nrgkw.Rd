@@ -201,14 +201,14 @@ if(beta_result_detail$converged && !is.null(beta_result_detail$numeric_hessian))
 }
 \references{
 Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88. \doi{10.1016/0022-1694(80)90036-0}
+random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
 
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-\emph{Journal of Statistical Computation and Simulation}, \emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753}
+\emph{Journal of Statistical Computation and Simulation}, \emph{81}(7), 883-898.
 
-Fletcher, R. (1987). \emph{Practical Methods of Optimization} (2nd ed.). John Wiley & Sons. \doi{10.1002/9781118723203}
+Fletcher, R. (1987). \emph{Practical Methods of Optimization} (2nd ed.). John Wiley & Sons.
 
-Nocedal, J., & Wright, S. J. (2006). \emph{Numerical Optimization} (2nd ed.). Springer. \doi{10.1007/978-0-387-40065-5}
+Nocedal, J., & Wright, S. J. (2006). \emph{Numerical Optimization} (2nd ed.). Springer.
 }
 \seealso{
 Underlying functions used: \code{\link{llgkw}}, \code{\link{grgkw}}, \code{\link{hsgkw}},
@@ -218,7 +218,7 @@ Underlying functions used: \code{\link{llgkw}}, \code{\link{grgkw}}, \code{\link
 \code{\link{llekw}}, \code{grekw}, \code{hsekw},
 \code{\link{llmc}}, \code{\link{grmc}}, \code{\link{hsmc}},
 \code{\link{llbeta}}, \code{\link{grbeta}}, \code{\link{hsbeta}}.
-General optimization: \code{\link[stats]{optim}}, \code{\link[stats]{nlm}}, \code{\link[stats]{mle}}.
+General optimization: \code{\link[stats]{optim}}, \code{\link[stats]{nlm}}.
 }
 \author{
 Lopes, J. E.
