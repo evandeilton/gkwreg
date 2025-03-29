@@ -86,7 +86,6 @@ print(aic1_k4)
 \references{
 Akaike, H. (1974). A new look at the statistical model identification.
 \emph{IEEE Transactions on Automatic Control}, \strong{19}(6), 716-723.
-\doi{10.1109/TAC.1974.1100705}
 
 Burnham, K. P., & Anderson, D. R. (2002). \emph{Model Selection and Multimodel
 Inference: A Practical Information-Theoretic Approach} (2nd ed.). Springer-Verlag.

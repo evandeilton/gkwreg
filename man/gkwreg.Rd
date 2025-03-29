@@ -394,28 +394,24 @@ legend("topright", legend = "Predicted Mean", col = "red", lty = 1, lwd = 2)
 \references{
 Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
 random processes. \emph{Journal of Hydrology}, \strong{46}(1-2), 79-88.
-\doi{10.1016/0022-1694(80)90036-0}
 
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
 \emph{Journal of Statistical Computation and Simulation}, \strong{81}(7), 883-898.
-\doi{10.1080/00949650903530745}
 
 Ferrari, S. L. P., & Cribari-Neto, F. (2004). Beta regression for modelling rates and
 proportions. \emph{Journal of Applied Statistics}, \strong{31}(7), 799-815.
-\doi{10.1080/0266476042000214501}
 
 Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016). TMB:
 Automatic Differentiation and Laplace Approximation. \emph{Journal of Statistical
-Software}, \strong{70}(5), 1-21. \doi{10.18637/jss.v070.i05}
+Software}, \strong{70}(5), 1-21.
 (Underlying TMB package)
 
 Zeileis, A., Kleiber, C., Jackman, S. (2008). Regression Models for Count Data in R.
 \emph{Journal of Statistical Software}, \strong{27}(8), 1-25.
-\doi{10.18637/jss.v027.i08} (Discusses \code{Formula} package)
 
 Smithson, M., & Verkuilen, J. (2006). A Better Lemon Squeezer? Maximum-Likelihood
 Regression with Beta-Distributed Dependent Variables. \emph{Psychological Methods},
-\strong{11}(1), 54–71. \doi{10.1037/1082-989X.11.1.54}
+\strong{11}(1), 54–71.
 }
 \seealso{
 \code{\link{summary.gkwreg}}, \code{\link{predict.gkwreg}},

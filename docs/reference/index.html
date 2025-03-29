@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gkwreg</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.3</span>
       </span>
     </div>
 
@@ -42,29 +42,25 @@
           <p class="section-desc"></p>
         </th>
       </tr></tbody><tbody><tr><td>
-          <p><code><a href="AIC.html">AIC()</a></code> </p>
-        </td>
-        <td><p>Register the S3 method</p></td>
-      </tr><tr><td>
           <p><code><a href="AIC.gkwfit.html">AIC(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Calculate AIC for a gkwfit object</p></td>
+        <td><p>Calculate AIC or BIC for gkwfit Objects</p></td>
       </tr><tr><td>
           <p><code><a href="AIC.gkwreg.html">AIC(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Akaike's Information Criterion for Generalized Kumaraswamy Regression Models</p></td>
-      </tr><tr><td>
-          <p><code><a href="BIC.html">BIC()</a></code> </p>
-        </td>
-        <td><p>Register the S3 method</p></td>
+        <td><p>Akaike's Information Criterion for GKw Regression Models</p></td>
       </tr><tr><td>
           <p><code><a href="BIC.gkwfit.html">BIC(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Calculate BIC for a gkwfit object</p></td>
+        <td><p>Calculate Bayesian Information Criterion (BIC) for gkwfit Objects</p></td>
       </tr><tr><td>
           <p><code><a href="BIC.gkwreg.html">BIC(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Bayesian Information Criterion for Generalized Kumaraswamy Regression Models</p></td>
+        <td><p>Bayesian Information Criterion for GKw Regression Models</p></td>
+      </tr><tr><td>
+          <p><code><a href="anova.gkwfit.html">anova(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Compare Fitted gkwfit Models using Likelihood Ratio Tests</p></td>
       </tr><tr><td>
           <p><code><a href="calculateCoxSnellResiduals.html">calculateCoxSnellResiduals()</a></code> </p>
         </td>
@@ -120,43 +116,43 @@
       </tr><tr><td>
           <p><code><a href="coef.gkwfit.html">coef(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Extract coefficients from a gkwfit object</p></td>
+        <td><p>Extract Model Coefficients from a gkwfit Object</p></td>
+      </tr><tr><td>
+          <p><code><a href="coef.gkwreg.html">coef(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Extract Coefficients from a Fitted GKw Regression Model</p></td>
       </tr><tr><td>
           <p><code><a href="confint.gkwfit.html">confint(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Extract confidence intervals from a gkwfit object</p></td>
-      </tr><tr><td>
-          <p><code><a href="confint.gkwreg.html">confint(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Confidence Intervals for Generalized Kumaraswamy Regression Coefficients</p></td>
+        <td><p>Compute Confidence Intervals for gkwfit Parameters</p></td>
       </tr><tr><td>
           <p><code><a href="dbeta_.html">dbeta_()</a></code> </p>
         </td>
-        <td><p>Density of the Beta Distribution</p></td>
+        <td><p>Density of the Beta Distribution (gamma, delta+1 Parameterization)</p></td>
       </tr><tr><td>
           <p><code><a href="dbkw.html">dbkw()</a></code> </p>
         </td>
-        <td><p>Density Function for Beta-Kumaraswamy Distribution</p></td>
+        <td><p>Density of the Beta-Kumaraswamy (BKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="dekw.html">dekw()</a></code> </p>
         </td>
-        <td><p>Density for Exponentiated Kumaraswamy Distribution</p></td>
+        <td><p>Density of the Exponentiated Kumaraswamy (EKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="dgkw.html">dgkw()</a></code> </p>
         </td>
-        <td><p>Density Function for Generalized Kumaraswamy Distribution</p></td>
+        <td><p>Density of the Generalized Kumaraswamy Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="dkkw.html">dkkw()</a></code> </p>
         </td>
-        <td><p>Density of the KwKw Distribution</p></td>
+        <td><p>Density of the Kumaraswamy-Kumaraswamy (kkw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="dkw.html">dkw()</a></code> </p>
         </td>
-        <td><p>PDF of the Kumaraswamy Distribution</p></td>
+        <td><p>Density of the Kumaraswamy (Kw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="dmc.html">dmc()</a></code> </p>
         </td>
-        <td><p>Density of the Beta Power Distribution</p></td>
+        <td><p>Density of the McDonald (Mc)/Beta Power Distribution Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="fitted.gkwreg.html">fitted(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>
@@ -176,95 +172,91 @@
       </tr><tr><td>
           <p><code><a href="grbeta.html">grbeta()</a></code> </p>
         </td>
-        <td><p>Gradient Function for Beta Log-Likelihood</p></td>
+        <td><p>Gradient of the Negative Log-Likelihood for the Beta Distribution (gamma, delta+1 Parameterization)</p></td>
       </tr><tr><td>
           <p><code><a href="grbkw.html">grbkw()</a></code> </p>
         </td>
-        <td><p>Gradient Function for Beta-Kumaraswamy Log-Likelihood</p></td>
+        <td><p>Gradient of the Negative Log-Likelihood for the BKw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="grekw.html">grekw()</a></code> </p>
         </td>
-        <td><p>Gradient Function for Exponentiated Kumaraswamy Log-Likelihood</p></td>
+        <td><p>Gradient of the Negative Log-Likelihood for the EKw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="grgkw.html">grgkw()</a></code> </p>
         </td>
-        <td><p>Gradient Function for Generalized Kumaraswamy Log-Likelihood</p></td>
+        <td><p>Gradient of the Negative Log-Likelihood for the GKw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="grkkw.html">grkkw()</a></code> </p>
         </td>
-        <td><p>Gradient Function for Kumaraswamy-Kumaraswamy Log-Likelihood</p></td>
+        <td><p>Gradient of the Negative Log-Likelihood for the kkw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="grkw.html">grkw()</a></code> </p>
         </td>
-        <td><p>Gradient Function for Kumaraswamy Log-Likelihood</p></td>
+        <td><p>Gradient of the Negative Log-Likelihood for the Kumaraswamy (Kw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="grmc.html">grmc()</a></code> </p>
         </td>
-        <td><p>Gradient Function for Beta Power Log-Likelihood</p></td>
+        <td><p>Gradient of the Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="hsbeta.html">hsbeta()</a></code> </p>
         </td>
-        <td><p>Hessian Matrix Function for Beta Log-Likelihood</p></td>
+        <td><p>Hessian Matrix of the Negative Log-Likelihood for the Beta Distribution (gamma, delta+1 Parameterization)</p></td>
       </tr><tr><td>
           <p><code><a href="hsbkw.html">hsbkw()</a></code> </p>
         </td>
-        <td><p>Analytic Hessian Matrix for Beta-Kumaraswamy Distribution</p></td>
+        <td><p>Hessian Matrix of the Negative Log-Likelihood for the BKw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="hsekw.html">hsekw()</a></code> </p>
         </td>
-        <td><p>Analytic Hessian Matrix for Exponentiated Kumaraswamy Distribution</p></td>
+        <td><p>Hessian Matrix of the Negative Log-Likelihood for the EKw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="hsgkw.html">hsgkw()</a></code> </p>
         </td>
-        <td><p>Analytic Hessian Matrix for Generalized Kumaraswamy Distribution</p></td>
+        <td><p>Hessian Matrix of the Negative Log-Likelihood for the GKw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="hskkw.html">hskkw()</a></code> </p>
         </td>
-        <td><p>Analytic Hessian Matrix for Kumaraswamy-Kumaraswamy Distribution</p></td>
+        <td><p>Hessian Matrix of the Negative Log-Likelihood for the kkw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="hskw.html">hskw()</a></code> </p>
         </td>
-        <td><p>Hessian Matrix Function for Kumaraswamy Log-Likelihood</p></td>
+        <td><p>Hessian Matrix of the Negative Log-Likelihood for the Kw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="hsmc.html">hsmc()</a></code> </p>
         </td>
-        <td><p>Hessian Matrix Function for Beta Power (McDonald) Log-Likelihood</p></td>
+        <td><p>Hessian Matrix of the Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="llbeta.html">llbeta()</a></code> </p>
         </td>
-        <td><p>Negative Log-Likelihood for the Beta Distribution</p></td>
+        <td><p>Negative Log-Likelihood for the Beta Distribution (gamma, delta+1 Parameterization)</p></td>
       </tr><tr><td>
           <p><code><a href="llbkw.html">llbkw()</a></code> </p>
         </td>
-        <td><p>Negative Log-Likelihood for Beta-Kumaraswamy Distribution</p></td>
+        <td><p>Negative Log-Likelihood for Beta-Kumaraswamy (BKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="llekw.html">llekw()</a></code> </p>
         </td>
-        <td><p>Negative Log-Likelihood for Exponentiated Kumaraswamy</p></td>
+        <td><p>Negative Log-Likelihood for the Exponentiated Kumaraswamy (EKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="llgkw.html">llgkw()</a></code> </p>
         </td>
-        <td><p>Log-Likelihood Function for Generalized Kumaraswamy Distribution</p></td>
+        <td><p>Negative Log-Likelihood for the Generalized Kumaraswamy Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="llkkw.html">llkkw()</a></code> </p>
         </td>
-        <td><p>Negative Log-Likelihood of KwKw Distribution</p></td>
+        <td><p>Negative Log-Likelihood for the kkw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="llkw.html">llkw()</a></code> </p>
         </td>
-        <td><p>Negative Log-Likelihood of the Kumaraswamy Distribution</p></td>
+        <td><p>Negative Log-Likelihood of the Kumaraswamy (Kw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="llmc.html">llmc()</a></code> </p>
         </td>
-        <td><p>Negative Log-Likelihood for Beta Power Distribution</p></td>
-      </tr><tr><td>
-          <p><code><a href="logLik.html">logLik()</a></code> </p>
-        </td>
-        <td><p>Register the S3 method</p></td>
+        <td><p>Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="logLik.gkwfit.html">logLik(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Extract log-likelihood from a gkwfit object</p></td>
+        <td><p>Extract Log-Likelihood from a gkwfit Object</p></td>
       </tr><tr><td>
           <p><code><a href="logLik.gkwreg.html">logLik(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>
@@ -272,99 +264,95 @@
       </tr><tr><td>
           <p><code><a href="nrgkw.html">nrgkw()</a></code> </p>
         </td>
-        <td><p>Newton-Raphson Optimization for Kumaraswamy Family Distributions</p></td>
+        <td><p>Newton-Raphson Optimization for GKw Family Distributions (nrgkw)</p></td>
       </tr><tr><td>
           <p><code><a href="pbeta_.html">pbeta_()</a></code> </p>
         </td>
-        <td><p>CDF of the Beta Distribution</p></td>
+        <td><p>CDF of the Beta Distribution (gamma, delta+1 Parameterization)</p></td>
       </tr><tr><td>
           <p><code><a href="pbkw.html">pbkw()</a></code> </p>
         </td>
-        <td><p>CDF of Beta-Kumaraswamy Distribution</p></td>
+        <td><p>Cumulative Distribution Function (CDF) of the Beta-Kumaraswamy (BKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="pekw.html">pekw()</a></code> </p>
         </td>
-        <td><p>CDF for Exponentiated Kumaraswamy Distribution</p></td>
+        <td><p>Cumulative Distribution Function (CDF) of the EKw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="pgkw.html">pgkw()</a></code> </p>
         </td>
-        <td><p>Cumulative Distribution Function for Generalized Kumaraswamy Distribution</p></td>
+        <td><p>Generalized Kumaraswamy Distribution CDF</p></td>
       </tr><tr><td>
           <p><code><a href="pkkw.html">pkkw()</a></code> </p>
         </td>
-        <td><p>CDF of the KwKw Distribution</p></td>
+        <td><p>Cumulative Distribution Function (CDF) of the kkw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="pkw.html">pkw()</a></code> </p>
         </td>
-        <td><p>CDF of the Kumaraswamy Distribution</p></td>
+        <td><p>Cumulative Distribution Function (CDF) of the Kumaraswamy (Kw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="plot.gkwfit.html">plot(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Plot method for gkwfit objects</p></td>
+        <td><p>Plot Diagnostics for a gkwfit Object</p></td>
       </tr><tr><td>
           <p><code><a href="plot.gkwreg.html">plot(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Diagnostic Plots for gkwreg Objects</p></td>
+        <td><p>Diagnostic Plots for Generalized Kumaraswamy Regression Models</p></td>
       </tr><tr><td>
           <p><code><a href="pmc.html">pmc()</a></code> </p>
         </td>
-        <td><p>CDF of the Beta Power Distribution</p></td>
+        <td><p>CDF of the McDonald (Mc)/Beta Power Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="predict.gkwfit.html">predict(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Calculate predicted density values for a gkwfit object</p></td>
+        <td><p>Predict Method for gkwfit Objects</p></td>
       </tr><tr><td>
           <p><code><a href="predict.gkwreg.html">predict(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Predict Method for Generalized Kumaraswamy Regression Models</p></td>
+        <td><p>Predictions from a Fitted Generalized Kumaraswamy Regression Model</p></td>
       </tr><tr><td>
-          <p><code><a href="print.gkwfit.html">print(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
+          <p><code><a href="print.anova.gkwfit.html">print(<i>&lt;anova.gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Print method for gkwfit objects</p></td>
-      </tr><tr><td>
-          <p><code><a href="print.summary.gkwfit.html">print(<i>&lt;summary.gkwfit&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Print method for summary.gkwfit objects</p></td>
+        <td><p>S3 method for class 'anova.gkwfit'</p></td>
       </tr><tr><td>
           <p><code><a href="qbeta_.html">qbeta_()</a></code> </p>
         </td>
-        <td><p>Quantile Function of the Beta Distribution</p></td>
+        <td><p>Quantile Function of the Beta Distribution (gamma, delta+1 Parameterization)</p></td>
       </tr><tr><td>
           <p><code><a href="qbkw.html">qbkw()</a></code> </p>
         </td>
-        <td><p>Quantile Function of Beta-Kumaraswamy Distribution</p></td>
+        <td><p>Quantile Function of the Beta-Kumaraswamy (BKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="qekw.html">qekw()</a></code> </p>
         </td>
-        <td><p>Quantile Function for Exponentiated Kumaraswamy</p></td>
+        <td><p>Quantile Function of the Exponentiated Kumaraswamy (EKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="qgkw.html">qgkw()</a></code> </p>
         </td>
-        <td><p>Quantile Function for Generalized Kumaraswamy Distribution</p></td>
+        <td><p>Generalized Kumaraswamy Distribution Quantile Function</p></td>
       </tr><tr><td>
           <p><code><a href="qkkw.html">qkkw()</a></code> </p>
         </td>
-        <td><p>Quantile Function of the KwKw Distribution</p></td>
+        <td><p>Quantile Function of the Kumaraswamy-Kumaraswamy (kkw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="qkw.html">qkw()</a></code> </p>
         </td>
-        <td><p>Quantile Function of the Kumaraswamy Distribution</p></td>
+        <td><p>Quantile Function of the Kumaraswamy (Kw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="qmc.html">qmc()</a></code> </p>
         </td>
-        <td><p>Quantile Function of the Beta Power Distribution</p></td>
+        <td><p>Quantile Function of the McDonald (Mc)/Beta Power Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="rbeta_.html">rbeta_()</a></code> </p>
         </td>
-        <td><p>Random Generation for the Beta Distribution</p></td>
+        <td><p>Random Generation for the Beta Distribution (gamma, delta+1 Parameterization)</p></td>
       </tr><tr><td>
           <p><code><a href="rbkw.html">rbkw()</a></code> </p>
         </td>
-        <td><p>Random Generation from Beta-Kumaraswamy Distribution</p></td>
+        <td><p>Random Number Generation for the Beta-Kumaraswamy (BKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="rekw.html">rekw()</a></code> </p>
         </td>
-        <td><p>Random Generation for Exponentiated Kumaraswamy Distribution</p></td>
+        <td><p>Random Number Generation for the Exponentiated Kumaraswamy (EKw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="residuals.gkwreg.html">residuals(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>
@@ -372,23 +360,23 @@
       </tr><tr><td>
           <p><code><a href="rgkw.html">rgkw()</a></code> </p>
         </td>
-        <td><p>Random Number Generation for Generalized Kumaraswamy Distribution</p></td>
+        <td><p>Generalized Kumaraswamy Distribution Random Generation</p></td>
       </tr><tr><td>
           <p><code><a href="rkkw.html">rkkw()</a></code> </p>
         </td>
-        <td><p>Random Generation from KwKw Distribution</p></td>
+        <td><p>Random Number Generation for the kkw Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="rkw.html">rkw()</a></code> </p>
         </td>
-        <td><p>Random Generation from the Kumaraswamy Distribution</p></td>
+        <td><p>Random Number Generation for the Kumaraswamy (Kw) Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="rmc.html">rmc()</a></code> </p>
         </td>
-        <td><p>Random Generation from Beta Power Distribution</p></td>
+        <td><p>Random Number Generation for the McDonald (Mc)/Beta Power Distribution</p></td>
       </tr><tr><td>
           <p><code><a href="summary.gkwfit.html">summary(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Summary method for gkwfit objects</p></td>
+        <td><p>Summary Method for gkwfit Objects</p></td>
       </tr><tr><td>
           <p><code><a href="summary.gkwreg.html">summary(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>
@@ -396,7 +384,7 @@
       </tr><tr><td>
           <p><code><a href="vcov.gkwfit.html">vcov(<i>&lt;gkwfit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Extract variance-covariance matrix from a gkwfit object</p></td>
+        <td><p>Extract Variance-Covariance Matrix from a gkwfit Object</p></td>
       </tr><tr><td>
           <p><code><a href="vcov.gkwreg.html">vcov(<i>&lt;gkwreg&gt;</i>)</a></code> </p>
         </td>

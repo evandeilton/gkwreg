@@ -133,11 +133,11 @@ if (mle_result_mc$convergence == 0 &&
 }
 \references{
 McDonald, J. B. (1984). Some generalized functions for the size distribution
-of income. \emph{Econometrica}, 52(3), 647-663. \doi{10.2307/1913469}
+of income. \emph{Econometrica}, 52(3), 647-663.
 
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 distributions. \emph{Journal of Statistical Computation and Simulation},
-\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+
 (Note: Specific Hessian formulas might be derived or sourced from additional references).
 }
 \seealso{

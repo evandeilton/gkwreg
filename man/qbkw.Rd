@@ -119,12 +119,10 @@ print(qbkw(c(-Inf, 0), alpha_par, beta_par, gamma_par, delta_par, log_p = TRUE))
 }
 \references{
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
-distributions. \emph{Journal of Statistical Computation and Simulation},
-\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
+distributions. \emph{Journal of Statistical Computation and Simulation}
 
 Kumaraswamy, P. (1980). A generalized probability density function for
 double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
-\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
 }
 \seealso{
 \code{\link{qgkw}} (parent distribution quantile function),

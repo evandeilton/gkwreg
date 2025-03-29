@@ -127,15 +127,13 @@ if (mle_result_ekw$convergence == 0 &&
 \references{
 Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
 Kumaraswamy distribution. \emph{Journal of the Franklin Institute}, \emph{349}(3),
-955-971. \doi{10.1016/j.jfranklin.2011.12.016}
 
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 distributions. \emph{Journal of Statistical Computation and Simulation},
-\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 
 Kumaraswamy, P. (1980). A generalized probability density function for
 double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79-88.
-\doi{10.1016/0022-1694(80)90036-0} (Introduces Kw)
+
 (Note: Specific Hessian formulas might be derived or sourced from additional references).
 }
 \seealso{

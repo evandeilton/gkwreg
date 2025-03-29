@@ -19,7 +19,7 @@ The function supports all seven submodels of the GKw family."><!-- mathjax --><s
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">gkwreg</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.3</span>
       </span>
     </div>
 
@@ -77,8 +77,8 @@ The function supports all seven submodels of the GKw family.</p>
 
 
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
-<dd><p>A character string specifying the distribution family. One of: "gkw" (default),
-"bkw", "kkw", "ekw", "mc", "kw", or "beta". See Details for parameter specifications.</p></dd>
+<dd><p>A character string specifying the distribution family. One of: <code>"gkw"</code> (default),
+<code>"bkw"</code>, <code>"kkw"</code>, <code>"ekw"</code>, <code>"mc"</code>, <code>"kw"</code>, or <code>"beta"</code>. See Details for parameter specifications.</p></dd>
 
 
 <dt id="arg-start">start<a class="anchor" aria-label="anchor" href="#arg-start"></a></dt>
@@ -87,15 +87,15 @@ values will be determined from the data.</p></dd>
 
 
 <dt id="arg-fixed">fixed<a class="anchor" aria-label="anchor" href="#arg-fixed"></a></dt>
-<dd><p>Optional list of parameters to be held fixed (not estimated).</p></dd>
+<dd><p>Optional list of parameters to be held fixed (not estimated), e.g., <code>list(lambda = 1)</code>.</p></dd>
 
 
 <dt id="arg-fit">fit<a class="anchor" aria-label="anchor" href="#arg-fit"></a></dt>
-<dd><p>Estimation method to be used: <code>"tmb"</code> (default) for TMB or <code>"nr"</code> for Newton-Raphson.</p></dd>
+<dd><p>Estimation method to be used: <code>"tmb"</code> (recommended) for TMB or <code>"nr"</code> for Newton-Raphson.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>(Only for <code>fit = "tmb"</code>) Optimization method to be used: <code>"nlminb"</code> (default) or <code>"optim"</code>.</p></dd>
+<dd><p>(Only for <code>fit = "tmb"</code>) Optimization method to be used by <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a></code> or <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a></code>: <code>"nlminb"</code> (default) or <code>"optim"</code>.</p></dd>
 
 
 <dt id="arg-use-moments">use_moments<a class="anchor" aria-label="anchor" href="#arg-use-moments"></a></dt>
@@ -103,7 +103,7 @@ values will be determined from the data.</p></dd>
 
 
 <dt id="arg-hessian">hessian<a class="anchor" aria-label="anchor" href="#arg-hessian"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, computes standard errors and the covariance matrix.</p></dd>
+<dd><p>Logical; if <code>TRUE</code>, computes standard errors and the covariance matrix using the observed Hessian matrix.</p></dd>
 
 
 <dt id="arg-profile">profile<a class="anchor" aria-label="anchor" href="#arg-profile"></a></dt>
@@ -111,11 +111,11 @@ values will be determined from the data.</p></dd>
 
 
 <dt id="arg-npoints">npoints<a class="anchor" aria-label="anchor" href="#arg-npoints"></a></dt>
-<dd><p>Number of points to use in profile likelihood calculations.</p></dd>
+<dd><p>Integer; number of points to use in profile likelihood calculations (minimum 5).</p></dd>
 
 
 <dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, generates diagnostic plots.</p></dd>
+<dd><p>Logical; if <code>TRUE</code>, generates diagnostic plots (histogram with fitted density, QQ-plot).</p></dd>
 
 
 <dt id="arg-conf-level">conf.level<a class="anchor" aria-label="anchor" href="#arg-conf-level"></a></dt>
@@ -123,76 +123,136 @@ values will be determined from the data.</p></dd>
 
 
 <dt id="arg-optimizer-control">optimizer.control<a class="anchor" aria-label="anchor" href="#arg-optimizer-control"></a></dt>
-<dd><p>List of control parameters passed to the optimizer. Default values
-are set internally based on the chosen method.</p></dd>
+<dd><p>List of control parameters passed to the optimizer (<code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a></code> or <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a></code> for <code>fit = "tmb"</code>, or the internal Newton-Raphson). Default values
+are set internally based on the chosen method (see Details).</p></dd>
 
 
 <dt id="arg-submodels">submodels<a class="anchor" aria-label="anchor" href="#arg-submodels"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, fits nested submodels for comparison.</p></dd>
+<dd><p>Logical; if <code>TRUE</code>, fits nested submodels for comparison via likelihood ratio tests.</p></dd>
 
 
 <dt id="arg-silent">silent<a class="anchor" aria-label="anchor" href="#arg-silent"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, suppresses messages.</p></dd>
+<dd><p>Logical; if <code>TRUE</code>, suppresses messages during fitting.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to internal functions.</p></dd>
+<dd><p>Additional arguments (currently unused).</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>An object of class <code>"gkwfit"</code> containing the fitted model. The names of the objects
-in the output list are preserved for compatibility.</p>
+    <p>An object of class <code>"gkwfit"</code> (inheriting from <code>"list"</code>) containing the fitted model results. Key components include:</p>
+<dl><dt>coefficients</dt>
+<dd><p>Named vector of estimated parameters.</p></dd>
+
+<dt>vcov</dt>
+<dd><p>Variance-covariance matrix of the estimates.</p></dd>
+
+<dt>logLik</dt>
+<dd><p>Log-likelihood value at the maximum.</p></dd>
+
+<dt>aic</dt>
+<dd><p>Akaike Information Criterion.</p></dd>
+
+<dt>bic</dt>
+<dd><p>Bayesian Information Criterion.</p></dd>
+
+<dt>convergence</dt>
+<dd><p>Convergence status code from the optimizer.</p></dd>
+
+<dt>hessian</dt>
+<dd><p>Observed Hessian matrix (if <code>hessian = TRUE</code>).</p></dd>
+
+<dt>data</dt>
+<dd><p>The input data vector.</p></dd>
+
+<dt>family</dt>
+<dd><p>The specified distribution family.</p></dd>
+
+<dt>call</dt>
+<dd><p>The matched function call.</p></dd>
+
+<dt>plots</dt>
+<dd><p>A list containing ggplot objects for diagnostics (if <code>plot = TRUE</code>).</p></dd>
+
+<dt>profile</dt>
+<dd><p>A list containing likelihood profile results (if <code>profile = TRUE</code>).</p></dd>
+
+<dt>submodels</dt>
+<dd><p>A list of fitted submodels (if <code>submodels = TRUE</code>).</p></dd>
+
+<dt>lrt</dt>
+<dd><p>A list of likelihood ratio test results comparing nested models (if <code>submodels = TRUE</code>).</p></dd>
+
+<dt>gof</dt>
+<dd><p>Goodness-of-fit statistics (e.g., AD, CvM).</p></dd>
+
+<dt>diagnostics</dt>
+<dd><p>Diagnostic information related to GOF tests.</p></dd>
+
+</dl><p>The names of the objects in the output list are preserved for compatibility with potential previous versions.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
-    <p>The <code>gkwfit</code> function implements fitting for all seven distributions in the Generalized Kumaraswamy family:</p><ul><li><p><strong>GKw</strong> (Generalized Kumaraswamy): 5 parameters (α, β, γ, δ, λ)</p></li>
-<li><p><strong>BKw</strong> (Beta-Kumaraswamy): 4 parameters (α, β, γ, δ), with λ = 1 fixed</p></li>
-<li><p><strong>KKw</strong> (Kumaraswamy-Kumaraswamy): 4 parameters (α, β, δ, λ), with γ = 1 fixed</p></li>
-<li><p><strong>EKw</strong> (Exponentiated Kumaraswamy): 3 parameters (α, β, λ), with γ = 1, δ = 0 fixed</p></li>
-<li><p><strong>Mc</strong> (McDonald/Beta Power): 3 parameters (γ, δ, λ), with α = 1, β = 1 fixed</p></li>
-<li><p><strong>Kw</strong> (Kumaraswamy): 2 parameters (α, β), with γ = 1, δ = 0, λ = 1 fixed</p></li>
-<li><p><strong>Beta</strong>: 2 parameters (γ, δ), with α = 1, β = 1, λ = 1 fixed</p></li>
-</ul><p>The function offers two estimation methods:</p><ul><li><p><code>fit = "tmb"</code>: Uses Template Model Builder (TMB) for fitting, with the option to choose
-the optimization method via the <code>method</code> argument, which can be <code>"nlminb"</code> or <code>"optim"</code>.</p></li>
-<li><p><code>fit = "nr"</code>: Uses the Newton-Raphson method for fitting. In this case, the <code>method</code>
-argument is ignored.</p></li>
-</ul><p>Default values for optimizer control parameters (<code>optimizer.control</code>) are:</p><ul><li><p>For <code>"nlminb"</code>: <code>list(eval.max = 500, iter.max = 300)</code>.</p></li>
-<li><p>For <code>"optim"</code>: <code>list(maxit = 500)</code>.</p></li>
-<li><p>For Newton-Raphson (<code>fit = "nr"</code>): <code>list(tol = 1e-6, max_iter = 100, step_size = 1.0,
-        enforce_bounds = TRUE, min_param_val = 1e-5, max_param_val = 1e5)</code>.</p></li>
-</ul></div>
+    <p>The <code>gkwfit</code> function implements fitting for all seven distributions in the Generalized Kumaraswamy family:</p><ul><li><p><strong>GKw</strong> (Generalized Kumaraswamy): 5 parameters (\(\alpha, \beta, \gamma, \delta, \lambda\))</p></li>
+<li><p><strong>BKw</strong> (Beta-Kumaraswamy): 4 parameters (\(\alpha, \beta, \gamma, \delta\)), with \(\lambda = 1\) fixed</p></li>
+<li><p><strong>KKw</strong> (Kumaraswamy-Kumaraswamy): 4 parameters (\(\alpha, \beta, \delta, \lambda\)), with \(\gamma = 1\) fixed</p></li>
+<li><p><strong>EKw</strong> (Exponentiated Kumaraswamy): 3 parameters (\(\alpha, \beta, \lambda\)), with \(\gamma = 1, \delta = 0\) fixed</p></li>
+<li><p><strong>Mc</strong> (McDonald / Beta Power): 3 parameters (\(\gamma, \delta, \lambda\)), with \(\alpha = 1, \beta = 1\) fixed</p></li>
+<li><p><strong>Kw</strong> (Kumaraswamy): 2 parameters (\(\alpha, \beta\)), with \(\gamma = 1, \delta = 0, \lambda = 1\) fixed</p></li>
+<li><p><strong>Beta</strong>: 2 parameters (\(\gamma, \delta\)), with \(\alpha = 1, \beta = 1, \lambda = 1\) fixed (equivalent to standard Beta distribution parameters)</p></li>
+</ul><p>All parameters are restricted to be positive.</p>
+<p>The function offers two estimation methods via the <code>fit</code> argument:</p><ul><li><p><code>fit = "tmb"</code>: Uses Template Model Builder (TMB) for robust and efficient fitting, leveraging automatic differentiation. The optimization backend (<code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb</a></code> or <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optim</a></code>) can be selected via the <code>method</code> argument. This is generally the recommended method.</p></li>
+<li><p><code>fit = "nr"</code>: Uses a custom Newton-Raphson implementation. In this case, the <code>method</code> argument is ignored. This might be faster for simple cases but potentially less stable than TMB.</p></li>
+</ul><p>Default values for <code>optimizer.control</code> depend on the fitting method:</p><ul><li><p>For <code>fit = "tmb", method = "nlminb"</code>: <code>list(eval.max = 500, iter.max = 300)</code></p></li>
+<li><p>For <code>fit = "tmb", method = "optim"</code>: <code>list(maxit = 500)</code> (uses <code>method = "BFGS"</code> by default within optim)</p></li>
+<li><p>For <code>fit = "nr"</code>: <code>list(tol = 1e-6, max_iter = 100, step_size = 1.0, enforce_bounds = TRUE, min_param_val = 1e-5, max_param_val = 1e5)</code></p></li>
+</ul><p>Users can override these defaults by providing their own list to <code>optimizer.control</code>.</p>
+    </div>
     <div id="references">
     <h2>References</h2>
     <p>Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-random processes. Journal of Hydrology, 46(1-2), 79-88.</p>
+random processes. <em>Journal of Hydrology</em>, 46(1-2), 79-88. <a href="https://doi.org/10.1016/0022-1694%2880%2990036-0" class="external-link">doi:10.1016/0022-1694(80)90036-0</a></p>
 <p>Cordeiro, G. M., &amp; de Castro, M. (2011). A new family of generalized distributions.
-Journal of Statistical Computation and Simulation, 81(7), 883-898.</p>
+<em>Journal of Statistical Computation and Simulation</em>, 81(7), 883-898. <a href="https://doi.org/10.1080/00949650903530745" class="external-link">doi:10.1080/00949650903530745</a></p>
+<p>Bourguignon, M., Silva, R. B., &amp; Cordeiro, G. M. (2014). The Weibull-G family of probability distributions. <em>Journal of Data Science</em>, 12(1), 53-68. (Mentioned as GKw is related to this framework)</p>
+    </div>
+    <div id="see-also">
+    <h2>See also</h2>
+    <div class="dont-index"><p><code><a href="dgkw.html">dgkw</a></code>, <code><a href="pgkw.html">pgkw</a></code>, <code><a href="qgkw.html">qgkw</a></code>, <code><a href="rgkw.html">rgkw</a></code>, <code><a href="summary.gkwfit.html">summary.gkwfit</a></code>, <code><a href="print.gkwfit.html">print.gkwfit</a></code>, <code><a href="plot.gkwfit.html">plot.gkwfit</a></code>, <code><a href="coef.gkwfit.html">coef.gkwfit</a></code>, <code><a href="vcov.gkwfit.html">vcov.gkwfit</a></code>, <code><a href="logLik.gkwfit.html">logLik.gkwfit</a></code>, <code><a href="confint.gkwfit.html">confint.gkwfit</a></code></p></div>
+    </div>
+    <div id="author">
+    <h2>Author</h2>
+    <p>Lopes, J. E.</p>
     </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># Ensure the package is loaded (if not already)</span></span></span>
+<span class="r-in"><span><span class="co"># library(gkwreg) # Or your package name</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va">gkwreg</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co">## Example 1: Basic Kumaraswamy distribution fitting</span></span></span>
 <span class="r-in"><span><span class="co"># Generate sample data from a Kumaraswamy distribution</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">2000</span></span></span>
+<span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">200</span> <span class="co"># Reduced size for faster example</span></span></span>
+<span class="r-in"><span><span class="co"># Assuming rkw is part of your package or loaded</span></span></span>
 <span class="r-in"><span><span class="va">kw_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="rkw.html">rkw</a></span><span class="op">(</span><span class="va">n</span>, alpha <span class="op">=</span> <span class="fl">2.5</span>, beta <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Fit the Kumaraswamy distribution to the data</span></span></span>
-<span class="r-in"><span><span class="va">kw_fit</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">kw_data</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Fit the Kumaraswamy distribution to the data using TMB</span></span></span>
+<span class="r-in"><span><span class="va">kw_fit</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">kw_data</span>, family <span class="op">=</span> <span class="st">"kw"</span>, fit <span class="op">=</span> <span class="st">"tmb"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Display summary of the fitted model</span></span></span>
+<span class="r-in"><span><span class="co"># Display summary of the fitted model (requires summary.gkwfit method)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">kw_fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Plot the fitted distribution against the data</span></span></span>
-<span class="r-in"><span><span class="va">kw_fit</span><span class="op">$</span><span class="va">plots</span></span></span>
+<span class="r-in"><span><span class="co"># Show diagnostic plots (requires plot.gkwfit method or access internal list)</span></span></span>
+<span class="r-in"><span><span class="co"># print(kw_fit$plots[[1]]) # Example: print histogram plot</span></span></span>
+<span class="r-in"><span><span class="co"># print(kw_fit$plots[[2]]) # Example: print QQ plot</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 2: Fitting a Generalized Kumaraswamy distribution</span></span></span>
 <span class="r-in"><span><span class="co"># Generate sample data from a GKw distribution</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">456</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Assuming rgkw is part of your package or loaded</span></span></span>
 <span class="r-in"><span><span class="va">gkw_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="rgkw.html">rgkw</a></span><span class="op">(</span><span class="va">n</span>,</span></span>
 <span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">2.0</span>, beta <span class="op">=</span> <span class="fl">3.0</span>,</span></span>
 <span class="r-in"><span>  gamma <span class="op">=</span> <span class="fl">1.5</span>, delta <span class="op">=</span> <span class="fl">2.5</span>, lambda <span class="op">=</span> <span class="fl">0.8</span></span></span>
@@ -201,12 +261,13 @@ Journal of Statistical Computation and Simulation, 81(7), 883-898.</p>
 <span class="r-in"><span><span class="co"># Fit the GKw distribution using TMB</span></span></span>
 <span class="r-in"><span><span class="va">gkw_fit</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">gkw_data</span>, family <span class="op">=</span> <span class="st">"gkw"</span>, fit <span class="op">=</span> <span class="st">"tmb"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Display parameter estimates with confidence intervals</span></span></span>
+<span class="r-in"><span><span class="co"># Display parameter estimates with confidence intervals (requires confint.gkwfit)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">gkw_fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 3: Comparing different estimation methods</span></span></span>
 <span class="r-in"><span><span class="co"># Generate sample data from a Beta-Kumaraswamy distribution</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">7809</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">789</span><span class="op">)</span> <span class="co"># Corrected seed from 7809 to 789</span></span></span>
+<span class="r-in"><span><span class="co"># Assuming rbkw is part of your package or loaded</span></span></span>
 <span class="r-in"><span><span class="va">bkw_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="rbkw.html">rbkw</a></span><span class="op">(</span><span class="va">n</span>, alpha <span class="op">=</span> <span class="fl">1.8</span>, beta <span class="op">=</span> <span class="fl">2.2</span>, gamma <span class="op">=</span> <span class="fl">0.9</span>, delta <span class="op">=</span> <span class="fl">1.2</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Fit using TMB with nlminb optimizer</span></span></span>
@@ -218,12 +279,13 @@ Journal of Statistical Computation and Simulation, 81(7), 883-898.</p>
 <span class="r-in"><span><span class="co"># Fit using Newton-Raphson method</span></span></span>
 <span class="r-in"><span><span class="va">bkw_fit_nr</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">bkw_data</span>, family <span class="op">=</span> <span class="st">"bkw"</span>, fit <span class="op">=</span> <span class="st">"nr"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Compare parameter estimates</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>TMB <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">bkw_fit_tmb</span><span class="op">)</span>, NR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">bkw_fit_nr</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Compare parameter estimates (requires coef.gkwfit method)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>TMB <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">bkw_fit_tmb</span><span class="op">)</span>, NR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">bkw_fit_nr</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 4: Fixing parameters during estimation</span></span></span>
 <span class="r-in"><span><span class="co"># Generate data from a Kumaraswamy-Kumaraswamy distribution</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">101</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Assuming rkkw is part of your package or loaded</span></span></span>
 <span class="r-in"><span><span class="va">kkw_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="rkkw.html">rkkw</a></span><span class="op">(</span><span class="va">n</span>, alpha <span class="op">=</span> <span class="fl">2.5</span>, beta <span class="op">=</span> <span class="fl">1.8</span>, delta <span class="op">=</span> <span class="fl">1.5</span>, lambda <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Fit the model with lambda fixed at 0.7</span></span></span>
@@ -232,44 +294,46 @@ Journal of Statistical Computation and Simulation, 81(7), 883-898.</p>
 <span class="r-in"><span>  fixed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>lambda <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Display results</span></span></span>
+<span class="r-in"><span><span class="co"># Display results (requires coef.gkwfit method)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">kkw_fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 5: Profile likelihoods</span></span></span>
-<span class="r-in"><span><span class="co"># Generate data from McDonald distribution</span></span></span>
+<span class="r-in"><span><span class="co"># Generate data from McDonald distribution (Beta Power)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">202</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">mc_data</span> <span class="op">&lt;-</span> <span class="fu">rbp</span><span class="op">(</span><span class="va">n</span>, gamma <span class="op">=</span> <span class="fl">2.0</span>, delta <span class="op">=</span> <span class="fl">1.5</span>, lambda <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Assuming rbp is part of your package or loaded (or maybe rmc?)</span></span></span>
+<span class="r-in"><span><span class="va">mc_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="rmc.html">rmc</a></span><span class="op">(</span><span class="va">n</span>, gamma <span class="op">=</span> <span class="fl">2.0</span>, delta <span class="op">=</span> <span class="fl">1.5</span>, lambda <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span> <span class="co"># Assuming rmc exists</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Fit the model with profile likelihoods</span></span></span>
+<span class="r-in"><span><span class="co"># Fit the model with profile likelihoods (may take time)</span></span></span>
 <span class="r-in"><span><span class="va">mc_fit</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">mc_data</span>, family <span class="op">=</span> <span class="st">"mc"</span>,</span></span>
-<span class="r-in"><span>  profile <span class="op">=</span> <span class="cn">TRUE</span>, npoints <span class="op">=</span> <span class="fl">15</span></span></span>
+<span class="r-in"><span>  profile <span class="op">=</span> <span class="cn">TRUE</span>, npoints <span class="op">=</span> <span class="fl">10</span> <span class="co"># Reduced points for speed</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Plot profile likelihoods</span></span></span>
-<span class="r-in"><span><span class="va">mc_fit</span><span class="op">$</span><span class="va">plots</span></span></span>
+<span class="r-in"><span><span class="co"># Plot profile likelihoods (requires plot.profile.gkwfit method or similar)</span></span></span>
+<span class="r-in"><span><span class="co"># plot(mc_fit$profile) # Or specific plotting function for profiles</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 6: Fitting and comparing submodels</span></span></span>
 <span class="r-in"><span><span class="co"># Generate data from Exponentiated Kumaraswamy distribution</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">303</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Assuming rekw is part of your package or loaded</span></span></span>
 <span class="r-in"><span><span class="va">ekw_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="rekw.html">rekw</a></span><span class="op">(</span><span class="va">n</span>, alpha <span class="op">=</span> <span class="fl">1.7</span>, beta <span class="op">=</span> <span class="fl">2.3</span>, lambda <span class="op">=</span> <span class="fl">1.2</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Fit the model and all its submodels</span></span></span>
-<span class="r-in"><span><span class="va">ekw_fit</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">ekw_data</span>, family <span class="op">=</span> <span class="st">"gkw"</span>, fit <span class="op">=</span> <span class="st">"tmb"</span>, submodels <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Fit the GKw model and all its submodels (may take significant time)</span></span></span>
+<span class="r-in"><span><span class="co"># Consider reducing 'n' for this example</span></span></span>
+<span class="r-in"><span><span class="va">ekw_fit_all</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">ekw_data</span>, family <span class="op">=</span> <span class="st">"gkw"</span>, fit <span class="op">=</span> <span class="st">"tmb"</span>, submodels <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Display likelihood ratio tests</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">ekw_fit</span><span class="op">$</span><span class="va">lrt</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Display likelihood ratio tests comparing GKw to nested models</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">ekw_fit_all</span><span class="op">$</span><span class="va">lrt</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 7: Using method of moments for initialization</span></span></span>
 <span class="r-in"><span><span class="co"># Generate data from Beta distribution</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">404</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">beta_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="va">n</span>, shape1 <span class="op">=</span> <span class="fl">2.0</span>, shape2 <span class="op">=</span> <span class="fl">3.0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">beta_data</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="va">n</span>, shape1 <span class="op">=</span> <span class="fl">2.0</span>, shape2 <span class="op">=</span> <span class="fl">3.0</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Fit using method of moments for starting values</span></span></span>
 <span class="r-in"><span><span class="va">beta_fit</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">beta_data</span>, family <span class="op">=</span> <span class="st">"beta"</span>, use_moments <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Check starting values vs final estimates</span></span></span>
-<span class="r-in"><span><span class="va">beta_fit</span><span class="op">$</span><span class="va">plots</span></span></span>
+<span class="r-in"><span><span class="co"># Check final estimates (requires coef.gkwfit method)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">beta_fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 8: Custom optimizer control</span></span></span>
@@ -279,12 +343,12 @@ Journal of Statistical Computation and Simulation, 81(7), 883-898.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Fit with custom optimizer settings for more iterations</span></span></span>
 <span class="r-in"><span><span class="va">kw_fit2</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  data <span class="op">=</span> <span class="va">kw_data2</span>, family <span class="op">=</span> <span class="st">"kw"</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">kw_data2</span>, family <span class="op">=</span> <span class="st">"kw"</span>, fit <span class="op">=</span> <span class="st">"tmb"</span>,</span></span>
 <span class="r-in"><span>  optimizer.control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>eval.max <span class="op">=</span> <span class="fl">1000</span>, iter.max <span class="op">=</span> <span class="fl">600</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Check convergence</span></span></span>
-<span class="r-in"><span><span class="va">kw_fit2</span><span class="op">$</span><span class="va">convergence</span></span></span>
+<span class="r-in"><span><span class="co"># Check convergence status</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">kw_fit2</span><span class="op">$</span><span class="va">convergence</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example 9: Goodness-of-fit assessment</span></span></span>
 <span class="r-in"><span><span class="co"># Generate data from GKw distribution</span></span></span>
@@ -297,45 +361,50 @@ Journal of Statistical Computation and Simulation, 81(7), 883-898.</p>
 <span class="r-in"><span><span class="co"># Fit the model</span></span></span>
 <span class="r-in"><span><span class="va">gkw_fit2</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">gkw_data2</span>, family <span class="op">=</span> <span class="st">"gkw"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Check goodness-of-fit measures</span></span></span>
-<span class="r-in"><span><span class="va">gkw_fit2</span><span class="op">$</span><span class="va">gof</span></span></span>
+<span class="r-in"><span><span class="co"># Check goodness-of-fit statistics</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">$</span><span class="va">gof</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Perform a Kolmogorov-Smirnov test</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/ks.test.html" class="external-link">ks.test</a></span><span class="op">(</span><span class="va">gkw_data2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># Perform a Kolmogorov-Smirnov test against the fitted distribution</span></span></span>
+<span class="r-in"><span><span class="co"># Requires pgkw function and coef method</span></span></span>
+<span class="r-in"><span><span class="va">ks_result</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/ks.test.html" class="external-link">ks.test</a></span><span class="op">(</span><span class="va">gkw_data2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="pgkw.html">pgkw</a></span><span class="op">(</span><span class="va">x</span>,</span></span>
-<span class="r-in"><span>    alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>    beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>    gamma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>    delta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>    lambda <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="fl">5</span><span class="op">]</span></span></span>
+<span class="r-in"><span>    alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="st">"alpha"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>    beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="st">"beta"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>    gamma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="st">"gamma"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>    delta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="st">"delta"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>    lambda <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">gkw_fit2</span><span class="op">)</span><span class="op">[</span><span class="st">"lambda"</span><span class="op">]</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">ks_result</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## Example 10: Dealing with bounded data</span></span></span>
-<span class="r-in"><span><span class="co"># Transform data to (0,1) interval if needed</span></span></span>
+<span class="r-in"><span><span class="co">## Example 10: Dealing with data outside (0,1) via transformation</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">707</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">original_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, mean <span class="op">=</span> <span class="fl">10</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">original_data</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, mean <span class="op">=</span> <span class="fl">10</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Transform data to (0,1) interval</span></span></span>
-<span class="r-in"><span><span class="va">transformed_data</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">original_data</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span></span></span>
-<span class="r-in"><span>  <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Transform data to (0,1) interval (common practice)</span></span></span>
+<span class="r-in"><span><span class="co"># Add small epsilon to avoid exact 0 or 1 after transformation</span></span></span>
+<span class="r-in"><span><span class="va">epsilon</span> <span class="op">&lt;-</span> <span class="fl">1e-6</span></span></span>
+<span class="r-in"><span><span class="va">orig_min</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">orig_range</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span> <span class="op">-</span> <span class="va">orig_min</span></span></span>
+<span class="r-in"><span><span class="va">transformed_data</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">original_data</span> <span class="op">-</span> <span class="va">orig_min</span><span class="op">)</span> <span class="op">/</span> <span class="va">orig_range</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="fl">2</span> <span class="op">*</span> <span class="va">epsilon</span><span class="op">)</span> <span class="op">+</span> <span class="va">epsilon</span></span></span>
+<span class="r-in"><span><span class="va">transformed_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="va">epsilon</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">epsilon</span>, <span class="va">transformed_data</span><span class="op">)</span><span class="op">)</span> <span class="co"># Ensure bounds</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Fit a suitable model</span></span></span>
+<span class="r-in"><span><span class="co"># Fit a suitable model (e.g., GKw) to transformed data</span></span></span>
 <span class="r-in"><span><span class="va">trans_fit</span> <span class="op">&lt;-</span> <span class="fu">gkwfit</span><span class="op">(</span>data <span class="op">=</span> <span class="va">transformed_data</span>, family <span class="op">=</span> <span class="st">"gkw"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Back-transform results for prediction in original scale</span></span></span>
-<span class="r-in"><span><span class="co"># Example of predicting quantiles in original scale</span></span></span>
-<span class="r-in"><span><span class="va">orig_min</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">orig_max</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">original_data</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">quantiles</span> <span class="op">&lt;-</span> <span class="fu"><a href="qgkw.html">qgkw</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="co"># Example: Predict quantiles and back-transform to original scale</span></span></span>
+<span class="r-in"><span><span class="co"># Requires qgkw function and coef method</span></span></span>
+<span class="r-in"><span><span class="va">fitted_coefs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">trans_fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">quantiles_01</span> <span class="op">&lt;-</span> <span class="fu"><a href="qgkw.html">qgkw</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  p <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span>, <span class="fl">0.9</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">trans_fit</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>  beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">trans_fit</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>  gamma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">trans_fit</span><span class="op">)</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>  delta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">trans_fit</span><span class="op">)</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span>,</span></span>
-<span class="r-in"><span>  lambda <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">trans_fit</span><span class="op">)</span><span class="op">[</span><span class="fl">5</span><span class="op">]</span></span></span>
+<span class="r-in"><span>  alpha <span class="op">=</span> <span class="va">fitted_coefs</span><span class="op">[</span><span class="st">"alpha"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>  beta <span class="op">=</span> <span class="va">fitted_coefs</span><span class="op">[</span><span class="st">"beta"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>  gamma <span class="op">=</span> <span class="va">fitted_coefs</span><span class="op">[</span><span class="st">"gamma"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>  delta <span class="op">=</span> <span class="va">fitted_coefs</span><span class="op">[</span><span class="st">"delta"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>  lambda <span class="op">=</span> <span class="va">fitted_coefs</span><span class="op">[</span><span class="st">"lambda"</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">original_quantiles</span> <span class="op">&lt;-</span> <span class="va">quantiles</span> <span class="op">*</span> <span class="op">(</span><span class="va">orig_max</span> <span class="op">-</span> <span class="va">orig_min</span><span class="op">)</span> <span class="op">+</span> <span class="va">orig_min</span></span></span>
+<span class="r-in"><span><span class="co"># Back-transform quantiles</span></span></span>
+<span class="r-in"><span><span class="va">original_quantiles</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">quantiles_01</span> <span class="op">-</span> <span class="va">epsilon</span><span class="op">)</span> <span class="op">/</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="fl">2</span> <span class="op">*</span> <span class="va">epsilon</span><span class="op">)</span> <span class="op">*</span> <span class="va">orig_range</span> <span class="op">+</span> <span class="va">orig_min</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">original_quantiles</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

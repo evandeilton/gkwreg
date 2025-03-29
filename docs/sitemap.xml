@@ -6,10 +6,9 @@
 <url><loc>/index.html</loc></url>
 <url><loc>/reference/AIC.gkwfit.html</loc></url>
 <url><loc>/reference/AIC.gkwreg.html</loc></url>
-<url><loc>/reference/AIC.html</loc></url>
 <url><loc>/reference/BIC.gkwfit.html</loc></url>
 <url><loc>/reference/BIC.gkwreg.html</loc></url>
-<url><loc>/reference/BIC.html</loc></url>
+<url><loc>/reference/anova.gkwfit.html</loc></url>
 <url><loc>/reference/calculateCoxSnellResiduals.html</loc></url>
 <url><loc>/reference/calculateDensities.html</loc></url>
 <url><loc>/reference/calculateDevianceResiduals.html</loc></url>
@@ -24,8 +23,8 @@
 <url><loc>/reference/calculateResponseResiduals.html</loc></url>
 <url><loc>/reference/calculateScoreResiduals.html</loc></url>
 <url><loc>/reference/coef.gkwfit.html</loc></url>
+<url><loc>/reference/coef.gkwreg.html</loc></url>
 <url><loc>/reference/confint.gkwfit.html</loc></url>
-<url><loc>/reference/confint.gkwreg.html</loc></url>
 <url><loc>/reference/dbeta_.html</loc></url>
 <url><loc>/reference/dbkw.html</loc></url>
 <url><loc>/reference/dekw.html</loc></url>
@@ -110,7 +109,6 @@
 <url><loc>/reference/llmc.html</loc></url>
 <url><loc>/reference/logLik.gkwfit.html</loc></url>
 <url><loc>/reference/logLik.gkwreg.html</loc></url>
-<url><loc>/reference/logLik.html</loc></url>
 <url><loc>/reference/nrgkw.html</loc></url>
 <url><loc>/reference/pbeta_.html</loc></url>
 <url><loc>/reference/pbkw.html</loc></url>
@@ -124,8 +122,10 @@
 <url><loc>/reference/pmc.html</loc></url>
 <url><loc>/reference/predict.gkwfit.html</loc></url>
 <url><loc>/reference/predict.gkwreg.html</loc></url>
+<url><loc>/reference/print.anova.gkwfit.html</loc></url>
 <url><loc>/reference/print.gkwfit.html</loc></url>
 <url><loc>/reference/print.summary.gkwfit.html</loc></url>
+<url><loc>/reference/print.summary.gkwreg.html</loc></url>
 <url><loc>/reference/qbeta_.html</loc></url>
 <url><loc>/reference/qbkw.html</loc></url>
 <url><loc>/reference/qekw.html</loc></url>

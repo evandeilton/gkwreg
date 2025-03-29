@@ -77,7 +77,6 @@ print(model_comparison_bic)
 \references{
 Schwarz, G. (1978). Estimating the dimension of a model.
 \emph{The Annals of Statistics}, \strong{6}(2), 461-464.
-\doi{10.1214/aos/1176344136}
 }
 \seealso{
 \code{\link{gkwreg}}, \code{\link{logLik.gkwreg}}, \code{\link{AIC.gkwreg}},

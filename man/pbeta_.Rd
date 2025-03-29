@@ -109,7 +109,6 @@ Distributions, Volume 2} (2nd ed.). Wiley.
 
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
 distributions. \emph{Journal of Statistical Computation and Simulation},
-\emph{81}(7), 883-898. \doi{10.1080/00949655.2010.483753} (Introduces GKw)
 }
 \seealso{
 \code{\link[stats]{pbeta}} (standard R implementation),
