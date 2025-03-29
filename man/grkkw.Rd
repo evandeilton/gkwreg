@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{grkkw}
 \alias{grkkw}
-\title{Gradient of the Negative Log-Likelihood for the KwKw Distribution}
+\title{Gradient of the Negative Log-Likelihood for the kkw Distribution}
 \usage{
 grkkw(par, data)
 }
@@ -25,7 +25,7 @@ interval (0, 1).
 }
 \description{
 Computes the gradient vector (vector of first partial derivatives) of the
-negative log-likelihood function for the Kumaraswamy-Kumaraswamy (KwKw)
+negative log-likelihood function for the Kumaraswamy-Kumaraswamy (kkw)
 distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
 (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
 This distribution is the special case of the Generalized Kumaraswamy (GKw)
@@ -34,7 +34,7 @@ optimization algorithms for maximum likelihood estimation.
 }
 \details{
 The components of the gradient vector of the negative log-likelihood
-(\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the KwKw (\eqn{\gamma=1}) model are:
+(\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the kkw (\eqn{\gamma=1}) model are:
 
 \deqn{
 -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
@@ -69,7 +69,7 @@ Numerical stability is maintained through careful implementation.
 }
 \examples{
 \dontrun{
-# Assuming existence of rkkw, llkkw, grkkw, hskkw functions for KwKw
+# Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 
 # Generate sample data
 set.seed(123)
@@ -86,7 +86,7 @@ if (exists("rkkw")) {
 start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
 mle_result_kkw <- stats::optim(par = start_par_kkw,
                                fn = llkkw,
-                               gr = grkkw, # Use analytical gradient for KwKw
+                               gr = grkkw, # Use analytical gradient for kkw
                                method = "BFGS",
                                hessian = TRUE,
                                data = sample_data_kkw)
@@ -96,7 +96,7 @@ if (mle_result_kkw$convergence == 0 &&
     requireNamespace("numDeriv", quietly = TRUE)) {
 
   mle_par_kkw <- mle_result_kkw$par
-  cat("\nComparing Gradients for KwKw at MLE estimates:\n")
+  cat("\nComparing Gradients for kkw at MLE estimates:\n")
 
   # Numerical gradient of llkkw
   num_grad_kkw <- numDeriv::grad(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
@@ -104,17 +104,17 @@ if (mle_result_kkw$convergence == 0 &&
   # Analytical gradient from grkkw
   ana_grad_kkw <- grkkw(par = mle_par_kkw, data = sample_data_kkw)
 
-  cat("Numerical Gradient (KwKw):\n")
+  cat("Numerical Gradient (kkw):\n")
   print(num_grad_kkw)
-  cat("Analytical Gradient (KwKw):\n")
+  cat("Analytical Gradient (kkw):\n")
   print(ana_grad_kkw)
 
   # Check differences
-  cat("Max absolute difference between KwKw gradients:\n")
+  cat("Max absolute difference between kkw gradients:\n")
   print(max(abs(num_grad_kkw - ana_grad_kkw)))
 
 } else {
-  cat("\nSkipping KwKw gradient comparison.\n")
+  cat("\nSkipping kkw gradient comparison.\n")
 }
 
 # --- Optional: Compare with relevant components of GKw gradient ---
@@ -146,9 +146,9 @@ double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79
 }
 \seealso{
 \code{\link{grgkw}} (parent distribution gradient),
-\code{\link{llkkw}} (negative log-likelihood for KwKw),
-\code{\link{hskkw}} (Hessian for KwKw),
-\code{\link{dkwkw}} (density for KwKw),
+\code{\link{llkkw}} (negative log-likelihood for kkw),
+\code{\link{hskkw}} (Hessian for kkw),
+\code{\link{dkkw}} (density for kkw),
 \code{\link[stats]{optim}},
 \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 }

@@ -112,7 +112,6 @@ double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79
 \seealso{
 \code{\link{dgkw}} (parent distribution density),
 \code{\link{pbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}} (other BKw functions),
-\code{\link[stats]{dbeta}}, \code{\link[stats]{dkumar}} (if available)
 }
 \author{
 Lopes, J. E.

@@ -48,7 +48,7 @@ The Kw distribution is a special case of several generalized distributions:
 \itemize{
 \item Generalized Kumaraswamy (\code{\link{pgkw}}) with \eqn{\gamma=1, \delta=0, \lambda=1}.
 \item Exponentiated Kumaraswamy (\code{\link{pekw}}) with \eqn{\lambda=1}.
-\item Kumaraswamy-Kumaraswamy (\code{\link{pkwkw}}) with \eqn{\delta=0, \lambda=1}.
+\item Kumaraswamy-Kumaraswamy (\code{\link{pkkw}}) with \eqn{\delta=0, \lambda=1}.
 }
 The implementation uses the closed-form expression for efficiency.
 }
@@ -110,7 +110,7 @@ with some tractability advantages. \emph{Statistical Methodology}, \emph{6}(1), 
 \doi{10.1016/j.stamet.2008.04.001}
 }
 \seealso{
-\code{\link{pgkw}}, \code{\link{pekw}}, \code{\link{pkwkw}} (related generalized CDFs),
+\code{\link{pgkw}}, \code{\link{pekw}}, \code{\link{pkkw}} (related generalized CDFs),
 \code{\link{dkw}}, \code{\link{qkw}}, \code{\link{rkw}} (other Kw functions),
 \code{\link[stats]{pbeta}}
 }

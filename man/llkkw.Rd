@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{llkkw}
 \alias{llkkw}
-\title{Negative Log-Likelihood for the KwKw Distribution}
+\title{Negative Log-Likelihood for the kkw Distribution}
 \usage{
 llkkw(par, data)
 }
@@ -22,13 +22,13 @@ constraints, or if any value in \code{data} is not in the interval (0, 1).
 }
 \description{
 Computes the negative log-likelihood function for the Kumaraswamy-Kumaraswamy
-(KwKw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(kkw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
 (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}),
 given a vector of observations. This distribution is a special case of the
 Generalized Kumaraswamy (GKw) distribution where \eqn{\gamma = 1}.
 }
 \details{
-The KwKw distribution is the GKw distribution (\code{\link{dgkw}}) with \eqn{\gamma=1}.
+The kkw distribution is the GKw distribution (\code{\link{dgkw}}) with \eqn{\gamma=1}.
 Its probability density function (PDF) is:
 \deqn{
 f(x | \theta) = (\delta + 1) \lambda \alpha \beta x^{\alpha - 1} (1 - x^\alpha)^{\beta - 1} \bigl[1 - (1 - x^\alpha)^\beta\bigr]^{\lambda - 1} \bigl\{1 - \bigl[1 - (1 - x^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta}
@@ -52,9 +52,9 @@ Numerical stability is maintained similarly to \code{\link{llgkw}}.
 }
 \examples{
 \dontrun{
-# Assuming existence of rkkw, grkkw, hskkw functions for KwKw distribution
+# Assuming existence of rkkw, grkkw, hskkw functions for kkw distribution
 
-# Generate sample data from a known KwKw distribution
+# Generate sample data from a known kkw distribution
 set.seed(123)
 true_par_kkw <- c(alpha = 2, beta = 3, delta = 1.5, lambda = 0.5)
 # Use rkkw if it exists, otherwise use rgkw with gamma=1
@@ -65,7 +65,7 @@ if (exists("rkkw")) {
   sample_data_kkw <- rgkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
                          gamma = 1, delta = true_par_kkw[3], lambda = true_par_kkw[4])
 }
-hist(sample_data_kkw, breaks = 20, main = "KwKw(2, 3, 1.5, 0.5) Sample")
+hist(sample_data_kkw, breaks = 20, main = "kkw(2, 3, 1.5, 0.5) Sample")
 
 # --- Maximum Likelihood Estimation using optim ---
 # Initial parameter guess
@@ -73,7 +73,7 @@ start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
 
 # Perform optimization (minimizing negative log-likelihood)
 mle_result_kkw <- stats::optim(par = start_par_kkw,
-                               fn = llkkw, # Use the KwKw neg-log-likelihood
+                               fn = llkkw, # Use the kkw neg-log-likelihood
                                method = "BFGS",
                                hessian = TRUE,
                                data = sample_data_kkw)
@@ -82,9 +82,9 @@ mle_result_kkw <- stats::optim(par = start_par_kkw,
 if (mle_result_kkw$convergence == 0) {
   print("Optimization converged successfully.")
   mle_par_kkw <- mle_result_kkw$par
-  print("Estimated KwKw parameters:")
+  print("Estimated kkw parameters:")
   print(mle_par_kkw)
-  print("True KwKw parameters:")
+  print("True kkw parameters:")
   print(true_par_kkw)
 } else {
   warning("Optimization did not converge!")
@@ -97,7 +97,7 @@ if (mle_result_kkw$convergence == 0 &&
     requireNamespace("numDeriv", quietly = TRUE) &&
     exists("grkkw") && exists("hskkw")) {
 
-  cat("\nComparing Derivatives at KwKw MLE estimates:\n")
+  cat("\nComparing Derivatives at kkw MLE estimates:\n")
 
   # Numerical derivatives of llkkw
   num_grad_kkw <- numDeriv::grad(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
@@ -114,7 +114,7 @@ if (mle_result_kkw$convergence == 0 &&
   print(max(abs(num_hess_kkw - ana_hess_kkw)))
 
 } else {
-   cat("\nSkipping derivative comparison for KwKw.\n")
+   cat("\nSkipping derivative comparison for kkw.\n")
    cat("Requires convergence, 'numDeriv' package and functions 'grkkw', 'hskkw'.\n")
 }
 
@@ -132,7 +132,7 @@ double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79
 }
 \seealso{
 \code{\link{llgkw}} (parent distribution negative log-likelihood),
-\code{\link{dkwkw}}, \code{\link{pkwkw}}, \code{\link{qkwkw}}, \code{\link{rkkw}},
+\code{\link{dkkw}}, \code{\link{pkkw}}, \code{\link{qkkw}}, \code{\link{rkkw}},
 \code{\link{grkkw}} (gradient, if available),
 \code{\link{hskkw}} (Hessian, if available),
 \code{\link[stats]{optim}}

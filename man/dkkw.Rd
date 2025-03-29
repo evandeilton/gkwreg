@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{dkkw}
 \alias{dkkw}
-\title{Density of the Kumaraswamy-Kumaraswamy (KwKw) Distribution}
+\title{Density of the Kumaraswamy-Kumaraswamy (kkw) Distribution}
 \usage{
 dkkw(x, alpha, beta, delta, lambda, log_prob = FALSE)
 }
@@ -35,12 +35,12 @@ rule applied to the arguments (\code{x}, \code{alpha}, \code{beta},
 }
 \description{
 Computes the probability density function (PDF) for the Kumaraswamy-Kumaraswamy
-(KwKw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(kkw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
 (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
 This distribution is defined on the interval (0, 1).
 }
 \details{
-The Kumaraswamy-Kumaraswamy (KwKw) distribution is a special case of the
+The Kumaraswamy-Kumaraswamy (kkw) distribution is a special case of the
 five-parameter Generalized Kumaraswamy distribution (\code{\link{dgkw}})
 obtained by setting the parameter \eqn{\gamma = 1}.
 
@@ -63,11 +63,11 @@ delta_par <- 0.5
 lambda_par <- 1.5
 
 # Calculate density
-densities <- dkwkw(x_vals, alpha_par, beta_par, delta_par, lambda_par)
+densities <- dkkw(x_vals, alpha_par, beta_par, delta_par, lambda_par)
 print(densities)
 
 # Calculate log-density
-log_densities <- dkwkw(x_vals, alpha_par, beta_par, delta_par, lambda_par,
+log_densities <- dkkw(x_vals, alpha_par, beta_par, delta_par, lambda_par,
                        log_prob = TRUE)
 print(log_densities)
 # Check: should match log(densities)
@@ -80,13 +80,13 @@ print(paste("Max difference:", max(abs(densities - densities_gkw)))) # Should be
 
 # Plot the density
 curve_x <- seq(0.01, 0.99, length.out = 200)
-curve_y <- dkwkw(curve_x, alpha_par, beta_par, delta_par, lambda_par)
-plot(curve_x, curve_y, type = "l", main = "KwKw Density Example",
+curve_y <- dkkw(curve_x, alpha_par, beta_par, delta_par, lambda_par)
+plot(curve_x, curve_y, type = "l", main = "kkw Density Example",
      xlab = "x", ylab = "f(x)", col = "blue")
 
 # Vectorized parameters
 alphas_vec <- c(1.5, 2.0, 2.5)
-densities_vec <- dkwkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
+densities_vec <- dkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
 print(densities_vec) # Density at x=0.5 for 3 different alpha values
 
 } # End of \dontrun block
@@ -103,7 +103,7 @@ double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79
 }
 \seealso{
 \code{\link{dgkw}} (parent distribution density),
-\code{\link{pkwkw}}, \code{\link{qkwkw}}, \code{\link{rkwkw}} (if they exist),
+\code{\link{pkkw}}, \code{\link{qkkw}}, \code{\link{rkkw}} (if they exist),
 \code{\link[stats]{dbeta}}
 }
 \author{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{pkkw}
 \alias{pkkw}
-\title{Cumulative Distribution Function (CDF) of the KwKw Distribution}
+\title{Cumulative Distribution Function (CDF) of the kkw Distribution}
 \usage{
 pkkw(q, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 }
@@ -38,13 +38,13 @@ for invalid parameters.
 }
 \description{
 Computes the cumulative distribution function (CDF), \eqn{P(X \le q)}, for the
-Kumaraswamy-Kumaraswamy (KwKw) distribution with parameters \code{alpha}
+Kumaraswamy-Kumaraswamy (kkw) distribution with parameters \code{alpha}
 (\eqn{\alpha}), \code{beta} (\eqn{\beta}), \code{delta} (\eqn{\delta}),
 and \code{lambda} (\eqn{\lambda}). This distribution is defined on the
 interval (0, 1).
 }
 \details{
-The Kumaraswamy-Kumaraswamy (KwKw) distribution is a special case of the
+The Kumaraswamy-Kumaraswamy (kkw) distribution is a special case of the
 five-parameter Generalized Kumaraswamy distribution (\code{\link{pgkw}})
 obtained by setting the shape parameter \eqn{\gamma = 1}.
 
@@ -52,7 +52,7 @@ The CDF of the GKw distribution is \eqn{F_{GKw}(q) = I_{y(q)}(\gamma, \delta+1)}
 where \eqn{y(q) = [1-(1-q^{\alpha})^{\beta}]^{\lambda}} and \eqn{I_x(a,b)}
 is the regularized incomplete beta function (\code{\link[stats]{pbeta}}).
 Setting \eqn{\gamma=1} utilizes the property \eqn{I_x(1, b) = 1 - (1-x)^b},
-yielding the KwKw CDF:
+yielding the kkw CDF:
 \deqn{
 F(q; \alpha, \beta, \delta, \lambda) = 1 - \bigl\{1 - \bigl[1 - (1 - q^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta + 1}
 }
@@ -71,18 +71,18 @@ delta_par <- 0.5
 lambda_par <- 1.5
 
 # Calculate CDF P(X <= q)
-probs <- pkwkw(q_vals, alpha_par, beta_par, delta_par, lambda_par)
+probs <- pkkw(q_vals, alpha_par, beta_par, delta_par, lambda_par)
 print(probs)
 
 # Calculate upper tail P(X > q)
-probs_upper <- pkwkw(q_vals, alpha_par, beta_par, delta_par, lambda_par,
+probs_upper <- pkkw(q_vals, alpha_par, beta_par, delta_par, lambda_par,
                      lower_tail = FALSE)
 print(probs_upper)
 # Check: probs + probs_upper should be 1
 print(probs + probs_upper)
 
 # Calculate log CDF
-log_probs <- pkwkw(q_vals, alpha_par, beta_par, delta_par, lambda_par,
+log_probs <- pkkw(q_vals, alpha_par, beta_par, delta_par, lambda_par,
                    log_p = TRUE)
 print(log_probs)
 # Check: should match log(probs)
@@ -95,13 +95,13 @@ print(paste("Max difference:", max(abs(probs - probs_gkw)))) # Should be near ze
 
 # Plot the CDF
 curve_q <- seq(0.01, 0.99, length.out = 200)
-curve_p <- pkwkw(curve_q, alpha_par, beta_par, delta_par, lambda_par)
-plot(curve_q, curve_p, type = "l", main = "KwKw CDF Example",
+curve_p <- pkkw(curve_q, alpha_par, beta_par, delta_par, lambda_par)
+plot(curve_q, curve_p, type = "l", main = "kkw CDF Example",
      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
 
 # Vectorized parameters
 alphas_vec <- c(1.5, 2.0, 2.5)
-probs_vec <- pkwkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
+probs_vec <- pkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
 print(probs_vec) # CDF at q=0.5 for 3 different alpha values
 
 } # End of \dontrun block
@@ -118,7 +118,7 @@ double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79
 }
 \seealso{
 \code{\link{pgkw}} (parent distribution CDF),
-\code{\link{dkwkw}}, \code{\link{qkwkw}}, \code{\link{rkwkw}},
+\code{\link{dkkw}}, \code{\link{qkkw}}, \code{\link{rkkw}},
 \code{\link[stats]{pbeta}}
 }
 \author{

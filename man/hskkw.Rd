@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{hskkw}
 \alias{hskkw}
-\title{Hessian Matrix of the Negative Log-Likelihood for the KwKw Distribution}
+\title{Hessian Matrix of the Negative Log-Likelihood for the kkw Distribution}
 \usage{
 hskkw(par, data)
 }
@@ -24,7 +24,7 @@ not in the interval (0, 1).
 }
 \description{
 Computes the analytic 4x4 Hessian matrix (matrix of second partial derivatives)
-of the negative log-likelihood function for the Kumaraswamy-Kumaraswamy (KwKw)
+of the negative log-likelihood function for the Kumaraswamy-Kumaraswamy (kkw)
 distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
 (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
 This distribution is the special case of the Generalized Kumaraswamy (GKw)
@@ -33,7 +33,7 @@ standard errors and in optimization algorithms.
 }
 \details{
 This function calculates the analytic second partial derivatives of the
-negative log-likelihood function based on the KwKw log-likelihood
+negative log-likelihood function based on the kkw log-likelihood
 (\eqn{\gamma=1} case of GKw, see \code{\link{llkkw}}):
 \deqn{
 \ell(\theta | \mathbf{x}) = n[\ln(\delta+1) + \ln(\lambda) + \ln(\alpha) + \ln(\beta)]
@@ -61,7 +61,7 @@ evaluated at \eqn{\gamma=1}. The exact analytical formulas are implemented direc
 }
 \examples{
 \dontrun{
-# Assuming existence of rkkw, llkkw, grkkw, hskkw functions for KwKw
+# Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 
 # Generate sample data
 set.seed(123)
@@ -89,7 +89,7 @@ if (mle_result_kkw$convergence == 0 &&
     exists("hskkw")) {
 
   mle_par_kkw <- mle_result_kkw$par
-  cat("\nComparing Hessians for KwKw at MLE estimates:\n")
+  cat("\nComparing Hessians for kkw at MLE estimates:\n")
 
   # Numerical Hessian of llkkw
   num_hess_kkw <- numDeriv::hessian(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
@@ -97,27 +97,27 @@ if (mle_result_kkw$convergence == 0 &&
   # Analytical Hessian from hskkw
   ana_hess_kkw <- hskkw(par = mle_par_kkw, data = sample_data_kkw)
 
-  cat("Numerical Hessian (KwKw):\n")
+  cat("Numerical Hessian (kkw):\n")
   print(round(num_hess_kkw, 4))
-  cat("Analytical Hessian (KwKw):\n")
+  cat("Analytical Hessian (kkw):\n")
   print(round(ana_hess_kkw, 4))
 
   # Check differences
-  cat("Max absolute difference between KwKw Hessians:\n")
+  cat("Max absolute difference between kkw Hessians:\n")
   print(max(abs(num_hess_kkw - ana_hess_kkw)))
 
   # Optional: Use analytical Hessian for Standard Errors
   # tryCatch({
   #   cov_matrix_kkw <- solve(ana_hess_kkw)
   #   std_errors_kkw <- sqrt(diag(cov_matrix_kkw))
-  #   cat("Std. Errors from Analytical KwKw Hessian:\n")
+  #   cat("Std. Errors from Analytical kkw Hessian:\n")
   #   print(std_errors_kkw)
   # }, error = function(e) {
-  #   warning("Could not invert analytical KwKw Hessian: ", e$message)
+  #   warning("Could not invert analytical kkw Hessian: ", e$message)
   # })
 
 } else {
-  cat("\nSkipping KwKw Hessian comparison.\n")
+  cat("\nSkipping kkw Hessian comparison.\n")
   cat("Requires convergence, 'numDeriv' package, and function 'hskkw'.\n")
 }
 
@@ -136,9 +136,9 @@ double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79
 }
 \seealso{
 \code{\link{hsgkw}} (parent distribution Hessian),
-\code{\link{llkkw}} (negative log-likelihood for KwKw),
-\code{\link{grkkw}} (gradient for KwKw),
-\code{\link{dkwkw}} (density for KwKw),
+\code{\link{llkkw}} (negative log-likelihood for kkw),
+\code{\link{grkkw}} (gradient for kkw),
+\code{\link{dkkw}} (density for kkw),
 \code{\link[stats]{optim}},
 \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 }

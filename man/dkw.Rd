@@ -43,7 +43,7 @@ The Kumaraswamy distribution is identical to the Generalized Kumaraswamy (GKw)
 distribution (\code{\link{dgkw}}) with parameters \eqn{\gamma = 1},
 \eqn{\delta = 0}, and \eqn{\lambda = 1}. It is also a special case of the
 Exponentiated Kumaraswamy (\code{\link{dekw}}) with \eqn{\lambda = 1}, and
-the Kumaraswamy-Kumaraswamy (\code{\link{dkwkw}}) with \eqn{\delta = 0}
+the Kumaraswamy-Kumaraswamy (\code{\link{dkkw}}) with \eqn{\delta = 0}
 and \eqn{\lambda = 1}.
 }
 \examples{
@@ -99,7 +99,7 @@ with some tractability advantages. \emph{Statistical Methodology}, \emph{6}(1), 
 }
 \seealso{
 \code{\link{dgkw}} (parent distribution density),
-\code{\link{dekw}}, \code{\link{dkwkw}},
+\code{\link{dekw}}, \code{\link{dkkw}},
 \code{\link{pkw}}, \code{\link{qkw}}, \code{\link{rkw}} (other Kw functions),
 \code{\link[stats]{dbeta}}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{qkkw}
 \alias{qkkw}
-\title{Quantile Function of the Kumaraswamy-Kumaraswamy (KwKw) Distribution}
+\title{Quantile Function of the Kumaraswamy-Kumaraswamy (kkw) Distribution}
 \usage{
 qkkw(p, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 }
@@ -45,7 +45,7 @@ Boundary return values are adjusted accordingly for \code{lower_tail = FALSE}.
 }
 \description{
 Computes the quantile function (inverse CDF) for the Kumaraswamy-Kumaraswamy
-(KwKw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+(kkw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
 (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
 It finds the value \code{q} such that \eqn{P(X \le q) = p}. This distribution
 is a special case of the Generalized Kumaraswamy (GKw) distribution where
@@ -53,7 +53,7 @@ the parameter \eqn{\gamma = 1}.
 }
 \details{
 The quantile function \eqn{Q(p)} is the inverse of the CDF \eqn{F(q)}. The CDF
-for the KwKw (\eqn{\gamma=1}) distribution is (see \code{\link{pkwkw}}):
+for the kkw (\eqn{\gamma=1}) distribution is (see \code{\link{pkkw}}):
 \deqn{
 F(q) = 1 - \bigl\{1 - \bigl[1 - (1 - q^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta + 1}
 }
@@ -75,20 +75,20 @@ delta_par <- 0.5
 lambda_par <- 1.5
 
 # Calculate quantiles
-quantiles <- qkwkw(p_vals, alpha_par, beta_par, delta_par, lambda_par)
+quantiles <- qkkw(p_vals, alpha_par, beta_par, delta_par, lambda_par)
 print(quantiles)
 
 # Calculate quantiles for upper tail probabilities P(X > q) = p
 # e.g., for p=0.1, find q such that P(X > q) = 0.1 (90th percentile)
-quantiles_upper <- qkwkw(p_vals, alpha_par, beta_par, delta_par, lambda_par,
+quantiles_upper <- qkkw(p_vals, alpha_par, beta_par, delta_par, lambda_par,
                          lower_tail = FALSE)
 print(quantiles_upper)
-# Check: qkwkw(p, ..., lt=F) == qkwkw(1-p, ..., lt=T)
-print(qkwkw(1 - p_vals, alpha_par, beta_par, delta_par, lambda_par))
+# Check: qkkw(p, ..., lt=F) == qkkw(1-p, ..., lt=T)
+print(qkkw(1 - p_vals, alpha_par, beta_par, delta_par, lambda_par))
 
 # Calculate quantiles from log probabilities
 log_p_vals <- log(p_vals)
-quantiles_logp <- qkwkw(log_p_vals, alpha_par, beta_par, delta_par, lambda_par,
+quantiles_logp <- qkkw(log_p_vals, alpha_par, beta_par, delta_par, lambda_par,
                         log_p = TRUE)
 print(quantiles_logp)
 # Check: should match original quantiles
@@ -99,16 +99,16 @@ quantiles_gkw <- qgkw(p_vals, alpha_par, beta_par, gamma = 1.0,
                       delta_par, lambda_par)
 print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be near zero
 
-# Verify inverse relationship with pkwkw
+# Verify inverse relationship with pkkw
 p_check <- 0.75
-q_calc <- qkwkw(p_check, alpha_par, beta_par, delta_par, lambda_par)
-p_recalc <- pkwkw(q_calc, alpha_par, beta_par, delta_par, lambda_par)
+q_calc <- qkkw(p_check, alpha_par, beta_par, delta_par, lambda_par)
+p_recalc <- pkkw(q_calc, alpha_par, beta_par, delta_par, lambda_par)
 print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
 
 # Boundary conditions
-print(qkwkw(c(0, 1), alpha_par, beta_par, delta_par, lambda_par)) # Should be 0, 1
-print(qkwkw(c(-Inf, 0), alpha_par, beta_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
+print(qkkw(c(0, 1), alpha_par, beta_par, delta_par, lambda_par)) # Should be 0, 1
+print(qkkw(c(-Inf, 0), alpha_par, beta_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
 
 } # End of \dontrun block
 
@@ -124,7 +124,7 @@ double-bounded random processes. \emph{Journal of Hydrology}, \emph{46}(1-2), 79
 }
 \seealso{
 \code{\link{qgkw}} (parent distribution quantile function),
-\code{\link{dkwkw}}, \code{\link{pkwkw}}, \code{\link{rkwkw}},
+\code{\link{dkkw}}, \code{\link{pkkw}}, \code{\link{rkkw}},
 \code{\link[stats]{qbeta}}
 }
 \author{
