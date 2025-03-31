@@ -13,6 +13,97 @@ gkwgetstartvalues <- function(x, n_starts = 5L) {
     .Call(`_gkwreg_gkwgetstartvalues`, x, n_starts)
 }
 
+#' @title Generate Regularized Positive Definite Approximation of a Hessian
+#' @description Creates a positive definite approximation of a Hessian matrix
+#' using eigendecomposition and selective eigenvalue adjustment with enhanced
+#' numerical stability.
+#'
+#' @param H Input Hessian matrix (arma::mat)
+#' @param min_eigenval Minimum eigenvalue threshold (default: 1e-6)
+#' @return Positive definite approximation of H
+#' @noRd
+NULL
+
+#' @title Calculate Numerical Hessian with Advanced Adaptive Step Size
+#' @description Computes a robust numerical approximation of the Hessian matrix
+#' using adaptive finite difference methods with cross-validation.
+#'
+#' @param params Parameter vector
+#' @param data Data vector
+#' @param ll_func Log-likelihood function
+#' @param gr_func Gradient function (used for validation)
+#' @param min_step Minimum step size (default: 1e-8)
+#' @param base_step Base step size (default: 1e-5)
+#' @return Numerical approximation of the Hessian matrix
+#' @noRd
+NULL
+
+#' @title Calculate Adaptive Parameter Scaling Factors
+#' @description Computes intelligent scaling factors for parameters to improve
+#' numerical stability in optimization, with automatic detection of parameter
+#' patterns and adaptive thresholds.
+#'
+#' @param params Parameter vector
+#' @return Vector of scaling factors
+#' @noRd
+NULL
+
+#' @title Enhanced Line Search with Wolfe Conditions
+#' @description Performs a robust line search that satisfies Wolfe conditions to
+#' ensure sufficient decrease and curvature conditions, with improved numerical
+#' stability and adaptive bracketing strategies.
+#'
+#' @param params Current parameter vector
+#' @param search_dir Search direction
+#' @param data Data vector
+#' @param ll_func Log-likelihood function
+#' @param gr_func Gradient function
+#' @param alpha_init Initial step size (default: 1.0)
+#' @param c1 Parameter for sufficient decrease condition (default: 1e-4)
+#' @param c2 Parameter for curvature condition (default: 0.9)
+#' @param max_iter Maximum line search iterations (default: 20)
+#' @return Step size satisfying Wolfe conditions
+#' @noRd
+NULL
+
+#' @title Force Matrix Symmetry
+#' @description Ensures perfect matrix symmetry for numerical stability
+#' @param M Input matrix to symmetrize
+#' @return Symmetrized matrix
+#' @noRd
+NULL
+
+#' @title Enhanced Trust Region Update Using Levenberg-Marquardt
+#' @description Performs robust parameter updates using an advanced trust region method
+#' with Levenberg-Marquardt implementation, incorporating numerical safeguards and
+#' adaptive strategies for improved convergence.
+#'
+#' @param params Current parameter vector
+#' @param data Data vector
+#' @param ll_func Log-likelihood function
+#' @param gr_func Gradient function
+#' @param hs_func Hessian function
+#' @param trust_radius Current trust region radius (default: 1.0)
+#' @param eta Acceptance threshold for step ratio (default: 0.1)
+#' @param enforce_bounds Whether to enforce parameter bounds (default: true)
+#' @param min_param_val Minimum parameter value (default: 1e-5)
+#' @param max_param_val Maximum parameter value (default: 1e5)
+#' @return List containing new parameters and trust region information
+#' @noRd
+NULL
+
+#' @title Advanced Initialization for GKw Family Parameters
+#' @description Generates intelligent initial parameter estimates for GKw
+#' family distributions based on theoretical moment relationships and
+#' distribution properties from Carrasco et al. (2010).
+#'
+#' @param data Data vector in (0,1)
+#' @param family Distribution family (default: "gkw")
+#' @param robust Logical; if TRUE, uses robust statistics for initialization (default: TRUE)
+#' @return Vector of initial parameter estimates
+#' @noRd
+NULL
+
 #' @title Density of the Generalized Kumaraswamy Distribution
 #' @author Lopes, J. E.
 #' @keywords distribution density
@@ -6068,52 +6159,253 @@ hsbeta <- function(par, data) {
     .Call(`_gkwreg_hsbeta`, par, data)
 }
 
-#' @title Newton-Raphson Optimization for GKw Family Distributions (nrgkw)
-#' @author Lopes, J. E.
+#' @title Enhanced Newton-Raphson Optimization for GKw Family Distributions (nrgkw_v2)
+#' @author Enhanced by Lopes, J. E.
 #' @keywords distribution optimization likelihood mle newton-raphson kumaraswamy mcdonald beta
 #'
 #' @description
-#' Performs maximum likelihood estimation (MLE) for the parameters of any
-#' distribution in the Generalized Kumaraswamy (GKw) family using a robust
-#' implementation of the Newton-Raphson algorithm (`nrgkw`). This function
-#' supports all 7 nested submodels, optimizing the corresponding negative
-#' log-likelihood function using analytical gradients and Hessians.
+#' An industrial-strength implementation of maximum likelihood estimation (MLE)
+#' for the parameters of any distribution in the Generalized Kumaraswamy (GKw) family.
+#' This function incorporates multiple advanced numerical techniques including trust region
+#' methods, eigenvalue-based regularization, adaptive scaling, and sophisticated line
+#' search to ensure robust convergence even for challenging datasets or extreme parameter values.
 #'
 #' @details
-#' The Generalized Kumaraswamy family includes the following distributions,
-#' all defined on the interval (0, 1):
+#' This enhanced algorithm provides robust parameter estimation for the Generalized
+#' Kumaraswamy distribution and its subfamilies. The function implements several
+#' advanced numerical optimization techniques to maximize the likelihood function
+#' reliably even in difficult cases.
+#'
+#' \subsection{The GKw Family of Distributions}{
+#' The Generalized Kumaraswamy (GKw) distribution, introduced by Carrasco, Ferrari,
+#' and Cordeiro (2010), is a flexible five-parameter continuous distribution defined
+#' on the standard unit interval (0,1). Its probability density function is given by:
+#'
+#' \deqn{f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda\alpha\beta x^{\alpha-1}}{B(\gamma, \delta+1)}(1-x^{\alpha})^{\beta-1}[1-(1-x^{\alpha})^{\beta}]^{\gamma\lambda-1}\{1-[1-(1-x^{\alpha})^{\beta}]^{\lambda}\}^{\delta}}
+#'
+#' where \eqn{\alpha, \beta, \gamma, \lambda > 0} and \eqn{\delta \geq 0} are the model
+#' parameters, and \eqn{B(\gamma, \delta+1)} is the beta function.
+#'
+#' The GKw distribution encompasses several important special cases:
 #' \itemize{
-#'   \item{\bold{GKw} (Generalized Kumaraswamy): 5 parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda})}
-#'   \item{\bold{BKw} (Beta-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \gamma, \delta}), GKw with \eqn{\lambda = 1}}
-#'   \item{\bold{KwKw} (Kumaraswamy-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \delta, \lambda}), GKw with \eqn{\gamma = 1}}
-#'   \item{\bold{EKw} (Exponentiated Kumaraswamy): 3 parameters (\eqn{\alpha, \beta, \lambda}), GKw with \eqn{\gamma = 1, \delta = 0}}
-#'   \item{\bold{Mc} (McDonald/Beta Power): 3 parameters (\eqn{\gamma, \delta, \lambda}), GKw with \eqn{\alpha = 1, \beta = 1}}
-#'   \item{\bold{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha, \beta}), GKw with \eqn{\gamma = 1, \delta = 0, \lambda = 1}}
-#'   \item{\bold{Beta}: 2 parameters (\eqn{\gamma, \delta}), GKw with \eqn{\alpha = 1, \beta = 1, \lambda = 1}. Corresponds to standard Beta(\eqn{\gamma, \delta+1}).}
+#'   \item\bold{GKw} (5 parameters): \eqn{\alpha, \beta, \gamma, \delta, \lambda}
+#'   \item\bold{BKw} (4 parameters): \eqn{\alpha, \beta, \gamma, \delta} (with \eqn{\lambda = 1})
+#'   \item\bold{KKw} (4 parameters): \eqn{\alpha, \beta, \delta, \lambda} (with \eqn{\gamma = 1})
+#'   \item\bold{EKw} (3 parameters): \eqn{\alpha, \beta, \lambda} (with \eqn{\gamma = 1, \delta = 0})
+#'   \item\bold{Mc}  (3 parameters): \eqn{\gamma, \delta, \lambda} (with \eqn{\alpha = 1, \beta = 1})
+#'   \item\bold{Kw}  (2 parameters): \eqn{\alpha, \beta} (with \eqn{\gamma = 1, \delta = 0, \lambda = 1})
+#'   \item\bold{Beta}(2 parameters): \eqn{\gamma, \delta} (with \eqn{\alpha = 1, \beta = 1, \lambda = 1})
+#' }
 #' }
 #'
-#' The `nrgkw` function implements a Newton-Raphson optimization procedure to
-#' find the maximum likelihood estimates. It incorporates multiple fallback strategies
-#' to handle numerical challenges when updating parameters using the Hessian matrix:
-#' \enumerate{
-#'  \item Cholesky decomposition (fastest, requires positive-definite Hessian)
-#'  \item Standard matrix solver (e.g., LU decomposition)
-#'  \item Regularized Hessian (adding small values to the diagonal)
-#'  \item Moore-Penrose Pseudo-inverse (for singular or ill-conditioned Hessians)
-#'  \item Gradient descent (if Hessian steps fail repeatedly or `use_hessian=FALSE`)
+#' \subsection{Trust Region Method with Levenberg-Marquardt Algorithm}{
+#' The trust region approach restricts parameter updates to a region where the quadratic
+#' approximation of the objective function is trusted to be accurate. This algorithm
+#' implements the Levenberg-Marquardt variant, which solves the subproblem:
+#'
+#' \deqn{\min_p m_k(p) = -\nabla \ell(\theta_k)^T p + \frac{1}{2}p^T H_k p}
+#' \deqn{\text{subject to } \|p\| \leq \Delta_k}
+#'
+#' where \eqn{\nabla \ell(\theta_k)} is the gradient, \eqn{H_k} is the Hessian, and \eqn{\Delta_k}
+#' is the trust region radius at iteration \eqn{k}.
+#'
+#' The Levenberg-Marquardt approach adds a regularization parameter \eqn{\lambda} to the
+#' Hessian, solving:
+#'
+#' \deqn{(H_k + \lambda I)p = -\nabla \ell(\theta_k)}
+#'
+#' The parameter \eqn{\lambda} controls the step size and direction:
+#' \itemize{
+#'   \item When \eqn{\lambda} is large, the step approaches a scaled steepest descent direction.
+#'   \item When \eqn{\lambda} is small, the step approaches the Newton direction.
 #' }
 #'
-#' The function also implements a backtracking line search algorithm to ensure
-#' monotonic improvement (decrease) in the negative log-likelihood at each step.
-#' If backtracking fails consistently, random parameter perturbation may be
-#' employed as a recovery strategy. Parameter bounds (\code{min_param_val},
-#' \code{max_param_val}, and \eqn{\delta \ge 0}) can be enforced if
-#' \code{enforce_bounds = TRUE}.
+#' The algorithm dynamically adjusts \eqn{\lambda} based on the agreement between the quadratic model and the actual function:
+#'
+#' \deqn{\rho_k = \frac{f(\theta_k) - f(\theta_k + p_k)}{m_k(0) - m_k(p_k)}}
+#'
+#' The trust region radius is updated according to:
+#' \itemize{
+#'   \item If \eqn{\rho_k < 0.25}, reduce the radius: \eqn{\Delta_{k+1} = 0.5\Delta_k}
+#'   \item If \eqn{\rho_k > 0.75} and \eqn{\|p_k\| \approx \Delta_k}, increase the radius: \eqn{\Delta_{k+1} = 2\Delta_k}
+#'   \item Otherwise, leave the radius unchanged: \eqn{\Delta_{k+1} = \Delta_k}
+#' }
+#'
+#' The step is accepted if \eqn{\rho_k > \eta} (typically \eqn{\eta = 0.1}).
+#' }
+#'
+#' \subsection{Eigenvalue-Based Hessian Regularization}{
+#' For the Newton-Raphson method to converge, the Hessian matrix must be positive definite.
+#' This algorithm uses eigendecomposition to create a positive definite approximation that
+#' preserves the Hessian's structure:
+#'
+#' \deqn{H = Q\Lambda Q^T}
+#'
+#' where \eqn{Q} contains the eigenvectors and \eqn{\Lambda} is a diagonal matrix of eigenvalues.
+#'
+#' The regularized Hessian is constructed by:
+#'
+#' \deqn{\tilde{H} = Q\tilde{\Lambda}Q^T}
+#'
+#' where \eqn{\tilde{\Lambda}} contains modified eigenvalues:
+#'
+#' \deqn{\tilde{\lambda}_i = \max(\lambda_i, \epsilon)}
+#'
+#' with \eqn{\epsilon} being a small positive threshold (typically \eqn{10^{-6}}).
+#'
+#' This approach is superior to diagonal loading (\eqn{H + \lambda I}) as it:
+#' \itemize{
+#'   \item Preserves the eigenvector structure of the original Hessian
+#'   \item Minimally modifies the eigenvalues needed to ensure positive definiteness
+#'   \item Better maintains the directional information in the Hessian
+#' }
+#' }
+#'
+#' \subsection{Parameter Scaling for Numerical Stability}{
+#' When parameters have widely different magnitudes, optimization can become numerically
+#' unstable. The adaptive scaling system transforms the parameter space to improve conditioning:
+#'
+#' \deqn{\theta_i^{scaled} = s_i \theta_i}
+#'
+#' where scaling factors \eqn{s_i} are determined by:
+#' \itemize{
+#'   \item For large parameters (\eqn{|\theta_i| > 100}): \eqn{s_i = 100/|\theta_i|}
+#'   \item For small parameters (\eqn{0 < |\theta_i| < 0.01}): \eqn{s_i = 0.01/|\theta_i|}
+#'   \item Otherwise: \eqn{s_i = 1}
+#' }
+#'
+#' The optimization is performed in the scaled space, with appropriate transformations
+#' for the gradient and Hessian:
+#'
+#' \deqn{\nabla \ell(\theta^{scaled})_i = \frac{1}{s_i}\nabla \ell(\theta)_i}
+#' \deqn{H(\theta^{scaled})_{ij} = \frac{1}{s_i s_j}H(\theta)_{ij}}
+#'
+#' The final results are back-transformed to the original parameter space before being returned.
+#' }
+#'
+#' \subsection{Line Search with Wolfe Conditions}{
+#' The line search procedure ensures sufficient decrease in the objective function when
+#' taking a step in the search direction. The implementation uses Wolfe conditions which
+#' include both:
+#'
+#' 1. Sufficient decrease (Armijo) condition:
+#' \deqn{f(\theta_k + \alpha p_k) \leq f(\theta_k) + c_1 \alpha \nabla f(\theta_k)^T p_k}
+#'
+#' 2. Curvature condition:
+#' \deqn{|\nabla f(\theta_k + \alpha p_k)^T p_k| \leq c_2 |\nabla f(\theta_k)^T p_k|}
+#'
+#' where \eqn{0 < c_1 < c_2 < 1}, typically \eqn{c_1 = 10^{-4}} and \eqn{c_2 = 0.9}.
+#'
+#' The step length \eqn{\alpha} is determined using polynomial interpolation:
+#' \itemize{
+#'   \item First iteration: quadratic interpolation
+#'   \item Subsequent iterations: cubic interpolation using function and derivative values
+#' }
+#'
+#' The cubic polynomial model has the form:
+#' \deqn{a\alpha^3 + b\alpha^2 + c\alpha + d}
+#'
+#' The algorithm computes coefficients from values at two points, then finds the minimizer
+#' of this polynomial subject to bounds to ensure convergence.
+#' }
+#'
+#' \subsection{Adaptive Numerical Differentiation}{
+#' When analytical derivatives are unreliable, the algorithm uses numerical differentiation
+#' with adaptive step sizes based on parameter magnitudes:
+#'
+#' \deqn{h_i = \max(h_{min}, \min(h_{base}, h_{base} \cdot |\theta_i|))}
+#'
+#' where \eqn{h_{min}} is a minimum step size (typically \eqn{10^{-8}}), \eqn{h_{base}}
+#' is a base step size (typically \eqn{10^{-5}}), and \eqn{\theta_i} is the parameter value.
+#'
+#' For computing diagonal Hessian elements, the central difference formula is used:
+#'
+#' \deqn{\frac{\partial^2 f}{\partial \theta_i^2} \approx \frac{f(\theta + h_i e_i) - 2f(\theta) + f(\theta - h_i e_i)}{h_i^2}}
+#'
+#' For mixed partial derivatives:
+#'
+#' \deqn{\frac{\partial^2 f}{\partial \theta_i \partial \theta_j} \approx \frac{f(\theta + h_i e_i + h_j e_j) - f(\theta + h_i e_i - h_j e_j) - f(\theta - h_i e_i + h_j e_j) + f(\theta - h_i e_i - h_j e_j)}{4h_i h_j}}
+#'
+#' The algorithm validates numerical differentiation by comparing with existing gradients
+#' and adaptively adjusts step sizes when discrepancies are detected.
+#' }
+#'
+#' \subsection{Stochastic Perturbation}{
+#' To escape flat regions or local minima, the algorithm implements controlled stochastic
+#' perturbation when progress stalls (detected by monitoring gradient norm changes):
+#'
+#' \deqn{\theta_i^{new} = \theta_i + \Delta\theta_i}
+#'
+#' where the perturbation \eqn{\Delta\theta_i} combines:
+#' \itemize{
+#'   \item A directed component opposite to the gradient: \eqn{-\text{sign}(\nabla \ell_i) \cdot 0.05 \cdot |\theta_i|}
+#'   \item A random noise component: \eqn{U(-0.05|\theta_i|, 0.05|\theta_i|)}
+#' }
+#'
+#' The perturbation is applied when:
+#' \itemize{
+#'   \item The relative change in gradient norm is below a threshold for several consecutive iterations
+#'   \item The algorithm appears to be stuck in a non-optimal region
+#' }
+#'
+#' The perturbation is accepted only if it improves the objective function value.
+#' }
+#'
+#' \subsection{Multi-Start Strategy}{
+#' For particularly challenging optimization landscapes, the algorithm can employ multiple
+#' starting points:
+#'
+#' \itemize{
+#'   \item Initial values are generated using moment-based estimation and domain knowledge about each distribution family
+#'   \item Each initial point is randomly perturbed to explore different regions of the parameter space
+#'   \item Independent optimization runs are performed from each starting point
+#'   \item The best result (based on likelihood value and convergence status) is returned
+#' }
+#'
+#' This approach increases the probability of finding the global optimum or a high-quality
+#' local optimum, particularly for complex models with many parameters.
+#' }
+#'
+#' \subsection{Advanced Parameter Initialization}{
+#' Intelligent starting values are critical for convergence in complex models. The algorithm
+#' uses data-driven initialization based on:
+#'
+#' \itemize{
+#'   \item Method of moments estimators for beta parameters:
+#'     \deqn{\alpha + \beta = \frac{\bar{x}(1-\bar{x})}{s^2} - 1}
+#'     \deqn{\alpha = (\alpha + \beta)\bar{x}}
+#'
+#'   \item Transformations to Kumaraswamy parameters:
+#'     \deqn{a_{Kw} = \sqrt{\alpha_{Beta}}}
+#'     \deqn{b_{Kw} = \sqrt{\beta_{Beta}}}
+#'
+#'   \item Adjustments based on data skewness (detected via mean relative to 0.5)
+#'
+#'   \item Corrections based on data dispersion (range relative to (0,1) interval)
+#' }
+#'
+#' The transformations between beta and Kumaraswamy parameters leverage the similarities
+#' between these distributions while accounting for their parametric differences.
+#' }
+#'
+#' \subsection{Hybrid Optimization Strategy}{
+#' The algorithm can dynamically switch between trust region and Newton-Raphson methods
+#' based on optimization progress:
+#'
+#' \itemize{
+#'   \item Early iterations: trust region method for stability and global convergence properties
+#'   \item Later iterations (when close to optimum): Newton-Raphson with line search for quadratic convergence rate
+#' }
+#'
+#' The switching criteria are based on iteration count and gradient norm, with additional
+#' logic to handle cases where one method consistently fails.
+#' }
 #'
 #' @param start A numeric vector containing initial values for the parameters.
-#'   The length and order must correspond to the selected `family`
-#'   (e.g., `c(alpha, beta, gamma, delta, lambda)` for "gkw"; `c(alpha, beta)` for "kw";
-#'   `c(gamma, delta)` for "beta").
+#'   If NULL, automatic initialization is used based on the dataset characteristics.
+#'   The length and order must correspond to the selected \code{family}
+#'   (e.g., \code{c(alpha, beta, gamma, delta, lambda)} for "gkw"; \code{c(alpha, beta)} for "kw";
+#'   \code{c(gamma, delta)} for "beta").
 #' @param data A numeric vector containing the observed data. All values must
 #'   be strictly between 0 and 1.
 #' @param family A character string specifying the distribution family. One of
@@ -6127,76 +6419,75 @@ hsbeta <- function(par, data) {
 #' @param verbose Logical; if \code{TRUE}, prints detailed progress information
 #'   during optimization, including iteration number, negative log-likelihood,
 #'   gradient norm, and step adjustment details. Default: \code{FALSE}.
-#' @param use_hessian Logical; if \code{TRUE}, uses the analytical Hessian matrix
-#'   for parameter updates (Newton-Raphson variants). If \code{FALSE}, uses
-#'   gradient descent. Default: \code{TRUE}.
-#' @param step_size Initial step size (\eqn{\eta}) for parameter updates
-#'   (\eqn{\theta_{new} = \theta_{old} - \eta H^{-1} \nabla \ell} or
-#'   \eqn{\theta_{new} = \theta_{old} - \eta \nabla \ell}). Backtracking line search
-#'   adjusts this step size dynamically. Default: \code{1.0}.
+#' @param optimization_method Character string specifying the optimization method:
+#'   "trust-region" (default), "newton-raphson", or "hybrid" (starts with trust-region,
+#'   switches to newton-raphson near convergence).
 #' @param enforce_bounds Logical; if \code{TRUE}, parameter values are constrained
 #'   to stay within \code{min_param_val}, \code{max_param_val} (and \eqn{\delta \ge 0})
 #'   during optimization. Default: \code{TRUE}.
 #' @param min_param_val Minimum allowed value for parameters constrained to be
 #'   strictly positive (\eqn{\alpha, \beta, \gamma, \lambda}). Default: \code{1e-5}.
 #' @param max_param_val Maximum allowed value for all parameters. Default: \code{1e5}.
+#' @param adaptive_scaling Logical; if \code{TRUE}, parameters are automatically scaled
+#'   to improve numerical stability. Default: \code{TRUE}.
+#' @param use_stochastic_perturbation Logical; if \code{TRUE}, applies random perturbations
+#'   when optimization stalls. Default: \code{TRUE}.
 #' @param get_num_hess Logical; if \code{TRUE}, computes and returns a numerical
-#'   approximation of the Hessian matrix at the solution using central differences,
-#'   in addition to the analytical Hessian. Useful for verification. Default: \code{FALSE}.
+#'   approximation of the Hessian at the solution. Default: \code{FALSE}.
+#' @param multi_start_attempts Integer specifying the number of different starting points
+#'   to try if initial optimization fails to converge. Default: \code{3}.
+#' @param eigenvalue_hessian_reg Logical; if \code{TRUE}, uses eigenvalue-based
+#'   regularization for the Hessian matrix. Default: \code{TRUE}.
+#' @param max_backtrack Integer specifying the maximum number of backtracking steps
+#'   in line search. Default: \code{20}.
+#' @param initial_trust_radius Initial radius for trust region method. Default: \code{1.0}.
 #'
 #' @return A list object of class \code{gkw_fit} containing the following components:
 #' \item{parameters}{A named numeric vector with the estimated parameters.}
-#' \item{loglik}{The maximized value of the log-likelihood function (not the negative log-likelihood).}
+#' \item{loglik}{The maximized value of the log-likelihood function.}
 #' \item{iterations}{Number of iterations performed.}
-#' \item{converged}{Logical flag indicating whether the algorithm converged successfully based on the tolerance criteria.}
-#' \item{param_history}{A matrix where rows represent iterations and columns represent parameter values (if requested implicitly or explicitly - may depend on implementation).}
-#' \item{loglik_history}{A vector of negative log-likelihood values at each iteration (if requested).}
-#' \item{gradient}{The gradient vector of the negative log-likelihood at the final parameter estimates.}
-#' \item{hessian}{The analytical Hessian matrix of the negative log-likelihood at the final parameter estimates.}
-#' \item{std_errors}{A named numeric vector of approximate standard errors for the estimated parameters, calculated from the inverse of the final Hessian matrix.}
-#' \item{aic}{Akaike Information Criterion: \eqn{AIC = 2k - 2 \ell(\hat{\theta})}, where \eqn{k} is the number of parameters.}
-#' \item{bic}{Bayesian Information Criterion: \eqn{BIC = k \ln(n) - 2 \ell(\hat{\theta})}, where \eqn{k} is the number of parameters and \eqn{n} is the sample size.}
-#' \item{n}{The sample size (number of observations in `data` after removing any NA values).}
-#' \item{status}{A character string indicating the termination status (e.g., "Converged", "Max iterations reached").}
-#' \item{z_values}{A named numeric vector of Z-statistics (\eqn{\hat{\theta}_j / SE(\hat{\theta}_j)}) for testing parameter significance.}
-#' \item{p_values}{A named numeric vector of two-sided p-values corresponding to the Z-statistics, calculated using the standard Normal distribution.}
-#' \item{param_names}{A character vector of the names of the parameters estimated for the specified family.}
-#' \item{family}{The character string specifying the distribution family used.}
-#' \item{numeric_hessian}{(Optional) The numerically approximated Hessian matrix at the solution, if \code{get_num_hess = TRUE}.}
+#' \item{converged}{Logical flag indicating whether the algorithm converged successfully.}
+#' \item{param_history}{A matrix where rows represent iterations and columns represent parameter values.}
+#' \item{loglik_history}{A vector of log-likelihood values at each iteration.}
+#' \item{gradient}{The gradient vector at the final parameter estimates.}
+#' \item{hessian}{The analytical Hessian matrix at the final parameter estimates.}
+#' \item{std_errors}{A named numeric vector of approximate standard errors for the parameters.}
+#' \item{aic}{Akaike Information Criterion.}
+#' \item{bic}{Bayesian Information Criterion.}
+#' \item{aicc}{AIC with small sample correction.}
+#' \item{n}{The sample size.}
+#' \item{status}{A character string indicating the termination status.}
+#' \item{z_values}{A named numeric vector of Z-statistics for parameter significance testing.}
+#' \item{p_values}{A named numeric vector of two-sided p-values corresponding to the Z-statistics.}
+#' \item{param_names}{A character vector of the parameter names.}
+#' \item{family}{The distribution family used.}
+#' \item{optimization_method}{The optimization method used.}
+#' \item{numeric_hessian}{The numerically approximated Hessian at the solution (if requested).}
+#' \item{condition_number}{The condition number of the final Hessian, a measure of parameter identifiability.}
+#' \item{scaling_factors}{The scaling factors used for parameters (if adaptive scaling was enabled).}
 #'
 #' @section Warning:
-#' Maximum likelihood estimation for these flexible distributions can be challenging.
-#' Convergence is sensitive to initial values and the shape of the likelihood surface.
-#' It is recommended to:
+#' Although this implementation is highly robust, fitting complex distributions can still be challenging.
+#' For best results:
 #' \itemize{
-#'   \item{Try different starting values (`start`) if convergence fails or seems suboptimal.}
-#'   \item{Check the `converged` flag and the `status` message.}
-#'   \item{Examine the final `gradient` norm; it should be close to zero for a successful convergence.}
-#'   \item{Inspect the `param_history` and `loglik_history` (if available) to understand the optimization path.}
-#'   \item{Use the `verbose = TRUE` option for detailed diagnostics during troubleshooting.}
-#'   \item{Be cautious interpreting results if standard errors are very large or `NaN`, which might indicate issues like likelihood flatness or parameter estimates near boundaries.}
+#'   \item{Try multiple starting values if results seem suboptimal}
+#'   \item{Examine diagnostic information carefully, especially condition numbers and standard errors}
+#'   \item{Be cautious of parameter estimates at or very near boundaries}
+#'   \item{Consider model simplification if convergence is consistently problematic}
+#'   \item{For the full GKw model with 5 parameters, convergence may be sensitive to starting values}
+#'   \item{High condition numbers (>1e6) may indicate parameter redundancy or weak identifiability}
 #' }
 #'
 #' @references
+#' Carrasco, J. M. F., Ferrari, S. L. P., & Cordeiro, G. M. (2010). A new generalized Kumaraswamy
+#' distribution. arXiv preprint arXiv:1004.0911.
+#'
+#' Nocedal, J., & Wright, S. J. (2006). Numerical Optimization (2nd ed.). Springer.
+#'
+#' Conn, A. R., Gould, N. I. M., & Toint, P. L. (2000). Trust Region Methods. MPS-SIAM Series on Optimization.
+#'
 #' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-#' random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-#'
-#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-#' *Journal of Statistical Computation and Simulation*, *81*(7), 883-898.
-#'
-#' Fletcher, R. (1987). *Practical Methods of Optimization* (2nd ed.). John Wiley & Sons.
-#'
-#' Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer.
-#'
-#' @seealso
-#' Underlying functions used: \code{\link{llgkw}}, \code{\link{grgkw}}, \code{\link{hsgkw}},
-#' \code{\link{llkw}}, \code{\link{grkw}}, \code{\link{hskw}},
-#' \code{\link{llbkw}}, \code{grbkw}, \code{hsbkw},
-#' \code{llkkw}, \code{grkkw}, \code{hskkw},
-#' \code{\link{llekw}}, \code{grekw}, \code{hsekw},
-#' \code{\link{llmc}}, \code{\link{grmc}}, \code{\link{hsmc}},
-#' \code{\link{llbeta}}, \code{\link{grbeta}}, \code{\link{hsbeta}}.
-#' General optimization: \code{\link[stats]{optim}}, \code{\link[stats]{nlm}}.
+#' random processes. Journal of Hydrology, 46(1-2), 79-88.
 #'
 #' @examples
 #' \dontrun{
@@ -6204,62 +6495,53 @@ hsbeta <- function(par, data) {
 #' set.seed(123)
 #' sample_data <- stats::rbeta(200, shape1 = 2, shape2 = 5)
 #'
-#' # --- Fit different models using nrgkw ---
+#' # Automatic initialization (recommended for beginners)
+#' result_auto <- nrgkw_v2(NULL, sample_data, family = "beta", verbose = TRUE)
+#' print(result_auto$parameters)
+#' print(result_auto$loglik)
 #'
-#' # Fit with full GKw model (5 parameters: alpha, beta, gamma, delta, lambda)
-#' start_gkw <- c(alpha=1.1, beta=1.1, gamma=1.8, delta=3.8, lambda=1.1)
-#' gkw_result <- nrgkw(start = start_gkw, data = sample_data, family = "gkw", verbose = FALSE)
-#' print("GKw Fit:")
-#' print(gkw_result$parameters)
+#' # Compare different optimization methods
+#' methods <- c("trust-region", "newton-raphson", "hybrid")
+#' results <- list()
 #'
-#' # Fit with simpler Kumaraswamy model (2 parameters: alpha, beta)
-#' start_kw <- c(alpha=1.5, beta=4.5)
-#' kw_result <- nrgkw(start = start_kw, data = sample_data, family = "kw")
-#' print("Kw Fit:")
-#' print(kw_result$parameters)
-#'
-#' # Fit with Beta model (2 parameters: gamma, delta, corresponding to Beta(gamma, delta+1))
-#' start_beta <- c(gamma=1.8, delta=3.8) # Start near expected values
-#' beta_result <- nrgkw(start = start_beta, data = sample_data, family = "beta")
-#' print("Beta Fit (gamma, delta parameters):")
-#' print(beta_result$parameters)
-#' cat(sprintf("Corresponding to Beta(%.3f, %.3f)\n",
-#'     beta_result$parameters[1], beta_result$parameters[2] + 1))
-#'
-#' # Fit with McDonald model (3 parameters: gamma, delta, lambda)
-#' start_mc <- c(gamma=1.8, delta=3.8, lambda=1.1)
-#' mc_result <- nrgkw(start = start_mc, data = sample_data, family = "mc")
-#' print("Mc Fit:")
-#' print(mc_result$parameters) # Expect lambda estimate near 1
-#'
-#' # --- Compare AIC/BIC values ---
-#' fit_comparison <- data.frame(
-#'   family = c("gkw", "kw", "beta", "mc"),
-#'   AIC = c(gkw_result$aic, kw_result$aic, beta_result$aic, mc_result$aic),
-#'   BIC = c(gkw_result$bic, kw_result$bic, beta_result$bic, mc_result$bic)
-#' )
-#' print("Model Comparison:")
-#' print(fit_comparison[order(fit_comparison$AIC), ]) # Lower is better
-#'
-#' # --- Example with verbosity and numerical Hessian check ---
-#' beta_result_detail <- nrgkw(start = start_beta, data = sample_data, family = "beta",
-#'                             verbose = TRUE, get_num_hess = TRUE)
-#' print(beta_result_detail$status)
-#' # Compare analytical and numerical Hessians (if hsbeta exists and converged)
-#' if(beta_result_detail$converged && !is.null(beta_result_detail$numeric_hessian)) {
-#'    print("Analytical Hessian:")
-#'    print(beta_result_detail$hessian)
-#'    print("Numerical Hessian:")
-#'    print(beta_result_detail$numeric_hessian)
-#'    print("Max Abs Diff:")
-#'    print(max(abs(beta_result_detail$hessian - beta_result_detail$numeric_hessian)))
+#' for (method in methods) {
+#'   results[[method]] <- nrgkw_v2(NULL, sample_data, family = "beta",
+#'                                optimization_method = method)
+#'   cat(sprintf("Method: %s, AIC: %.4f\n", method, results[[method]]$aic))
 #' }
 #'
-#' } # End of \dontrun block
+#' # Fit the full GKw model with diagnostic information
+#' gkw_result <- nrgkw_v2(NULL, sample_data, family = "gkw",
+#'                       verbose = TRUE, get_num_hess = TRUE)
+#'
+#' # Examine parameter identifiability through condition number
+#' cat(sprintf("Condition number: %.2e\n", gkw_result$condition_number))
+#'
+#' # Evaluate parameter significance
+#' param_summary <- data.frame(
+#'   Parameter = names(gkw_result$parameters),
+#'   Estimate = gkw_result$parameters,
+#'   StdError = gkw_result$std_errors,
+#'   Z_value = gkw_result$z_values,
+#'   P_value = gkw_result$p_values
+#' )
+#' print(param_summary)
+#'
+#' # Compare with simpler models using information criteria
+#' cat("Information criteria comparison:\n")
+#' cat(sprintf("GKw: AIC=%.4f, BIC=%.4f\n", gkw_result$aic, gkw_result$bic))
+#' cat(sprintf("Beta: AIC=%.4f, BIC=%.4f\n",
+#'            results[["trust-region"]]$aic, results[["trust-region"]]$bic))
+#'
+#' # Plot convergence history
+#' plot(1:length(gkw_result$loglik_history), gkw_result$loglik_history,
+#'      type = "l", xlab = "Iteration", ylab = "Log-likelihood",
+#'      main = "Convergence History")
+#' }
 #'
 #' @export
-nrgkw <- function(start, data, family = "gkw", tol = 1e-6, max_iter = 100L, verbose = FALSE, use_hessian = TRUE, step_size = 1.0, enforce_bounds = TRUE, min_param_val = 1e-5, max_param_val = 1e5, get_num_hess = FALSE) {
-    .Call(`_gkwreg_nrgkw`, start, data, family, tol, max_iter, verbose, use_hessian, step_size, enforce_bounds, min_param_val, max_param_val, get_num_hess)
+nrgkw <- function(start = NULL, data = as.numeric( c()), family = "gkw", tol = 1e-6, max_iter = 100L, verbose = FALSE, optimization_method = "trust-region", enforce_bounds = TRUE, min_param_val = 1e-5, max_param_val = 1e5, adaptive_scaling = TRUE, use_stochastic_perturbation = TRUE, get_num_hess = FALSE, multi_start_attempts = 3L, eigenvalue_hessian_reg = TRUE, max_backtrack = 20L, initial_trust_radius = 1.0) {
+    .Call(`_gkwreg_nrgkw`, start, data, family, tol, max_iter, verbose, optimization_method, enforce_bounds, min_param_val, max_param_val, adaptive_scaling, use_stochastic_perturbation, get_num_hess, multi_start_attempts, eigenvalue_hessian_reg, max_backtrack, initial_trust_radius)
 }
 
 #' @title Calculate Parameters for the Generalized Kumaraswamy Distribution

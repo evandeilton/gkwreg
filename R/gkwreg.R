@@ -5037,6 +5037,7 @@ extract_profile_ci <- function(profile_obj, level = 0.95) {
 #'
 #' @importFrom stats logLik
 #' @method logLik gkwreg
+#' @export
 logLik.gkwreg <- function(object, ...) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {
@@ -5192,6 +5193,7 @@ logLik.gkwreg <- function(object, ...) {
 #'
 #' @importFrom stats AIC
 #' @method AIC gkwreg
+#' @export
 AIC.gkwreg <- function(object, ..., k = 2) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {
@@ -5339,6 +5341,7 @@ AIC.gkwreg <- function(object, ..., k = 2) {
 #'
 #' @importFrom stats BIC
 #' @method BIC gkwreg
+#' @export
 BIC.gkwreg <- function(object, ...) {
   # Check if the object is of class gkwreg
   if (!inherits(object, "gkwreg")) {

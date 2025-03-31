@@ -4,6 +4,11 @@
 #include <cmath>
 #include <limits>
 
+#include <algorithm>
+#include <string>
+#include <functional>
+#include <vector>
+
 using namespace Rcpp;
 using namespace arma;
 
@@ -2089,328 +2094,6 @@ Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  // Returns the analytic Hessian matrix of the log-likelihood
  return Rcpp::wrap(-H);
 }
-
-
-// //' @title Analytic Hessian Matrix for Generalized Kumaraswamy Distribution
-// //'
-// //' @description
-// //' Computes the analytic Hessian matrix of the log-likelihood function for
-// //' the Generalized Kumaraswamy (GKw) distribution. This function provides
-// //' exact second derivatives needed for optimization and inference.
-// //'
-// //' @param par Numeric vector of length 5 containing the parameters
-// //'        (α, β, γ, δ, λ) in that order. All parameters must be positive.
-// //' @param data Numeric vector of observations, where all values must be
-// //'        in the open interval (0,1).
-// //'
-// //' @return A 5×5 numeric matrix representing the Hessian of the negative
-// //'         log-likelihood function. If parameters or data are invalid
-// //'         (parameters ≤ 0 or data outside (0,1)), returns a matrix of
-// //'         NaN values.
-// //'
-// //' @details
-// //' The log-likelihood for the generalized Kumaraswamy distribution is:
-// //'
-// //' \deqn{
-// //' \ell(\theta) = n \ln(\lambda) + n \ln(\alpha) + n \ln(\beta) - n \ln B(\gamma, \delta+1)
-// //' + (\alpha-1) \sum \ln(x_i)
-// //' + (\beta-1) \sum \ln(1 - x_i^\alpha)
-// //' + (\gamma\lambda - 1) \sum \ln\{1 - (1 - x_i^\alpha)^\beta\}
-// //' + \delta \sum \ln\{1 - \{1 - (1 - x_i^\alpha)^\beta\}^\lambda\}
-// //' }
-// //'
-// //' where B refers to the Beta function.
-// //'
-// //' The implementation computes all second derivatives analytically for each term.
-// //' For computational efficiency, the following transformations are used:
-// //' \itemize{
-// //'   \item \deqn{A = x^α} and derivatives
-// //'   \item \deqn{v = 1 - A}
-// //'   \item \deqn{w = 1 - v^β}
-// //'   \item \deqn{z = 1 - w^λ}
-// //' }
-// //'
-// //' The returned Hessian matrix has the following structure:
-// //' \itemize{
-// //'   \item Rows/columns 1-5 correspond to α, β, γ, δ, λ respectively
-// //'   \item The matrix is symmetric (as expected for a Hessian)
-// //'   \item The matrix represents second derivatives of the negative log-likelihood
-// //' }
-// //'
-// //' This function is implemented in C++ for computational efficiency.
-// //'
-// //' @examples
-// //' \dontrun{
-// //' # Generate sample data from a GKw distribution
-// //' set.seed(123)
-// //' x <- rgkw(100, 2, 3, 1.0, 0.5, 0.5)
-// //' hist(x, breaks = 20, main = "GKw(2, 3, 1.0, 0.5, 0.5) Sample")
-// //'
-// //' # Use in optimization with Hessian-based methods
-// //' result <- optim(c(0.5, 0.5, 0.5, 0.5, 0.5), llgkw, method = "BFGS",
-// //'                 hessian = TRUE, data = x)
-// //'
-// //' # Compare numerical and analytical derivatives
-// //' num_grad <- numDeriv::grad(llgkw, x = result$par, data = x)
-// //' num_hess <- numDeriv::hessian(llgkw, x = result$par, data = x)
-// //'
-// //' ana_grad <- grgkw(result$par, data = x)
-// //' ana_hess <- hsgkw(result$par, data = x)
-// //'
-// //' # Check differences (should be very small)
-// //' round(num_grad - ana_grad, 4)
-// //' round(num_hess - ana_hess, 4)
-// //'
-// //' }
-// //'
-// //' @seealso
-// //' \code{\link[gkwreg]{dgkw}} for the GKw density function,
-// //' \code{\link[gkwreg]{gkwreg}} for fitting GKw regression models,
-// //' \code{\link[gkwreg]{pgkw}} for the GKw cumulative distribution function
-// //'
-// //' @references
-// //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes.
-// //' Journal of Hydrology, 46(1-2), 79-88.
-// //'
-// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-// //' Journal of Statistical Computation and Simulation, 81(7), 883-898.
-// //'
-// //' @export
-// // [[Rcpp::export]]
-// Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
-//  // Parameter extraction
-//  double alpha  = par[0];   // θ[0] = α
-//  double beta   = par[1];   // θ[1] = β
-//  double gamma  = par[2];   // θ[2] = γ
-//  double delta  = par[3];   // θ[3] = δ
-//  double lambda = par[4];   // θ[4] = λ
-//
-//  // Simple parameter validation (all > 0)
-//  if(alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0 || lambda <= 0) {
-//    Rcpp::NumericMatrix nanH(5,5);
-//    nanH.fill(R_NaN);
-//    return nanH;
-//  }
-//
-//  // Data conversion and basic validation
-//  arma::vec x = Rcpp::as<arma::vec>(data);
-//  if(arma::any(x <= 0) || arma::any(x >= 1)) {
-//    Rcpp::NumericMatrix nanH(5,5);
-//    nanH.fill(R_NaN);
-//    return nanH;
-//  }
-//
-//  int n = x.n_elem;  // sample size
-//
-//  // Initialize Hessian matrix H (of ℓ(θ)) as 5x5
-//  arma::mat H(5,5, arma::fill::zeros);
-//
-//  // --- CONSTANT TERMS (do not depend on x) ---
-//  // L1: n ln(λ)  => d²/dλ² = -n/λ²
-//  H(4,4) += - n/(lambda*lambda);
-//  // L2: n ln(α)  => d²/dα² = -n/α²
-//  H(0,0) += - n/(alpha*alpha);
-//  // L3: n ln(β)  => d²/dβ² = -n/β²
-//  H(1,1) += - n/(beta*beta);
-//  // L4: - n ln[B(γ, δ+1)]
-//  //   d²/dγ² = -n [ψ₁(γ) - ψ₁(γ+δ+1)]  where ψ₁ is the trigamma function
-//  H(2,2) += - n * ( R::trigamma(gamma) - R::trigamma(gamma+delta+1) );
-//  //   d²/dδ² = -n [ψ₁(δ+1) - ψ₁(γ+δ+1)]
-//  H(3,3) += - n * ( R::trigamma(delta+1) - R::trigamma(gamma+delta+1) );
-//  //   Mixed derivative (γ,δ): = n ψ₁(γ+δ+1)
-//  H(2,3) += n * R::trigamma(gamma+delta+1);
-//  H(3,2) = H(2,3);
-//  // L5: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
-//
-//  // Accumulators for mixed derivatives with λ
-//  double acc_gamma_lambda = 0.0;  // Sum of ln(w)
-//  double acc_delta_lambda = 0.0;  // Sum of dz_dlambda / z
-//  double acc_alpha_lambda = 0.0;  // For α,λ contributions
-//  double acc_beta_lambda = 0.0;   // For β,λ contributions
-//
-//  // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
-//  // Loop over each observation to accumulate contributions from:
-//  // L6: (β-1) Σ ln(v), where v = 1 - x^α
-//  // L7: (γλ-1) Σ ln(w), where w = 1 - v^β
-//  // L8: δ Σ ln(z), where z = 1 - w^λ
-//  for (int i = 0; i < n; i++) {
-//    double xi    = x(i);
-//    double ln_xi = std::log(xi);
-//
-//    // -- Compute A = x^α and its derivatives --
-//    double A = std::pow(xi, alpha);                  // A = x^α
-//    double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
-//    double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
-//
-//    // -- v = 1 - A and its derivatives --
-//    double v = 1.0 - A;                              // v = 1 - x^α
-//    double ln_v = std::log(v);                       // ln(v)
-//    double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
-//    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
-//
-//    // --- L6: (β-1) ln(v) ---
-//    // First derivative w.r.t. α: (β-1) * (1/v)*dv_dalpha
-//    double dL6_dalpha = (beta - 1.0) * (dv_dalpha / v);
-//    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
-//    double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
-//    // First derivative w.r.t. β: dL6/dβ = ln(v)
-//    double dL6_dbeta = ln_v;
-//    // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
-//    double d2L6_dalpha_dbeta = dv_dalpha / v;
-//
-//    // --- L7: (γλ - 1) ln(w), where w = 1 - v^β ---
-//    double v_beta = std::pow(v, beta);               // v^β
-//    double w = 1.0 - v_beta;                         // w = 1 - v^β
-//    double ln_w = std::log(w);                       // ln(w)
-//    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
-//    double dw_dv = -beta * std::pow(v, beta - 1.0);
-//    // Chain rule: dw/dα = dw/dv * dv/dα
-//    double dw_dalpha = dw_dv * dv_dalpha;
-//    // First derivative w.r.t. α: d/dα ln(w) = (1/w)*dw_dalpha
-//    double dL7_dalpha = (gamma * lambda - 1.0) * (dw_dalpha / w);
-//    // Second derivative w.r.t. α for L7:
-//    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
-//    // Computing d²w/dα²:
-//    //   dw/dα = -β * v^(β-1)*dv_dalpha,
-//    //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
-//    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
-//                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
-//    double d2L7_dalpha2 = (gamma * lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
-//    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
-//    double dw_dbeta = -v_beta * ln_v;
-//    double dL7_dbeta = (gamma * lambda - 1.0) * (dw_dbeta / w);
-//    // Second derivative w.r.t. β for L7:
-//    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
-//    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
-//    double d2L7_dbeta2 = (gamma * lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
-//    // Mixed derivative L7 (α,β): d²/(dα dβ) ln(w) =
-//    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
-//    // Approximate d/dβ dw_dalpha:
-//    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
-//    double d2L7_dalpha_dbeta = (gamma * lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
-//
-//    // --- L8: δ ln(z), where z = 1 - w^λ ---
-//    double w_lambda_val = std::pow(w, lambda);       // w^λ
-//    double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
-//    double ln_z = std::log(z);                       // ln(z)
-//    // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
-//    double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
-//    double dL8_dalpha = delta * (dz_dalpha / z);
-//    // Second derivative w.r.t. α for L8:
-//    // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
-//    double d2w_dalpha2_dummy = d2w_dalpha2; // already calculated for L7
-//    double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
-//                                      + std::pow(w, lambda-1.0) * d2w_dalpha2_dummy);
-//    double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
-//
-//    // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
-//    double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
-//    double dL8_dbeta = delta * (dz_dbeta / z);
-//    // Second derivative w.r.t. β for L8:
-//    // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
-//    double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
-//                                     + std::pow(w, lambda-1.0) * d2w_dbeta2);
-//    double d2L8_dbeta2 = delta * ((d2z_dbeta2 * z - dz_dbeta*dz_dbeta)/(z*z));
-//
-//    // Mixed derivative L8 (α,β): d²/(dα dβ) ln(z)
-//    // = (d/dβ dz_dalpha)/z - (dz_dalpha*dz_dbeta)/(z*z)
-//    // Approximate d/dβ dz_dalpha = -λ * [(λ-1)*w^(λ-2)*(dw_dβ*dw_dα) + w^(λ-1)*(d/dβ dw_dalpha)]
-//    double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * dw_dbeta * dw_dalpha
-//                                              + std::pow(w, lambda-1.0) * d_dw_dalpha_dbeta);
-//    double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha*dz_dbeta)/(z*z));
-//
-//    // Derivatives of L8 with respect to λ:
-//    // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
-//    double dz_dlambda = -w_lambda_val * ln_w;
-//    double dL8_dlambda = delta * (dz_dlambda / z);
-//    // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
-//    double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
-//    double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
-//
-//    // Mixed derivative L8 (α,λ): d²/(dα dλ) ln(z) = (d/dα dz_dλ)/z - (dz_dλ*dz_dalpha)/(z*z)
-//    // Correct formula: sum of two terms, not multiplication
-//    double d_dalpha_dz_dlambda = -std::pow(w, lambda-1.0) * dw_dalpha -
-//      lambda * ln_w * std::pow(w, lambda-1.0) * dw_dalpha;
-//    double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda*dz_dalpha)/(z*z));
-//
-//    // Mixed derivative L8 (β,λ): d²/(dβ dλ) ln(z) = (d/dβ dz_dλ)/z - (dz_dlambda*dz_dbeta)/(z*z)
-//    // Correct formula: sum of two terms, not multiplication
-//    double d_dbeta_dz_dlambda = -std::pow(w, lambda-1.0) * dw_dbeta -
-//      lambda * ln_w * std::pow(w, lambda-1.0) * dw_dbeta;
-//    double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda*dz_dbeta)/(z*z));
-//
-//    // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
-//    // Index: 0 = α, 1 = β, 2 = γ, 3 = δ, 4 = λ
-//
-//    // H(α,α): sum of L2, L6, L7, and L8 (constants already added)
-//    H(0,0) += d2L6_dalpha2 + d2L7_dalpha2 + d2L8_dalpha2;
-//
-//    // H(α,β): mixed from L6, L7, and L8
-//    H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta + d2L8_dalpha_dbeta;
-//    H(1,0) = H(0,1);
-//
-//    // H(β,β): contributions from L3, L7, and L8
-//    H(1,1) += d2L7_dbeta2 + d2L8_dbeta2;
-//
-//    // H(λ,λ): contains L1 and L8 (L1 already added)
-//    H(4,4) += d2L8_dlambda2;
-//
-//    // H(γ,α): from L7 - derivative of ln(w) in α multiplied by λ factor of (γλ-1)
-//    H(2,0) += lambda * (dw_dalpha / w);
-//    H(0,2) = H(2,0);
-//
-//    // H(γ,β): from L7 - derivative of ln(w) in β multiplied by λ
-//    H(2,1) += lambda * (dw_dbeta / w);
-//    H(1,2) = H(2,1);
-//
-//    // H(δ,α): L8 - mixed derivative: d/dα ln(z)
-//    H(3,0) += dz_dalpha / z;
-//    H(0,3) = H(3,0);
-//
-//    // H(δ,β): L8 - d/dβ ln(z)
-//    H(3,1) += dz_dbeta / z;
-//    H(1,3) = H(3,1);
-//
-//    // Accumulating terms for mixed derivatives with λ
-//    // (α,λ): Term from L7 (γ contribution) + term from L8 (δ contribution)
-//    double term1_alpha_lambda = gamma * (dw_dalpha / w);
-//    double term2_alpha_lambda = d2L8_dalpha_dlambda;
-//    acc_alpha_lambda += term1_alpha_lambda + term2_alpha_lambda;
-//
-//    // (β,λ): Term from L7 (γ contribution) + term from L8 (δ contribution)
-//    double term1_beta_lambda = gamma * (dw_dbeta / w);
-//    double term2_beta_lambda = d2L8_dbeta_dlambda;
-//    acc_beta_lambda += term1_beta_lambda + term2_beta_lambda;
-//
-//    // (γ,λ): Contribution from L7 (γλ-1)*ln(w)
-//    acc_gamma_lambda += ln_w;
-//
-//    // (δ,λ): Contribution from L8 δ*ln(z)
-//    acc_delta_lambda += dz_dlambda / z;
-//  } // end of loop
-//
-//  // Applying mixed derivatives with λ
-//  // Note: All signs are positive for log-likelihood (not negative log-likelihood)
-//
-//  // H(α,λ): Positive sign for log-likelihood
-//  H(0,4) = acc_alpha_lambda;
-//  H(4,0) = H(0,4);
-//
-//  // H(β,λ): Positive sign for log-likelihood
-//  H(1,4) = acc_beta_lambda;
-//  H(4,1) = H(1,4);
-//
-//  // H(γ,λ): Positive sign for log-likelihood
-//  H(2,4) = acc_gamma_lambda;
-//  H(4,2) = H(2,4);
-//
-//  // H(δ,λ): Positive sign for log-likelihood
-//  H(3,4) = acc_delta_lambda;
-//  H(4,3) = H(3,4);
-//
-//  // Returns the analytic Hessian matrix of the log-likelihood
-//  return Rcpp::wrap(-H);
-// }
 
 
 
@@ -11781,114 +11464,2008 @@ Rcpp::NumericMatrix hsbeta(const Rcpp::NumericVector& par,
 }
 
 
-// Função para calcular a Hessiana numericamente usando Armadillo
-arma::mat numHess(
-  NumericVector params,
-  NumericVector data,
-  double eps = 1e-6
+
+
+
+
+
+
+
+
+//' @title Generate Regularized Positive Definite Approximation of a Hessian
+//' @description Creates a positive definite approximation of a Hessian matrix
+//' using eigendecomposition and selective eigenvalue adjustment with enhanced
+//' numerical stability.
+//'
+//' @param H Input Hessian matrix (arma::mat)
+//' @param min_eigenval Minimum eigenvalue threshold (default: 1e-6)
+//' @return Positive definite approximation of H
+//' @noRd
+arma::mat makePositiveDefinite(arma::mat H, double min_eigenval = 1e-6) {
+ // Special case for 1x1 matrices for efficiency
+ if (H.n_rows == 1 && H.n_cols == 1) {
+   return arma::mat(1, 1, arma::fill::value(std::max(H(0,0), min_eigenval)));
+ }
+
+ // Verify matrix dimensions
+ if (H.n_rows != H.n_cols) {
+   Rcpp::warning("Non-square matrix provided to makePositiveDefinite. Returning diagonal matrix.");
+   arma::mat diag_matrix = arma::eye(H.n_rows, H.n_rows);
+   diag_matrix *= min_eigenval;
+   return diag_matrix;
+ }
+
+ // Ensure symmetry by averaging with transpose using a numerically stable approach
+ double sym_tol = 1e-8;
+ double max_asym = 0.0;
+
+ // Check asymmetry level
+ for (unsigned int i = 0; i < H.n_rows; i++) {
+   for (unsigned int j = i+1; j < H.n_cols; j++) {
+     max_asym = std::max(max_asym, std::abs(H(i,j) - H(j,i)));
+   }
+ }
+
+ // Warning if severe asymmetry is detected
+ if (max_asym > 1e-3) {
+   Rcpp::warning("Significant asymmetry detected in Hessian matrix (max diff: %f)", max_asym);
+ }
+
+ // Force symmetry
+ H = 0.5 * (H + H.t());
+
+ // Attempt Cholesky decomposition first (faster for already positive definite matrices)
+ arma::mat R;
+ bool is_pd = arma::chol(R, H);
+
+ if (is_pd) {
+   // Matrix is already positive definite, verify if eigenvalues meet minimum threshold
+   arma::vec eigval;
+   bool eig_success = arma::eig_sym(eigval, H);
+
+   if (eig_success && arma::min(eigval) >= min_eigenval) {
+     return H;  // Already meets all requirements
+   }
+ }
+
+ // Perform eigendecomposition with enhanced numerical stability
+ arma::vec eigval;
+ arma::mat eigvec;
+ bool success = arma::eig_sym(eigval, eigvec, H);
+
+ if (!success) {
+   // Enhanced fallback if eigendecomposition fails
+   arma::mat H_diag = H;
+   double max_diag = 0.0;
+
+   // Find maximum diagonal element for scaling
+   for (unsigned int i = 0; i < H.n_rows; i++) {
+     max_diag = std::max(max_diag, std::abs(H(i,i)));
+   }
+
+   // Add scaled regularization
+   double reg_val = std::max(min_eigenval, 1e-4 * max_diag);
+   return H + reg_val * arma::eye(size(H));
+ }
+
+ // Find the smallest eigenvalue
+ double min_eig = arma::min(eigval);
+ double max_eig = arma::max(eigval);
+
+ // Check condition number and apply stronger regularization if needed
+ double condition_number = max_eig / std::max(std::abs(min_eig), 1e-12);
+ bool needs_strong_reg = (condition_number > 1e10) || (min_eig < -1e3 * min_eigenval);
+
+ // If extreme conditioning or large negative eigenvalues, use modified approach
+ if (needs_strong_reg) {
+   // Apply progressive regularization for better numerical stability
+   double shift = std::max(min_eigenval, -min_eig + min_eigenval * 10.0);
+
+   // Adaptive scaling based on eigenvalue magnitude
+   double scale_factor = std::max(0.01, std::min(1.0, 1e6 / condition_number));
+
+   for (unsigned int i = 0; i < eigval.n_elem; i++) {
+     if (eigval(i) < min_eigenval) {
+       // Progressive adjustment: stronger for more negative values
+       double neg_factor = (eigval(i) < 0) ? std::abs(eigval(i)) / (std::abs(min_eig) + 1e-10) : 0.0;
+       eigval(i) = min_eigenval * (1.0 + 10.0 * neg_factor * scale_factor);
+     }
+   }
+ } else {
+   // Standard adjustment for mild cases
+   for (unsigned int i = 0; i < eigval.n_elem; i++) {
+     if (eigval(i) < min_eigenval) {
+       eigval(i) = min_eigenval;
+     }
+   }
+ }
+
+ // Reconstruct matrix: H = Q * D * Q'
+ arma::mat D = arma::diagmat(eigval);
+ arma::mat H_pd = eigvec * D * eigvec.t();
+
+ // Ensure perfect symmetry (counteract any accumulating numerical errors)
+ H_pd = 0.5 * (H_pd + H_pd.t());
+
+ // Verify result is positive definite (in debug mode or with high tolerance)
+#ifdef DEBUG
+ is_pd = arma::chol(R, H_pd);
+ if (!is_pd) {
+   Rcpp::warning("Resulting matrix is still not positive definite");
+   // Add last-resort regularization
+   H_pd += 10.0 * min_eigenval * arma::eye(size(H_pd));
+ }
+#endif
+
+ return H_pd;
+}
+
+
+//' @title Calculate Numerical Hessian with Advanced Adaptive Step Size
+//' @description Computes a robust numerical approximation of the Hessian matrix
+//' using adaptive finite difference methods with cross-validation.
+//'
+//' @param params Parameter vector
+//' @param data Data vector
+//' @param ll_func Log-likelihood function
+//' @param gr_func Gradient function (used for validation)
+//' @param min_step Minimum step size (default: 1e-8)
+//' @param base_step Base step size (default: 1e-5)
+//' @return Numerical approximation of the Hessian matrix
+//' @noRd
+arma::mat numHessianAdaptive(
+   Rcpp::NumericVector params,
+   Rcpp::NumericVector data,
+   std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
+   std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
+   double min_step = 1e-8,
+   double base_step = 1e-5
 ) {
-int n = params.size();
-arma::mat hessian(n, n, arma::fill::zeros);
+ int n = params.size();
+ arma::mat hessian(n, n, arma::fill::zeros);
 
-// Valor da função no ponto atual
-double f0 = llgkw(params, data);
+ // Evaluate function at center point with safeguards
+ double f0 = ll_func(params, data);
+ if (!R_finite(f0)) {
+   Rcpp::warning("Function evaluation at center point is not finite");
+   f0 = 0.0;  // Neutral value to allow continued computation
+ }
 
-// Para cada par de variáveis
-for (int i = 0; i < n; i++) {
-  for (int j = 0; j <= i; j++) {
-    // Cálculo da derivada segunda usando diferenças finitas
-    if (i == j) {
-      // Derivada segunda em relação à mesma variável
-      NumericVector params_p = clone(params);
-      NumericVector params_m = clone(params);
+ // Calculate gradient at current point for validation and method selection
+ Rcpp::NumericVector g0;
+ bool valid_gradient = true;
 
-      params_p[i] += eps;
-      params_m[i] -= eps;
+ try {
+   g0 = gr_func(params, data);
 
-      double f_p = llgkw(params_p, data);
-      double f_m = llgkw(params_m, data);
+   // Check if gradient values are finite
+   for (int i = 0; i < n; i++) {
+     if (!R_finite(g0[i])) {
+       valid_gradient = false;
+       break;
+     }
+   }
+ } catch (...) {
+   valid_gradient = false;
+ }
 
-      hessian(i, j) = (f_p - 2*f0 + f_m) / (eps * eps);
-    } else {
-      // Derivada cruzada
-      NumericVector params_pp = clone(params);
-      NumericVector params_pm = clone(params);
-      NumericVector params_mp = clone(params);
-      NumericVector params_mm = clone(params);
+ if (!valid_gradient) {
+   Rcpp::warning("Analytic gradient invalid or unavailable, using fully numerical approach");
+   // Create placeholder gradient for the algorithm to continue
+   g0 = Rcpp::NumericVector(n, 0.0);
+ }
 
-      params_pp[i] += eps;
-      params_pp[j] += eps;
+ // Compute scale factors for parameters to improve numerical behavior
+ std::vector<double> param_scales(n);
+ double param_norm = 0.0;
+ for (int i = 0; i < n; i++) {
+   param_scales[i] = std::max(1.0, std::abs(params[i]));
+   param_norm += std::pow(params[i] / param_scales[i], 2);
+ }
+ param_norm = std::sqrt(param_norm);
 
-      params_pm[i] += eps;
-      params_pm[j] -= eps;
+ // Compute adaptive step sizes based on parameter magnitudes with enhanced heuristics
+ std::vector<double> step_sizes(n);
+ for (int i = 0; i < n; i++) {
+   // Base step size proportional to parameter magnitude but bounded
+   step_sizes[i] = std::max(min_step, std::min(base_step, base_step * std::abs(params[i])));
 
-      params_mp[i] -= eps;
-      params_mp[j] += eps;
+   // Ensure step isn't too large relative to parameter value
+   if (params[i] != 0 && step_sizes[i] > 0.01 * std::abs(params[i])) {
+     step_sizes[i] = 0.01 * std::abs(params[i]);
+   }
 
-      params_mm[i] -= eps;
-      params_mm[j] -= eps;
+   // Ensure step is well above floating point precision for the parameter magnitude
+   double eps_precision = std::abs(params[i]) * std::numeric_limits<double>::epsilon() * 100.0;
+   step_sizes[i] = std::max(step_sizes[i], eps_precision);
 
-      double f_pp = llgkw(params_pp, data);
-      double f_pm = llgkw(params_pm, data);
-      double f_mp = llgkw(params_mp, data);
-      double f_mm = llgkw(params_mm, data);
+   // Final safety check
+   step_sizes[i] = std::max(min_step, step_sizes[i]);
+ }
 
-      hessian(i, j) = hessian(j, i) = (f_pp - f_pm - f_mp + f_mm) / (4 * eps * eps);
-    }
-  }
+ // Cache for function evaluations to avoid redundant computations
+ std::map<std::vector<int>, double> evaluation_cache;
+
+ // Helper to retrieve or compute function value with caching
+ auto cached_eval = [&](const Rcpp::NumericVector& p) -> double {
+   // Create key for cache
+   std::vector<int> key;
+   for (int i = 0; i < n; i++) {
+     // Hash based on offset from original parameters
+     // Scale to avoid floating point comparison issues
+     key.push_back(static_cast<int>((p[i] - params[i]) * 1e10));
+   }
+
+   auto it = evaluation_cache.find(key);
+   if (it != evaluation_cache.end()) {
+     return it->second;  // Return cached value
+   }
+
+   // Compute and cache
+   double value = ll_func(p, data);
+
+   // Sanitize result - replace non-finite values with a penalty value
+   if (!R_finite(value)) {
+     double penalty = f0 + 1e6 * param_norm;  // Large penalty proportional to parameter size
+     value = penalty;
+   }
+
+   evaluation_cache[key] = value;
+   return value;
+ };
+
+ // Compute diagonal elements using central difference
+ for (int i = 0; i < n; i++) {
+   double eps = step_sizes[i];
+   double best_estimate = 0.0;
+   double lowest_error = R_PosInf;
+   double actual_eps_used = eps;
+
+   // Declare params_p and params_m in the outer scope so they're available for Richardson
+   Rcpp::NumericVector params_p;
+   Rcpp::NumericVector params_m;
+   double f_p, f_m;
+
+   // Try multiple step sizes for better accuracy
+   for (int step_iter = 0; step_iter < 3; step_iter++) {
+     // Adjust step size for current iteration
+     double current_eps = eps;
+     if (step_iter == 1) current_eps *= 0.1;
+     if (step_iter == 2) current_eps *= 10.0;
+
+     params_p = Rcpp::clone(params);
+     params_m = Rcpp::clone(params);
+
+     params_p[i] += current_eps;
+     params_m[i] -= current_eps;
+
+     f_p = cached_eval(params_p);
+     f_m = cached_eval(params_m);
+
+     // Standard central difference formula for second derivative
+     double h2 = current_eps * current_eps;
+     double estimate = (f_p - 2.0*f0 + f_m) / h2;
+
+     // Validate with gradient if available
+     if (valid_gradient) {
+       double grad_i = g0[i];
+       double diff_approx = (f_p - f_m) / (2.0 * current_eps);
+
+       // Estimate error by comparing with analytical gradient
+       double error = std::abs(grad_i - diff_approx);
+       double relative_error = error / (std::abs(grad_i) + std::abs(diff_approx) + 1e-10);
+
+       // Keep the estimate with lowest error
+       if (relative_error < lowest_error) {
+         lowest_error = relative_error;
+         best_estimate = estimate;
+         actual_eps_used = current_eps;
+
+         // Also update the points for Richardson when we store the best estimate
+         // This ensures params_p and params_m correspond to the epsilon that will be used
+         if (step_iter != 1) { // If not the middle step size, recalculate
+           params_p = Rcpp::clone(params);
+           params_m = Rcpp::clone(params);
+           params_p[i] += actual_eps_used;
+           params_m[i] -= actual_eps_used;
+           f_p = cached_eval(params_p);
+           f_m = cached_eval(params_m);
+         }
+       }
+     } else {
+       // Without valid gradient, use the most refined step size
+       if (step_iter == 1) {  // Middle iteration has smallest step size
+         best_estimate = estimate;
+         actual_eps_used = current_eps;
+       }
+     }
+   }
+
+   // Use Richardson extrapolation for higher accuracy if appropriate
+   if (valid_gradient && lowest_error < 0.05) {
+     // Additional points for Richardson extrapolation
+     Rcpp::NumericVector params_p2 = Rcpp::clone(params);
+     Rcpp::NumericVector params_m2 = Rcpp::clone(params);
+
+     params_p2[i] += 2.0 * actual_eps_used;
+     params_m2[i] -= 2.0 * actual_eps_used;
+
+     double f_p2 = cached_eval(params_p2);
+     double f_m2 = cached_eval(params_m2);
+
+     // Standard formula
+     double h2 = actual_eps_used * actual_eps_used;
+     double standard = (f_p - 2.0*f0 + f_m) / h2;
+
+     // Wider formula
+     double h2_wide = 4.0 * h2;  // (2h)²
+     double wider = (f_p2 - 2.0*f0 + f_m2) / h2_wide;
+
+     // Richardson extrapolation: eliminate leading error term
+     best_estimate = (4.0/3.0) * standard - (1.0/3.0) * wider;
+   }
+
+   // Sanity check and fallback for the diagonal elements
+   if (!R_finite(best_estimate) || std::abs(best_estimate) > 1e6 / param_scales[i]) {
+     // Use a regularized estimate based on gradient if available
+     if (valid_gradient) {
+       Rcpp::NumericVector params_p = Rcpp::clone(params);
+       params_p[i] += actual_eps_used;
+
+       Rcpp::NumericVector grad_p = gr_func(params_p, data);
+
+       // Compute directional derivative differences
+       double dir_diff = 0.0;
+       bool valid_dir_diff = true;
+
+       for (int k = 0; k < n; k++) {
+         if (!R_finite(grad_p[k])) {
+           valid_dir_diff = false;
+           break;
+         }
+         dir_diff += (grad_p[k] - g0[k]) / actual_eps_used;
+       }
+
+       if (valid_dir_diff) {
+         best_estimate = dir_diff;
+       } else {
+         // Last resort: use a small positive value
+         best_estimate = 1.0 / param_scales[i];
+       }
+     } else {
+       // Without valid gradient, use a small positive value
+       best_estimate = 1.0 / param_scales[i];
+     }
+   }
+
+   // Assign to diagonal
+   hessian(i, i) = best_estimate;
+ }
+
+ // Compute off-diagonal elements using mixed partial derivative formula
+ for (int i = 0; i < n; i++) {
+   for (int j = 0; j < i; j++) {
+     double eps_i = step_sizes[i];
+     double eps_j = step_sizes[j];
+
+     // Adjust step sizes if parameters have very different magnitudes
+     double mag_ratio = param_scales[i] / param_scales[j];
+     if (mag_ratio > 100.0 || mag_ratio < 0.01) {
+       double geom_mean = std::sqrt(eps_i * eps_j);
+       eps_i = std::min(eps_i, geom_mean);
+       eps_j = std::min(eps_j, geom_mean);
+     }
+
+     Rcpp::NumericVector params_pp = Rcpp::clone(params);
+     Rcpp::NumericVector params_pm = Rcpp::clone(params);
+     Rcpp::NumericVector params_mp = Rcpp::clone(params);
+     Rcpp::NumericVector params_mm = Rcpp::clone(params);
+
+     params_pp[i] += eps_i; params_pp[j] += eps_j;
+     params_pm[i] += eps_i; params_pm[j] -= eps_j;
+     params_mp[i] -= eps_i; params_mp[j] += eps_j;
+     params_mm[i] -= eps_i; params_mm[j] -= eps_j;
+
+     double f_pp = cached_eval(params_pp);
+     double f_pm = cached_eval(params_pm);
+     double f_mp = cached_eval(params_mp);
+     double f_mm = cached_eval(params_mm);
+
+     // Mixed partial formula
+     double mixed_estimate = (f_pp - f_pm - f_mp + f_mm) / (4.0 * eps_i * eps_j);
+
+     // Alternative calculation using gradient if available
+     bool use_alternative = false;
+     double alt_estimate = 0.0;
+
+     if (valid_gradient) {
+       try {
+         Rcpp::NumericVector grad_p = gr_func(params_pp, data);
+         Rcpp::NumericVector grad_m = gr_func(params_mm, data);
+
+         bool valid_grads = true;
+         for (int k = 0; k < n; k++) {
+           if (!R_finite(grad_p[k]) || !R_finite(grad_m[k])) {
+             valid_grads = false;
+             break;
+           }
+         }
+
+         if (valid_grads) {
+           // Alternative estimate using directional derivatives
+           double dir_diff_i = (grad_p[i] - grad_m[i]) / (2.0 * eps_i);
+           double dir_diff_j = (grad_p[j] - grad_m[j]) / (2.0 * eps_j);
+
+           alt_estimate = 0.5 * (dir_diff_i + dir_diff_j);
+           use_alternative = true;
+         }
+       } catch (...) {
+         // Failed to compute alternative
+       }
+     }
+
+     // Choose estimate with fallback strategy
+     double final_estimate = mixed_estimate;
+
+     if (!R_finite(mixed_estimate) || std::abs(mixed_estimate) > 1e6 / (param_scales[i] * param_scales[j])) {
+       if (use_alternative && R_finite(alt_estimate)) {
+         final_estimate = alt_estimate;
+       } else {
+         // As last resort, use geometric mean of diagonal elements with reduced magnitude
+         final_estimate = std::sqrt(std::abs(hessian(i,i) * hessian(j,j))) * 0.1;
+         // Preserve sign from original estimate if valid
+         if (R_finite(mixed_estimate) && mixed_estimate != 0.0) {
+           final_estimate *= std::copysign(1.0, mixed_estimate);
+         }
+       }
+     }
+
+     hessian(i, j) = final_estimate;
+     hessian(j, i) = final_estimate; // Ensure symmetry
+   }
+ }
+
+ // Final validation and corrections
+
+ // Check for NaN or Inf values
+ bool has_invalid = false;
+ for (int i = 0; i < n && !has_invalid; i++) {
+   for (int j = 0; j < n; j++) {
+     if (!R_finite(hessian(i, j))) {
+       has_invalid = true;
+       break;
+     }
+   }
+ }
+
+ // Fix any remaining invalid values
+ if (has_invalid) {
+   Rcpp::warning("Numerical Hessian contains invalid values; applying regularization");
+
+   // Use diagonal dominance to ensure positive definiteness
+   for (int i = 0; i < n; i++) {
+     if (!R_finite(hessian(i, i)) || hessian(i, i) <= 0) {
+       hessian(i, i) = 1.0 / param_scales[i]; // Fallback positive value
+     }
+
+     double row_sum = 0.0;
+     for (int j = 0; j < n; j++) {
+       if (i != j) {
+         if (!R_finite(hessian(i, j))) {
+           hessian(i, j) = 0.0; // Zero out invalid off-diagonals
+           hessian(j, i) = 0.0; // Maintain symmetry
+         }
+         row_sum += std::abs(hessian(i, j));
+       }
+     }
+
+     // Ensure diagonal dominance for numerical stability
+     if (std::abs(hessian(i, i)) <= row_sum) {
+       hessian(i, i) = row_sum + 1e-3 / param_scales[i];
+     }
+   }
+ }
+
+ // Return the final, robust Hessian approximation
+ return hessian;
 }
 
-return hessian;
+
+//' @title Calculate Adaptive Parameter Scaling Factors
+//' @description Computes intelligent scaling factors for parameters to improve
+//' numerical stability in optimization, with automatic detection of parameter
+//' patterns and adaptive thresholds.
+//'
+//' @param params Parameter vector
+//' @return Vector of scaling factors
+//' @noRd
+Rcpp::NumericVector computeScalingFactors(Rcpp::NumericVector params) {
+ int n = params.size();
+ Rcpp::NumericVector scaling_factors(n, 1.0);
+
+ // Handle empty parameter vector
+ if (n == 0) return scaling_factors;
+
+ // Calculate parameter statistics for adaptive scaling
+ double param_max = 0.0;
+ double param_min = R_PosInf;
+ double geom_mean = 0.0;
+ int non_zero_count = 0;
+
+ for (int i = 0; i < n; i++) {
+   double abs_param = std::abs(params[i]);
+
+   // Skip zeros for statistics
+   if (abs_param > 0) {
+     param_max = std::max(param_max, abs_param);
+     param_min = std::min(param_min, abs_param);
+     geom_mean += std::log(abs_param);
+     non_zero_count++;
+   }
+ }
+
+ // Set adaptive thresholds
+ double upper_threshold = 100.0;  // Default upper threshold
+ double lower_threshold = 0.01;   // Default lower threshold
+
+ // Use adaptive thresholds if we have enough non-zero parameters
+ if (non_zero_count > 1) {
+   geom_mean = std::exp(geom_mean / non_zero_count);
+
+   // Calculate magnitude range
+   double magnitude_range = param_max / std::max(param_min, std::numeric_limits<double>::min());
+
+   // If parameters span many orders of magnitude, use more aggressive scaling
+   if (magnitude_range > 1e6) {
+     // For extreme ranges, use statistics-based thresholds
+     upper_threshold = std::min(100.0, std::max(10.0, 10.0 * geom_mean));
+     lower_threshold = std::max(0.01, std::min(0.1, 0.1 * geom_mean));
+   }
+   else if (magnitude_range > 1e4) {
+     // For wide ranges, adjust thresholds based on geometric mean
+     upper_threshold = std::min(100.0, std::max(10.0, 5.0 * geom_mean));
+     lower_threshold = std::max(0.01, std::min(0.1, 0.2 * geom_mean));
+   }
+ }
+
+ // Apply scaling factors with adaptive thresholds
+ for (int i = 0; i < n; i++) {
+   double abs_param = std::abs(params[i]);
+
+   // Apply scaling for very large parameters
+   if (abs_param > upper_threshold) {
+     // Nonlinear scaling for extreme values to prevent excessive scaling
+     if (abs_param > 1e4 * upper_threshold) {
+       // Use square root scaling for extremely large values
+       scaling_factors[i] = upper_threshold / std::sqrt(abs_param * upper_threshold);
+     } else {
+       // Standard scaling
+       scaling_factors[i] = upper_threshold / abs_param;
+     }
+   }
+   // Apply scaling for very small non-zero parameters
+   else if (abs_param < lower_threshold && abs_param > 0) {
+     // Nonlinear scaling for extreme values to prevent excessive scaling
+     if (abs_param < lower_threshold * 1e-4) {
+       // Use square root scaling for extremely small values
+       scaling_factors[i] = std::sqrt(lower_threshold / abs_param);
+     } else {
+       // Standard scaling
+       scaling_factors[i] = lower_threshold / abs_param;
+     }
+   }
+
+   // Handle zero parameters specially - leave scaling at 1.0
+   // as multiplying by any factor won't change zero
+ }
+
+ // Detect if parameters have extreme differences that might cause issues
+ if (n > 1) {
+   double max_scaling = 1.0;
+   double min_scaling = 1.0;
+
+   for (int i = 0; i < n; i++) {
+     if (scaling_factors[i] != 1.0) {
+       max_scaling = std::max(max_scaling, scaling_factors[i]);
+       min_scaling = std::min(min_scaling, scaling_factors[i]);
+     }
+   }
+
+   // If scaling factors themselves vary too much, moderate them
+   if (max_scaling / min_scaling > 1e6) {
+     for (int i = 0; i < n; i++) {
+       if (scaling_factors[i] > 1.0) {
+         // Reduce very large upscaling factors using a logarithmic damping
+         scaling_factors[i] = std::pow(scaling_factors[i], 0.75);
+       }
+       else if (scaling_factors[i] < 1.0 && scaling_factors[i] > 0) {
+         // Reduce very small downscaling factors using a logarithmic damping
+         scaling_factors[i] = std::pow(scaling_factors[i], 0.75);
+       }
+     }
+   }
+ }
+
+ return scaling_factors;
 }
 
 
 
-//' @title Newton-Raphson Optimization for GKw Family Distributions (nrgkw)
-//' @author Lopes, J. E.
+//' @title Enhanced Line Search with Wolfe Conditions
+//' @description Performs a robust line search that satisfies Wolfe conditions to
+//' ensure sufficient decrease and curvature conditions, with improved numerical
+//' stability and adaptive bracketing strategies.
+//'
+//' @param params Current parameter vector
+//' @param search_dir Search direction
+//' @param data Data vector
+//' @param ll_func Log-likelihood function
+//' @param gr_func Gradient function
+//' @param alpha_init Initial step size (default: 1.0)
+//' @param c1 Parameter for sufficient decrease condition (default: 1e-4)
+//' @param c2 Parameter for curvature condition (default: 0.9)
+//' @param max_iter Maximum line search iterations (default: 20)
+//' @return Step size satisfying Wolfe conditions
+//' @noRd
+double lineSearchWolfe(
+   Rcpp::NumericVector params,
+   Rcpp::NumericVector search_dir,
+   Rcpp::NumericVector data,
+   std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
+   std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
+   double alpha_init = 1.0,
+   double c1 = 1e-4,
+   double c2 = 0.9,
+   int max_iter = 20
+) {
+ const int n_params = params.size();
+
+ // Safety bounds for step size
+ const double alpha_min = 1e-10;
+ const double alpha_max = 1e3;
+
+ // Safeguard alpha_init to be reasonable
+ alpha_init = std::min(std::max(alpha_init, alpha_min), alpha_max);
+
+ // Evaluate function and gradient at starting point with error handling
+ double f0;
+ Rcpp::NumericVector g0;
+
+ try {
+   f0 = ll_func(params, data);
+   if (!R_finite(f0)) {
+     Rcpp::warning("Initial function value is not finite");
+     return alpha_min;
+   }
+
+   g0 = gr_func(params, data);
+   for (int i = 0; i < n_params; i++) {
+     if (!R_finite(g0[i])) {
+       Rcpp::warning("Initial gradient contains non-finite values");
+       return alpha_min;
+     }
+   }
+ } catch (...) {
+   Rcpp::warning("Exception during initial function/gradient evaluation");
+   return alpha_min;
+ }
+
+ // Calculate directional derivative and search direction norm
+ double dir_deriv = 0.0;
+ double search_dir_norm = 0.0;
+
+ for (int i = 0; i < n_params; i++) {
+   dir_deriv += g0[i] * search_dir[i];
+   search_dir_norm += search_dir[i] * search_dir[i];
+ }
+ search_dir_norm = std::sqrt(search_dir_norm);
+
+ // Adjust c1 and c2 based on problem characteristics (if needed)
+ if (std::abs(dir_deriv) / search_dir_norm < 1e-4) {
+   // For very flat regions, relax the conditions slightly
+   c1 = std::min(c1, 1e-6);
+   c2 = std::max(c2, 0.95);
+ }
+
+ // Ensure search direction is a descent direction
+ if (dir_deriv >= 0) {
+   // Not a descent direction, return small step
+   return alpha_min;
+ }
+
+ // Scale initial step size based on search direction norm for better initial guess
+ if (search_dir_norm > 100.0) {
+   alpha_init = std::min(alpha_init, 10.0/search_dir_norm);
+ } else if (search_dir_norm < 0.01) {
+   alpha_init = std::min(alpha_max, std::max(alpha_init, 0.1/search_dir_norm));
+ }
+
+ // Initialize the bracketing phase
+ double alpha = alpha_init;
+ double alpha_prev = 0.0;
+ double f_prev = f0;
+
+ // Cache to avoid redundant function evaluations
+ struct CacheEntry {
+   double alpha;
+   double f_val;
+   Rcpp::NumericVector gradient;
+   bool has_gradient;
+
+   CacheEntry(double a, double f, Rcpp::NumericVector g, bool has_g) :
+     alpha(a), f_val(f), gradient(g), has_gradient(has_g) {}
+ };
+
+ std::vector<CacheEntry> evaluations;
+ evaluations.reserve(max_iter + 1);
+
+ // Helper function to compute new parameters
+ auto compute_new_params = [&](double step_size) -> Rcpp::NumericVector {
+   Rcpp::NumericVector new_params = Rcpp::clone(params);
+   for (int i = 0; i < n_params; i++) {
+     new_params[i] += step_size * search_dir[i];
+   }
+   return new_params;
+ };
+
+ // Helper to find cached evaluation
+ auto find_cached = [&](double a) -> std::vector<CacheEntry>::iterator {
+   const double cache_tol = 1e-14;
+   for (auto it = evaluations.begin(); it != evaluations.end(); ++it) {
+     if (std::abs(it->alpha - a) < cache_tol) {
+       return it;
+     }
+   }
+   return evaluations.end();
+ };
+
+ // Helper to evaluate function and optionally gradient at a point
+ auto evaluate = [&](double a, bool need_gradient) -> CacheEntry {
+   // Check cache first
+   auto cached = find_cached(a);
+   if (cached != evaluations.end()) {
+     if (need_gradient && !cached->has_gradient) {
+       // Need to compute gradient for cached point
+       try {
+         Rcpp::NumericVector new_params = compute_new_params(a);
+         cached->gradient = gr_func(new_params, data);
+         cached->has_gradient = true;
+       } catch (...) {
+         // Keep existing entry if gradient fails
+       }
+     }
+     return *cached;
+   }
+
+   // New evaluation needed
+   Rcpp::NumericVector new_params = compute_new_params(a);
+   double f_val;
+   Rcpp::NumericVector g_val;
+   bool has_g = false;
+
+   try {
+     f_val = ll_func(new_params, data);
+     if (!R_finite(f_val)) {
+       f_val = R_PosInf; // Mark as invalid
+     }
+
+     if (need_gradient) {
+       g_val = gr_func(new_params, data);
+       has_g = true;
+
+       // Check gradient validity
+       for (int i = 0; i < n_params; i++) {
+         if (!R_finite(g_val[i])) {
+           has_g = false;
+           break;
+         }
+       }
+     }
+   } catch (...) {
+     f_val = R_PosInf;
+     has_g = false;
+   }
+
+   CacheEntry entry(a, f_val, g_val, has_g);
+   evaluations.push_back(entry);
+   return entry;
+ };
+
+ // Line search iterations
+ for (int iter = 0; iter < max_iter; iter++) {
+   // Evaluate function at new point
+   CacheEntry eval = evaluate(alpha, false);
+   double f_new = eval.f_val;
+
+   // Check for invalid function values
+   if (!R_finite(f_new) || f_new == R_PosInf) {
+     // Rapidly reduce step size for invalid regions
+     alpha = 0.1 * alpha;
+     if (alpha < alpha_min) {
+       return alpha_min;
+     }
+     continue;
+   }
+
+   // Check Armijo condition (sufficient decrease)
+   bool armijo_condition = f_new <= f0 + c1 * alpha * dir_deriv;
+
+   if (!armijo_condition) {
+     // Backtracking with safeguarded polynomial interpolation
+     if (iter == 0) {
+       // First iteration, use safeguarded quadratic interpolation
+       double denominator = 2.0 * (f_new - f0 - dir_deriv * alpha);
+
+       if (std::abs(denominator) < 1e-10) {
+         // Avoid division by very small number
+         alpha = 0.5 * alpha;
+       } else {
+         // Quadratic interpolation
+         double alpha_quad = -dir_deriv * alpha * alpha / denominator;
+
+         // Safeguard the interpolated value
+         if (alpha_quad < 0.1 * alpha || alpha_quad > 0.9 * alpha || !R_finite(alpha_quad)) {
+           alpha = 0.5 * alpha;  // Fallback
+         } else {
+           alpha = alpha_quad;
+         }
+       }
+     } else {
+       // Subsequent iterations, use safeguarded cubic interpolation
+       double d1 = dir_deriv + (f_new - f0) / alpha;
+       double d2 = (f_prev - f0) / alpha_prev + dir_deriv;
+
+       // Check for nearly identical slopes
+       if (std::abs(d1 - d2) < 1e-10 || std::abs(alpha - alpha_prev) < 1e-10) {
+         alpha = 0.5 * alpha;  // Simple backtracking
+       } else {
+         double a = (d1 - d2) / (alpha - alpha_prev);
+         double b = d1 - a * alpha;
+
+         // Compute minimum of cubic polynomial with safeguards
+         double alpha_cubic;
+
+         if (std::abs(a) < 1e-10) {
+           // Nearly quadratic case
+           if (std::abs(b) < 1e-10) {
+             alpha_cubic = 0.5 * alpha;  // Fallback
+           } else {
+             alpha_cubic = -dir_deriv / (2.0 * b);
+           }
+         } else {
+           double disc = b * b - 3.0 * a * dir_deriv;
+
+           if (disc < 0 || !R_finite(disc)) {
+             // Discriminant invalid, use simple backtracking
+             alpha_cubic = 0.5 * alpha;
+           } else {
+             alpha_cubic = (-b + std::sqrt(disc)) / (3.0 * a);
+
+             // Check if we got the wrong root
+             if (alpha_cubic <= 0 || alpha_cubic > alpha) {
+               alpha_cubic = (-b - std::sqrt(disc)) / (3.0 * a);
+             }
+           }
+         }
+
+         // Safeguard the interpolated value
+         if (alpha_cubic <= 0.1 * alpha || alpha_cubic >= 0.9 * alpha || !R_finite(alpha_cubic)) {
+           alpha = 0.5 * alpha;  // Fallback
+         } else {
+           alpha = alpha_cubic;
+         }
+       }
+     }
+
+     // Additional safeguards for new alpha
+     if (alpha < alpha_min) {
+       return alpha_min;  // Step too small, terminate
+     }
+
+     // Safety check to avoid too small steps
+     if (alpha < 0.1 * alpha_prev) {
+       alpha = 0.1 * alpha_prev;
+     }
+
+     // Save current values for next iteration
+     alpha_prev = alpha;
+     f_prev = f_new;
+     continue;
+   }
+
+   // Armijo condition is satisfied, now check curvature condition
+   CacheEntry eval_with_grad = evaluate(alpha, true);
+
+   // Check if we could compute a valid gradient
+   if (!eval_with_grad.has_gradient) {
+     // No valid gradient, accept the point anyway if it decreased the function
+     if (f_new < f0) {
+       return alpha;
+     } else {
+       // Try smaller step
+       alpha = 0.5 * alpha;
+       continue;
+     }
+   }
+
+   // Compute new directional derivative
+   double dir_deriv_new = 0.0;
+   for (int i = 0; i < n_params; i++) {
+     dir_deriv_new += eval_with_grad.gradient[i] * search_dir[i];
+   }
+
+   // Check Wolfe curvature condition
+   bool wolfe_condition = std::abs(dir_deriv_new) <= c2 * std::abs(dir_deriv);
+
+   if (wolfe_condition) {
+     return alpha;  // Both conditions satisfied
+   }
+
+   // Curvature condition not satisfied, adjust interval
+   if (dir_deriv_new * dir_deriv > 0) {
+     // Derivative not changing sign, increase alpha
+     alpha_prev = alpha;
+
+     // More intelligent expansion strategy
+     if (f_new < f_prev) {
+       // Function still decreasing, be more aggressive
+       alpha = std::min(alpha_max, 2.0 * alpha);
+     } else {
+       // Function increasing, be more conservative
+       alpha = std::min(alpha_max, 1.5 * alpha);
+     }
+
+     f_prev = f_new;
+   } else {
+     // Derivative changed sign, we bracketed a minimum
+     // Use bisection with more weight to the current point
+     double alpha_temp = alpha;
+     double weight = 0.6;  // Bias toward current point if it's better
+
+     if (f_new < f_prev) {
+       weight = 0.7;  // Even more bias if current point is much better
+     }
+
+     alpha = (1.0 - weight) * alpha_prev + weight * alpha;
+     alpha_prev = alpha_temp;
+     f_prev = f_new;
+   }
+
+   // Check for convergence based on step size
+   if (std::abs(alpha - alpha_prev) < alpha_min) {
+     return alpha;  // Steps are becoming too small
+   }
+ }
+
+ // Check final point quality after max iterations
+ CacheEntry last_eval = evaluate(alpha, false);
+
+ // If we didn't satisfy Wolfe conditions but found a good improvement, accept it
+ if (last_eval.f_val < f0) {
+   return alpha;
+ }
+
+ // Otherwise, find best alpha from our evaluations
+ double best_alpha = alpha_min;
+ double best_value = f0;
+
+ for (const auto& eval : evaluations) {
+   if (R_finite(eval.f_val) && eval.f_val < best_value) {
+     best_value = eval.f_val;
+     best_alpha = eval.alpha;
+   }
+ }
+
+ return best_alpha;
+}
+
+
+
+//' @title Force Matrix Symmetry
+//' @description Ensures perfect matrix symmetry for numerical stability
+//' @param M Input matrix to symmetrize
+//' @return Symmetrized matrix
+//' @noRd
+inline arma::mat forceSymmetry(const arma::mat& M) {
+ return 0.5 * (M + M.t());
+}
+
+//' @title Enhanced Trust Region Update Using Levenberg-Marquardt
+//' @description Performs robust parameter updates using an advanced trust region method
+//' with Levenberg-Marquardt implementation, incorporating numerical safeguards and
+//' adaptive strategies for improved convergence.
+//'
+//' @param params Current parameter vector
+//' @param data Data vector
+//' @param ll_func Log-likelihood function
+//' @param gr_func Gradient function
+//' @param hs_func Hessian function
+//' @param trust_radius Current trust region radius (default: 1.0)
+//' @param eta Acceptance threshold for step ratio (default: 0.1)
+//' @param enforce_bounds Whether to enforce parameter bounds (default: true)
+//' @param min_param_val Minimum parameter value (default: 1e-5)
+//' @param max_param_val Maximum parameter value (default: 1e5)
+//' @return List containing new parameters and trust region information
+//' @noRd
+Rcpp::List trustRegionUpdate(
+   Rcpp::NumericVector params,
+   Rcpp::NumericVector data,
+   std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
+   std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
+   std::function<Rcpp::NumericMatrix(Rcpp::NumericVector, Rcpp::NumericVector)> hs_func,
+   double trust_radius = 1.0,
+   double eta = 0.1,
+   bool enforce_bounds = true,
+   double min_param_val = 1e-5,
+   double max_param_val = 1e5
+) {
+ int n = params.size();
+
+ // Ensure trust radius is within reasonable bounds
+ // This prevents numerical issues with extremely small or large step sizes
+ trust_radius = std::max(1e-8, std::min(trust_radius, 100.0));
+
+ // Create result container with default values for error cases
+ // This ensures we always return a valid result even if computation fails
+ Rcpp::List result;
+ result["new_params"] = Rcpp::clone(params);  // Default: no change
+ result["accept"] = false;
+ result["trust_radius"] = trust_radius * 0.5;  // Default: reduce trust region
+ result["actual_reduction"] = 0.0;
+ result["ratio"] = 0.0;
+
+ // Evaluate function and gradient at current point
+ double f0;
+ Rcpp::NumericVector g0;
+ bool valid_evaluation = true;
+
+ try {
+   f0 = ll_func(params, data);
+   g0 = gr_func(params, data);
+
+   // Check for non-finite values
+   if (!R_finite(f0)) {
+     Rcpp::warning("Non-finite function value at current point");
+     return result;
+   }
+
+   for (int i = 0; i < n; i++) {
+     if (!R_finite(g0[i])) {
+       Rcpp::warning("Non-finite gradient value(s) at current point");
+       return result;
+     }
+   }
+ } catch (...) {
+   Rcpp::warning("Exception during function/gradient evaluation");
+   return result;
+ }
+
+ // Convert gradient to Armadillo vector
+ arma::vec g_arma(n);
+ double grad_norm = 0.0;
+
+ for (int i = 0; i < n; i++) {
+   g_arma(i) = g0[i];
+   grad_norm += g0[i] * g0[i];
+ }
+ grad_norm = std::sqrt(grad_norm);
+
+ // Skip update if gradient is effectively zero (we're at a stationary point)
+ if (grad_norm < 1e-10) {
+   result["accept"] = true;  // Accept current point (it's already optimal)
+   return result;
+ }
+
+ // Compute parameter scale factors for better conditioning
+ // This helps handle parameters with very different magnitudes
+ arma::vec param_scales(n);
+ for (int i = 0; i < n; i++) {
+   param_scales(i) = std::max(1.0, std::abs(params[i]));
+ }
+
+ // Retrieve and validate Hessian
+ Rcpp::NumericMatrix rcpp_hessian;
+ arma::mat H(n, n);
+ bool use_hessian = true;
+
+ try {
+   rcpp_hessian = hs_func(params, data);
+
+   // Check for non-finite values
+   for (int i = 0; i < n; i++) {
+     for (int j = 0; j < n; j++) {
+       if (!R_finite(rcpp_hessian(i, j))) {
+         use_hessian = false;
+         break;
+       }
+     }
+     if (!use_hessian) break;
+   }
+
+   if (use_hessian) {
+     H = Rcpp::as<arma::mat>(rcpp_hessian);
+
+     // Check for unreasonable values in Hessian
+     double max_abs_hess = 0.0;
+     for (int i = 0; i < n; i++) {
+       for (int j = 0; j < n; j++) {
+         max_abs_hess = std::max(max_abs_hess, std::abs(H(i, j)));
+       }
+     }
+
+     // Reject extreme values which may cause numerical instability
+     if (max_abs_hess > 1e7) {
+       use_hessian = false;
+     }
+   }
+ } catch (...) {
+   use_hessian = false;
+ }
+
+ // Fallback if Hessian is invalid or computation failed
+ if (!use_hessian) {
+   // Use scaled identity matrix if Hessian is invalid
+   H = arma::diagmat(arma::vec(n, arma::fill::ones));
+
+   // Scale diagonal elements by gradient magnitudes for better conditioning
+   for (int i = 0; i < n; i++) {
+     double scale = std::max(1.0, std::sqrt(std::abs(g_arma(i))));
+     H(i, i) = scale;
+   }
+ }
+
+ // Ensure H is symmetric before making it positive definite
+ H = forceSymmetry(H);
+
+ // Ensure H is positive definite with scaled regularization
+ try {
+   H = makePositiveDefinite(H, 1e-5);
+ } catch (...) {
+   // If regularization fails, use a robust diagonal approximation
+   for (int i = 0; i < n; i++) {
+     for (int j = 0; j < n; j++) {
+       if (i != j) H(i, j) = 0.0;
+       else H(i, i) = std::max(1.0, std::abs(H(i, i)));
+     }
+   }
+ }
+
+ // Precondition the system for better numerical stability
+ // This helps solve the linear system more accurately
+ arma::vec scaled_g = g_arma;
+ arma::mat scaled_H = H;
+
+ for (int i = 0; i < n; i++) {
+   double scale = param_scales(i);
+   scaled_g(i) /= scale;
+
+   for (int j = 0; j < n; j++) {
+     scaled_H(i, j) = H(i, j) * scale / param_scales(j);
+   }
+ }
+
+ // Ensure scaled_H is perfectly symmetric for eigendecomposition
+ scaled_H = forceSymmetry(scaled_H);
+
+ // Solve the trust region subproblem using Levenberg-Marquardt
+ arma::vec scaled_p;
+ double lambda = 0.0;
+ bool solve_success = false;
+
+ // Initial lambda based on Hessian eigenvalues and gradient norm
+ arma::vec eigval;
+ bool eig_success = arma::eig_sym(eigval, scaled_H);
+
+ if (eig_success) {
+   double min_eig = arma::min(eigval);
+   double max_eig = arma::max(eigval);
+
+   // Set initial lambda based on eigenvalue range and gradient
+   if (min_eig <= 1e-5) {
+     // Matrix is near-singular or indefinite
+     lambda = std::max(1e-5, -min_eig + 1e-4);
+   } else {
+     // Use smaller regularization if matrix is already positive definite
+     lambda = std::min(min_eig, 1e-3 * max_eig);
+   }
+
+   // Adjust lambda based on gradient norm
+   lambda = std::max(lambda, 1e-6 * grad_norm);
+ } else {
+   // Fallback if eigenvalue computation fails
+   lambda = 0.1 * grad_norm;
+ }
+
+ // Advanced binary search strategy with adaptive bounds
+ double lambda_low = 0.0;
+ double lambda_high = 1e8;
+ double target_step_ratio = 0.8; // Target ratio of step norm to trust radius
+
+ // Maximum number of binary search iterations
+ const int max_search_iter = 30;
+
+ // Store best solution found so far
+ arma::vec best_p;
+ double best_lambda = -1.0;
+ double best_ratio = 0.0; // Ratio of step norm to trust radius
+
+ for (int iter = 0; iter < max_search_iter; iter++) {
+   // Solve the linear system with current lambda
+   try {
+     solve_success = arma::solve(scaled_p, scaled_H + lambda * arma::eye<arma::mat>(n, n), -scaled_g);
+   } catch (...) {
+     solve_success = false;
+   }
+
+   // Check if solve was successful and step is valid
+   if (solve_success) {
+     double step_norm = arma::norm(scaled_p);
+     double step_ratio = step_norm / trust_radius;
+
+     // Keep track of best solution so far
+     if (best_lambda < 0 || std::abs(step_ratio - target_step_ratio) < std::abs(best_ratio - target_step_ratio)) {
+       best_p = scaled_p;
+       best_lambda = lambda;
+       best_ratio = step_ratio;
+     }
+
+     // If we're close enough to the target ratio, stop early
+     if (std::abs(step_ratio - target_step_ratio) < 0.05 || std::abs(lambda_high - lambda_low) < 1e-6 * (1.0 + lambda)) {
+       break;
+     }
+
+     // Binary search update
+     if (step_norm > trust_radius) {
+       // Step too large, increase lambda
+       lambda_low = lambda;
+
+       // Adaptive update based on how far we are from target
+       double factor = step_ratio / target_step_ratio;
+       lambda = std::min(lambda_high, std::max(lambda * factor, lambda + (lambda_high - lambda_low) * 0.25));
+     } else {
+       // Step within trust region, decrease lambda if it's too small
+       lambda_high = lambda;
+
+       // Adaptive update based on how far we are from target
+       if (step_ratio < 0.1 * target_step_ratio) {
+         // Step much too small, be more aggressive
+         lambda = std::max(lambda_low, lambda * 0.1);
+       } else {
+         // Step somewhat small, make moderate adjustment
+         double factor = step_ratio / target_step_ratio;
+         lambda = std::max(lambda_low, lambda * factor);
+       }
+     }
+   } else {
+     // Solver failed, increase lambda substantially
+     lambda_low = lambda;
+     lambda = std::min(lambda_high, lambda * 10.0);
+
+     // If lambda is getting very large, adjust the upper bound
+     if (lambda > 1e6) lambda_high = std::min(lambda_high, lambda * 2.0);
+   }
+
+   // Handle convergence edge cases
+   if (lambda_high < 1e-10) {
+     lambda_high = 1e-2;
+     lambda = 1e-3;
+   }
+
+   if (lambda < 1e-12) {
+     lambda = 1e-6;
+   }
+
+   // Check if bounds are too close
+   if (lambda_high / lambda_low < 1.01) {
+     break;
+   }
+ }
+
+ // If we found at least one valid solution, use the best one
+ if (best_lambda >= 0) {
+   scaled_p = best_p;
+   solve_success = true;
+ } else {
+   // Fallback to steepest descent if no valid solution found
+   scaled_p = -scaled_g * (trust_radius / arma::norm(scaled_g));
+   solve_success = true;
+ }
+
+ // Unscale the step
+ arma::vec p(n);
+ for (int i = 0; i < n; i++) {
+   p(i) = scaled_p(i) * param_scales(i);
+ }
+
+ // Convert step to NumericVector
+ Rcpp::NumericVector step = Rcpp::wrap(p);
+
+ // Apply step to get new parameters
+ Rcpp::NumericVector new_params = Rcpp::clone(params);
+ for (int i = 0; i < n; i++) {
+   new_params[i] += step[i];
+ }
+
+ // Apply bounds with intelligent handling for different parameter types
+ if (enforce_bounds) {
+   for (int i = 0; i < n; i++) {
+     // Detect if this is a delta-type parameter (non-negative but can be zero)
+     bool is_delta = (i == 3); // Default assumption for delta parameter
+
+     // More intelligent check based on parameter name or position if available
+     // (This could be enhanced with parameter type information if available)
+
+     if (is_delta) {
+       // For delta parameters (non-negative)
+       new_params[i] = std::max(0.0, new_params[i]);
+     } else {
+       // For strictly positive parameters
+       new_params[i] = std::max(min_param_val, new_params[i]);
+     }
+
+     // Upper bound for all parameters
+     new_params[i] = std::min(max_param_val, new_params[i]);
+   }
+ }
+
+ // Evaluate function at new point with error handling
+ double f_new;
+ bool valid_new_point = true;
+
+ try {
+   f_new = ll_func(new_params, data);
+   if (!R_finite(f_new)) {
+     valid_new_point = false;
+   }
+ } catch (...) {
+   valid_new_point = false;
+ }
+
+ // Fallback for invalid new point
+ if (!valid_new_point) {
+   // Try a smaller step (half the size)
+   for (int i = 0; i < n; i++) {
+     new_params[i] = params[i] + 0.5 * step[i];
+   }
+
+   // Re-apply bounds
+   if (enforce_bounds) {
+     for (int i = 0; i < n; i++) {
+       bool is_delta = (i == 3);
+       if (is_delta) {
+         new_params[i] = std::max(0.0, new_params[i]);
+       } else {
+         new_params[i] = std::max(min_param_val, new_params[i]);
+       }
+       new_params[i] = std::min(max_param_val, new_params[i]);
+     }
+   }
+
+   // Try evaluating at reduced step
+   try {
+     f_new = ll_func(new_params, data);
+     valid_new_point = R_finite(f_new);
+   } catch (...) {
+     valid_new_point = false;
+   }
+
+   // If still invalid, reject the step
+   if (!valid_new_point) {
+     result["new_params"] = params;
+     result["trust_radius"] = 0.1 * trust_radius;  // Reduce trust region more aggressively
+     return result;
+   }
+ }
+
+ // Compute actual reduction and predicted reduction
+ double actual_reduction = f0 - f_new;
+
+ // More numerically stable quadratic model prediction
+ double pred_reduction = 0.0;
+
+ // Direct calculation of pred_reduction = -g^T p - 0.5 * p^T H p
+ pred_reduction = -arma::dot(g_arma, p);
+
+ // Avoid potential catastrophic cancellation in the Hessian term
+ arma::vec Hp = H * p;
+ pred_reduction -= 0.5 * arma::dot(p, Hp);
+
+ // Compute ratio with safeguards
+ double rho = 0.0;
+
+ if (pred_reduction > 1e-10) {
+   rho = actual_reduction / pred_reduction;
+ } else if (actual_reduction > 1e-10) {
+   // Positive reduction but prediction was tiny - count as success
+   rho = 2.0;  // Arbitrary value > 1
+ } else if (std::abs(actual_reduction) < 1e-10 && std::abs(pred_reduction) < 1e-10) {
+   // Both reductions effectively zero - neutral
+   rho = 1.0;
+ }
+
+ // Adaptive trust radius update based on ratio quality
+ if (rho < 0.25) {
+   // Poor agreement, reduce radius more aggressively for very bad ratios
+   if (rho < 0.0) {
+     trust_radius = std::max(1e-8, 0.25 * trust_radius);
+   } else {
+     trust_radius = std::max(1e-8, 0.5 * trust_radius);
+   }
+ } else if (rho > 0.75 && arma::norm(p) >= 0.8 * trust_radius) {
+   // Good agreement and step near boundary, increase radius
+   // More conservative growth for already large trust regions
+   if (trust_radius > 10.0) {
+     trust_radius = std::min(1.5 * trust_radius, 100.0);
+   } else {
+     trust_radius = std::min(2.0 * trust_radius, 10.0);
+   }
+ } else if (0.25 <= rho && rho <= 0.75) {
+   // Modest agreement, keep radius but consider slight increase if step is large
+   if (arma::norm(p) >= 0.9 * trust_radius) {
+     trust_radius = std::min(1.1 * trust_radius, 10.0);
+   }
+ }
+
+ // Acceptance decision with more nuanced criteria
+ bool accept = false;
+
+ if (rho > eta) {
+   // Standard acceptance criteria
+   accept = true;
+ } else if (rho > 0 && actual_reduction > 0 && arma::norm(p) < 0.1 * trust_radius) {
+   // Accept small steps with any positive reduction
+   accept = true;
+ }
+
+ // Final results
+ result["new_params"] = new_params;
+ result["accept"] = accept;
+ result["trust_radius"] = trust_radius;
+ result["actual_reduction"] = actual_reduction;
+ result["ratio"] = rho;
+
+ return result;
+}
+
+
+//' @title Advanced Initialization for GKw Family Parameters
+//' @description Generates intelligent initial parameter estimates for GKw
+//' family distributions based on theoretical moment relationships and
+//' distribution properties from Carrasco et al. (2010).
+//'
+//' @param data Data vector in (0,1)
+//' @param family Distribution family (default: "gkw")
+//' @param robust Logical; if TRUE, uses robust statistics for initialization (default: TRUE)
+//' @return Vector of initial parameter estimates
+//' @noRd
+Rcpp::NumericVector smartInitGkw(
+   Rcpp::NumericVector data,
+   std::string family = "gkw",
+   bool robust = true
+) {
+ // Convert family to lowercase
+ std::string family_lower = family;
+ std::transform(family_lower.begin(), family_lower.end(),
+                family_lower.begin(), ::tolower);
+
+ int n_data = data.size();
+
+ // Calculate summary statistics with optional robustness
+ double data_mean = 0.0;
+ double data_var = 0.0;
+ double data_min = 1.0;
+ double data_max = 0.0;
+
+ // First pass: mean, min, max
+ for (int i = 0; i < n_data; i++) {
+   data_mean += data[i];
+   data_min = std::min(data_min, data[i]);
+   data_max = std::max(data_max, data[i]);
+ }
+ data_mean /= n_data;
+
+ // Second pass: variance, skewness, kurtosis
+ double m2 = 0.0;  // 2nd central moment
+ double m3 = 0.0;  // 3rd central moment
+ double m4 = 0.0;  // 4th central moment
+
+ for (int i = 0; i < n_data; i++) {
+   double dev = data[i] - data_mean;
+   double dev2 = dev * dev;
+   m2 += dev2;
+   m3 += dev2 * dev;
+   m4 += dev2 * dev2;
+ }
+
+ m2 /= n_data;
+ m3 /= n_data;
+ m4 /= n_data;
+
+ data_var = m2;
+ double data_skew = m3 / std::pow(m2, 1.5);
+ double data_kurt = m4 / (m2 * m2) - 3.0;  // Excess kurtosis
+
+ // Use robust statistics if requested
+ if (robust && n_data > 10) {
+   // Sort data for quantile-based statistics (trimmed mean, etc.)
+   std::vector<double> sorted_data(data.begin(), data.end());
+   std::sort(sorted_data.begin(), sorted_data.end());
+
+   int trim_level = static_cast<int>(0.1 * n_data);  // 10% trimming
+
+   // Calculate trimmed mean
+   double trimmed_mean = 0.0;
+   for (int i = trim_level; i < n_data - trim_level; i++) {
+     trimmed_mean += sorted_data[i];
+   }
+   trimmed_mean /= (n_data - 2 * trim_level);
+
+   // Calculate median
+   double median;
+   if (n_data % 2 == 0) {
+     median = (sorted_data[n_data/2 - 1] + sorted_data[n_data/2]) / 2.0;
+   } else {
+     median = sorted_data[n_data/2];
+   }
+
+   // Calculate interquartile range for robust variance
+   int q1_idx = n_data / 4;
+   int q3_idx = 3 * n_data / 4;
+   double q1 = sorted_data[q1_idx];
+   double q3 = sorted_data[q3_idx];
+   double iqr = q3 - q1;
+
+   // Estimate robust variance using IQR (assumes approximately normal distribution)
+   double robust_var = std::pow(iqr / 1.349, 2);
+
+   // Use robust statistics if they seem more reliable
+   if (robust_var > 0 && robust_var < data_var * 3) {
+     data_var = robust_var;
+   }
+
+   // Use median instead of mean if distribution is highly skewed
+   if (std::abs(data_skew) > 1.0) {
+     data_mean = median;
+   }
+ }
+
+ // Compute beta parameters using method of moments
+ // Based on E(X) and Var(X) for beta distribution
+ double alpha_beta = 0.0;
+ double beta_beta = 0.0;
+
+ if (data_var < data_mean * (1 - data_mean)) {
+   // Valid moment estimates exist
+   alpha_beta = data_mean * (1 - data_mean) / data_var - 1;
+   alpha_beta = std::max(0.5, alpha_beta);
+
+   beta_beta = alpha_beta * (1 - data_mean) / data_mean;
+   beta_beta = std::max(0.5, beta_beta);
+ } else {
+   // Use alternative based on range and mean (approximate method)
+   alpha_beta = 1.0 + 4.0 * (data_mean - data_min) / (data_max - data_min);
+   beta_beta = 1.0 + 4.0 * (data_max - data_mean) / (data_max - data_min);
+ }
+
+ // Compute Kumaraswamy parameters using theoretical relationship
+ // The relationship is approximate: shape1 ≈ √α and shape2 ≈ √β for similar shapes
+ double shape1_kw = std::sqrt(alpha_beta);
+ double shape2_kw = std::sqrt(beta_beta);
+
+ // Refine parameters based on distribution shape characteristics
+ double adjustment_factor = 0.0;
+
+ // Use skewness to refine shape adjustment (following theoretical moment relationships)
+ if (std::abs(data_skew) > 0.1) {
+   // Skewness adjustment - Using the known relationship between
+   // skewness and shape parameters
+   adjustment_factor = std::min(0.3, std::abs(data_skew) * 0.1);
+
+   if (data_skew > 0) {
+     // Right-skewed (positive skew): Lower shape1, higher shape2
+     shape1_kw = std::max(0.5, shape1_kw * (1.0 - adjustment_factor));
+     shape2_kw = std::min(20.0, shape2_kw * (1.0 + adjustment_factor));
+   } else {
+     // Left-skewed (negative skew): Higher shape1, lower shape2
+     shape1_kw = std::min(20.0, shape1_kw * (1.0 + adjustment_factor));
+     shape2_kw = std::max(0.5, shape2_kw * (1.0 - adjustment_factor));
+   }
+ }
+
+ // Use kurtosis for additional refinement
+ if (std::abs(data_kurt) > 0.5) {
+   // Kurtosis adjustment
+   adjustment_factor = std::min(0.2, std::abs(data_kurt) * 0.05);
+
+   if (data_kurt > 0) {
+     // Leptokurtic (heavy tails): Reduce both shapes to allow heavier tails
+     shape1_kw = std::max(0.5, shape1_kw * (1.0 - adjustment_factor));
+     shape2_kw = std::max(0.5, shape2_kw * (1.0 - adjustment_factor));
+   } else {
+     // Platykurtic (light tails): Increase both shapes for lighter tails
+     shape1_kw = std::min(20.0, shape1_kw * (1.0 + adjustment_factor));
+     shape2_kw = std::min(20.0, shape2_kw * (1.0 + adjustment_factor));
+   }
+ }
+
+ // Adjust based on data concentration using the range
+ double range_factor = (data_max - data_min) / 0.9;
+
+ if (range_factor < 0.5) {
+   // Highly concentrated data - Increase shape parameters
+   double concentration_factor = 1.0 + 2.0 * (0.5 - range_factor);
+   shape1_kw = std::min(25.0, shape1_kw * concentration_factor);
+   shape2_kw = std::min(25.0, shape2_kw * concentration_factor);
+ } else if (range_factor > 0.95) {
+   // Very dispersed data - Decrease shape parameters
+   double dispersion_factor = 0.7 + 0.3 * std::min(1.0, range_factor - 0.95);
+   shape1_kw = std::max(0.3, shape1_kw * dispersion_factor);
+   shape2_kw = std::max(0.3, shape2_kw * dispersion_factor);
+ }
+
+ // Initialize additional parameters for the GKw family
+ double gamma_param = 1.0;
+ double delta_param = 0.2;  // Small but positive
+ double lambda_param = 1.0;
+
+ // For more complex distributions, initialize additional parameters
+ // based on theoretical insights from Carrasco et al. (2010)
+ if (family_lower == "gkw" || family_lower == "kkw" ||
+     family_lower == "ekw" || family_lower == "mc") {
+
+   // Lambda affects tails and moments significantly
+   // Use data range and kurtosis to inform lambda estimate
+   if (range_factor > 0.9 || std::abs(data_kurt) > 1.0) {
+     // Wide range or high kurtosis suggests potential for lambda > 1
+     lambda_param = 1.0 + std::min(15.0, range_factor * 10.0 * std::abs(data_kurt));
+   }
+
+   // For kkw and gkw, delta can be adjusted based on tail behavior
+   if (family_lower == "gkw" || family_lower == "kkw" || family_lower == "bkw") {
+     // Delta controls tail behavior
+     // Higher values for more flexible tails, especially with extreme values
+     if (data_kurt > 0.5) {
+       delta_param = std::min(2.0, 0.2 + data_kurt * 0.2);
+     }
+   }
+
+   // For gkw and bkw, gamma can be adjusted based on mode location
+   if (family_lower == "gkw" || family_lower == "bkw") {
+     // Gamma affects the mode location and skewness
+     // Adjust based on skewness and mean/median relationship
+     if (data_skew < -0.5) {
+       gamma_param = std::max(0.5, 1.0 - std::abs(data_skew) * 0.2);
+     } else if (data_skew > 0.5) {
+       gamma_param = std::min(2.0, 1.0 + data_skew * 0.2);
+     }
+   }
+ }
+
+ // Create parameter vector based on family
+ Rcpp::NumericVector result;
+
+ if (family_lower == "gkw") {
+   result = Rcpp::NumericVector(5);
+   result[0] = shape1_kw;        // alpha
+   result[1] = shape2_kw;        // beta
+   result[2] = gamma_param;      // gamma
+   result[3] = delta_param;      // delta
+   result[4] = lambda_param;     // lambda
+ } else if (family_lower == "bkw") {
+   result = Rcpp::NumericVector(4);
+   result[0] = shape1_kw;        // alpha
+   result[1] = shape2_kw;        // beta
+   result[2] = gamma_param;      // gamma
+   result[3] = delta_param;      // delta
+ } else if (family_lower == "kkw") {
+   result = Rcpp::NumericVector(4);
+   result[0] = shape1_kw;        // alpha
+   result[1] = shape2_kw;        // beta
+   result[2] = delta_param;      // delta
+   result[3] = lambda_param;     // lambda
+ } else if (family_lower == "ekw") {
+   result = Rcpp::NumericVector(3);
+   result[0] = shape1_kw;        // alpha
+   result[1] = shape2_kw;        // beta
+   result[2] = lambda_param;     // lambda
+ } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+   result = Rcpp::NumericVector(3);
+   result[0] = alpha_beta;       // gamma
+   result[1] = std::max(0.0, beta_beta - 1.0);  // delta
+   result[2] = lambda_param;     // lambda
+ } else if (family_lower == "kw") {
+   result = Rcpp::NumericVector(2);
+   result[0] = shape1_kw;        // alpha
+   result[1] = shape2_kw;        // beta
+ } else if (family_lower == "beta") {
+   result = Rcpp::NumericVector(2);
+   result[0] = alpha_beta;       // gamma
+   result[1] = std::max(0.0, beta_beta - 1.0);  // delta
+ }
+
+ return result;
+}
+
+
+// Declaração de funções externas para log-verossimilhança, gradiente e hessiana
+// para cada família de distribuição
+// Essas declarações são necessárias para que o compilador reconheça essas funções
+extern double llgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericVector grgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+
+extern double llbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericVector grbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+
+extern double llkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericVector grkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+
+extern double llekw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericVector grekw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+
+extern double llmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericVector grmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+
+extern double llkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericVector grkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericMatrix hskw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+
+extern double llbeta(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericVector grbeta(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+extern Rcpp::NumericMatrix hsbeta(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
+
+
+//' @title Enhanced Newton-Raphson Optimization for GKw Family Distributions (nrgkw_v2)
+//' @author Enhanced by Lopes, J. E.
 //' @keywords distribution optimization likelihood mle newton-raphson kumaraswamy mcdonald beta
 //'
 //' @description
-//' Performs maximum likelihood estimation (MLE) for the parameters of any
-//' distribution in the Generalized Kumaraswamy (GKw) family using a robust
-//' implementation of the Newton-Raphson algorithm (`nrgkw`). This function
-//' supports all 7 nested submodels, optimizing the corresponding negative
-//' log-likelihood function using analytical gradients and Hessians.
+//' An industrial-strength implementation of maximum likelihood estimation (MLE)
+//' for the parameters of any distribution in the Generalized Kumaraswamy (GKw) family.
+//' This function incorporates multiple advanced numerical techniques including trust region
+//' methods, eigenvalue-based regularization, adaptive scaling, and sophisticated line
+//' search to ensure robust convergence even for challenging datasets or extreme parameter values.
 //'
 //' @details
-//' The Generalized Kumaraswamy family includes the following distributions,
-//' all defined on the interval (0, 1):
+//' This enhanced algorithm provides robust parameter estimation for the Generalized
+//' Kumaraswamy distribution and its subfamilies. The function implements several
+//' advanced numerical optimization techniques to maximize the likelihood function
+//' reliably even in difficult cases.
+//'
+//' \subsection{The GKw Family of Distributions}{
+//' The Generalized Kumaraswamy (GKw) distribution, introduced by Carrasco, Ferrari,
+//' and Cordeiro (2010), is a flexible five-parameter continuous distribution defined
+//' on the standard unit interval (0,1). Its probability density function is given by:
+//'
+//' \deqn{f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda\alpha\beta x^{\alpha-1}}{B(\gamma, \delta+1)}(1-x^{\alpha})^{\beta-1}[1-(1-x^{\alpha})^{\beta}]^{\gamma\lambda-1}\{1-[1-(1-x^{\alpha})^{\beta}]^{\lambda}\}^{\delta}}
+//'
+//' where \eqn{\alpha, \beta, \gamma, \lambda > 0} and \eqn{\delta \geq 0} are the model
+//' parameters, and \eqn{B(\gamma, \delta+1)} is the beta function.
+//'
+//' The GKw distribution encompasses several important special cases:
 //' \itemize{
-//'   \item{\bold{GKw} (Generalized Kumaraswamy): 5 parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda})}
-//'   \item{\bold{BKw} (Beta-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \gamma, \delta}), GKw with \eqn{\lambda = 1}}
-//'   \item{\bold{KwKw} (Kumaraswamy-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \delta, \lambda}), GKw with \eqn{\gamma = 1}}
-//'   \item{\bold{EKw} (Exponentiated Kumaraswamy): 3 parameters (\eqn{\alpha, \beta, \lambda}), GKw with \eqn{\gamma = 1, \delta = 0}}
-//'   \item{\bold{Mc} (McDonald/Beta Power): 3 parameters (\eqn{\gamma, \delta, \lambda}), GKw with \eqn{\alpha = 1, \beta = 1}}
-//'   \item{\bold{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha, \beta}), GKw with \eqn{\gamma = 1, \delta = 0, \lambda = 1}}
-//'   \item{\bold{Beta}: 2 parameters (\eqn{\gamma, \delta}), GKw with \eqn{\alpha = 1, \beta = 1, \lambda = 1}. Corresponds to standard Beta(\eqn{\gamma, \delta+1}).}
+//'   \item\bold{GKw} (5 parameters): \eqn{\alpha, \beta, \gamma, \delta, \lambda}
+//'   \item\bold{BKw} (4 parameters): \eqn{\alpha, \beta, \gamma, \delta} (with \eqn{\lambda = 1})
+//'   \item\bold{KKw} (4 parameters): \eqn{\alpha, \beta, \delta, \lambda} (with \eqn{\gamma = 1})
+//'   \item\bold{EKw} (3 parameters): \eqn{\alpha, \beta, \lambda} (with \eqn{\gamma = 1, \delta = 0})
+//'   \item\bold{Mc}  (3 parameters): \eqn{\gamma, \delta, \lambda} (with \eqn{\alpha = 1, \beta = 1})
+//'   \item\bold{Kw}  (2 parameters): \eqn{\alpha, \beta} (with \eqn{\gamma = 1, \delta = 0, \lambda = 1})
+//'   \item\bold{Beta}(2 parameters): \eqn{\gamma, \delta} (with \eqn{\alpha = 1, \beta = 1, \lambda = 1})
+//' }
 //' }
 //'
-//' The `nrgkw` function implements a Newton-Raphson optimization procedure to
-//' find the maximum likelihood estimates. It incorporates multiple fallback strategies
-//' to handle numerical challenges when updating parameters using the Hessian matrix:
-//' \enumerate{
-//'  \item Cholesky decomposition (fastest, requires positive-definite Hessian)
-//'  \item Standard matrix solver (e.g., LU decomposition)
-//'  \item Regularized Hessian (adding small values to the diagonal)
-//'  \item Moore-Penrose Pseudo-inverse (for singular or ill-conditioned Hessians)
-//'  \item Gradient descent (if Hessian steps fail repeatedly or `use_hessian=FALSE`)
+//' \subsection{Trust Region Method with Levenberg-Marquardt Algorithm}{
+//' The trust region approach restricts parameter updates to a region where the quadratic
+//' approximation of the objective function is trusted to be accurate. This algorithm
+//' implements the Levenberg-Marquardt variant, which solves the subproblem:
+//'
+//' \deqn{\min_p m_k(p) = -\nabla \ell(\theta_k)^T p + \frac{1}{2}p^T H_k p}
+//' \deqn{\text{subject to } \|p\| \leq \Delta_k}
+//'
+//' where \eqn{\nabla \ell(\theta_k)} is the gradient, \eqn{H_k} is the Hessian, and \eqn{\Delta_k}
+//' is the trust region radius at iteration \eqn{k}.
+//'
+//' The Levenberg-Marquardt approach adds a regularization parameter \eqn{\lambda} to the
+//' Hessian, solving:
+//'
+//' \deqn{(H_k + \lambda I)p = -\nabla \ell(\theta_k)}
+//'
+//' The parameter \eqn{\lambda} controls the step size and direction:
+//' \itemize{
+//'   \item When \eqn{\lambda} is large, the step approaches a scaled steepest descent direction.
+//'   \item When \eqn{\lambda} is small, the step approaches the Newton direction.
 //' }
 //'
-//' The function also implements a backtracking line search algorithm to ensure
-//' monotonic improvement (decrease) in the negative log-likelihood at each step.
-//' If backtracking fails consistently, random parameter perturbation may be
-//' employed as a recovery strategy. Parameter bounds (\code{min_param_val},
-//' \code{max_param_val}, and \eqn{\delta \ge 0}) can be enforced if
-//' \code{enforce_bounds = TRUE}.
+//' The algorithm dynamically adjusts \eqn{\lambda} based on the agreement between the quadratic model and the actual function:
+//'
+//' \deqn{\rho_k = \frac{f(\theta_k) - f(\theta_k + p_k)}{m_k(0) - m_k(p_k)}}
+//'
+//' The trust region radius is updated according to:
+//' \itemize{
+//'   \item If \eqn{\rho_k < 0.25}, reduce the radius: \eqn{\Delta_{k+1} = 0.5\Delta_k}
+//'   \item If \eqn{\rho_k > 0.75} and \eqn{\|p_k\| \approx \Delta_k}, increase the radius: \eqn{\Delta_{k+1} = 2\Delta_k}
+//'   \item Otherwise, leave the radius unchanged: \eqn{\Delta_{k+1} = \Delta_k}
+//' }
+//'
+//' The step is accepted if \eqn{\rho_k > \eta} (typically \eqn{\eta = 0.1}).
+//' }
+//'
+//' \subsection{Eigenvalue-Based Hessian Regularization}{
+//' For the Newton-Raphson method to converge, the Hessian matrix must be positive definite.
+//' This algorithm uses eigendecomposition to create a positive definite approximation that
+//' preserves the Hessian's structure:
+//'
+//' \deqn{H = Q\Lambda Q^T}
+//'
+//' where \eqn{Q} contains the eigenvectors and \eqn{\Lambda} is a diagonal matrix of eigenvalues.
+//'
+//' The regularized Hessian is constructed by:
+//'
+//' \deqn{\tilde{H} = Q\tilde{\Lambda}Q^T}
+//'
+//' where \eqn{\tilde{\Lambda}} contains modified eigenvalues:
+//'
+//' \deqn{\tilde{\lambda}_i = \max(\lambda_i, \epsilon)}
+//'
+//' with \eqn{\epsilon} being a small positive threshold (typically \eqn{10^{-6}}).
+//'
+//' This approach is superior to diagonal loading (\eqn{H + \lambda I}) as it:
+//' \itemize{
+//'   \item Preserves the eigenvector structure of the original Hessian
+//'   \item Minimally modifies the eigenvalues needed to ensure positive definiteness
+//'   \item Better maintains the directional information in the Hessian
+//' }
+//' }
+//'
+//' \subsection{Parameter Scaling for Numerical Stability}{
+//' When parameters have widely different magnitudes, optimization can become numerically
+//' unstable. The adaptive scaling system transforms the parameter space to improve conditioning:
+//'
+//' \deqn{\theta_i^{scaled} = s_i \theta_i}
+//'
+//' where scaling factors \eqn{s_i} are determined by:
+//' \itemize{
+//'   \item For large parameters (\eqn{|\theta_i| > 100}): \eqn{s_i = 100/|\theta_i|}
+//'   \item For small parameters (\eqn{0 < |\theta_i| < 0.01}): \eqn{s_i = 0.01/|\theta_i|}
+//'   \item Otherwise: \eqn{s_i = 1}
+//' }
+//'
+//' The optimization is performed in the scaled space, with appropriate transformations
+//' for the gradient and Hessian:
+//'
+//' \deqn{\nabla \ell(\theta^{scaled})_i = \frac{1}{s_i}\nabla \ell(\theta)_i}
+//' \deqn{H(\theta^{scaled})_{ij} = \frac{1}{s_i s_j}H(\theta)_{ij}}
+//'
+//' The final results are back-transformed to the original parameter space before being returned.
+//' }
+//'
+//' \subsection{Line Search with Wolfe Conditions}{
+//' The line search procedure ensures sufficient decrease in the objective function when
+//' taking a step in the search direction. The implementation uses Wolfe conditions which
+//' include both:
+//'
+//' 1. Sufficient decrease (Armijo) condition:
+//' \deqn{f(\theta_k + \alpha p_k) \leq f(\theta_k) + c_1 \alpha \nabla f(\theta_k)^T p_k}
+//'
+//' 2. Curvature condition:
+//' \deqn{|\nabla f(\theta_k + \alpha p_k)^T p_k| \leq c_2 |\nabla f(\theta_k)^T p_k|}
+//'
+//' where \eqn{0 < c_1 < c_2 < 1}, typically \eqn{c_1 = 10^{-4}} and \eqn{c_2 = 0.9}.
+//'
+//' The step length \eqn{\alpha} is determined using polynomial interpolation:
+//' \itemize{
+//'   \item First iteration: quadratic interpolation
+//'   \item Subsequent iterations: cubic interpolation using function and derivative values
+//' }
+//'
+//' The cubic polynomial model has the form:
+//' \deqn{a\alpha^3 + b\alpha^2 + c\alpha + d}
+//'
+//' The algorithm computes coefficients from values at two points, then finds the minimizer
+//' of this polynomial subject to bounds to ensure convergence.
+//' }
+//'
+//' \subsection{Adaptive Numerical Differentiation}{
+//' When analytical derivatives are unreliable, the algorithm uses numerical differentiation
+//' with adaptive step sizes based on parameter magnitudes:
+//'
+//' \deqn{h_i = \max(h_{min}, \min(h_{base}, h_{base} \cdot |\theta_i|))}
+//'
+//' where \eqn{h_{min}} is a minimum step size (typically \eqn{10^{-8}}), \eqn{h_{base}}
+//' is a base step size (typically \eqn{10^{-5}}), and \eqn{\theta_i} is the parameter value.
+//'
+//' For computing diagonal Hessian elements, the central difference formula is used:
+//'
+//' \deqn{\frac{\partial^2 f}{\partial \theta_i^2} \approx \frac{f(\theta + h_i e_i) - 2f(\theta) + f(\theta - h_i e_i)}{h_i^2}}
+//'
+//' For mixed partial derivatives:
+//'
+//' \deqn{\frac{\partial^2 f}{\partial \theta_i \partial \theta_j} \approx \frac{f(\theta + h_i e_i + h_j e_j) - f(\theta + h_i e_i - h_j e_j) - f(\theta - h_i e_i + h_j e_j) + f(\theta - h_i e_i - h_j e_j)}{4h_i h_j}}
+//'
+//' The algorithm validates numerical differentiation by comparing with existing gradients
+//' and adaptively adjusts step sizes when discrepancies are detected.
+//' }
+//'
+//' \subsection{Stochastic Perturbation}{
+//' To escape flat regions or local minima, the algorithm implements controlled stochastic
+//' perturbation when progress stalls (detected by monitoring gradient norm changes):
+//'
+//' \deqn{\theta_i^{new} = \theta_i + \Delta\theta_i}
+//'
+//' where the perturbation \eqn{\Delta\theta_i} combines:
+//' \itemize{
+//'   \item A directed component opposite to the gradient: \eqn{-\text{sign}(\nabla \ell_i) \cdot 0.05 \cdot |\theta_i|}
+//'   \item A random noise component: \eqn{U(-0.05|\theta_i|, 0.05|\theta_i|)}
+//' }
+//'
+//' The perturbation is applied when:
+//' \itemize{
+//'   \item The relative change in gradient norm is below a threshold for several consecutive iterations
+//'   \item The algorithm appears to be stuck in a non-optimal region
+//' }
+//'
+//' The perturbation is accepted only if it improves the objective function value.
+//' }
+//'
+//' \subsection{Multi-Start Strategy}{
+//' For particularly challenging optimization landscapes, the algorithm can employ multiple
+//' starting points:
+//'
+//' \itemize{
+//'   \item Initial values are generated using moment-based estimation and domain knowledge about each distribution family
+//'   \item Each initial point is randomly perturbed to explore different regions of the parameter space
+//'   \item Independent optimization runs are performed from each starting point
+//'   \item The best result (based on likelihood value and convergence status) is returned
+//' }
+//'
+//' This approach increases the probability of finding the global optimum or a high-quality
+//' local optimum, particularly for complex models with many parameters.
+//' }
+//'
+//' \subsection{Advanced Parameter Initialization}{
+//' Intelligent starting values are critical for convergence in complex models. The algorithm
+//' uses data-driven initialization based on:
+//'
+//' \itemize{
+//'   \item Method of moments estimators for beta parameters:
+//'     \deqn{\alpha + \beta = \frac{\bar{x}(1-\bar{x})}{s^2} - 1}
+//'     \deqn{\alpha = (\alpha + \beta)\bar{x}}
+//'
+//'   \item Transformations to Kumaraswamy parameters:
+//'     \deqn{a_{Kw} = \sqrt{\alpha_{Beta}}}
+//'     \deqn{b_{Kw} = \sqrt{\beta_{Beta}}}
+//'
+//'   \item Adjustments based on data skewness (detected via mean relative to 0.5)
+//'
+//'   \item Corrections based on data dispersion (range relative to (0,1) interval)
+//' }
+//'
+//' The transformations between beta and Kumaraswamy parameters leverage the similarities
+//' between these distributions while accounting for their parametric differences.
+//' }
+//'
+//' \subsection{Hybrid Optimization Strategy}{
+//' The algorithm can dynamically switch between trust region and Newton-Raphson methods
+//' based on optimization progress:
+//'
+//' \itemize{
+//'   \item Early iterations: trust region method for stability and global convergence properties
+//'   \item Later iterations (when close to optimum): Newton-Raphson with line search for quadratic convergence rate
+//' }
+//'
+//' The switching criteria are based on iteration count and gradient norm, with additional
+//' logic to handle cases where one method consistently fails.
+//' }
 //'
 //' @param start A numeric vector containing initial values for the parameters.
-//'   The length and order must correspond to the selected `family`
-//'   (e.g., `c(alpha, beta, gamma, delta, lambda)` for "gkw"; `c(alpha, beta)` for "kw";
-//'   `c(gamma, delta)` for "beta").
+//'   If NULL, automatic initialization is used based on the dataset characteristics.
+//'   The length and order must correspond to the selected \code{family}
+//'   (e.g., \code{c(alpha, beta, gamma, delta, lambda)} for "gkw"; \code{c(alpha, beta)} for "kw";
+//'   \code{c(gamma, delta)} for "beta").
 //' @param data A numeric vector containing the observed data. All values must
 //'   be strictly between 0 and 1.
 //' @param family A character string specifying the distribution family. One of
@@ -11902,76 +13479,75 @@ return hessian;
 //' @param verbose Logical; if \code{TRUE}, prints detailed progress information
 //'   during optimization, including iteration number, negative log-likelihood,
 //'   gradient norm, and step adjustment details. Default: \code{FALSE}.
-//' @param use_hessian Logical; if \code{TRUE}, uses the analytical Hessian matrix
-//'   for parameter updates (Newton-Raphson variants). If \code{FALSE}, uses
-//'   gradient descent. Default: \code{TRUE}.
-//' @param step_size Initial step size (\eqn{\eta}) for parameter updates
-//'   (\eqn{\theta_{new} = \theta_{old} - \eta H^{-1} \nabla \ell} or
-//'   \eqn{\theta_{new} = \theta_{old} - \eta \nabla \ell}). Backtracking line search
-//'   adjusts this step size dynamically. Default: \code{1.0}.
+//' @param optimization_method Character string specifying the optimization method:
+//'   "trust-region" (default), "newton-raphson", or "hybrid" (starts with trust-region,
+//'   switches to newton-raphson near convergence).
 //' @param enforce_bounds Logical; if \code{TRUE}, parameter values are constrained
 //'   to stay within \code{min_param_val}, \code{max_param_val} (and \eqn{\delta \ge 0})
 //'   during optimization. Default: \code{TRUE}.
 //' @param min_param_val Minimum allowed value for parameters constrained to be
 //'   strictly positive (\eqn{\alpha, \beta, \gamma, \lambda}). Default: \code{1e-5}.
 //' @param max_param_val Maximum allowed value for all parameters. Default: \code{1e5}.
+//' @param adaptive_scaling Logical; if \code{TRUE}, parameters are automatically scaled
+//'   to improve numerical stability. Default: \code{TRUE}.
+//' @param use_stochastic_perturbation Logical; if \code{TRUE}, applies random perturbations
+//'   when optimization stalls. Default: \code{TRUE}.
 //' @param get_num_hess Logical; if \code{TRUE}, computes and returns a numerical
-//'   approximation of the Hessian matrix at the solution using central differences,
-//'   in addition to the analytical Hessian. Useful for verification. Default: \code{FALSE}.
+//'   approximation of the Hessian at the solution. Default: \code{FALSE}.
+//' @param multi_start_attempts Integer specifying the number of different starting points
+//'   to try if initial optimization fails to converge. Default: \code{3}.
+//' @param eigenvalue_hessian_reg Logical; if \code{TRUE}, uses eigenvalue-based
+//'   regularization for the Hessian matrix. Default: \code{TRUE}.
+//' @param max_backtrack Integer specifying the maximum number of backtracking steps
+//'   in line search. Default: \code{20}.
+//' @param initial_trust_radius Initial radius for trust region method. Default: \code{1.0}.
 //'
 //' @return A list object of class \code{gkw_fit} containing the following components:
 //' \item{parameters}{A named numeric vector with the estimated parameters.}
-//' \item{loglik}{The maximized value of the log-likelihood function (not the negative log-likelihood).}
+//' \item{loglik}{The maximized value of the log-likelihood function.}
 //' \item{iterations}{Number of iterations performed.}
-//' \item{converged}{Logical flag indicating whether the algorithm converged successfully based on the tolerance criteria.}
-//' \item{param_history}{A matrix where rows represent iterations and columns represent parameter values (if requested implicitly or explicitly - may depend on implementation).}
-//' \item{loglik_history}{A vector of negative log-likelihood values at each iteration (if requested).}
-//' \item{gradient}{The gradient vector of the negative log-likelihood at the final parameter estimates.}
-//' \item{hessian}{The analytical Hessian matrix of the negative log-likelihood at the final parameter estimates.}
-//' \item{std_errors}{A named numeric vector of approximate standard errors for the estimated parameters, calculated from the inverse of the final Hessian matrix.}
-//' \item{aic}{Akaike Information Criterion: \eqn{AIC = 2k - 2 \ell(\hat{\theta})}, where \eqn{k} is the number of parameters.}
-//' \item{bic}{Bayesian Information Criterion: \eqn{BIC = k \ln(n) - 2 \ell(\hat{\theta})}, where \eqn{k} is the number of parameters and \eqn{n} is the sample size.}
-//' \item{n}{The sample size (number of observations in `data` after removing any NA values).}
-//' \item{status}{A character string indicating the termination status (e.g., "Converged", "Max iterations reached").}
-//' \item{z_values}{A named numeric vector of Z-statistics (\eqn{\hat{\theta}_j / SE(\hat{\theta}_j)}) for testing parameter significance.}
-//' \item{p_values}{A named numeric vector of two-sided p-values corresponding to the Z-statistics, calculated using the standard Normal distribution.}
-//' \item{param_names}{A character vector of the names of the parameters estimated for the specified family.}
-//' \item{family}{The character string specifying the distribution family used.}
-//' \item{numeric_hessian}{(Optional) The numerically approximated Hessian matrix at the solution, if \code{get_num_hess = TRUE}.}
+//' \item{converged}{Logical flag indicating whether the algorithm converged successfully.}
+//' \item{param_history}{A matrix where rows represent iterations and columns represent parameter values.}
+//' \item{loglik_history}{A vector of log-likelihood values at each iteration.}
+//' \item{gradient}{The gradient vector at the final parameter estimates.}
+//' \item{hessian}{The analytical Hessian matrix at the final parameter estimates.}
+//' \item{std_errors}{A named numeric vector of approximate standard errors for the parameters.}
+//' \item{aic}{Akaike Information Criterion.}
+//' \item{bic}{Bayesian Information Criterion.}
+//' \item{aicc}{AIC with small sample correction.}
+//' \item{n}{The sample size.}
+//' \item{status}{A character string indicating the termination status.}
+//' \item{z_values}{A named numeric vector of Z-statistics for parameter significance testing.}
+//' \item{p_values}{A named numeric vector of two-sided p-values corresponding to the Z-statistics.}
+//' \item{param_names}{A character vector of the parameter names.}
+//' \item{family}{The distribution family used.}
+//' \item{optimization_method}{The optimization method used.}
+//' \item{numeric_hessian}{The numerically approximated Hessian at the solution (if requested).}
+//' \item{condition_number}{The condition number of the final Hessian, a measure of parameter identifiability.}
+//' \item{scaling_factors}{The scaling factors used for parameters (if adaptive scaling was enabled).}
 //'
 //' @section Warning:
-//' Maximum likelihood estimation for these flexible distributions can be challenging.
-//' Convergence is sensitive to initial values and the shape of the likelihood surface.
-//' It is recommended to:
+//' Although this implementation is highly robust, fitting complex distributions can still be challenging.
+//' For best results:
 //' \itemize{
-//'   \item{Try different starting values (`start`) if convergence fails or seems suboptimal.}
-//'   \item{Check the `converged` flag and the `status` message.}
-//'   \item{Examine the final `gradient` norm; it should be close to zero for a successful convergence.}
-//'   \item{Inspect the `param_history` and `loglik_history` (if available) to understand the optimization path.}
-//'   \item{Use the `verbose = TRUE` option for detailed diagnostics during troubleshooting.}
-//'   \item{Be cautious interpreting results if standard errors are very large or `NaN`, which might indicate issues like likelihood flatness or parameter estimates near boundaries.}
+//'   \item{Try multiple starting values if results seem suboptimal}
+//'   \item{Examine diagnostic information carefully, especially condition numbers and standard errors}
+//'   \item{Be cautious of parameter estimates at or very near boundaries}
+//'   \item{Consider model simplification if convergence is consistently problematic}
+//'   \item{For the full GKw model with 5 parameters, convergence may be sensitive to starting values}
+//'   \item{High condition numbers (>1e6) may indicate parameter redundancy or weak identifiability}
 //' }
 //'
 //' @references
+//' Carrasco, J. M. F., Ferrari, S. L. P., & Cordeiro, G. M. (2010). A new generalized Kumaraswamy
+//' distribution. arXiv preprint arXiv:1004.0911.
+//'
+//' Nocedal, J., & Wright, S. J. (2006). Numerical Optimization (2nd ed.). Springer.
+//'
+//' Conn, A. R., Gould, N. I. M., & Toint, P. L. (2000). Trust Region Methods. MPS-SIAM Series on Optimization.
+//'
 //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-//' random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-//'
-//' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-//' *Journal of Statistical Computation and Simulation*, *81*(7), 883-898.
-//'
-//' Fletcher, R. (1987). *Practical Methods of Optimization* (2nd ed.). John Wiley & Sons.
-//'
-//' Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer.
-//'
-//' @seealso
-//' Underlying functions used: \code{\link{llgkw}}, \code{\link{grgkw}}, \code{\link{hsgkw}},
-//' \code{\link{llkw}}, \code{\link{grkw}}, \code{\link{hskw}},
-//' \code{\link{llbkw}}, \code{grbkw}, \code{hsbkw},
-//' \code{llkkw}, \code{grkkw}, \code{hskkw},
-//' \code{\link{llekw}}, \code{grekw}, \code{hsekw},
-//' \code{\link{llmc}}, \code{\link{grmc}}, \code{\link{hsmc}},
-//' \code{\link{llbeta}}, \code{\link{grbeta}}, \code{\link{hsbeta}}.
-//' General optimization: \code{\link[stats]{optim}}, \code{\link[stats]{nlm}}.
+//' random processes. Journal of Hydrology, 46(1-2), 79-88.
 //'
 //' @examples
 //' \dontrun{
@@ -11979,77 +13555,84 @@ return hessian;
 //' set.seed(123)
 //' sample_data <- stats::rbeta(200, shape1 = 2, shape2 = 5)
 //'
-//' # --- Fit different models using nrgkw ---
+//' # Automatic initialization (recommended for beginners)
+//' result_auto <- nrgkw_v2(NULL, sample_data, family = "beta", verbose = TRUE)
+//' print(result_auto$parameters)
+//' print(result_auto$loglik)
 //'
-//' # Fit with full GKw model (5 parameters: alpha, beta, gamma, delta, lambda)
-//' start_gkw <- c(alpha=1.1, beta=1.1, gamma=1.8, delta=3.8, lambda=1.1)
-//' gkw_result <- nrgkw(start = start_gkw, data = sample_data, family = "gkw", verbose = FALSE)
-//' print("GKw Fit:")
-//' print(gkw_result$parameters)
+//' # Compare different optimization methods
+//' methods <- c("trust-region", "newton-raphson", "hybrid")
+//' results <- list()
 //'
-//' # Fit with simpler Kumaraswamy model (2 parameters: alpha, beta)
-//' start_kw <- c(alpha=1.5, beta=4.5)
-//' kw_result <- nrgkw(start = start_kw, data = sample_data, family = "kw")
-//' print("Kw Fit:")
-//' print(kw_result$parameters)
-//'
-//' # Fit with Beta model (2 parameters: gamma, delta, corresponding to Beta(gamma, delta+1))
-//' start_beta <- c(gamma=1.8, delta=3.8) # Start near expected values
-//' beta_result <- nrgkw(start = start_beta, data = sample_data, family = "beta")
-//' print("Beta Fit (gamma, delta parameters):")
-//' print(beta_result$parameters)
-//' cat(sprintf("Corresponding to Beta(%.3f, %.3f)\n",
-//'     beta_result$parameters[1], beta_result$parameters[2] + 1))
-//'
-//' # Fit with McDonald model (3 parameters: gamma, delta, lambda)
-//' start_mc <- c(gamma=1.8, delta=3.8, lambda=1.1)
-//' mc_result <- nrgkw(start = start_mc, data = sample_data, family = "mc")
-//' print("Mc Fit:")
-//' print(mc_result$parameters) # Expect lambda estimate near 1
-//'
-//' # --- Compare AIC/BIC values ---
-//' fit_comparison <- data.frame(
-//'   family = c("gkw", "kw", "beta", "mc"),
-//'   AIC = c(gkw_result$aic, kw_result$aic, beta_result$aic, mc_result$aic),
-//'   BIC = c(gkw_result$bic, kw_result$bic, beta_result$bic, mc_result$bic)
-//' )
-//' print("Model Comparison:")
-//' print(fit_comparison[order(fit_comparison$AIC), ]) # Lower is better
-//'
-//' # --- Example with verbosity and numerical Hessian check ---
-//' beta_result_detail <- nrgkw(start = start_beta, data = sample_data, family = "beta",
-//'                             verbose = TRUE, get_num_hess = TRUE)
-//' print(beta_result_detail$status)
-//' # Compare analytical and numerical Hessians (if hsbeta exists and converged)
-//' if(beta_result_detail$converged && !is.null(beta_result_detail$numeric_hessian)) {
-//'    print("Analytical Hessian:")
-//'    print(beta_result_detail$hessian)
-//'    print("Numerical Hessian:")
-//'    print(beta_result_detail$numeric_hessian)
-//'    print("Max Abs Diff:")
-//'    print(max(abs(beta_result_detail$hessian - beta_result_detail$numeric_hessian)))
+//' for (method in methods) {
+//'   results[[method]] <- nrgkw_v2(NULL, sample_data, family = "beta",
+//'                                optimization_method = method)
+//'   cat(sprintf("Method: %s, AIC: %.4f\n", method, results[[method]]$aic))
 //' }
 //'
-//' } # End of \dontrun block
+//' # Fit the full GKw model with diagnostic information
+//' gkw_result <- nrgkw_v2(NULL, sample_data, family = "gkw",
+//'                       verbose = TRUE, get_num_hess = TRUE)
+//'
+//' # Examine parameter identifiability through condition number
+//' cat(sprintf("Condition number: %.2e\n", gkw_result$condition_number))
+//'
+//' # Evaluate parameter significance
+//' param_summary <- data.frame(
+//'   Parameter = names(gkw_result$parameters),
+//'   Estimate = gkw_result$parameters,
+//'   StdError = gkw_result$std_errors,
+//'   Z_value = gkw_result$z_values,
+//'   P_value = gkw_result$p_values
+//' )
+//' print(param_summary)
+//'
+//' # Compare with simpler models using information criteria
+//' cat("Information criteria comparison:\n")
+//' cat(sprintf("GKw: AIC=%.4f, BIC=%.4f\n", gkw_result$aic, gkw_result$bic))
+//' cat(sprintf("Beta: AIC=%.4f, BIC=%.4f\n",
+//'            results[["trust-region"]]$aic, results[["trust-region"]]$bic))
+//'
+//' # Plot convergence history
+//' plot(1:length(gkw_result$loglik_history), gkw_result$loglik_history,
+//'      type = "l", xlab = "Iteration", ylab = "Log-likelihood",
+//'      main = "Convergence History")
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
-List nrgkw(
-   NumericVector start,
-   NumericVector data,
+Rcpp::List nrgkw(
+   Rcpp::Nullable<Rcpp::NumericVector> start = R_NilValue,
+   Rcpp::NumericVector data = Rcpp::NumericVector::create(),
    std::string family = "gkw",
    double tol = 1e-6,
    int max_iter = 100,
    bool verbose = false,
-   bool use_hessian = true,
-   double step_size = 1.0,
+   std::string optimization_method = "trust-region",
    bool enforce_bounds = true,
    double min_param_val = 1e-5,
    double max_param_val = 1e5,
-   bool get_num_hess = false
+   bool adaptive_scaling = true,
+   bool use_stochastic_perturbation = true,
+   bool get_num_hess = false,
+   int multi_start_attempts = 3,
+   bool eigenvalue_hessian_reg = true,
+   int max_backtrack = 20,
+   double initial_trust_radius = 1.0
 ) {
  // Final result will be a list with different components
- List result;
+ Rcpp::List result;
+
+ // Convert optimization method to lowercase
+ std::transform(optimization_method.begin(), optimization_method.end(),
+                optimization_method.begin(), ::tolower);
+
+ // Validate optimization method
+ if (optimization_method != "trust-region" &&
+     optimization_method != "newton-raphson" &&
+     optimization_method != "hybrid") {
+   Rcpp::stop("Invalid optimization_method. Use 'trust-region', 'newton-raphson', or 'hybrid'.");
+ }
 
  // Convert family to lowercase for case-insensitive comparison
  std::string family_lower = family;
@@ -12057,55 +13640,72 @@ List nrgkw(
 
  // Determine number of parameters based on family
  int n_params = 0;
- CharacterVector param_names;
+ Rcpp::CharacterVector param_names;
 
  if (family_lower == "gkw") {
    n_params = 5;
-   param_names = CharacterVector::create("alpha", "beta", "gamma", "delta", "lambda");
+   param_names = Rcpp::CharacterVector::create("alpha", "beta", "gamma", "delta", "lambda");
  } else if (family_lower == "bkw") {
    n_params = 4;
-   param_names = CharacterVector::create("alpha", "beta", "gamma", "delta");
+   param_names = Rcpp::CharacterVector::create("alpha", "beta", "gamma", "delta");
  } else if (family_lower == "kkw") {
    n_params = 4;
-   param_names = CharacterVector::create("alpha", "beta", "delta", "lambda");
+   param_names = Rcpp::CharacterVector::create("alpha", "beta", "delta", "lambda");
  } else if (family_lower == "ekw") {
    n_params = 3;
-   param_names = CharacterVector::create("alpha", "beta", "lambda");
+   param_names = Rcpp::CharacterVector::create("alpha", "beta", "lambda");
  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
    n_params = 3;
-   param_names = CharacterVector::create("gamma", "delta", "lambda");
+   param_names = Rcpp::CharacterVector::create("gamma", "delta", "lambda");
  } else if (family_lower == "kw") {
    n_params = 2;
-   param_names = CharacterVector::create("alpha", "beta");
+   param_names = Rcpp::CharacterVector::create("alpha", "beta");
  } else if (family_lower == "beta") {
    n_params = 2;
-   param_names = CharacterVector::create("gamma", "delta");
+   param_names = Rcpp::CharacterVector::create("gamma", "delta");
  } else {
-   stop("Unknown family: '" + family + "'. Available options are 'gkw', 'bkw', 'kkw', 'ekw', 'mc', 'kw', 'beta'.");
- }
-
- // Validate initial parameters size
- if (start.size() != n_params) {
-   stop("Invalid number of parameters for '" + family + "'. Expected " +
-     std::to_string(n_params) + ", got " + std::to_string(start.size()));
+   Rcpp::stop("Unknown family: '" + family + "'. Available options are 'gkw', 'bkw', 'kkw', 'ekw', 'mc', 'kw', 'beta'.");
  }
 
  // Check for valid data
  int n_data = data.size();
  if (n_data < n_params) {
-   stop("At least " + std::to_string(n_params) + " data points are needed to estimate " +
+   Rcpp::stop("At least " + std::to_string(n_params) + " data points are needed to estimate " +
      std::to_string(n_params) + " parameters");
  }
 
  // Check if all data are in the interval (0,1)
  for (int i = 0; i < n_data; i++) {
    if (data[i] <= 0.0 || data[i] >= 1.0 || !R_finite(data[i])) {
-     stop("All data must be in the interval (0,1)");
+     Rcpp::stop("All data must be in the interval (0,1)");
    }
  }
 
- // Copy initial parameters and convert to standard GKw parameters where needed
- NumericVector params(5); // Always use 5 parameters internally (GKw format)
+ // Handle automatic initialization or user-provided start values
+ Rcpp::NumericVector user_start;
+
+ if (start.isNull()) {
+   user_start = smartInitGkw(data, family);
+
+   if (verbose) {
+     Rcpp::Rcout << "Auto-initialized parameters: ";
+     for (int i = 0; i < user_start.size(); i++) {
+       Rcpp::Rcout << user_start[i] << " ";
+     }
+     Rcpp::Rcout << std::endl;
+   }
+ } else {
+   user_start = Rcpp::as<Rcpp::NumericVector>(start);
+
+   // Validate initial parameters size
+   if (user_start.size() != n_params) {
+     Rcpp::stop("Invalid number of parameters for '" + family + "'. Expected " +
+       std::to_string(n_params) + ", got " + std::to_string(user_start.size()));
+   }
+ }
+
+ // Convert family-specific parameters to standard GKw format
+ Rcpp::NumericVector params(5); // Always use 5 parameters internally (GKw format)
 
  // Set default values based on fixed parameters in specific families
  params[0] = 1.0; // α = 1 default
@@ -12117,49 +13717,49 @@ List nrgkw(
  // Fill with provided parameters based on family
  if (family_lower == "gkw") {
    for (int j = 0; j < 5; j++) {
-     params[j] = start[j];
+     params[j] = user_start[j];
    }
  } else if (family_lower == "bkw") {
    // α, β, γ, δ with λ = 1
    for (int j = 0; j < 4; j++) {
-     params[j] = start[j];
+     params[j] = user_start[j];
    }
    params[4] = 1.0; // λ fixed at 1
  } else if (family_lower == "kkw") {
    // α, β, δ, λ with γ = 1
-   params[0] = start[0]; // α
-   params[1] = start[1]; // β
-   params[2] = 1.0;             // γ fixed at 1
-   params[3] = start[2]; // δ
-   params[4] = start[3]; // λ
+   params[0] = user_start[0]; // α
+   params[1] = user_start[1]; // β
+   params[2] = 1.0;           // γ fixed at 1
+   params[3] = user_start[2]; // δ
+   params[4] = user_start[3]; // λ
  } else if (family_lower == "ekw") {
    // α, β, λ with γ = 1, δ = 0
-   params[0] = start[0]; // α
-   params[1] = start[1]; // β
-   params[2] = 1.0;             // γ fixed at 1
-   params[3] = 0.0;             // δ fixed at 0
-   params[4] = start[2]; // λ
+   params[0] = user_start[0]; // α
+   params[1] = user_start[1]; // β
+   params[2] = 1.0;           // γ fixed at 1
+   params[3] = 0.0;           // δ fixed at 0
+   params[4] = user_start[2]; // λ
  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
    // γ, δ, λ with α = 1, β = 1
-   params[0] = 1.0;             // α fixed at 1
-   params[1] = 1.0;             // β fixed at 1
-   params[2] = start[0]; // γ
-   params[3] = start[1]; // δ
-   params[4] = start[2]; // λ
+   params[0] = 1.0;           // α fixed at 1
+   params[1] = 1.0;           // β fixed at 1
+   params[2] = user_start[0]; // γ
+   params[3] = user_start[1]; // δ
+   params[4] = user_start[2]; // λ
  } else if (family_lower == "kw") {
    // α, β with γ = 1, δ = 0, λ = 1
-   params[0] = start[0]; // α
-   params[1] = start[1]; // β
-   params[2] = 1.0;             // γ fixed at 1
-   params[3] = 0.0;             // δ fixed at 0
-   params[4] = 1.0;             // λ fixed at 1
+   params[0] = user_start[0]; // α
+   params[1] = user_start[1]; // β
+   params[2] = 1.0;           // γ fixed at 1
+   params[3] = 0.0;           // δ fixed at 0
+   params[4] = 1.0;           // λ fixed at 1
  } else if (family_lower == "beta") {
    // γ, δ with α = 1, β = 1, λ = 1
-   params[0] = 1.0;             // α fixed at 1
-   params[1] = 1.0;             // β fixed at 1
-   params[2] = start[0]; // γ
-   params[3] = start[1]; // δ
-   params[4] = 1.0;             // λ fixed at 1
+   params[0] = 1.0;           // α fixed at 1
+   params[1] = 1.0;           // β fixed at 1
+   params[2] = user_start[0]; // γ
+   params[3] = user_start[1]; // δ
+   params[4] = 1.0;           // λ fixed at 1
  }
 
  // Apply constraints to initial parameters if needed
@@ -12175,73 +13775,73 @@ List nrgkw(
  }
 
  // Define function pointers based on family
- std::function<double(NumericVector, NumericVector)> ll_func;
- std::function<NumericVector(NumericVector, NumericVector)> gr_func;
- std::function<NumericMatrix(NumericVector, NumericVector)> hs_func;
+ std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func;
+ std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func;
+ std::function<Rcpp::NumericMatrix(Rcpp::NumericVector, Rcpp::NumericVector)> hs_func;
 
- // Assign appropriate functions based on family
+ // Assign appropriate functions based on family - usando expressões lambda
  if (family_lower == "gkw") {
-   ll_func = llgkw;
-   gr_func = grgkw;
-   hs_func = hsgkw;
+   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llgkw(p, d); };
+   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grgkw(p, d); };
+   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsgkw(p, d); };
  } else if (family_lower == "bkw") {
-   ll_func = llbkw;
-   gr_func = grbkw;
-   hs_func = hsbkw;
+   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llbkw(p, d); };
+   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grbkw(p, d); };
+   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsbkw(p, d); };
  } else if (family_lower == "kkw") {
-   ll_func = llkkw;
-   gr_func = grkkw;
-   hs_func = hskkw;
+   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llkkw(p, d); };
+   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grkkw(p, d); };
+   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hskkw(p, d); };
  } else if (family_lower == "ekw") {
-   ll_func = llekw;
-   gr_func = grekw;
-   hs_func = hsekw;
+   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llekw(p, d); };
+   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grekw(p, d); };
+   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsekw(p, d); };
  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-   ll_func = llmc;
-   gr_func = grmc;
-   hs_func = hsmc;
+   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llmc(p, d); };
+   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grmc(p, d); };
+   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsmc(p, d); };
  } else if (family_lower == "kw") {
-   ll_func = llkw;
-   gr_func = grkw;
-   hs_func = hskw;
+   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llkw(p, d); };
+   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grkw(p, d); };
+   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hskw(p, d); };
  } else if (family_lower == "beta") {
-   ll_func = llbeta;
-   gr_func = grbeta;
-   hs_func = hsbeta;
+   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llbeta(p, d); };
+   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grbeta(p, d); };
+   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsbeta(p, d); };
  }
 
  // Function to extract relevant parameters for specific family
- auto extract_params = [&](const NumericVector& full_params) -> NumericVector {
-   NumericVector result;
+ auto extractParams = [&](const Rcpp::NumericVector& full_params) -> Rcpp::NumericVector {
+   Rcpp::NumericVector result;
 
    if (family_lower == "gkw") {
-     result = NumericVector(5);
+     result = Rcpp::NumericVector(5);
      for (int j = 0; j < 5; j++) result[j] = full_params[j];
    } else if (family_lower == "bkw") {
-     result = NumericVector(4);
+     result = Rcpp::NumericVector(4);
      for (int j = 0; j < 4; j++) result[j] = full_params[j];
    } else if (family_lower == "kkw") {
-     result = NumericVector(4);
+     result = Rcpp::NumericVector(4);
      result[0] = full_params[0]; // α
      result[1] = full_params[1]; // β
      result[2] = full_params[3]; // δ
      result[3] = full_params[4]; // λ
    } else if (family_lower == "ekw") {
-     result = NumericVector(3);
+     result = Rcpp::NumericVector(3);
      result[0] = full_params[0]; // α
      result[1] = full_params[1]; // β
      result[2] = full_params[4]; // λ
    } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-     result = NumericVector(3);
+     result = Rcpp::NumericVector(3);
      result[0] = full_params[2]; // γ
      result[1] = full_params[3]; // δ
      result[2] = full_params[4]; // λ
    } else if (family_lower == "kw") {
-     result = NumericVector(2);
+     result = Rcpp::NumericVector(2);
      result[0] = full_params[0]; // α
      result[1] = full_params[1]; // β
    } else if (family_lower == "beta") {
-     result = NumericVector(2);
+     result = Rcpp::NumericVector(2);
      result[0] = full_params[2]; // γ
      result[1] = full_params[3]; // δ
    }
@@ -12249,74 +13849,136 @@ List nrgkw(
    return result;
  };
 
- // Create a custom numHess function to handle specific families
- auto numHess_family = [&](NumericVector params_family, NumericVector data_family, double eps = 1e-6) {
-   int n_params_family = params_family.size();
-   arma::mat hessian(n_params_family, n_params_family, arma::fill::zeros);
+ // Get family-specific parameters
+ Rcpp::NumericVector family_params = extractParams(params);
 
-   // Value of the function at the current point
-   double f0 = ll_func(params_family, data_family);
+ // Compute parameter scaling factors if enabled
+ Rcpp::NumericVector scaling_factors(family_params.size(), 1.0);
+ if (adaptive_scaling) {
+   scaling_factors = computeScalingFactors(family_params);
 
-   // For each pair of variables
-   for (int i = 0; i < n_params_family; i++) {
-     for (int j = 0; j <= i; j++) {
-       // Calculate second derivative using finite differences
-       if (i == j) {
-         // Second derivative with respect to the same variable
-         NumericVector params_p = clone(params_family);
-         NumericVector params_m = clone(params_family);
-
-         params_p[i] += eps;
-         params_m[i] -= eps;
-
-         double f_p = ll_func(params_p, data_family);
-         double f_m = ll_func(params_m, data_family);
-
-         hessian(i, j) = (f_p - 2*f0 + f_m) / (eps * eps);
-       } else {
-         // Mixed derivative
-         NumericVector params_pp = clone(params_family);
-         NumericVector params_pm = clone(params_family);
-         NumericVector params_mp = clone(params_family);
-         NumericVector params_mm = clone(params_family);
-
-         params_pp[i] += eps;
-         params_pp[j] += eps;
-
-         params_pm[i] += eps;
-         params_pm[j] -= eps;
-
-         params_mp[i] -= eps;
-         params_mp[j] += eps;
-
-         params_mm[i] -= eps;
-         params_mm[j] -= eps;
-
-         double f_pp = ll_func(params_pp, data_family);
-         double f_pm = ll_func(params_pm, data_family);
-         double f_mp = ll_func(params_mp, data_family);
-         double f_mm = ll_func(params_mm, data_family);
-
-         hessian(i, j) = hessian(j, i) = (f_pp - f_pm - f_mp + f_mm) / (4 * eps * eps);
-       }
+   if (verbose) {
+     Rcpp::Rcout << "Parameter scaling factors: ";
+     for (int i = 0; i < scaling_factors.size(); i++) {
+       Rcpp::Rcout << scaling_factors[i] << " ";
      }
+     Rcpp::Rcout << std::endl;
    }
 
-   return hessian;
+   // Apply scaling to initial parameters
+   Rcpp::NumericVector scaled_params = Rcpp::clone(family_params);
+   for (int i = 0; i < family_params.size(); i++) {
+     scaled_params[i] *= scaling_factors[i];
+   }
+   family_params = scaled_params;
+
+   // Update full parameter vector with scaled values
+   params = Rcpp::clone(params);
+   Rcpp::NumericVector full_scaling(5, 1.0);
+
+   if (family_lower == "gkw") {
+     for (int j = 0; j < 5; j++) full_scaling[j] = scaling_factors[j];
+   } else if (family_lower == "bkw") {
+     for (int j = 0; j < 4; j++) full_scaling[j] = scaling_factors[j];
+   } else if (family_lower == "kkw") {
+     full_scaling[0] = scaling_factors[0]; // α
+     full_scaling[1] = scaling_factors[1]; // β
+     full_scaling[3] = scaling_factors[2]; // δ
+     full_scaling[4] = scaling_factors[3]; // λ
+   } else if (family_lower == "ekw") {
+     full_scaling[0] = scaling_factors[0]; // α
+     full_scaling[1] = scaling_factors[1]; // β
+     full_scaling[4] = scaling_factors[2]; // λ
+   } else if (family_lower == "mc") {
+     full_scaling[2] = scaling_factors[0]; // γ
+     full_scaling[3] = scaling_factors[1]; // δ
+     full_scaling[4] = scaling_factors[2]; // λ
+   } else if (family_lower == "kw") {
+     full_scaling[0] = scaling_factors[0]; // α
+     full_scaling[1] = scaling_factors[1]; // β
+   } else if (family_lower == "beta") {
+     full_scaling[2] = scaling_factors[0]; // γ
+     full_scaling[3] = scaling_factors[1]; // δ
+   }
+
+   for (int i = 0; i < 5; i++) {
+     params[i] *= full_scaling[i];
+   }
+ }
+
+ // Create scaled versions of likelihood and gradient functions
+ auto scaled_ll_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> double {
+   if (adaptive_scaling) {
+     Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
+
+     // Unscale parameters before evaluation
+     for (int i = 0; i < params.size(); i++) {
+       unscaled_params[i] /= scaling_factors[i];
+     }
+
+     return ll_func(unscaled_params, data);
+   } else {
+     return ll_func(params, data);
+   }
  };
 
- // Get family-specific parameters
- NumericVector family_params = extract_params(params);
+ auto scaled_gr_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> Rcpp::NumericVector {
+   if (adaptive_scaling) {
+     Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
+
+     // Unscale parameters
+     for (int i = 0; i < params.size(); i++) {
+       unscaled_params[i] /= scaling_factors[i];
+     }
+
+     // Get gradient at unscaled point
+     Rcpp::NumericVector grad = gr_func(unscaled_params, data);
+
+     // Adjust gradient for scaling
+     for (int i = 0; i < grad.size(); i++) {
+       grad[i] /= scaling_factors[i];
+     }
+
+     return grad;
+   } else {
+     return gr_func(params, data);
+   }
+ };
+
+ auto scaled_hs_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> Rcpp::NumericMatrix {
+   if (adaptive_scaling) {
+     Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
+
+     // Unscale parameters
+     for (int i = 0; i < params.size(); i++) {
+       unscaled_params[i] /= scaling_factors[i];
+     }
+
+     // Get Hessian at unscaled point
+     Rcpp::NumericMatrix hess = hs_func(unscaled_params, data);
+
+     // Adjust Hessian for scaling
+     for (int i = 0; i < hess.nrow(); i++) {
+       for (int j = 0; j < hess.ncol(); j++) {
+         hess(i, j) /= (scaling_factors[i] * scaling_factors[j]);
+       }
+     }
+
+     return hess;
+   } else {
+     return hs_func(params, data);
+   }
+ };
 
  // Calculate initial log-likelihood
- double initial_loglik = ll_func(family_params, data);
+ double initial_loglik = scaled_ll_func(family_params, data);
  if (!R_finite(initial_loglik) || initial_loglik == R_PosInf) {
-   stop("Initial log-likelihood is infinite or NaN. Check the initial parameters.");
+   Rcpp::stop("Initial log-likelihood is infinite or NaN. Check the initial parameters.");
  }
 
  // Parameter and log-likelihood history for diagnostics
- NumericMatrix param_history(max_iter + 1, n_params);
- NumericVector loglik_history(max_iter + 1);
+ Rcpp::NumericMatrix param_history(max_iter + 1, n_params);
+ Rcpp::NumericVector loglik_history(max_iter + 1);
 
  // Initialize history with initial values
  for (int j = 0; j < n_params; j++) {
@@ -12329,19 +13991,30 @@ List nrgkw(
  int iter = 0;
  double prev_loglik = initial_loglik;
 
- // Prepare to store the best result obtained
+ // Best result tracking
  double best_loglik = initial_loglik;
- NumericVector best_params = clone(family_params);
+ Rcpp::NumericVector best_params = Rcpp::clone(family_params);
 
- // Main Newton-Raphson loop
+ // Trust region radius
+ double trust_radius = initial_trust_radius;
+
+ // Tracking variables for algorithm adaptation
+ int consecutive_tr_failures = 0;
+ const int max_consecutive_failures = 3;
+
+ int stagnation_counter = 0;
+ const int stagnation_limit = 5;
+ double prev_grad_norm = 0.0;
+
+ // Main optimization loop
  while (!converged && iter < max_iter) {
    iter++;
 
-   // Calculate log-likelihood, gradient and hessian
-   double current_loglik = ll_func(family_params, data);
-   NumericVector gradient = gr_func(family_params, data);
+   // Calculate current log-likelihood and gradient
+   double current_loglik = scaled_ll_func(family_params, data);
+   Rcpp::NumericVector gradient = scaled_gr_func(family_params, data);
 
-   // Check if gradient has valid values
+   // Check gradient validity
    bool valid_gradient = true;
    for (int j = 0; j < n_params; j++) {
      if (!R_finite(gradient[j])) {
@@ -12352,238 +14025,234 @@ List nrgkw(
 
    if (!valid_gradient) {
      if (verbose) {
-       Rcout << "Warning: Invalid gradient in iteration " << iter << std::endl;
+       Rcpp::Rcout << "Warning: Invalid gradient in iteration " << iter << std::endl;
      }
-     result["converged"] = false;
-     result["status"] = "gradient_failure";
-     // Use the best parameters found so far
-     family_params = best_params;
-     break;
+
+     // Use numerical gradient as fallback
+     for (int j = 0; j < n_params; j++) {
+       double eps = std::max(1e-6, 1e-6 * std::abs(family_params[j]));
+
+       Rcpp::NumericVector params_p = Rcpp::clone(family_params);
+       Rcpp::NumericVector params_m = Rcpp::clone(family_params);
+
+       params_p[j] += eps;
+       params_m[j] -= eps;
+
+       double f_p = scaled_ll_func(params_p, data);
+       double f_m = scaled_ll_func(params_m, data);
+
+       if (R_finite(f_p) && R_finite(f_m)) {
+         gradient[j] = (f_p - f_m) / (2 * eps);
+       } else {
+         // If numerical gradient also fails, use small step
+         gradient[j] = 0.001 * ((j % 2 == 0) ? 1.0 : -1.0); // Alternating signs
+       }
+     }
    }
 
-   // Calculate gradient norm for stopping criterion
+   // Calculate gradient norm for convergence check
    double grad_norm = 0.0;
    for (int j = 0; j < n_params; j++) {
      grad_norm += gradient[j] * gradient[j];
    }
    grad_norm = std::sqrt(grad_norm);
 
+   // Check for stagnation
+   if (std::abs(grad_norm - prev_grad_norm) < 0.01 * grad_norm) {
+     stagnation_counter++;
+   } else {
+     stagnation_counter = 0;
+   }
+   prev_grad_norm = grad_norm;
+
+   // Gradient convergence check
    if (grad_norm < tol) {
      converged = true;
      if (verbose) {
-       Rcout << "Convergence detected: gradient norm (" << grad_norm
-             << ") < tolerance (" << tol << ")" << std::endl;
+       Rcpp::Rcout << "Convergence detected: gradient norm (" << grad_norm
+                   << ") < tolerance (" << tol << ")" << std::endl;
      }
      break;
    }
 
-   // Update direction
-   NumericVector update(n_params);
+   // Determine optimization method for this iteration
+   std::string current_method = optimization_method;
 
-   if (use_hessian) {
-     // Calculate the Hessian
-     NumericMatrix rcpp_hessian = hs_func(family_params, data);
+   // For hybrid method, adapt based on progress
+   if (current_method == "hybrid") {
+     if (iter > max_iter / 2 || grad_norm < 0.1) {
+       current_method = "newton-raphson"; // Switch to Newton-Raphson near convergence
+     } else {
+       current_method = "trust-region";   // Use trust-region initially
+     }
 
-     // Check if Hessian has valid values
+     if (verbose && iter > 1) {
+       Rcpp::Rcout << "Hybrid method using: " << current_method << std::endl;
+     }
+   }
+
+   // Switch methods if trust region is failing consistently
+   if (consecutive_tr_failures >= max_consecutive_failures && current_method == "trust-region") {
+     current_method = "newton-raphson";
+     if (verbose) {
+       Rcpp::Rcout << "Temporarily switching to Newton-Raphson after consecutive failures." << std::endl;
+     }
+   }
+
+   // Apply stochastic perturbation if stagnating
+   if (use_stochastic_perturbation && stagnation_counter >= stagnation_limit) {
+     if (verbose) {
+       Rcpp::Rcout << "Applying stochastic perturbation after " << stagnation_counter
+                   << " iterations of stagnation." << std::endl;
+     }
+
+     // Create perturbed parameters
+     Rcpp::NumericVector new_params = Rcpp::clone(family_params);
+
+     GetRNGstate(); // Initialize R's RNG
+     for (int j = 0; j < n_params; j++) {
+       // Perturbation proportional to parameter and opposite to gradient
+       double range = 0.1 * std::abs(family_params[j]);
+       double direction = -1.0 * ((gradient[j] > 0) ? 1 : -1);
+       double noise = R::runif(-0.5, 0.5);
+
+       // Combined perturbation
+       double perturb = direction * range * (0.5 + 0.5 * noise);
+       new_params[j] += perturb;
+     }
+     PutRNGstate();
+
+     // Apply bounds
+     if (enforce_bounds) {
+       for (int j = 0; j < n_params; j++) {
+         bool is_delta = (family_lower == "gkw" && j == 3) ||
+           (family_lower == "bkw" && j == 3) ||
+           (family_lower == "kkw" && j == 2) ||
+           (family_lower == "mc" && j == 1) ||
+           (family_lower == "beta" && j == 1);
+
+         if (is_delta) {
+           new_params[j] = std::max(0.0, new_params[j]);
+         } else {
+           new_params[j] = std::max(min_param_val, new_params[j]);
+         }
+         new_params[j] = std::min(max_param_val, new_params[j]);
+       }
+     }
+
+     // Evaluate at perturbed point
+     double new_loglik = scaled_ll_func(new_params, data);
+
+     // Accept if better
+     if (R_finite(new_loglik) && new_loglik < current_loglik) {
+       family_params = new_params;
+       current_loglik = new_loglik;
+       stagnation_counter = 0;
+
+       if (verbose) {
+         Rcpp::Rcout << "Stochastic perturbation successful, new loglik: " << -new_loglik << std::endl;
+       }
+
+       // Update history
+       for (int j = 0; j < n_params; j++) {
+         param_history(iter, j) = family_params[j];
+       }
+       loglik_history[iter] = new_loglik;
+
+       // Update best result if improved
+       if (new_loglik < best_loglik) {
+         best_loglik = new_loglik;
+         best_params = Rcpp::clone(family_params);
+       }
+
+       // Skip to next iteration
+       continue;
+     } else if (verbose) {
+       Rcpp::Rcout << "Stochastic perturbation unsuccessful, continuing with standard update." << std::endl;
+     }
+   }
+
+   // Parameter update using selected method
+   Rcpp::NumericVector new_params;
+   double new_loglik;
+   bool update_success = false;
+
+   if (current_method == "trust-region") {
+     // Trust region update
+     Rcpp::NumericMatrix rcpp_hessian = scaled_hs_func(family_params, data);
+
+     // Check Hessian validity
      bool valid_hessian = true;
-     for (int i = 0; i < n_params; i++) {
+     for (int i = 0; i < n_params && valid_hessian; i++) {
        for (int j = 0; j < n_params; j++) {
          if (!R_finite(rcpp_hessian(i, j))) {
            valid_hessian = false;
            break;
          }
        }
-       if (!valid_hessian) break;
      }
 
      if (!valid_hessian) {
        if (verbose) {
-         Rcout << "Warning: Invalid Hessian in iteration " << iter
-               << ", using only the gradient." << std::endl;
-       }
-       // Fallback to steepest descent if Hessian is invalid
-       for (int j = 0; j < n_params; j++) {
-         // Normalize gradient for step control
-         update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
-       }
-     } else {
-       // Convert to arma::mat for more robust matrix operations
-       arma::mat hessian = as<arma::mat>(rcpp_hessian);
-       arma::vec grad_vec = as<arma::vec>(gradient);
-       arma::vec neg_grad = -grad_vec;
-       arma::vec update_vec;
-
-       bool solve_success = false;
-
-       // Try 1: Cholesky for symmetric positive definite matrices (fastest)
-       try {
-         update_vec = arma::solve(hessian, neg_grad, arma::solve_opts::likely_sympd);
-         solve_success = true;
-
-         if (verbose) {
-           Rcout << "Cholesky decomposition successful for parameter update." << std::endl;
-         }
-       } catch (...) {
-         if (verbose) {
-           Rcout << "Warning: Cholesky decomposition failed, trying standard solver..." << std::endl;
-         }
-
-         // Try 2: Standard Armadillo solver
-         try {
-           update_vec = arma::solve(hessian, neg_grad);
-           solve_success = true;
-
-           if (verbose) {
-             Rcout << "Standard solver successful for parameter update." << std::endl;
-           }
-         } catch (...) {
-           if (verbose) {
-             Rcout << "Warning: Standard solver failed, trying with regularization..." << std::endl;
-           }
-
-           // Try 3: Regularize the Hessian matrix
-           arma::mat reg_hessian = hessian;
-           double reg_factor = 1e-6;
-
-           // Find reasonable magnitude for regularization
-           double diag_max = arma::max(arma::abs(reg_hessian.diag()));
-           reg_factor = std::max(reg_factor, 1e-6 * diag_max);
-
-           // Add small value to diagonal
-           reg_hessian.diag() += reg_factor;
-
-           try {
-             update_vec = arma::solve(reg_hessian, neg_grad);
-             solve_success = true;
-
-             if (verbose) {
-               Rcout << "Regularized solver successful with factor: " << reg_factor << std::endl;
-             }
-           } catch (...) {
-             // Try 4: Stronger regularization
-             reg_hessian = hessian;
-             reg_factor = 1e-4 * (1.0 + diag_max);
-             reg_hessian.diag() += reg_factor;
-
-             try {
-               update_vec = arma::solve(reg_hessian, neg_grad);
-               solve_success = true;
-
-               if (verbose) {
-                 Rcout << "Stronger regularization successful with factor: " << reg_factor << std::endl;
-               }
-             } catch (...) {
-               // Try 5: Pseudo-inverse (very robust method)
-               try {
-                 arma::mat hess_pinv = arma::pinv(hessian);
-                 update_vec = hess_pinv * neg_grad;
-                 solve_success = true;
-
-                 if (verbose) {
-                   Rcout << "Pseudo-inverse solution successful for parameter update." << std::endl;
-                 }
-               } catch (...) {
-                 if (verbose) {
-                   Rcout << "Warning: All matrix inversion methods failed in iteration " << iter
-                         << ", using only the gradient." << std::endl;
-                 }
-
-                 // If all attempts fail, use gradient descent
-                 for (int j = 0; j < n_params; j++) {
-                   update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
-                 }
-
-                 solve_success = false;
-               }
-             }
-           }
-         }
+         Rcpp::Rcout << "Warning: Invalid Hessian, using numerical approximation." << std::endl;
        }
 
-       if (solve_success) {
-         // Convert solution from arma::vec to NumericVector
-         update = wrap(update_vec);
+       // Use numerical Hessian
+       arma::mat num_hessian = numHessianAdaptive(family_params, data,
+                                                  scaled_ll_func, scaled_gr_func);
+       rcpp_hessian = Rcpp::wrap(num_hessian);
+     }
 
-         // Limit step size to avoid too large steps
-         double max_update = 0.0;
-         for (int j = 0; j < n_params; j++) {
-           max_update = std::max(max_update, std::abs(update[j]));
-         }
+     // Apply Hessian regularization if enabled
+     if (eigenvalue_hessian_reg) {
+       arma::mat H = Rcpp::as<arma::mat>(rcpp_hessian);
+       arma::mat H_pd = makePositiveDefinite(H);
+       rcpp_hessian = Rcpp::wrap(H_pd);
 
-         // If step is too large, reduce proportionally
-         const double max_step = 2.0;
-         if (max_update > max_step) {
-           double scale_factor = max_step / max_update;
-           for (int j = 0; j < n_params; j++) {
-             update[j] *= scale_factor;
-           }
-         }
-
-         // Apply step_size
-         for (int j = 0; j < n_params; j++) {
-           update[j] *= step_size;
-         }
+       if (verbose) {
+         Rcpp::Rcout << "Applied eigenvalue-based Hessian regularization." << std::endl;
        }
      }
-   } else {
-     // Use only gradient (gradient descent method)
-     for (int j = 0; j < n_params; j++) {
-       update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
-     }
-   }
 
-   // Update parameters: theta_new = theta_old + update
-   NumericVector new_params(n_params);
-   for (int j = 0; j < n_params; j++) {
-     new_params[j] = family_params[j] + update[j];
-   }
+     // Trust region update
+     Rcpp::List tr_result = trustRegionUpdate(
+       family_params, data, scaled_ll_func, scaled_gr_func,
+       [&](Rcpp::NumericVector p, Rcpp::NumericVector d) { return rcpp_hessian; },
+       trust_radius, 0.1, enforce_bounds, min_param_val, max_param_val
+     );
 
-   // Enforce bounds if requested
-   if (enforce_bounds) {
-     for (int j = 0; j < n_params; j++) {
-       bool is_delta = (family_lower == "gkw" && j == 3) ||
-         (family_lower == "bkw" && j == 3) ||
-         (family_lower == "kkw" && j == 2) ||
-         (family_lower == "mc" && j == 1) ||
-         (family_lower == "beta" && j == 1);
+     new_params = Rcpp::as<Rcpp::NumericVector>(tr_result["new_params"]);
+     trust_radius = Rcpp::as<double>(tr_result["trust_radius"]);
+     bool accept = Rcpp::as<bool>(tr_result["accept"]);
+     double ratio = Rcpp::as<double>(tr_result["ratio"]);
 
-       // Note: for delta, we allow values down to 0
-       if (is_delta) {
-         new_params[j] = std::max(0.0, new_params[j]);
-       } else {
-         new_params[j] = std::max(min_param_val, new_params[j]);
-       }
-       new_params[j] = std::min(max_param_val, new_params[j]);
-     }
-   }
-
-   // Calculate new objective function value
-   double new_loglik = ll_func(new_params, data);
-
-   // Line search / Backtracking if new value is not better
-   bool backtracking_success = true;
-   double bt_step = 1.0;
-   const double bt_factor = 0.5; // reduce step by half each backtracking
-   const int max_bt = 10;        // maximum backtracking iterations
-
-   if (!R_finite(new_loglik) || new_loglik >= current_loglik) {
-     backtracking_success = false;
+     new_loglik = scaled_ll_func(new_params, data);
 
      if (verbose) {
-       Rcout << "Starting backtracking at iteration " << iter
-             << ", current value: " << current_loglik
-             << ", new value: " << new_loglik << std::endl;
+       Rcpp::Rcout << "Trust region step: radius = " << trust_radius
+                   << ", ratio = " << ratio
+                   << ", accept = " << (accept ? "true" : "false") << std::endl;
      }
 
-     for (int bt = 0; bt < max_bt; bt++) {
-       bt_step *= bt_factor;
+     if (accept) {
+       update_success = true;
+       consecutive_tr_failures = 0;
+     } else {
+       consecutive_tr_failures++;
 
-       // Recalculate new parameters with reduced step
-       for (int j = 0; j < n_params; j++) {
-         new_params[j] = family_params[j] + bt_step * update[j];
+       // Fallback to steepest descent
+       if (verbose) {
+         Rcpp::Rcout << "Trust region step rejected, trying steepest descent." << std::endl;
        }
 
-       // Enforce bounds again
+       new_params = Rcpp::clone(family_params);
+       double gd_step = 0.1 * trust_radius / std::max(1.0, grad_norm);
+
+       for (int j = 0; j < n_params; j++) {
+         new_params[j] -= gd_step * gradient[j];
+       }
+
+       // Apply bounds
        if (enforce_bounds) {
          for (int j = 0; j < n_params; j++) {
            bool is_delta = (family_lower == "gkw" && j == 3) ||
@@ -12601,83 +14270,160 @@ List nrgkw(
          }
        }
 
-       // Test new value
-       new_loglik = ll_func(new_params, data);
+       new_loglik = scaled_ll_func(new_params, data);
 
        if (R_finite(new_loglik) && new_loglik < current_loglik) {
-         backtracking_success = true;
+         update_success = true;
          if (verbose) {
-           Rcout << "Backtracking successful after " << (bt + 1)
-                 << " attempts, new value: " << new_loglik << std::endl;
+           Rcpp::Rcout << "Gradient descent successful." << std::endl;
          }
-         break;
        }
+     }
+   } else { // Newton-Raphson update
+     Rcpp::NumericMatrix rcpp_hessian = scaled_hs_func(family_params, data);
+
+     // Check Hessian validity
+     bool valid_hessian = true;
+     for (int i = 0; i < n_params && valid_hessian; i++) {
+       for (int j = 0; j < n_params; j++) {
+         if (!R_finite(rcpp_hessian(i, j))) {
+           valid_hessian = false;
+           break;
+         }
+       }
+     }
+
+     if (!valid_hessian) {
+       if (verbose) {
+         Rcpp::Rcout << "Warning: Invalid Hessian, using numerical approximation." << std::endl;
+       }
+
+       // Use numerical Hessian
+       arma::mat num_hessian = numHessianAdaptive(family_params, data,
+                                                  scaled_ll_func, scaled_gr_func);
+       rcpp_hessian = Rcpp::wrap(num_hessian);
+     }
+
+     // Convert to arma for numerical operations
+     arma::mat hessian = Rcpp::as<arma::mat>(rcpp_hessian);
+     arma::vec grad_vec = Rcpp::as<arma::vec>(gradient);
+
+     if (eigenvalue_hessian_reg) {
+       // Enhanced regularization
+       hessian = makePositiveDefinite(hessian);
+     } else {
+       // Simple diagonal addition
+       hessian.diag() += 1e-6 * (1.0 + arma::max(arma::abs(hessian.diag())));
+     }
+
+     // Compute Newton direction
+     arma::vec direction;
+     bool solve_success = arma::solve(direction, hessian, -grad_vec);
+
+     if (!solve_success) {
+       if (verbose) {
+         Rcpp::Rcout << "Warning: Failed to solve for Newton direction, using gradient." << std::endl;
+       }
+
+       // Use negative gradient if Newton direction cannot be computed
+       direction = -grad_vec;
+
+       // Scale the direction to control step size
+       double scale_factor = 1.0 / std::max(1.0, arma::norm(direction));
+       direction *= scale_factor;
+     }
+
+     // Use line search for step size
+     Rcpp::NumericVector search_direction = Rcpp::wrap(direction);
+     double alpha = lineSearchWolfe(
+       family_params, search_direction, data,
+       scaled_ll_func, scaled_gr_func, 1.0, 1e-4, 0.9, max_backtrack
+     );
+
+     if (verbose) {
+       Rcpp::Rcout << "Line search: alpha = " << alpha << std::endl;
+     }
+
+     // Update parameters
+     new_params = Rcpp::clone(family_params);
+     for (int j = 0; j < n_params; j++) {
+       new_params[j] += alpha * search_direction[j];
+     }
+
+     // Apply bounds if needed
+     if (enforce_bounds) {
+       for (int j = 0; j < n_params; j++) {
+         bool is_delta = (family_lower == "gkw" && j == 3) ||
+           (family_lower == "bkw" && j == 3) ||
+           (family_lower == "kkw" && j == 2) ||
+           (family_lower == "mc" && j == 1) ||
+           (family_lower == "beta" && j == 1);
+
+         if (is_delta) {
+           new_params[j] = std::max(0.0, new_params[j]);
+         } else {
+           new_params[j] = std::max(min_param_val, new_params[j]);
+         }
+         new_params[j] = std::min(max_param_val, new_params[j]);
+       }
+     }
+
+     // Evaluate at new point
+     new_loglik = scaled_ll_func(new_params, data);
+
+     if (R_finite(new_loglik) && new_loglik <= current_loglik + 1e-4) {
+       update_success = true;
      }
    }
 
-   // If we still cannot improve, evaluate the situation
-   if (!backtracking_success) {
+   // If update failed, try random perturbation as last resort
+   if (!update_success) {
      if (verbose) {
-       Rcout << "Warning: Backtracking failed at iteration " << iter << std::endl;
+       Rcpp::Rcout << "Update failed, applying random perturbation." << std::endl;
      }
 
-     // If gradient is small enough, consider converged
-     if (grad_norm < tol * 10) {  // Relaxed tolerance for this case
-       converged = true;
+     new_params = Rcpp::clone(family_params);
+     GetRNGstate();
+     for (int j = 0; j < n_params; j++) {
+       // Small random perturbation
+       double range = R::runif(0.01, 0.05) * std::abs(family_params[j]);
+       double perturb = R::runif(-range, range);
+       new_params[j] += perturb;
+     }
+     PutRNGstate();
+
+     // Apply bounds
+     if (enforce_bounds) {
+       for (int j = 0; j < n_params; j++) {
+         bool is_delta = (family_lower == "gkw" && j == 3) ||
+           (family_lower == "bkw" && j == 3) ||
+           (family_lower == "kkw" && j == 2) ||
+           (family_lower == "mc" && j == 1) ||
+           (family_lower == "beta" && j == 1);
+
+         if (is_delta) {
+           new_params[j] = std::max(0.0, new_params[j]);
+         } else {
+           new_params[j] = std::max(min_param_val, new_params[j]);
+         }
+         new_params[j] = std::min(max_param_val, new_params[j]);
+       }
+     }
+
+     new_loglik = scaled_ll_func(new_params, data);
+
+     if (R_finite(new_loglik) && new_loglik < current_loglik + 1e-2) {
+       update_success = true;
        if (verbose) {
-         Rcout << "Convergence detected with small gradient after backtracking failure." << std::endl;
+         Rcpp::Rcout << "Random perturbation successful." << std::endl;
        }
      } else {
-       // If backtracking fails and we're close to max iterations,
-       // check if we're in a reasonable region
-       if (iter > max_iter * 0.8 && current_loglik < best_loglik * 1.1) {
-         converged = true;
-         if (verbose) {
-           Rcout << "Forced convergence after backtracking failure near maximum iterations." << std::endl;
-         }
-       } else {
-         // Try a small random perturbation
-         NumericVector perturb(n_params);
-         for (int j = 0; j < n_params; j++) {
-           // Perturbation of up to 5% of current value
-           double range = 0.05 * std::abs(family_params[j]);
-           perturb[j] = R::runif(-range, range);
-           new_params[j] = family_params[j] + perturb[j];
-         }
+       // If even random perturbation fails, use best parameters so far
+       new_params = best_params;
+       new_loglik = best_loglik;
 
-         // Apply constraints
-         if (enforce_bounds) {
-           for (int j = 0; j < n_params; j++) {
-             bool is_delta = (family_lower == "gkw" && j == 3) ||
-               (family_lower == "bkw" && j == 3) ||
-               (family_lower == "kkw" && j == 2) ||
-               (family_lower == "mc" && j == 1) ||
-               (family_lower == "beta" && j == 1);
-
-             if (is_delta) {
-               new_params[j] = std::max(0.0, new_params[j]);
-             } else {
-               new_params[j] = std::max(min_param_val, new_params[j]);
-             }
-             new_params[j] = std::min(max_param_val, new_params[j]);
-           }
-         }
-
-         new_loglik = ll_func(new_params, data);
-
-         if (R_finite(new_loglik) && new_loglik < current_loglik) {
-           backtracking_success = true;
-           if (verbose) {
-             Rcout << "Recovery by random perturbation, new value: " << new_loglik << std::endl;
-           }
-         } else {
-           // If even perturbation doesn't work, use the best result so far
-           new_params = best_params;
-           new_loglik = best_loglik;
-           if (verbose) {
-             Rcout << "Returning to the previous best result: " << -best_loglik << std::endl;
-           }
-         }
+       if (verbose) {
+         Rcpp::Rcout << "All recovery attempts failed, using best parameters so far." << std::endl;
        }
      }
    }
@@ -12689,7 +14435,7 @@ List nrgkw(
    }
    loglik_history[iter] = new_loglik;
 
-   // Update the best result if this is better
+   // Update best result if improved
    if (new_loglik < best_loglik) {
      best_loglik = new_loglik;
      for (int j = 0; j < n_params; j++) {
@@ -12697,50 +14443,51 @@ List nrgkw(
      }
    }
 
-   // Check convergence by parameter change
+   // Check parameter change convergence
    double param_change = 0.0;
    double param_rel_change = 0.0;
    for (int j = 0; j < n_params; j++) {
-     param_change += std::pow(update[j], 2);
+     double delta = family_params[j] - param_history(iter-1, j);
+     param_change += std::pow(delta, 2);
      if (std::abs(family_params[j]) > 1e-10) {
-       param_rel_change += std::pow(update[j] / family_params[j], 2);
+       param_rel_change += std::pow(delta / family_params[j], 2);
      } else {
-       param_rel_change += std::pow(update[j], 2);
+       param_rel_change += std::pow(delta, 2);
      }
    }
    param_change = std::sqrt(param_change);
    param_rel_change = std::sqrt(param_rel_change / n_params);
 
-   // Check convergence by log-likelihood change
+   // Check log-likelihood change convergence
    double loglik_change = std::abs(prev_loglik - new_loglik);
    double loglik_rel_change = loglik_change / (std::abs(prev_loglik) + 1e-10);
    prev_loglik = new_loglik;
 
    if (verbose) {
-     Rcout << "Iteration " << iter
-           << ", Log-likelihood: " << -new_loglik
-           << ", Change: " << loglik_change
-           << ", Rel. Change: " << loglik_rel_change
-           << ", Gradient Norm: " << grad_norm
-           << std::endl;
+     Rcpp::Rcout << "Iteration " << iter
+                 << ", Log-likelihood: " << -new_loglik
+                 << ", Change: " << loglik_change
+                 << ", Rel. Change: " << loglik_rel_change
+                 << ", Gradient Norm: " << grad_norm
+                 << std::endl;
 
-     Rcout << "Parameters:";
+     Rcpp::Rcout << "Parameters: ";
      for (int j = 0; j < n_params; j++) {
-       Rcout << " " << family_params[j];
+       Rcpp::Rcout << family_params[j] << " ";
      }
-     Rcout << std::endl;
+     Rcpp::Rcout << std::endl;
    }
 
-   // Convergence criteria
+   // Check convergence criteria
    if (param_change < tol || param_rel_change < tol ||
        loglik_change < tol || loglik_rel_change < tol) {
      converged = true;
      if (verbose) {
-       Rcout << "Convergence detected:" << std::endl;
-       if (param_change < tol) Rcout << "- Absolute parameter change < tolerance" << std::endl;
-       if (param_rel_change < tol) Rcout << "- Relative parameter change < tolerance" << std::endl;
-       if (loglik_change < tol) Rcout << "- Absolute log-likelihood change < tolerance" << std::endl;
-       if (loglik_rel_change < tol) Rcout << "- Relative log-likelihood change < tolerance" << std::endl;
+       Rcpp::Rcout << "Convergence detected:" << std::endl;
+       if (param_change < tol) Rcpp::Rcout << "- Absolute parameter change < tolerance" << std::endl;
+       if (param_rel_change < tol) Rcpp::Rcout << "- Relative parameter change < tolerance" << std::endl;
+       if (loglik_change < tol) Rcpp::Rcout << "- Absolute log-likelihood change < tolerance" << std::endl;
+       if (loglik_rel_change < tol) Rcpp::Rcout << "- Relative log-likelihood change < tolerance" << std::endl;
      }
    }
  }
@@ -12749,13 +14496,36 @@ List nrgkw(
  if (!converged) {
    family_params = best_params;
    if (verbose) {
-     Rcout << "Did not fully converge, using the best parameters found." << std::endl;
+     Rcpp::Rcout << "Did not fully converge, using the best parameters found." << std::endl;
+   }
+ }
+
+ // Unscale parameters if scaling was used
+ if (adaptive_scaling) {
+   // Unscale final parameters
+   for (int j = 0; j < n_params; j++) {
+     family_params[j] /= scaling_factors[j];
+   }
+
+   // Unscale parameter history
+   for (int i = 0; i <= iter; i++) {
+     for (int j = 0; j < n_params; j++) {
+       param_history(i, j) /= scaling_factors[j];
+     }
+   }
+
+   if (verbose) {
+     Rcpp::Rcout << "Final unscaled parameters: ";
+     for (int j = 0; j < n_params; j++) {
+       Rcpp::Rcout << family_params[j] << " ";
+     }
+     Rcpp::Rcout << std::endl;
    }
  }
 
  // Prepare final result
- NumericMatrix final_param_history(iter + 1, n_params);
- NumericVector final_loglik_history(iter + 1);
+ Rcpp::NumericMatrix final_param_history(iter + 1, n_params);
+ Rcpp::NumericVector final_loglik_history(iter + 1);
 
  for (int i = 0; i <= iter; i++) {
    for (int j = 0; j < n_params; j++) {
@@ -12764,150 +14534,142 @@ List nrgkw(
    final_loglik_history[i] = loglik_history[i];
  }
 
- // Calculate final gradient and hessian
- NumericVector final_gradient = gr_func(family_params, data);
- NumericMatrix rcpp_hessian = hs_func(family_params, data);
+ // Final computations with best parameters
+ double final_loglik = ll_func(family_params, data);
+ Rcpp::NumericVector final_gradient = gr_func(family_params, data);
+ Rcpp::NumericMatrix final_hessian = hs_func(family_params, data);
 
- // Calculate numerical Hessian if requested
- NumericMatrix rcpp_numeric_hessian;
- if (get_num_hess) {
-   arma::mat arma_numeric_hessian = numHess_family(family_params, data);
-   rcpp_numeric_hessian = wrap(arma_numeric_hessian);
-   result["numeric_hessian"] = rcpp_numeric_hessian;
+ // Check final Hessian validity
+ bool valid_final_hessian = true;
+ for (int i = 0; i < n_params && valid_final_hessian; i++) {
+   for (int j = 0; j < n_params; j++) {
+     if (!R_finite(final_hessian(i, j))) {
+       valid_final_hessian = false;
+       break;
+     }
+   }
  }
 
- // Calculate standard errors using Armadillo for robust matrix inversion
- NumericVector std_errors(n_params, NA_REAL);
+ // Use numerical approximation if analytical Hessian is invalid
+ if (!valid_final_hessian) {
+   if (verbose) {
+     Rcpp::Rcout << "Final analytical Hessian invalid, using numerical approximation." << std::endl;
+   }
+
+   arma::mat num_hessian = numHessianAdaptive(family_params, data, ll_func, gr_func);
+   final_hessian = Rcpp::wrap(num_hessian);
+ }
+
+ // Calculate numerical Hessian if requested
+ Rcpp::NumericMatrix numeric_hessian;
+ if (get_num_hess) {
+   arma::mat num_hessian = numHessianAdaptive(family_params, data, ll_func, gr_func);
+   numeric_hessian = Rcpp::wrap(num_hessian);
+   result["numeric_hessian"] = numeric_hessian;
+ }
+
+ // Calculate standard errors using eigenvalue-regularized Hessian
+ Rcpp::NumericVector std_errors(n_params, NA_REAL);
  bool valid_se = true;
 
- // Convert Rcpp Hessian to Armadillo matrix
- arma::mat hessian = as<arma::mat>(rcpp_hessian);
- arma::mat cov_matrix;
+ // Calculate condition number of the Hessian
+ double condition_number = NA_REAL;
+ arma::mat arma_hessian = Rcpp::as<arma::mat>(final_hessian);
+ arma::vec eigval;
+ bool eig_success = arma::eig_sym(eigval, arma_hessian);
 
- // Layered approach to calculate covariance matrix (inverse of Hessian)
+ if (eig_success) {
+   double max_eigval = arma::max(eigval);
+   double min_eigval = arma::min(eigval);
+
+   if (min_eigval > 0) {
+     condition_number = max_eigval / min_eigval;
+   } else {
+     condition_number = R_PosInf;
+   }
+ }
+
+ // Use robust approach to calculate standard errors
  try {
-   // Step 1: Try to use Cholesky decomposition (fastest, requires positive definite)
+   // Make Hessian positive definite
+   arma::mat hessian_pd = makePositiveDefinite(arma_hessian);
+
+   // Compute covariance matrix
+   arma::mat cov_matrix;
+   bool inv_success = false;
+
+   // Try various inversion methods
    try {
-     cov_matrix = arma::inv_sympd(hessian);
-
-     if (verbose) {
-       Rcout << "Standard error calculation: Cholesky decomposition successful." << std::endl;
-     }
+     cov_matrix = arma::inv_sympd(hessian_pd);
+     inv_success = true;
    } catch (...) {
-     // Step 2: Try standard inversion
      try {
-       cov_matrix = arma::inv(hessian);
-
-       if (verbose) {
-         Rcout << "Standard error calculation: Standard inverse successful." << std::endl;
-       }
+       cov_matrix = arma::inv(hessian_pd);
+       inv_success = true;
      } catch (...) {
-       // Step 3: Apply regularization
-       arma::mat reg_hessian = hessian;
-       double reg_factor = 1e-6;
-
-       // Find reasonable magnitude for regularization
-       double diag_max = arma::max(arma::abs(reg_hessian.diag()));
-       reg_factor = std::max(reg_factor, 1e-6 * diag_max);
-
-       // Add small value to diagonal
-       reg_hessian.diag() += reg_factor;
-
        try {
-         cov_matrix = arma::inv(reg_hessian);
-
-         if (verbose) {
-           Rcout << "Standard error calculation: Regularized inverse successful." << std::endl;
-         }
+         cov_matrix = arma::pinv(hessian_pd);
+         inv_success = true;
        } catch (...) {
-         // Step 4: Stronger regularization
-         reg_hessian = hessian;
-         reg_factor = 1e-4 * (1.0 + diag_max);
-         reg_hessian.diag() += reg_factor;
-
-         try {
-           cov_matrix = arma::inv(reg_hessian);
-
-           if (verbose) {
-             Rcout << "Standard error calculation: Stronger regularized inverse successful." << std::endl;
-           }
-         } catch (...) {
-           // Step 5: Use pseudo-inverse (more robust)
-           try {
-             cov_matrix = arma::pinv(hessian);
-
-             if (verbose) {
-               Rcout << "Standard error calculation: Pseudo-inverse successful." << std::endl;
-             }
-           } catch (...) {
-             // Step 6: Try numerical Hessian if available
-             if (get_num_hess) {
-               arma::mat num_hessian = as<arma::mat>(rcpp_numeric_hessian);
-
-               try {
-                 cov_matrix = arma::pinv(num_hessian);
-
-                 if (verbose) {
-                   Rcout << "Standard error calculation: Numerical Hessian pseudo-inverse successful." << std::endl;
-                 }
-               } catch (...) {
-                 valid_se = false;
-               }
-             } else {
-               valid_se = false;
-             }
-           }
-         }
+         inv_success = false;
        }
      }
    }
 
-   // Calculate standard errors if covariance matrix is available
-   if (valid_se) {
-     // Extract diagonal elements and calculate square root
+   // Extract standard errors if inversion succeeded
+   if (inv_success) {
      arma::vec diag_cov = cov_matrix.diag();
 
      for (int j = 0; j < n_params; j++) {
        if (diag_cov(j) > 0) {
          std_errors[j] = std::sqrt(diag_cov(j));
        } else {
-         if (verbose) {
-           Rcout << "Warning: Non-positive variance detected for parameter " << j
-                 << ". Standard error set to NA." << std::endl;
-         }
          std_errors[j] = NA_REAL;
        }
      }
+   } else {
+     valid_se = false;
    }
  } catch (...) {
    valid_se = false;
  }
 
  if (!valid_se && verbose) {
-   Rcout << "Warning: Could not calculate standard errors. The Hessian matrix may not be positive definite." << std::endl;
+   Rcpp::Rcout << "Could not calculate standard errors. The Hessian may not be positive definite." << std::endl;
  }
 
- // Calculate AIC: AIC = 2k - 2ln(L) = 2k + 2*(-ln(L))
- double final_loglik = ll_func(family_params, data);
+ // Calculate information criteria
  double aic = 2 * n_params + 2 * final_loglik;
-
- // Calculate BIC: BIC = k ln(n) - 2ln(L) = k ln(n) + 2*(-ln(L))
  double bic = n_params * std::log(n_data) + 2 * final_loglik;
+ double aicc = aic;
+ if (n_data > n_params + 1) {
+   aicc += 2 * n_params * (n_params + 1) / (n_data - n_params - 1);
+ }
 
  // Fill the result
  result["parameters"] = family_params;
- result["loglik"] = -final_loglik;  // Negative because ll functions return -logL
+ result["loglik"] = -final_loglik;
  result["iterations"] = iter;
  result["converged"] = converged;
  result["param_history"] = final_param_history;
- result["loglik_history"] = -final_loglik_history;  // Negative for consistency
+ result["loglik_history"] = -final_loglik_history;
  result["gradient"] = final_gradient;
- result["hessian"] = rcpp_hessian;
+ result["hessian"] = final_hessian;
  result["std_errors"] = std_errors;
  result["aic"] = aic;
  result["bic"] = bic;
+ result["aicc"] = aicc;
  result["n"] = n_data;
  result["family"] = family;
+ result["optimization_method"] = optimization_method;
+
+ if (adaptive_scaling) {
+   result["scaling_factors"] = scaling_factors;
+ }
+
+ if (eig_success) {
+   result["condition_number"] = condition_number;
+ }
 
  if (!converged && !result.containsElementNamed("status")) {
    result["status"] = "max_iterations_reached";
@@ -12915,15 +14677,14 @@ List nrgkw(
    result["status"] = "success";
  }
 
- // Calculate statistical significance (p-values) using normal approximation
- NumericVector z_values(n_params, NA_REAL);
- NumericVector p_values(n_params, NA_REAL);
+ // Calculate statistical significance metrics
+ Rcpp::NumericVector z_values(n_params, NA_REAL);
+ Rcpp::NumericVector p_values(n_params, NA_REAL);
 
  if (valid_se) {
    for (int j = 0; j < n_params; j++) {
      if (std_errors[j] != NA_REAL && std_errors[j] > 0) {
        z_values[j] = family_params[j] / std_errors[j];
-       // Two-tailed approximation
        p_values[j] = 2.0 * R::pnorm(-std::abs(z_values[j]), 0.0, 1.0, 1, 0);
      }
    }
@@ -12931,9 +14692,1268 @@ List nrgkw(
    result["p_values"] = p_values;
  }
 
- // Set parameter names for easier interpretation
+ // Set parameter names
  colnames(final_param_history) = param_names;
  result["param_names"] = param_names;
 
+ // Multi-start optimization if needed
+ if (!converged && multi_start_attempts > 0) {
+   if (verbose) {
+     Rcpp::Rcout << "Initial optimization did not converge. Trying with different starting values..." << std::endl;
+   }
+
+   bool multi_start_success = false;
+   Rcpp::List best_result = Rcpp::clone(result);
+   double best_multi_loglik = -Rcpp::as<double>(result["loglik"]);
+
+   for (int attempt = 0; attempt < multi_start_attempts; attempt++) {
+     if (verbose) {
+       Rcpp::Rcout << "Multi-start attempt " << (attempt + 1) << " of " << multi_start_attempts << std::endl;
+     }
+
+     // Generate new starting values
+     Rcpp::NumericVector new_start = smartInitGkw(data, family);
+
+     // Perturb the starting values
+     GetRNGstate();
+     for (int j = 0; j < new_start.size(); j++) {
+       // Perturb by up to ±30%
+       double perturb_factor = R::runif(0.7, 1.3);
+       new_start[j] *= perturb_factor;
+
+       // Ensure valid values
+       if (j == new_start.size() - 1 && (family_lower == "bkw" || family_lower == "beta")) {
+         // For delta parameter
+         new_start[j] = std::max(0.0, new_start[j]);
+       } else {
+         new_start[j] = std::max(min_param_val, new_start[j]);
+       }
+       new_start[j] = std::min(max_param_val, new_start[j]);
+     }
+     PutRNGstate();
+
+     if (verbose) {
+       Rcpp::Rcout << "New starting values: ";
+       for (int j = 0; j < new_start.size(); j++) {
+         Rcpp::Rcout << new_start[j] << " ";
+       }
+       Rcpp::Rcout << std::endl;
+     }
+
+     // Try optimization with new starting values
+     try {
+       Rcpp::List new_result = nrgkw(
+         new_start, data, family, tol, max_iter / 2,
+         verbose, optimization_method, enforce_bounds,
+         min_param_val, max_param_val, adaptive_scaling,
+         use_stochastic_perturbation, false, 0, // No further multi-start
+         eigenvalue_hessian_reg, max_backtrack, initial_trust_radius
+       );
+
+       bool new_converged = Rcpp::as<bool>(new_result["converged"]);
+       double new_multi_loglik = -Rcpp::as<double>(new_result["loglik"]);
+
+       if (verbose) {
+         Rcpp::Rcout << "Multi-start result: converged = " << (new_converged ? "true" : "false")
+                     << ", loglik = " << -new_multi_loglik << std::endl;
+       }
+
+       // Keep the best result
+       if (new_converged || (!multi_start_success && new_multi_loglik < best_multi_loglik)) {
+         best_result = new_result;
+         best_multi_loglik = new_multi_loglik;
+         multi_start_success = new_converged;
+
+         if (verbose) {
+           Rcpp::Rcout << "Found better solution with multi-start!" << std::endl;
+         }
+
+         // Stop early if converged
+         if (multi_start_success) {
+           break;
+         }
+       }
+     } catch (...) {
+       if (verbose) {
+         Rcpp::Rcout << "Multi-start attempt failed with an exception." << std::endl;
+       }
+     }
+   }
+
+   // Return the best result from multi-start attempts
+   if (multi_start_success || best_multi_loglik < -Rcpp::as<double>(result["loglik"])) {
+     return best_result;
+   }
+ }
+
  return result;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // Função para calcular a Hessiana numericamente usando Armadillo
+// arma::mat numHess(
+//   NumericVector params,
+//   NumericVector data,
+//   double eps = 1e-6
+// ) {
+// int n = params.size();
+// arma::mat hessian(n, n, arma::fill::zeros);
+//
+// // Valor da função no ponto atual
+// double f0 = llgkw(params, data);
+//
+// // Para cada par de variáveis
+// for (int i = 0; i < n; i++) {
+//   for (int j = 0; j <= i; j++) {
+//     // Cálculo da derivada segunda usando diferenças finitas
+//     if (i == j) {
+//       // Derivada segunda em relação à mesma variável
+//       NumericVector params_p = clone(params);
+//       NumericVector params_m = clone(params);
+//
+//       params_p[i] += eps;
+//       params_m[i] -= eps;
+//
+//       double f_p = llgkw(params_p, data);
+//       double f_m = llgkw(params_m, data);
+//
+//       hessian(i, j) = (f_p - 2*f0 + f_m) / (eps * eps);
+//     } else {
+//       // Derivada cruzada
+//       NumericVector params_pp = clone(params);
+//       NumericVector params_pm = clone(params);
+//       NumericVector params_mp = clone(params);
+//       NumericVector params_mm = clone(params);
+//
+//       params_pp[i] += eps;
+//       params_pp[j] += eps;
+//
+//       params_pm[i] += eps;
+//       params_pm[j] -= eps;
+//
+//       params_mp[i] -= eps;
+//       params_mp[j] += eps;
+//
+//       params_mm[i] -= eps;
+//       params_mm[j] -= eps;
+//
+//       double f_pp = llgkw(params_pp, data);
+//       double f_pm = llgkw(params_pm, data);
+//       double f_mp = llgkw(params_mp, data);
+//       double f_mm = llgkw(params_mm, data);
+//
+//       hessian(i, j) = hessian(j, i) = (f_pp - f_pm - f_mp + f_mm) / (4 * eps * eps);
+//     }
+//   }
+// }
+//
+// return hessian;
+// }
+//
+
+
+// //' @title Newton-Raphson Optimization for GKw Family Distributions (nrgkw)
+// //' @author Lopes, J. E.
+// //' @keywords distribution optimization likelihood mle newton-raphson kumaraswamy mcdonald beta
+// //'
+// //' @description
+// //' Performs maximum likelihood estimation (MLE) for the parameters of any
+// //' distribution in the Generalized Kumaraswamy (GKw) family using a robust
+// //' implementation of the Newton-Raphson algorithm (`nrgkw`). This function
+// //' supports all 7 nested submodels, optimizing the corresponding negative
+// //' log-likelihood function using analytical gradients and Hessians.
+// //'
+// //' @details
+// //' The Generalized Kumaraswamy family includes the following distributions,
+// //' all defined on the interval (0, 1):
+// //' \itemize{
+// //'   \item{\bold{GKw} (Generalized Kumaraswamy): 5 parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda})}
+// //'   \item{\bold{BKw} (Beta-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \gamma, \delta}), GKw with \eqn{\lambda = 1}}
+// //'   \item{\bold{KwKw} (Kumaraswamy-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \delta, \lambda}), GKw with \eqn{\gamma = 1}}
+// //'   \item{\bold{EKw} (Exponentiated Kumaraswamy): 3 parameters (\eqn{\alpha, \beta, \lambda}), GKw with \eqn{\gamma = 1, \delta = 0}}
+// //'   \item{\bold{Mc} (McDonald/Beta Power): 3 parameters (\eqn{\gamma, \delta, \lambda}), GKw with \eqn{\alpha = 1, \beta = 1}}
+// //'   \item{\bold{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha, \beta}), GKw with \eqn{\gamma = 1, \delta = 0, \lambda = 1}}
+// //'   \item{\bold{Beta}: 2 parameters (\eqn{\gamma, \delta}), GKw with \eqn{\alpha = 1, \beta = 1, \lambda = 1}. Corresponds to standard Beta(\eqn{\gamma, \delta+1}).}
+// //' }
+// //'
+// //' The `nrgkw` function implements a Newton-Raphson optimization procedure to
+// //' find the maximum likelihood estimates. It incorporates multiple fallback strategies
+// //' to handle numerical challenges when updating parameters using the Hessian matrix:
+// //' \enumerate{
+// //'  \item Cholesky decomposition (fastest, requires positive-definite Hessian)
+// //'  \item Standard matrix solver (e.g., LU decomposition)
+// //'  \item Regularized Hessian (adding small values to the diagonal)
+// //'  \item Moore-Penrose Pseudo-inverse (for singular or ill-conditioned Hessians)
+// //'  \item Gradient descent (if Hessian steps fail repeatedly or `use_hessian=FALSE`)
+// //' }
+// //'
+// //' The function also implements a backtracking line search algorithm to ensure
+// //' monotonic improvement (decrease) in the negative log-likelihood at each step.
+// //' If backtracking fails consistently, random parameter perturbation may be
+// //' employed as a recovery strategy. Parameter bounds (\code{min_param_val},
+// //' \code{max_param_val}, and \eqn{\delta \ge 0}) can be enforced if
+// //' \code{enforce_bounds = TRUE}.
+// //'
+// //' @param start A numeric vector containing initial values for the parameters.
+// //'   The length and order must correspond to the selected `family`
+// //'   (e.g., `c(alpha, beta, gamma, delta, lambda)` for "gkw"; `c(alpha, beta)` for "kw";
+// //'   `c(gamma, delta)` for "beta").
+// //' @param data A numeric vector containing the observed data. All values must
+// //'   be strictly between 0 and 1.
+// //' @param family A character string specifying the distribution family. One of
+// //'   \code{"gkw"}, \code{"bkw"}, \code{"kkw"}, \code{"ekw"}, \code{"mc"},
+// //'   \code{"kw"}, or \code{"beta"}. Default: \code{"gkw"}.
+// //' @param tol Convergence tolerance. The algorithm stops when the Euclidean norm
+// //'   of the gradient is below this value, or if relative changes in parameters
+// //'   or the negative log-likelihood are below this threshold across consecutive
+// //'   iterations. Default: \code{1e-6}.
+// //' @param max_iter Maximum number of iterations allowed. Default: \code{100}.
+// //' @param verbose Logical; if \code{TRUE}, prints detailed progress information
+// //'   during optimization, including iteration number, negative log-likelihood,
+// //'   gradient norm, and step adjustment details. Default: \code{FALSE}.
+// //' @param use_hessian Logical; if \code{TRUE}, uses the analytical Hessian matrix
+// //'   for parameter updates (Newton-Raphson variants). If \code{FALSE}, uses
+// //'   gradient descent. Default: \code{TRUE}.
+// //' @param step_size Initial step size (\eqn{\eta}) for parameter updates
+// //'   (\eqn{\theta_{new} = \theta_{old} - \eta H^{-1} \nabla \ell} or
+// //'   \eqn{\theta_{new} = \theta_{old} - \eta \nabla \ell}). Backtracking line search
+// //'   adjusts this step size dynamically. Default: \code{1.0}.
+// //' @param enforce_bounds Logical; if \code{TRUE}, parameter values are constrained
+// //'   to stay within \code{min_param_val}, \code{max_param_val} (and \eqn{\delta \ge 0})
+// //'   during optimization. Default: \code{TRUE}.
+// //' @param min_param_val Minimum allowed value for parameters constrained to be
+// //'   strictly positive (\eqn{\alpha, \beta, \gamma, \lambda}). Default: \code{1e-5}.
+// //' @param max_param_val Maximum allowed value for all parameters. Default: \code{1e5}.
+// //' @param get_num_hess Logical; if \code{TRUE}, computes and returns a numerical
+// //'   approximation of the Hessian matrix at the solution using central differences,
+// //'   in addition to the analytical Hessian. Useful for verification. Default: \code{FALSE}.
+// //'
+// //' @return A list object of class \code{gkw_fit} containing the following components:
+// //' \item{parameters}{A named numeric vector with the estimated parameters.}
+// //' \item{loglik}{The maximized value of the log-likelihood function (not the negative log-likelihood).}
+// //' \item{iterations}{Number of iterations performed.}
+// //' \item{converged}{Logical flag indicating whether the algorithm converged successfully based on the tolerance criteria.}
+// //' \item{param_history}{A matrix where rows represent iterations and columns represent parameter values (if requested implicitly or explicitly - may depend on implementation).}
+// //' \item{loglik_history}{A vector of negative log-likelihood values at each iteration (if requested).}
+// //' \item{gradient}{The gradient vector of the negative log-likelihood at the final parameter estimates.}
+// //' \item{hessian}{The analytical Hessian matrix of the negative log-likelihood at the final parameter estimates.}
+// //' \item{std_errors}{A named numeric vector of approximate standard errors for the estimated parameters, calculated from the inverse of the final Hessian matrix.}
+// //' \item{aic}{Akaike Information Criterion: \eqn{AIC = 2k - 2 \ell(\hat{\theta})}, where \eqn{k} is the number of parameters.}
+// //' \item{bic}{Bayesian Information Criterion: \eqn{BIC = k \ln(n) - 2 \ell(\hat{\theta})}, where \eqn{k} is the number of parameters and \eqn{n} is the sample size.}
+// //' \item{n}{The sample size (number of observations in `data` after removing any NA values).}
+// //' \item{status}{A character string indicating the termination status (e.g., "Converged", "Max iterations reached").}
+// //' \item{z_values}{A named numeric vector of Z-statistics (\eqn{\hat{\theta}_j / SE(\hat{\theta}_j)}) for testing parameter significance.}
+// //' \item{p_values}{A named numeric vector of two-sided p-values corresponding to the Z-statistics, calculated using the standard Normal distribution.}
+// //' \item{param_names}{A character vector of the names of the parameters estimated for the specified family.}
+// //' \item{family}{The character string specifying the distribution family used.}
+// //' \item{numeric_hessian}{(Optional) The numerically approximated Hessian matrix at the solution, if \code{get_num_hess = TRUE}.}
+// //'
+// //' @section Warning:
+// //' Maximum likelihood estimation for these flexible distributions can be challenging.
+// //' Convergence is sensitive to initial values and the shape of the likelihood surface.
+// //' It is recommended to:
+// //' \itemize{
+// //'   \item{Try different starting values (`start`) if convergence fails or seems suboptimal.}
+// //'   \item{Check the `converged` flag and the `status` message.}
+// //'   \item{Examine the final `gradient` norm; it should be close to zero for a successful convergence.}
+// //'   \item{Inspect the `param_history` and `loglik_history` (if available) to understand the optimization path.}
+// //'   \item{Use the `verbose = TRUE` option for detailed diagnostics during troubleshooting.}
+// //'   \item{Be cautious interpreting results if standard errors are very large or `NaN`, which might indicate issues like likelihood flatness or parameter estimates near boundaries.}
+// //' }
+// //'
+// //' @references
+// //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
+// //' random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
+// //' *Journal of Statistical Computation and Simulation*, *81*(7), 883-898.
+// //'
+// //' Fletcher, R. (1987). *Practical Methods of Optimization* (2nd ed.). John Wiley & Sons.
+// //'
+// //' Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer.
+// //'
+// //' @seealso
+// //' Underlying functions used: \code{\link{llgkw}}, \code{\link{grgkw}}, \code{\link{hsgkw}},
+// //' \code{\link{llkw}}, \code{\link{grkw}}, \code{\link{hskw}},
+// //' \code{\link{llbkw}}, \code{grbkw}, \code{hsbkw},
+// //' \code{llkkw}, \code{grkkw}, \code{hskkw},
+// //' \code{\link{llekw}}, \code{grekw}, \code{hsekw},
+// //' \code{\link{llmc}}, \code{\link{grmc}}, \code{\link{hsmc}},
+// //' \code{\link{llbeta}}, \code{\link{grbeta}}, \code{\link{hsbeta}}.
+// //' General optimization: \code{\link[stats]{optim}}, \code{\link[stats]{nlm}}.
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Generate sample data from a Beta(2,5) distribution for testing
+// //' set.seed(123)
+// //' sample_data <- stats::rbeta(200, shape1 = 2, shape2 = 5)
+// //'
+// //' # --- Fit different models using nrgkw ---
+// //'
+// //' # Fit with full GKw model (5 parameters: alpha, beta, gamma, delta, lambda)
+// //' start_gkw <- c(alpha=1.1, beta=1.1, gamma=1.8, delta=3.8, lambda=1.1)
+// //' gkw_result <- nrgkw(start = start_gkw, data = sample_data, family = "gkw", verbose = FALSE)
+// //' print("GKw Fit:")
+// //' print(gkw_result$parameters)
+// //'
+// //' # Fit with simpler Kumaraswamy model (2 parameters: alpha, beta)
+// //' start_kw <- c(alpha=1.5, beta=4.5)
+// //' kw_result <- nrgkw(start = start_kw, data = sample_data, family = "kw")
+// //' print("Kw Fit:")
+// //' print(kw_result$parameters)
+// //'
+// //' # Fit with Beta model (2 parameters: gamma, delta, corresponding to Beta(gamma, delta+1))
+// //' start_beta <- c(gamma=1.8, delta=3.8) # Start near expected values
+// //' beta_result <- nrgkw(start = start_beta, data = sample_data, family = "beta")
+// //' print("Beta Fit (gamma, delta parameters):")
+// //' print(beta_result$parameters)
+// //' cat(sprintf("Corresponding to Beta(%.3f, %.3f)\n",
+// //'     beta_result$parameters[1], beta_result$parameters[2] + 1))
+// //'
+// //' # Fit with McDonald model (3 parameters: gamma, delta, lambda)
+// //' start_mc <- c(gamma=1.8, delta=3.8, lambda=1.1)
+// //' mc_result <- nrgkw(start = start_mc, data = sample_data, family = "mc")
+// //' print("Mc Fit:")
+// //' print(mc_result$parameters) # Expect lambda estimate near 1
+// //'
+// //' # --- Compare AIC/BIC values ---
+// //' fit_comparison <- data.frame(
+// //'   family = c("gkw", "kw", "beta", "mc"),
+// //'   AIC = c(gkw_result$aic, kw_result$aic, beta_result$aic, mc_result$aic),
+// //'   BIC = c(gkw_result$bic, kw_result$bic, beta_result$bic, mc_result$bic)
+// //' )
+// //' print("Model Comparison:")
+// //' print(fit_comparison[order(fit_comparison$AIC), ]) # Lower is better
+// //'
+// //' # --- Example with verbosity and numerical Hessian check ---
+// //' beta_result_detail <- nrgkw(start = start_beta, data = sample_data, family = "beta",
+// //'                             verbose = TRUE, get_num_hess = TRUE)
+// //' print(beta_result_detail$status)
+// //' # Compare analytical and numerical Hessians (if hsbeta exists and converged)
+// //' if(beta_result_detail$converged && !is.null(beta_result_detail$numeric_hessian)) {
+// //'    print("Analytical Hessian:")
+// //'    print(beta_result_detail$hessian)
+// //'    print("Numerical Hessian:")
+// //'    print(beta_result_detail$numeric_hessian)
+// //'    print("Max Abs Diff:")
+// //'    print(max(abs(beta_result_detail$hessian - beta_result_detail$numeric_hessian)))
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// List nrgkw(
+//    NumericVector start,
+//    NumericVector data,
+//    std::string family = "gkw",
+//    double tol = 1e-6,
+//    int max_iter = 100,
+//    bool verbose = false,
+//    bool use_hessian = true,
+//    double step_size = 1.0,
+//    bool enforce_bounds = true,
+//    double min_param_val = 1e-5,
+//    double max_param_val = 1e5,
+//    bool get_num_hess = false
+// ) {
+//  // Final result will be a list with different components
+//  List result;
+//
+//  // Convert family to lowercase for case-insensitive comparison
+//  std::string family_lower = family;
+//  std::transform(family_lower.begin(), family_lower.end(), family_lower.begin(), ::tolower);
+//
+//  // Determine number of parameters based on family
+//  int n_params = 0;
+//  CharacterVector param_names;
+//
+//  if (family_lower == "gkw") {
+//    n_params = 5;
+//    param_names = CharacterVector::create("alpha", "beta", "gamma", "delta", "lambda");
+//  } else if (family_lower == "bkw") {
+//    n_params = 4;
+//    param_names = CharacterVector::create("alpha", "beta", "gamma", "delta");
+//  } else if (family_lower == "kkw") {
+//    n_params = 4;
+//    param_names = CharacterVector::create("alpha", "beta", "delta", "lambda");
+//  } else if (family_lower == "ekw") {
+//    n_params = 3;
+//    param_names = CharacterVector::create("alpha", "beta", "lambda");
+//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//    n_params = 3;
+//    param_names = CharacterVector::create("gamma", "delta", "lambda");
+//  } else if (family_lower == "kw") {
+//    n_params = 2;
+//    param_names = CharacterVector::create("alpha", "beta");
+//  } else if (family_lower == "beta") {
+//    n_params = 2;
+//    param_names = CharacterVector::create("gamma", "delta");
+//  } else {
+//    stop("Unknown family: '" + family + "'. Available options are 'gkw', 'bkw', 'kkw', 'ekw', 'mc', 'kw', 'beta'.");
+//  }
+//
+//  // Validate initial parameters size
+//  if (start.size() != n_params) {
+//    stop("Invalid number of parameters for '" + family + "'. Expected " +
+//      std::to_string(n_params) + ", got " + std::to_string(start.size()));
+//  }
+//
+//  // Check for valid data
+//  int n_data = data.size();
+//  if (n_data < n_params) {
+//    stop("At least " + std::to_string(n_params) + " data points are needed to estimate " +
+//      std::to_string(n_params) + " parameters");
+//  }
+//
+//  // Check if all data are in the interval (0,1)
+//  for (int i = 0; i < n_data; i++) {
+//    if (data[i] <= 0.0 || data[i] >= 1.0 || !R_finite(data[i])) {
+//      stop("All data must be in the interval (0,1)");
+//    }
+//  }
+//
+//  // Copy initial parameters and convert to standard GKw parameters where needed
+//  NumericVector params(5); // Always use 5 parameters internally (GKw format)
+//
+//  // Set default values based on fixed parameters in specific families
+//  params[0] = 1.0; // α = 1 default
+//  params[1] = 1.0; // β = 1 default
+//  params[2] = 1.0; // γ = 1 default
+//  params[3] = 0.0; // δ = 0 default
+//  params[4] = 1.0; // λ = 1 default
+//
+//  // Fill with provided parameters based on family
+//  if (family_lower == "gkw") {
+//    for (int j = 0; j < 5; j++) {
+//      params[j] = start[j];
+//    }
+//  } else if (family_lower == "bkw") {
+//    // α, β, γ, δ with λ = 1
+//    for (int j = 0; j < 4; j++) {
+//      params[j] = start[j];
+//    }
+//    params[4] = 1.0; // λ fixed at 1
+//  } else if (family_lower == "kkw") {
+//    // α, β, δ, λ with γ = 1
+//    params[0] = start[0]; // α
+//    params[1] = start[1]; // β
+//    params[2] = 1.0;             // γ fixed at 1
+//    params[3] = start[2]; // δ
+//    params[4] = start[3]; // λ
+//  } else if (family_lower == "ekw") {
+//    // α, β, λ with γ = 1, δ = 0
+//    params[0] = start[0]; // α
+//    params[1] = start[1]; // β
+//    params[2] = 1.0;             // γ fixed at 1
+//    params[3] = 0.0;             // δ fixed at 0
+//    params[4] = start[2]; // λ
+//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//    // γ, δ, λ with α = 1, β = 1
+//    params[0] = 1.0;             // α fixed at 1
+//    params[1] = 1.0;             // β fixed at 1
+//    params[2] = start[0]; // γ
+//    params[3] = start[1]; // δ
+//    params[4] = start[2]; // λ
+//  } else if (family_lower == "kw") {
+//    // α, β with γ = 1, δ = 0, λ = 1
+//    params[0] = start[0]; // α
+//    params[1] = start[1]; // β
+//    params[2] = 1.0;             // γ fixed at 1
+//    params[3] = 0.0;             // δ fixed at 0
+//    params[4] = 1.0;             // λ fixed at 1
+//  } else if (family_lower == "beta") {
+//    // γ, δ with α = 1, β = 1, λ = 1
+//    params[0] = 1.0;             // α fixed at 1
+//    params[1] = 1.0;             // β fixed at 1
+//    params[2] = start[0]; // γ
+//    params[3] = start[1]; // δ
+//    params[4] = 1.0;             // λ fixed at 1
+//  }
+//
+//  // Apply constraints to initial parameters if needed
+//  if (enforce_bounds) {
+//    for (int j = 0; j < 5; j++) {
+//      if (j == 3) { // delta
+//        params[j] = std::max(0.0, params[j]);
+//      } else { // other parameters must be > 0
+//        params[j] = std::max(min_param_val, params[j]);
+//      }
+//      params[j] = std::min(max_param_val, params[j]);
+//    }
+//  }
+//
+//  // Define function pointers based on family
+//  std::function<double(NumericVector, NumericVector)> ll_func;
+//  std::function<NumericVector(NumericVector, NumericVector)> gr_func;
+//  std::function<NumericMatrix(NumericVector, NumericVector)> hs_func;
+//
+//  // Assign appropriate functions based on family
+//  if (family_lower == "gkw") {
+//    ll_func = llgkw;
+//    gr_func = grgkw;
+//    hs_func = hsgkw;
+//  } else if (family_lower == "bkw") {
+//    ll_func = llbkw;
+//    gr_func = grbkw;
+//    hs_func = hsbkw;
+//  } else if (family_lower == "kkw") {
+//    ll_func = llkkw;
+//    gr_func = grkkw;
+//    hs_func = hskkw;
+//  } else if (family_lower == "ekw") {
+//    ll_func = llekw;
+//    gr_func = grekw;
+//    hs_func = hsekw;
+//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//    ll_func = llmc;
+//    gr_func = grmc;
+//    hs_func = hsmc;
+//  } else if (family_lower == "kw") {
+//    ll_func = llkw;
+//    gr_func = grkw;
+//    hs_func = hskw;
+//  } else if (family_lower == "beta") {
+//    ll_func = llbeta;
+//    gr_func = grbeta;
+//    hs_func = hsbeta;
+//  }
+//
+//  // Function to extract relevant parameters for specific family
+//  auto extract_params = [&](const NumericVector& full_params) -> NumericVector {
+//    NumericVector result;
+//
+//    if (family_lower == "gkw") {
+//      result = NumericVector(5);
+//      for (int j = 0; j < 5; j++) result[j] = full_params[j];
+//    } else if (family_lower == "bkw") {
+//      result = NumericVector(4);
+//      for (int j = 0; j < 4; j++) result[j] = full_params[j];
+//    } else if (family_lower == "kkw") {
+//      result = NumericVector(4);
+//      result[0] = full_params[0]; // α
+//      result[1] = full_params[1]; // β
+//      result[2] = full_params[3]; // δ
+//      result[3] = full_params[4]; // λ
+//    } else if (family_lower == "ekw") {
+//      result = NumericVector(3);
+//      result[0] = full_params[0]; // α
+//      result[1] = full_params[1]; // β
+//      result[2] = full_params[4]; // λ
+//    } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+//      result = NumericVector(3);
+//      result[0] = full_params[2]; // γ
+//      result[1] = full_params[3]; // δ
+//      result[2] = full_params[4]; // λ
+//    } else if (family_lower == "kw") {
+//      result = NumericVector(2);
+//      result[0] = full_params[0]; // α
+//      result[1] = full_params[1]; // β
+//    } else if (family_lower == "beta") {
+//      result = NumericVector(2);
+//      result[0] = full_params[2]; // γ
+//      result[1] = full_params[3]; // δ
+//    }
+//
+//    return result;
+//  };
+//
+//  // Create a custom numHess function to handle specific families
+//  auto numHess_family = [&](NumericVector params_family, NumericVector data_family, double eps = 1e-6) {
+//    int n_params_family = params_family.size();
+//    arma::mat hessian(n_params_family, n_params_family, arma::fill::zeros);
+//
+//    // Value of the function at the current point
+//    double f0 = ll_func(params_family, data_family);
+//
+//    // For each pair of variables
+//    for (int i = 0; i < n_params_family; i++) {
+//      for (int j = 0; j <= i; j++) {
+//        // Calculate second derivative using finite differences
+//        if (i == j) {
+//          // Second derivative with respect to the same variable
+//          NumericVector params_p = clone(params_family);
+//          NumericVector params_m = clone(params_family);
+//
+//          params_p[i] += eps;
+//          params_m[i] -= eps;
+//
+//          double f_p = ll_func(params_p, data_family);
+//          double f_m = ll_func(params_m, data_family);
+//
+//          hessian(i, j) = (f_p - 2*f0 + f_m) / (eps * eps);
+//        } else {
+//          // Mixed derivative
+//          NumericVector params_pp = clone(params_family);
+//          NumericVector params_pm = clone(params_family);
+//          NumericVector params_mp = clone(params_family);
+//          NumericVector params_mm = clone(params_family);
+//
+//          params_pp[i] += eps;
+//          params_pp[j] += eps;
+//
+//          params_pm[i] += eps;
+//          params_pm[j] -= eps;
+//
+//          params_mp[i] -= eps;
+//          params_mp[j] += eps;
+//
+//          params_mm[i] -= eps;
+//          params_mm[j] -= eps;
+//
+//          double f_pp = ll_func(params_pp, data_family);
+//          double f_pm = ll_func(params_pm, data_family);
+//          double f_mp = ll_func(params_mp, data_family);
+//          double f_mm = ll_func(params_mm, data_family);
+//
+//          hessian(i, j) = hessian(j, i) = (f_pp - f_pm - f_mp + f_mm) / (4 * eps * eps);
+//        }
+//      }
+//    }
+//
+//    return hessian;
+//  };
+//
+//  // Get family-specific parameters
+//  NumericVector family_params = extract_params(params);
+//
+//  // Calculate initial log-likelihood
+//  double initial_loglik = ll_func(family_params, data);
+//  if (!R_finite(initial_loglik) || initial_loglik == R_PosInf) {
+//    stop("Initial log-likelihood is infinite or NaN. Check the initial parameters.");
+//  }
+//
+//  // Parameter and log-likelihood history for diagnostics
+//  NumericMatrix param_history(max_iter + 1, n_params);
+//  NumericVector loglik_history(max_iter + 1);
+//
+//  // Initialize history with initial values
+//  for (int j = 0; j < n_params; j++) {
+//    param_history(0, j) = family_params[j];
+//  }
+//  loglik_history[0] = initial_loglik;
+//
+//  // Variables for convergence control
+//  bool converged = false;
+//  int iter = 0;
+//  double prev_loglik = initial_loglik;
+//
+//  // Prepare to store the best result obtained
+//  double best_loglik = initial_loglik;
+//  NumericVector best_params = clone(family_params);
+//
+//  // Main Newton-Raphson loop
+//  while (!converged && iter < max_iter) {
+//    iter++;
+//
+//    // Calculate log-likelihood, gradient and hessian
+//    double current_loglik = ll_func(family_params, data);
+//    NumericVector gradient = gr_func(family_params, data);
+//
+//    // Check if gradient has valid values
+//    bool valid_gradient = true;
+//    for (int j = 0; j < n_params; j++) {
+//      if (!R_finite(gradient[j])) {
+//        valid_gradient = false;
+//        break;
+//      }
+//    }
+//
+//    if (!valid_gradient) {
+//      if (verbose) {
+//        Rcout << "Warning: Invalid gradient in iteration " << iter << std::endl;
+//      }
+//      result["converged"] = false;
+//      result["status"] = "gradient_failure";
+//      // Use the best parameters found so far
+//      family_params = best_params;
+//      break;
+//    }
+//
+//    // Calculate gradient norm for stopping criterion
+//    double grad_norm = 0.0;
+//    for (int j = 0; j < n_params; j++) {
+//      grad_norm += gradient[j] * gradient[j];
+//    }
+//    grad_norm = std::sqrt(grad_norm);
+//
+//    if (grad_norm < tol) {
+//      converged = true;
+//      if (verbose) {
+//        Rcout << "Convergence detected: gradient norm (" << grad_norm
+//              << ") < tolerance (" << tol << ")" << std::endl;
+//      }
+//      break;
+//    }
+//
+//    // Update direction
+//    NumericVector update(n_params);
+//
+//    if (use_hessian) {
+//      // Calculate the Hessian
+//      NumericMatrix rcpp_hessian = hs_func(family_params, data);
+//
+//      // Check if Hessian has valid values
+//      bool valid_hessian = true;
+//      for (int i = 0; i < n_params; i++) {
+//        for (int j = 0; j < n_params; j++) {
+//          if (!R_finite(rcpp_hessian(i, j))) {
+//            valid_hessian = false;
+//            break;
+//          }
+//        }
+//        if (!valid_hessian) break;
+//      }
+//
+//      if (!valid_hessian) {
+//        if (verbose) {
+//          Rcout << "Warning: Invalid Hessian in iteration " << iter
+//                << ", using only the gradient." << std::endl;
+//        }
+//        // Fallback to steepest descent if Hessian is invalid
+//        for (int j = 0; j < n_params; j++) {
+//          // Normalize gradient for step control
+//          update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
+//        }
+//      } else {
+//        // Convert to arma::mat for more robust matrix operations
+//        arma::mat hessian = as<arma::mat>(rcpp_hessian);
+//        arma::vec grad_vec = as<arma::vec>(gradient);
+//        arma::vec neg_grad = -grad_vec;
+//        arma::vec update_vec;
+//
+//        bool solve_success = false;
+//
+//        // Try 1: Cholesky for symmetric positive definite matrices (fastest)
+//        try {
+//          update_vec = arma::solve(hessian, neg_grad, arma::solve_opts::likely_sympd);
+//          solve_success = true;
+//
+//          if (verbose) {
+//            Rcout << "Cholesky decomposition successful for parameter update." << std::endl;
+//          }
+//        } catch (...) {
+//          if (verbose) {
+//            Rcout << "Warning: Cholesky decomposition failed, trying standard solver..." << std::endl;
+//          }
+//
+//          // Try 2: Standard Armadillo solver
+//          try {
+//            update_vec = arma::solve(hessian, neg_grad);
+//            solve_success = true;
+//
+//            if (verbose) {
+//              Rcout << "Standard solver successful for parameter update." << std::endl;
+//            }
+//          } catch (...) {
+//            if (verbose) {
+//              Rcout << "Warning: Standard solver failed, trying with regularization..." << std::endl;
+//            }
+//
+//            // Try 3: Regularize the Hessian matrix
+//            arma::mat reg_hessian = hessian;
+//            double reg_factor = 1e-6;
+//
+//            // Find reasonable magnitude for regularization
+//            double diag_max = arma::max(arma::abs(reg_hessian.diag()));
+//            reg_factor = std::max(reg_factor, 1e-6 * diag_max);
+//
+//            // Add small value to diagonal
+//            reg_hessian.diag() += reg_factor;
+//
+//            try {
+//              update_vec = arma::solve(reg_hessian, neg_grad);
+//              solve_success = true;
+//
+//              if (verbose) {
+//                Rcout << "Regularized solver successful with factor: " << reg_factor << std::endl;
+//              }
+//            } catch (...) {
+//              // Try 4: Stronger regularization
+//              reg_hessian = hessian;
+//              reg_factor = 1e-4 * (1.0 + diag_max);
+//              reg_hessian.diag() += reg_factor;
+//
+//              try {
+//                update_vec = arma::solve(reg_hessian, neg_grad);
+//                solve_success = true;
+//
+//                if (verbose) {
+//                  Rcout << "Stronger regularization successful with factor: " << reg_factor << std::endl;
+//                }
+//              } catch (...) {
+//                // Try 5: Pseudo-inverse (very robust method)
+//                try {
+//                  arma::mat hess_pinv = arma::pinv(hessian);
+//                  update_vec = hess_pinv * neg_grad;
+//                  solve_success = true;
+//
+//                  if (verbose) {
+//                    Rcout << "Pseudo-inverse solution successful for parameter update." << std::endl;
+//                  }
+//                } catch (...) {
+//                  if (verbose) {
+//                    Rcout << "Warning: All matrix inversion methods failed in iteration " << iter
+//                          << ", using only the gradient." << std::endl;
+//                  }
+//
+//                  // If all attempts fail, use gradient descent
+//                  for (int j = 0; j < n_params; j++) {
+//                    update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
+//                  }
+//
+//                  solve_success = false;
+//                }
+//              }
+//            }
+//          }
+//        }
+//
+//        if (solve_success) {
+//          // Convert solution from arma::vec to NumericVector
+//          update = wrap(update_vec);
+//
+//          // Limit step size to avoid too large steps
+//          double max_update = 0.0;
+//          for (int j = 0; j < n_params; j++) {
+//            max_update = std::max(max_update, std::abs(update[j]));
+//          }
+//
+//          // If step is too large, reduce proportionally
+//          const double max_step = 2.0;
+//          if (max_update > max_step) {
+//            double scale_factor = max_step / max_update;
+//            for (int j = 0; j < n_params; j++) {
+//              update[j] *= scale_factor;
+//            }
+//          }
+//
+//          // Apply step_size
+//          for (int j = 0; j < n_params; j++) {
+//            update[j] *= step_size;
+//          }
+//        }
+//      }
+//    } else {
+//      // Use only gradient (gradient descent method)
+//      for (int j = 0; j < n_params; j++) {
+//        update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
+//      }
+//    }
+//
+//    // Update parameters: theta_new = theta_old + update
+//    NumericVector new_params(n_params);
+//    for (int j = 0; j < n_params; j++) {
+//      new_params[j] = family_params[j] + update[j];
+//    }
+//
+//    // Enforce bounds if requested
+//    if (enforce_bounds) {
+//      for (int j = 0; j < n_params; j++) {
+//        bool is_delta = (family_lower == "gkw" && j == 3) ||
+//          (family_lower == "bkw" && j == 3) ||
+//          (family_lower == "kkw" && j == 2) ||
+//          (family_lower == "mc" && j == 1) ||
+//          (family_lower == "beta" && j == 1);
+//
+//        // Note: for delta, we allow values down to 0
+//        if (is_delta) {
+//          new_params[j] = std::max(0.0, new_params[j]);
+//        } else {
+//          new_params[j] = std::max(min_param_val, new_params[j]);
+//        }
+//        new_params[j] = std::min(max_param_val, new_params[j]);
+//      }
+//    }
+//
+//    // Calculate new objective function value
+//    double new_loglik = ll_func(new_params, data);
+//
+//    // Line search / Backtracking if new value is not better
+//    bool backtracking_success = true;
+//    double bt_step = 1.0;
+//    const double bt_factor = 0.5; // reduce step by half each backtracking
+//    const int max_bt = 10;        // maximum backtracking iterations
+//
+//    if (!R_finite(new_loglik) || new_loglik >= current_loglik) {
+//      backtracking_success = false;
+//
+//      if (verbose) {
+//        Rcout << "Starting backtracking at iteration " << iter
+//              << ", current value: " << current_loglik
+//              << ", new value: " << new_loglik << std::endl;
+//      }
+//
+//      for (int bt = 0; bt < max_bt; bt++) {
+//        bt_step *= bt_factor;
+//
+//        // Recalculate new parameters with reduced step
+//        for (int j = 0; j < n_params; j++) {
+//          new_params[j] = family_params[j] + bt_step * update[j];
+//        }
+//
+//        // Enforce bounds again
+//        if (enforce_bounds) {
+//          for (int j = 0; j < n_params; j++) {
+//            bool is_delta = (family_lower == "gkw" && j == 3) ||
+//              (family_lower == "bkw" && j == 3) ||
+//              (family_lower == "kkw" && j == 2) ||
+//              (family_lower == "mc" && j == 1) ||
+//              (family_lower == "beta" && j == 1);
+//
+//            if (is_delta) {
+//              new_params[j] = std::max(0.0, new_params[j]);
+//            } else {
+//              new_params[j] = std::max(min_param_val, new_params[j]);
+//            }
+//            new_params[j] = std::min(max_param_val, new_params[j]);
+//          }
+//        }
+//
+//        // Test new value
+//        new_loglik = ll_func(new_params, data);
+//
+//        if (R_finite(new_loglik) && new_loglik < current_loglik) {
+//          backtracking_success = true;
+//          if (verbose) {
+//            Rcout << "Backtracking successful after " << (bt + 1)
+//                  << " attempts, new value: " << new_loglik << std::endl;
+//          }
+//          break;
+//        }
+//      }
+//    }
+//
+//    // If we still cannot improve, evaluate the situation
+//    if (!backtracking_success) {
+//      if (verbose) {
+//        Rcout << "Warning: Backtracking failed at iteration " << iter << std::endl;
+//      }
+//
+//      // If gradient is small enough, consider converged
+//      if (grad_norm < tol * 10) {  // Relaxed tolerance for this case
+//        converged = true;
+//        if (verbose) {
+//          Rcout << "Convergence detected with small gradient after backtracking failure." << std::endl;
+//        }
+//      } else {
+//        // If backtracking fails and we're close to max iterations,
+//        // check if we're in a reasonable region
+//        if (iter > max_iter * 0.8 && current_loglik < best_loglik * 1.1) {
+//          converged = true;
+//          if (verbose) {
+//            Rcout << "Forced convergence after backtracking failure near maximum iterations." << std::endl;
+//          }
+//        } else {
+//          // Try a small random perturbation
+//          NumericVector perturb(n_params);
+//          for (int j = 0; j < n_params; j++) {
+//            // Perturbation of up to 5% of current value
+//            double range = 0.05 * std::abs(family_params[j]);
+//            perturb[j] = R::runif(-range, range);
+//            new_params[j] = family_params[j] + perturb[j];
+//          }
+//
+//          // Apply constraints
+//          if (enforce_bounds) {
+//            for (int j = 0; j < n_params; j++) {
+//              bool is_delta = (family_lower == "gkw" && j == 3) ||
+//                (family_lower == "bkw" && j == 3) ||
+//                (family_lower == "kkw" && j == 2) ||
+//                (family_lower == "mc" && j == 1) ||
+//                (family_lower == "beta" && j == 1);
+//
+//              if (is_delta) {
+//                new_params[j] = std::max(0.0, new_params[j]);
+//              } else {
+//                new_params[j] = std::max(min_param_val, new_params[j]);
+//              }
+//              new_params[j] = std::min(max_param_val, new_params[j]);
+//            }
+//          }
+//
+//          new_loglik = ll_func(new_params, data);
+//
+//          if (R_finite(new_loglik) && new_loglik < current_loglik) {
+//            backtracking_success = true;
+//            if (verbose) {
+//              Rcout << "Recovery by random perturbation, new value: " << new_loglik << std::endl;
+//            }
+//          } else {
+//            // If even perturbation doesn't work, use the best result so far
+//            new_params = best_params;
+//            new_loglik = best_loglik;
+//            if (verbose) {
+//              Rcout << "Returning to the previous best result: " << -best_loglik << std::endl;
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    // Update parameters and history
+//    for (int j = 0; j < n_params; j++) {
+//      family_params[j] = new_params[j];
+//      param_history(iter, j) = family_params[j];
+//    }
+//    loglik_history[iter] = new_loglik;
+//
+//    // Update the best result if this is better
+//    if (new_loglik < best_loglik) {
+//      best_loglik = new_loglik;
+//      for (int j = 0; j < n_params; j++) {
+//        best_params[j] = family_params[j];
+//      }
+//    }
+//
+//    // Check convergence by parameter change
+//    double param_change = 0.0;
+//    double param_rel_change = 0.0;
+//    for (int j = 0; j < n_params; j++) {
+//      param_change += std::pow(update[j], 2);
+//      if (std::abs(family_params[j]) > 1e-10) {
+//        param_rel_change += std::pow(update[j] / family_params[j], 2);
+//      } else {
+//        param_rel_change += std::pow(update[j], 2);
+//      }
+//    }
+//    param_change = std::sqrt(param_change);
+//    param_rel_change = std::sqrt(param_rel_change / n_params);
+//
+//    // Check convergence by log-likelihood change
+//    double loglik_change = std::abs(prev_loglik - new_loglik);
+//    double loglik_rel_change = loglik_change / (std::abs(prev_loglik) + 1e-10);
+//    prev_loglik = new_loglik;
+//
+//    if (verbose) {
+//      Rcout << "Iteration " << iter
+//            << ", Log-likelihood: " << -new_loglik
+//            << ", Change: " << loglik_change
+//            << ", Rel. Change: " << loglik_rel_change
+//            << ", Gradient Norm: " << grad_norm
+//            << std::endl;
+//
+//      Rcout << "Parameters:";
+//      for (int j = 0; j < n_params; j++) {
+//        Rcout << " " << family_params[j];
+//      }
+//      Rcout << std::endl;
+//    }
+//
+//    // Convergence criteria
+//    if (param_change < tol || param_rel_change < tol ||
+//        loglik_change < tol || loglik_rel_change < tol) {
+//      converged = true;
+//      if (verbose) {
+//        Rcout << "Convergence detected:" << std::endl;
+//        if (param_change < tol) Rcout << "- Absolute parameter change < tolerance" << std::endl;
+//        if (param_rel_change < tol) Rcout << "- Relative parameter change < tolerance" << std::endl;
+//        if (loglik_change < tol) Rcout << "- Absolute log-likelihood change < tolerance" << std::endl;
+//        if (loglik_rel_change < tol) Rcout << "- Relative log-likelihood change < tolerance" << std::endl;
+//      }
+//    }
+//  }
+//
+//  // If not converged, use the best parameters found
+//  if (!converged) {
+//    family_params = best_params;
+//    if (verbose) {
+//      Rcout << "Did not fully converge, using the best parameters found." << std::endl;
+//    }
+//  }
+//
+//  // Prepare final result
+//  NumericMatrix final_param_history(iter + 1, n_params);
+//  NumericVector final_loglik_history(iter + 1);
+//
+//  for (int i = 0; i <= iter; i++) {
+//    for (int j = 0; j < n_params; j++) {
+//      final_param_history(i, j) = param_history(i, j);
+//    }
+//    final_loglik_history[i] = loglik_history[i];
+//  }
+//
+//  // Calculate final gradient and hessian
+//  NumericVector final_gradient = gr_func(family_params, data);
+//  NumericMatrix rcpp_hessian = hs_func(family_params, data);
+//
+//  // Calculate numerical Hessian if requested
+//  NumericMatrix rcpp_numeric_hessian;
+//  if (get_num_hess) {
+//    arma::mat arma_numeric_hessian = numHess_family(family_params, data);
+//    rcpp_numeric_hessian = wrap(arma_numeric_hessian);
+//    result["numeric_hessian"] = rcpp_numeric_hessian;
+//  }
+//
+//  // Calculate standard errors using Armadillo for robust matrix inversion
+//  NumericVector std_errors(n_params, NA_REAL);
+//  bool valid_se = true;
+//
+//  // Convert Rcpp Hessian to Armadillo matrix
+//  arma::mat hessian = as<arma::mat>(rcpp_hessian);
+//  arma::mat cov_matrix;
+//
+//  // Layered approach to calculate covariance matrix (inverse of Hessian)
+//  try {
+//    // Step 1: Try to use Cholesky decomposition (fastest, requires positive definite)
+//    try {
+//      cov_matrix = arma::inv_sympd(hessian);
+//
+//      if (verbose) {
+//        Rcout << "Standard error calculation: Cholesky decomposition successful." << std::endl;
+//      }
+//    } catch (...) {
+//      // Step 2: Try standard inversion
+//      try {
+//        cov_matrix = arma::inv(hessian);
+//
+//        if (verbose) {
+//          Rcout << "Standard error calculation: Standard inverse successful." << std::endl;
+//        }
+//      } catch (...) {
+//        // Step 3: Apply regularization
+//        arma::mat reg_hessian = hessian;
+//        double reg_factor = 1e-6;
+//
+//        // Find reasonable magnitude for regularization
+//        double diag_max = arma::max(arma::abs(reg_hessian.diag()));
+//        reg_factor = std::max(reg_factor, 1e-6 * diag_max);
+//
+//        // Add small value to diagonal
+//        reg_hessian.diag() += reg_factor;
+//
+//        try {
+//          cov_matrix = arma::inv(reg_hessian);
+//
+//          if (verbose) {
+//            Rcout << "Standard error calculation: Regularized inverse successful." << std::endl;
+//          }
+//        } catch (...) {
+//          // Step 4: Stronger regularization
+//          reg_hessian = hessian;
+//          reg_factor = 1e-4 * (1.0 + diag_max);
+//          reg_hessian.diag() += reg_factor;
+//
+//          try {
+//            cov_matrix = arma::inv(reg_hessian);
+//
+//            if (verbose) {
+//              Rcout << "Standard error calculation: Stronger regularized inverse successful." << std::endl;
+//            }
+//          } catch (...) {
+//            // Step 5: Use pseudo-inverse (more robust)
+//            try {
+//              cov_matrix = arma::pinv(hessian);
+//
+//              if (verbose) {
+//                Rcout << "Standard error calculation: Pseudo-inverse successful." << std::endl;
+//              }
+//            } catch (...) {
+//              // Step 6: Try numerical Hessian if available
+//              if (get_num_hess) {
+//                arma::mat num_hessian = as<arma::mat>(rcpp_numeric_hessian);
+//
+//                try {
+//                  cov_matrix = arma::pinv(num_hessian);
+//
+//                  if (verbose) {
+//                    Rcout << "Standard error calculation: Numerical Hessian pseudo-inverse successful." << std::endl;
+//                  }
+//                } catch (...) {
+//                  valid_se = false;
+//                }
+//              } else {
+//                valid_se = false;
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    // Calculate standard errors if covariance matrix is available
+//    if (valid_se) {
+//      // Extract diagonal elements and calculate square root
+//      arma::vec diag_cov = cov_matrix.diag();
+//
+//      for (int j = 0; j < n_params; j++) {
+//        if (diag_cov(j) > 0) {
+//          std_errors[j] = std::sqrt(diag_cov(j));
+//        } else {
+//          if (verbose) {
+//            Rcout << "Warning: Non-positive variance detected for parameter " << j
+//                  << ". Standard error set to NA." << std::endl;
+//          }
+//          std_errors[j] = NA_REAL;
+//        }
+//      }
+//    }
+//  } catch (...) {
+//    valid_se = false;
+//  }
+//
+//  if (!valid_se && verbose) {
+//    Rcout << "Warning: Could not calculate standard errors. The Hessian matrix may not be positive definite." << std::endl;
+//  }
+//
+//  // Calculate AIC: AIC = 2k - 2ln(L) = 2k + 2*(-ln(L))
+//  double final_loglik = ll_func(family_params, data);
+//  double aic = 2 * n_params + 2 * final_loglik;
+//
+//  // Calculate BIC: BIC = k ln(n) - 2ln(L) = k ln(n) + 2*(-ln(L))
+//  double bic = n_params * std::log(n_data) + 2 * final_loglik;
+//
+//  // Fill the result
+//  result["parameters"] = family_params;
+//  result["loglik"] = -final_loglik;  // Negative because ll functions return -logL
+//  result["iterations"] = iter;
+//  result["converged"] = converged;
+//  result["param_history"] = final_param_history;
+//  result["loglik_history"] = -final_loglik_history;  // Negative for consistency
+//  result["gradient"] = final_gradient;
+//  result["hessian"] = rcpp_hessian;
+//  result["std_errors"] = std_errors;
+//  result["aic"] = aic;
+//  result["bic"] = bic;
+//  result["n"] = n_data;
+//  result["family"] = family;
+//
+//  if (!converged && !result.containsElementNamed("status")) {
+//    result["status"] = "max_iterations_reached";
+//  } else if (converged) {
+//    result["status"] = "success";
+//  }
+//
+//  // Calculate statistical significance (p-values) using normal approximation
+//  NumericVector z_values(n_params, NA_REAL);
+//  NumericVector p_values(n_params, NA_REAL);
+//
+//  if (valid_se) {
+//    for (int j = 0; j < n_params; j++) {
+//      if (std_errors[j] != NA_REAL && std_errors[j] > 0) {
+//        z_values[j] = family_params[j] / std_errors[j];
+//        // Two-tailed approximation
+//        p_values[j] = 2.0 * R::pnorm(-std::abs(z_values[j]), 0.0, 1.0, 1, 0);
+//      }
+//    }
+//    result["z_values"] = z_values;
+//    result["p_values"] = p_values;
+//  }
+//
+//  // Set parameter names for easier interpretation
+//  colnames(final_param_history) = param_names;
+//  result["param_names"] = param_names;
+//
+//  return result;
+// }

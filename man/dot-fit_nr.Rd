@@ -2,7 +2,7 @@
 % Please edit documentation in R/gkwfit.R
 \name{.fit_nr}
 \alias{.fit_nr}
-\title{Fit GKw family distributions using Newton-Raphson}
+\title{Fit GKw family distributions using enhanced optimization methods}
 \usage{
 .fit_nr(
   data,
@@ -36,6 +36,6 @@
 List containing fit results.
 }
 \description{
-Fit GKw family distributions using Newton-Raphson
+Fit GKw family distributions using enhanced optimization methods
 }
 \keyword{internal}

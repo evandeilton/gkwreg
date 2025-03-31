@@ -711,24 +711,29 @@ BEGIN_RCPP
 END_RCPP
 }
 // nrgkw
-List nrgkw(NumericVector start, NumericVector data, std::string family, double tol, int max_iter, bool verbose, bool use_hessian, double step_size, bool enforce_bounds, double min_param_val, double max_param_val, bool get_num_hess);
-RcppExport SEXP _gkwreg_nrgkw(SEXP startSEXP, SEXP dataSEXP, SEXP familySEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP verboseSEXP, SEXP use_hessianSEXP, SEXP step_sizeSEXP, SEXP enforce_boundsSEXP, SEXP min_param_valSEXP, SEXP max_param_valSEXP, SEXP get_num_hessSEXP) {
+Rcpp::List nrgkw(Rcpp::Nullable<Rcpp::NumericVector> start, Rcpp::NumericVector data, std::string family, double tol, int max_iter, bool verbose, std::string optimization_method, bool enforce_bounds, double min_param_val, double max_param_val, bool adaptive_scaling, bool use_stochastic_perturbation, bool get_num_hess, int multi_start_attempts, bool eigenvalue_hessian_reg, int max_backtrack, double initial_trust_radius);
+RcppExport SEXP _gkwreg_nrgkw(SEXP startSEXP, SEXP dataSEXP, SEXP familySEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP verboseSEXP, SEXP optimization_methodSEXP, SEXP enforce_boundsSEXP, SEXP min_param_valSEXP, SEXP max_param_valSEXP, SEXP adaptive_scalingSEXP, SEXP use_stochastic_perturbationSEXP, SEXP get_num_hessSEXP, SEXP multi_start_attemptsSEXP, SEXP eigenvalue_hessian_regSEXP, SEXP max_backtrackSEXP, SEXP initial_trust_radiusSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type start(startSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type start(startSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type data(dataSEXP);
     Rcpp::traits::input_parameter< std::string >::type family(familySEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_hessian(use_hessianSEXP);
-    Rcpp::traits::input_parameter< double >::type step_size(step_sizeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_method(optimization_methodSEXP);
     Rcpp::traits::input_parameter< bool >::type enforce_bounds(enforce_boundsSEXP);
     Rcpp::traits::input_parameter< double >::type min_param_val(min_param_valSEXP);
     Rcpp::traits::input_parameter< double >::type max_param_val(max_param_valSEXP);
+    Rcpp::traits::input_parameter< bool >::type adaptive_scaling(adaptive_scalingSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_stochastic_perturbation(use_stochastic_perturbationSEXP);
     Rcpp::traits::input_parameter< bool >::type get_num_hess(get_num_hessSEXP);
-    rcpp_result_gen = Rcpp::wrap(nrgkw(start, data, family, tol, max_iter, verbose, use_hessian, step_size, enforce_bounds, min_param_val, max_param_val, get_num_hess));
+    Rcpp::traits::input_parameter< int >::type multi_start_attempts(multi_start_attemptsSEXP);
+    Rcpp::traits::input_parameter< bool >::type eigenvalue_hessian_reg(eigenvalue_hessian_regSEXP);
+    Rcpp::traits::input_parameter< int >::type max_backtrack(max_backtrackSEXP);
+    Rcpp::traits::input_parameter< double >::type initial_trust_radius(initial_trust_radiusSEXP);
+    rcpp_result_gen = Rcpp::wrap(nrgkw(start, data, family, tol, max_iter, verbose, optimization_method, enforce_bounds, min_param_val, max_param_val, adaptive_scaling, use_stochastic_perturbation, get_num_hess, multi_start_attempts, eigenvalue_hessian_reg, max_backtrack, initial_trust_radius));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -968,7 +973,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gkwreg_llbeta", (DL_FUNC) &_gkwreg_llbeta, 2},
     {"_gkwreg_grbeta", (DL_FUNC) &_gkwreg_grbeta, 2},
     {"_gkwreg_hsbeta", (DL_FUNC) &_gkwreg_hsbeta, 2},
-    {"_gkwreg_nrgkw", (DL_FUNC) &_gkwreg_nrgkw, 12},
+    {"_gkwreg_nrgkw", (DL_FUNC) &_gkwreg_nrgkw, 17},
     {"_gkwreg_calculateParameters", (DL_FUNC) &_gkwreg_calculateParameters, 13},
     {"_gkwreg_calculateMeans", (DL_FUNC) &_gkwreg_calculateMeans, 2},
     {"_gkwreg_calculateDensities", (DL_FUNC) &_gkwreg_calculateDensities, 4},
