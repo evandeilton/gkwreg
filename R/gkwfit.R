@@ -2402,7 +2402,6 @@ gkwfit <- function(data,
                    submodels = FALSE,
                    silent = TRUE,
                    ...) {
-
   # --- Argument Matching and Validation ---
   call <- match.call()
   family <- match.arg(family, choices = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"))
@@ -2941,7 +2940,7 @@ print.summary.gkwfit <- function(x, digits = max(3L, getOption("digits") - 3L),
   } else {
     conv_status_text <- paste0("Potential issues (code ", conv_code, ")")
   }
-  cat("Convergence:", conv_status_text)
+  # cat("Convergence:", conv_status_text)
 
   # Optimizer Message
   conv_msg <- if (!is.null(x$message) && nzchar(trimws(x$message))) trimws(x$message) else "None reported"

@@ -6,11 +6,11 @@
 \usage{
 gkwfit(
   data,
-  family = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"),
+  family = "gkw",
   start = NULL,
   fixed = NULL,
-  fit = c("tmb", "nlminb", "optim", "nr"),
-  method = c("nlminb", "optim"),
+  fit = "tmb",
+  method = "nlminb",
   use_moments = FALSE,
   hessian = TRUE,
   profile = FALSE,
@@ -19,7 +19,7 @@ gkwfit(
   conf.level = 0.95,
   optimizer.control = list(),
   submodels = FALSE,
-  silent = FALSE,
+  silent = TRUE,
   ...
 )
 }
