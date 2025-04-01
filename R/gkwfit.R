@@ -496,7 +496,6 @@
   return(result)
 }
 
-
 #' Fit GKw family distributions using TMB
 #'
 #' @param data Numeric vector with values in the (0, 1) interval.
@@ -825,6 +824,8 @@
 
   return(result)
 }
+
+
 
 
 #' Fit GKw family distributions using optim() + BFGS
@@ -1612,6 +1613,9 @@
 
 
 
+
+
+
 #' Calculate profile likelihoods
 #'
 #' @param result Fit result from TMB or Newton-Raphson.
@@ -1626,6 +1630,7 @@
 #' @keywords internal
 .calculate_profiles <- function(result, data, family, fixed, fit, method, npoints, silent) {
   prof_list <- list()
+
   # Filter out fixed parameters
   param_info <- .get_family_param_info(family)
   params_to_profile <- setdiff(param_info$names, names(fixed))
@@ -1636,20 +1641,10 @@
     message("Computing profile likelihoods for ", total_profiles, " parameters...")
   }
 
-  # Get the appropriate log-likelihood function based on family
-  ll_func <- switch(family,
-    "gkw" = llgkw,
-    "bkw" = llbkw,
-    "kkw" = llkkw,
-    "ekw" = llekw,
-    "mc" = llmc,
-    "kw" = llkw,
-    "beta" = llbeta
-  )
-
   # Process each parameter
   for (param_idx in seq_along(params_to_profile)) {
     param <- params_to_profile[param_idx]
+
     if (!silent) {
       message("  Computing profile for ", param, " (", param_idx, "/", total_profiles, ")...")
     }
@@ -1664,11 +1659,13 @@
       # Calculate range ensuring positive values and reasonable breadth
       min_value <- max(est_value - 3 * se, .Machine$double.eps * 10)
       max_value <- est_value + 3 * se
+
       profile_range <- seq(min_value, max_value, length.out = npoints)
     } else {
       # If no standard error, use a proportional range
       min_value <- max(est_value * 0.2, .Machine$double.eps * 10)
       max_value <- est_value * 2.0
+
       profile_range <- seq(min_value, max_value, length.out = npoints)
     }
 
@@ -1677,28 +1674,48 @@
 
     for (i in seq_along(profile_range)) {
       if (fit == "tmb") {
-        # For TMB, modify log parameters (no changes to this part)
+        # For TMB, modify log parameters
         tmb_par <- result$optimizer$par
         log_param <- paste0("log_", param)
         tmb_par[log_param] <- log(profile_range[i])
+
         # Evaluate negative log-likelihood
         prof_ll[i] <- -result$obj$fn(tmb_par)
       } else {
-        stop("Profiles only for fit = 'tmb'. Working on Newton-Rapson!")
-      }
+        # For Newton-Raphson, directly modify the parameter vector
+        mod_params <- result$coefficients
+        mod_params[param] <- profile_range[i]
 
-      # Create profile data frame matching the expected output format
-      prof_list[[param]] <- data.frame(
-        parameter = rep(param, length(profile_range)),
-        value = profile_range,
-        loglik = prof_ll
-      )
+        # Transform to the family-specific parameter vector
+        param_names <- .get_family_param_info(family)$names
+        family_mod_params <- mod_params[param_names]
+
+        # Use the appropriate log-likelihood function based on family
+        ll_func <- switch(family,
+          "gkw" = llgkw,
+          "bkw" = llbkw,
+          "kkw" = llkkw,
+          "ekw" = llekw,
+          "mc" = llmc,
+          "kw" = llkw,
+          "beta" = llbeta
+        )
+
+        # Use ll_func directly (already negated for consistency)
+        prof_ll[i] <- ll_func(family_mod_params, data)
+      }
     }
+
+    # Create profile data frame
+    prof_list[[param]] <- data.frame(
+      parameter = param,
+      value = profile_range,
+      loglik = prof_ll
+    )
   }
 
   return(prof_list)
 }
-
 
 #' Fit submodels for comparison
 #'
@@ -2370,11 +2387,11 @@
 #' @author Lopes, J. E.
 #' @export
 gkwfit <- function(data,
-                   family = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"),
+                   family = "gkw",
                    start = NULL,
                    fixed = NULL,
-                   fit = c("tmb", "nlminb", "optim", "nr"),
-                   method = c("nlminb", "optim"),
+                   fit = "tmb",
+                   method = "nlminb",
                    use_moments = FALSE,
                    hessian = TRUE,
                    profile = FALSE,
@@ -2383,12 +2400,16 @@ gkwfit <- function(data,
                    conf.level = 0.95,
                    optimizer.control = list(),
                    submodels = FALSE,
-                   silent = FALSE, # Changed default to FALSE for more feedback
+                   silent = TRUE,
                    ...) {
+
   # --- Argument Matching and Validation ---
   call <- match.call()
   family <- match.arg(family, choices = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"))
   fit <- match.arg(fit, choices = c("nr", "tmb", "nlminb", "optim"))
+  method <- match.arg(method, choices = c("nlminb", "optim"))
+
+
   # Only match method if fit is tmb, otherwise use its default interpretation
   if (fit == "tmb") {
     method <- match.arg(method, choices = c("nlminb", "optim"))
@@ -2503,23 +2524,15 @@ gkwfit <- function(data,
 
   # Generate diagnostic plots if requested
   if (plot) {
-    if (!silent) message("Generating diagnostic plots...")
     plots <- .generate_plots(result, data, family, silent)
-    if (!is.null(plots)) {
-      # Combine plots using patchwork
-      combined_plot <- tryCatch(
-        {
-          patchwork::wrap_plots(plots) +
-            patchwork::plot_annotation(
-              title = paste("Diagnostic Plots for Fitted", toupper(family), "Model")
-            )
-        },
-        error = function(e) {
-          warning("Could not combine plots using patchwork: ", e$message)
-          plots # Return the list if patchwork fails
-        }
+
+    plots <- patchwork::wrap_plots(plots) +
+      patchwork::plot_annotation(
+        title = paste("Diagnostic Plots for Fitted", toupper(family), "Model")
       )
-      result$plots <- combined_plot
+
+    if (!is.null(plots)) {
+      result$plots <- plots
     }
   }
 
@@ -2531,6 +2544,7 @@ gkwfit <- function(data,
   if (!silent) message("Fitting complete.")
   return(result)
 }
+
 
 
 #' @title Print Method for gkwfit Objects
@@ -2927,7 +2941,7 @@ print.summary.gkwfit <- function(x, digits = max(3L, getOption("digits") - 3L),
   } else {
     conv_status_text <- paste0("Potential issues (code ", conv_code, ")")
   }
-  # cat("Convergence:", conv_status_text)
+  cat("Convergence:", conv_status_text)
 
   # Optimizer Message
   conv_msg <- if (!is.null(x$message) && nzchar(trimws(x$message))) trimws(x$message) else "None reported"
@@ -3023,92 +3037,9 @@ plot.gkwfit <- function(x, ...) {
     stop("Input 'x' must be of class 'gkwfit'")
   }
 
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("Package 'ggplot2' is required for plotting. Please install it.")
-  }
-  if (!requireNamespace("patchwork", quietly = TRUE)) {
-    stop("Package 'patchwork' is required to arrange plots. Please install it.")
-  }
+  plots_list <- gkwgof(x, simulate_p_values = FALSE, plot = TRUE, print_summary = FALSE)
 
-  plot_list <- x$plots
-
-  if (is.null(plot_list)) {
-    # Attempt to generate plots if not found in the object
-    message("Plots not found in the fitted object, generating them now...")
-
-    # Check if necessary components are present in the gkwfit object
-    required_comps <- c("coefficients", "data", "family")
-    if (!all(required_comps %in% names(x))) {
-      stop(
-        "Cannot generate plots: the 'gkwfit' object is missing required components ",
-        "(e.g., coefficients, data, family). Re-run gkwfit perhaps?"
-      )
-    }
-
-    # Call the internal plotting function (defined previously)
-    # Need to ensure all d/p/q functions are available in the environment
-    plot_list <- tryCatch(
-      {
-        .generate_plots(
-          result = x, # Pass the whole object as 'result' argument
-          data   = x$data,
-          family = x$family,
-          silent = FALSE # Show messages from .generate_plots
-        )
-      },
-      error = function(e) {
-        warning("Failed to generate plots: ", e$message)
-        NULL
-      }
-    )
-
-    # Handle potential failure in .generate_plots
-    if (is.null(plot_list)) {
-      warning("Plot generation failed or produced no plots.")
-      return(invisible(x)) # Return early
-    }
-  }
-
-  if (!is.list(plot_list) || length(plot_list) == 0) {
-    warning("No plots available in the 'gkwfit' object.")
-    return(invisible(x))
-  }
-
-  # Filter out any non-ggplot objects or NULLs just in case
-  valid_plots <- Filter(function(p) inherits(p, "ggplot"), plot_list)
-
-  if (length(valid_plots) == 0) {
-    warning("No valid ggplot objects found to plot.")
-    return(invisible(x))
-  }
-
-  # Use patchwork::wrap_plots for automatic arrangement in a grid
-  # It handles determining the number of columns/rows reasonably well
-  combined_plot <- tryCatch(
-    {
-      patchwork::wrap_plots(valid_plots) +
-        patchwork::plot_annotation(
-          title = paste("Diagnostic Plots for Fitted", toupper(x$family), "Model")
-        )
-    },
-    error = function(e) {
-      warning("Failed to arrange plots using patchwork: ", e$message)
-      NULL
-    }
-  )
-
-  # Print the combined plot if successful
-  if (!is.null(combined_plot)) {
-    print(combined_plot)
-  } else {
-    # Fallback if arrangement failed: print plots individually
-    warning("Plot arrangement failed. Printing available plots individually.")
-    for (i in seq_along(valid_plots)) {
-      try(print(valid_plots[[i]]), silent = TRUE)
-    }
-  }
-
-  invisible(x)
+  invisible(plots_list)
 }
 
 
@@ -3445,274 +3376,6 @@ confint.gkwfit <- function(object, parm, level = 0.95, ...) {
   dimnames(ci) <- list(params_to_compute, pct) # Assign row and column names
 
   return(ci)
-}
-
-
-
-#' @title Predict Method for gkwfit Objects
-#'
-#' @description
-#' Computes various types of predictions based on a model fitted by the
-#' \code{\link{gkwfit}} function. This includes predicted density (pdf),
-#' cumulative probability (CDF), quantiles, or the theoretical mean response
-#' of the fitted distribution.
-#'
-#' @param object An object of class \code{"gkwfit"}, typically the result of a
-#'   call to \code{\link{gkwfit}}.
-#' @param newdata An optional numeric vector of values strictly between 0 and 1
-#'   at which to compute predictions for \code{type = "density"} or
-#'   \code{type = "cdf"}. If \code{NULL} (the default) for these types, an
-#'   error is raised as specific points are required. For \code{type = "response"},
-#'   if \code{newdata} is provided, the calculated mean is replicated to match
-#'   the length of \code{newdata}; otherwise (if \code{newdata = NULL}), a
-#'   single mean value is returned. For \code{type = "quantile"}, this argument
-#'   is ignored.
-#' @param type A character string specifying the type of prediction required. Valid options are:
-#'   \itemize{
-#'     \item \code{"density"}: Computes the probability density function (pdf) values.
-#'       Requires the \code{newdata} argument.
-#'     \item \code{"cdf"}: Computes the cumulative distribution function (CDF) values.
-#'       Requires the \code{newdata} argument.
-#'     \item \code{"quantile"}: Computes the quantiles for given probabilities.
-#'       Requires the \code{p} argument. Ignores \code{newdata}.
-#'     \item \code{"response"}: Computes the theoretical mean of the fitted distribution.
-#'       Does not strictly require \code{newdata}, but if provided, the result is
-#'       replicated to match its length.
-#'   }
-#' @param p A numeric vector of probabilities (values between 0 and 1 inclusive)
-#'   for which to compute quantiles. Required and only used when \code{type = "quantile"}.
-#' @param ... Currently unused arguments. Included for consistency with the
-#'   generic \code{\link[stats]{predict}} method.
-#'
-#' @details
-#' This function acts as an interface to the underlying distribution functions
-#' corresponding to the fitted model's family (specified in \code{object$family}).
-#' It dynamically selects the appropriate density function (e.g., \code{dgkw}, \code{dkw}),
-#' CDF function (e.g., \code{pgkw}, \code{pkw}), quantile function (e.g., \code{qgkw}, \code{qkw}),
-#' or potentially a mean function (e.g., \code{meangkw}, \code{meankw}) based on the
-#' requested \code{type} and the fitted \code{family}.
-#'
-#' The function retrieves the estimated parameters using \code{coef(object)} and
-#' passes them along with \code{newdata} or \code{p} to the relevant underlying
-#' distribution function.
-#'
-#' **Important:** For this function to work correctly, the corresponding `d`, `p`, `q`
-#' (and `mean` if `type = "response"` is used, unless it's the standard Beta)
-#' functions for the specific \code{family} fitted (e.g., `dkw`, `pkw`, `qkw` for the
-#' `"kw"` family) must be available in the environment where \code{predict.gkwfit}
-#' is called (typically meaning they should be defined and exported by the same package).
-#'
-#' Input values in \code{newdata} must be strictly within the open interval (0, 1).
-#' Probabilities in \code{p} must be within the closed interval (0, 1).
-#'
-#' @return The type of return value depends on the \code{type} argument:
-#' \itemize{
-#'   \item If \code{type = "density"} or \code{type = "cdf"}: A numeric vector of
-#'     density or CDF values, respectively, corresponding to each value in \code{newdata}.
-#'     The length matches the length of \code{newdata}.
-#'   \item If \code{type = "quantile"}: A numeric vector of quantile values
-#'     corresponding to each probability in \code{p}. The length matches the
-#'     length of \code{p}.
-#'   \item If \code{type = "response"}: A single numeric value representing the
-#'     theoretical mean of the fitted distribution if \code{newdata = NULL}. If
-#'     \code{newdata} was provided, a numeric vector repeating the theoretical mean,
-#'     with length matching the length of \code{newdata}.
-#' }
-#'
-#' @seealso \code{\link{gkwfit}}, \code{\link[stats]{predict}}, and the specific
-#'   distribution functions used (e.g., \code{dgkw}, \code{pgkw}, \code{qgkw},
-#'   \code{dkw}, \code{pkw}, \code{qkw}, etc.).
-#'
-#' @examples
-#' \dontrun{
-#' # Assume necessary functions like 'rkw', 'gkwfit',
-#' # 'dkw', 'pkw', 'qkw', and 'meankw' (or equivalent logic) exist.
-#'
-#' set.seed(123)
-#' kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
-#' fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
-#'
-#' # Example points for prediction
-#' new_pts <- c(0.1, 0.25, 0.5, 0.75, 0.9)
-#'
-#' # --- Predict Density ---
-#' pred_d <- predict(fit_obj, newdata = new_pts, type = "density")
-#' print(pred_d)
-#' # plot(new_pts, pred_d, type = "l", main = "Predicted Density")
-#'
-#' # --- Predict CDF ---
-#' pred_p <- predict(fit_obj, newdata = new_pts, type = "cdf")
-#' print(pred_p)
-#' # plot(new_pts, pred_p, type = "l", main = "Predicted CDF")
-#'
-#' # --- Predict Quantiles ---
-#' probabilities <- c(0.01, 0.05, 0.5, 0.95, 0.99)
-#' pred_q <- predict(fit_obj, p = probabilities, type = "quantile")
-#' print(pred_q)
-#'
-#' # --- Predict Mean Response ---
-#' # Get the single theoretical mean value
-#' pred_mean_single <- predict(fit_obj, type = "response")
-#' print(pred_mean_single)
-#'
-#' # Get the mean replicated for the length of newdata
-#' pred_mean_vector <- predict(fit_obj, newdata = new_pts, type = "response")
-#' print(pred_mean_vector)
-#'
-#' # --- Example with a different family (assuming setup exists) ---
-#' # set.seed(456)
-#' # gkw_data <- rgkw(100, alpha=2, beta=3, gamma=1.5, delta=2.5, lambda=0.8)
-#' # fit_gkw <- gkwfit(gkw_data, family="gkw", silent=TRUE)
-#' # pred_gkw_cdf <- predict(fit_gkw, newdata = new_pts, type = "cdf")
-#' # print(pred_gkw_cdf)
-#' }
-#'
-#' @keywords methods models prediction
-#' @author Lopes, J. E.
-#' @export
-predict.gkwfit <- function(object, newdata = NULL,
-                           type = c("density", "cdf", "quantile", "response"),
-                           p = NULL, # Probability for quantile type
-                           ...) {
-  if (!inherits(object, "gkwfit")) {
-    stop("Input 'object' must be of class 'gkwfit'.")
-  }
-  type <- match.arg(type)
-
-  family <- object$family
-  params <- stats::coef(object) # Use coef extractor
-  if (is.null(params) || length(params) == 0) {
-    stop("Could not extract coefficients from the object.")
-  }
-  param_names_fit <- names(params) # Names of parameters actually fitted
-
-  result <- NULL
-
-  switch(type,
-    "density" = {
-      if (is.null(newdata)) stop("'newdata' must be provided for type = 'density'.")
-      if (!is.numeric(newdata)) stop("'newdata' must be numeric.")
-      # Validate bounds slightly relaxed to avoid floating point issues at edges
-      eps <- .Machine$double.eps^0.5
-      if (any(newdata <= eps | newdata >= (1 - eps))) {
-        warning("Some 'newdata' values are very close to or outside (0, 1). Results may be NA/NaN/Inf or unreliable.")
-        # Allow calculation but warn
-      }
-
-      density_func_name <- paste0("d", family)
-      # Special case for beta? Assuming dbeta_ exists
-      if (family == "beta") density_func_name <- "dbeta_"
-
-      if (!exists(density_func_name, mode = "function")) {
-        stop("Density function '", density_func_name, "' not found for family '", family, "'.")
-      }
-      density_func <- get(density_func_name, mode = "function")
-
-      # Prepare arguments, matching fitted params to function args
-      func_args <- list(newdata) # First argument is usually the data/x
-      # Add only the parameters relevant for this family
-      func_args <- c(func_args, params)
-
-      result <- tryCatch(do.call(density_func, func_args),
-        error = function(e) {
-          stop("Error calling ", density_func_name, ": ", e$message)
-        }
-      )
-    },
-    "cdf" = {
-      if (is.null(newdata)) stop("'newdata' must be provided for type = 'cdf'.")
-      if (!is.numeric(newdata)) stop("'newdata' must be numeric.")
-      eps <- .Machine$double.eps^0.5
-      if (any(newdata <= eps | newdata >= (1 - eps))) {
-        warning("Some 'newdata' values are very close to or outside (0, 1). Results may be less reliable at boundaries.")
-        # Clamp newdata for CDF calculation robustness
-        newdata <- pmax(eps, pmin(1 - eps, newdata))
-      }
-
-
-      cdf_func_name <- paste0("p", family)
-      if (family == "beta") cdf_func_name <- "pbeta_" # Assuming pbeta_
-
-      if (!exists(cdf_func_name, mode = "function")) {
-        stop("CDF function '", cdf_func_name, "' not found for family '", family, "'.")
-      }
-      cdf_func <- get(cdf_func_name, mode = "function")
-
-      func_args <- list(newdata)
-      func_args <- c(func_args, params)
-
-      result <- tryCatch(do.call(cdf_func, func_args),
-        error = function(e) {
-          stop("Error calling ", cdf_func_name, ": ", e$message)
-        }
-      )
-    },
-    "quantile" = {
-      if (is.null(p)) stop("'p' (probabilities) must be provided for type = 'quantile'.")
-      if (!is.numeric(p) || any(p < 0 | p > 1)) {
-        stop("'p' must be numeric values between 0 and 1.")
-      }
-
-      quantile_func_name <- paste0("q", family)
-      if (family == "beta") quantile_func_name <- "qbeta_" # Assuming qbeta_
-
-      if (!exists(quantile_func_name, mode = "function")) {
-        stop("Quantile function '", quantile_func_name, "' not found for family '", family, "'.")
-      }
-      quantile_func <- get(quantile_func_name, mode = "function")
-
-      func_args <- list(p)
-      func_args <- c(func_args, params)
-
-      result <- tryCatch(do.call(quantile_func, func_args),
-        error = function(e) {
-          stop("Error calling ", quantile_func_name, ": ", e$message)
-        }
-      )
-    },
-    "response" = {
-      # Calculate the theoretical mean of the distribution
-      # Assuming functions like meangkw, meanbkw, meankw, meanbeta_ exist
-      mean_func_name <- paste0("mean", family)
-      if (family == "beta") mean_func_name <- "meanbeta_" # Or calculate directly: g/(g+d)
-
-      if (!exists(mean_func_name, mode = "function")) {
-        # Fallback for beta if meanbeta_ doesn't exist
-        if (family == "beta" && all(c("gamma", "delta") %in% names(params))) {
-          result <- params["gamma"] / (params["gamma"] + params["delta"])
-        } else {
-          stop(
-            "Mean function '", mean_func_name, "' not found for family '", family,
-            "' and type = 'response'. Cannot calculate predicted mean."
-          )
-        }
-      } else {
-        mean_func <- get(mean_func_name, mode = "function")
-        # Prepare arguments - mean functions usually just take parameters
-        func_args <- params
-
-        result <- tryCatch(do.call(mean_func, func_args),
-          error = function(e) {
-            stop("Error calling ", mean_func_name, ": ", e$message)
-          }
-        )
-      }
-      # Mean is typically a single value for the distribution
-      # If newdata was provided, maybe replicate the mean? Or just return the single value?
-      # Standard predict methods often return predictions corresponding to newdata.
-      # Let's return a vector matching newdata length if newdata is provided.
-      if (!is.null(newdata)) {
-        if (!is.numeric(newdata)) stop("'newdata' must be numeric if provided for type='response'.")
-        result <- rep(result, length.out = length(newdata))
-      } else {
-        # If newdata is NULL, return the single mean value
-      }
-    },
-    # Default case for switch
-    stop("Invalid 'type' specified.")
-  )
-
-  return(result)
 }
 
 
@@ -4255,7 +3918,7 @@ BIC.gkwfit <- function(object, ...) {
 #' }
 #' @keywords models methods regression htest
 #' @author Lopes, J. E.
-#' @export anova.gkwfit
+#' @export
 anova.gkwfit <- function(object, ...) {
   # --- Gather objects and perform initial validation ---
   objects <- list(object, ...)
@@ -4375,7 +4038,7 @@ anova.gkwfit <- function(object, ...) {
 #' @param digits Minimum number of significant digits to print.
 #' @param signif.stars Logical; if TRUE, add significance stars.
 #' @param ... Other args passed to
-#' @export print.anova.gkwfit
+#' @export
 print.anova.gkwfit <- function(x, digits = max(getOption("digits") - 2L, 3L),
                                signif.stars = getOption("show.signif.stars", TRUE), ...) {
   if (!inherits(x, "anova")) stop("x not of class anova") # Basic check
