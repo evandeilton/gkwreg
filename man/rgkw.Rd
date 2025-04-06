@@ -4,14 +4,7 @@
 \alias{rgkw}
 \title{Generalized Kumaraswamy Distribution Random Generation}
 \usage{
-rgkw(
-  n,
-  alpha = as.numeric(c(1)),
-  beta = as.numeric(c(1)),
-  gamma = as.numeric(c(1)),
-  delta = as.numeric(c(0)),
-  lambda = as.numeric(c(1))
-)
+rgkw(n, alpha, beta, gamma, delta, lambda)
 }
 \arguments{
 \item{n}{Number of observations. If \code{length(n) > 1}, the length is

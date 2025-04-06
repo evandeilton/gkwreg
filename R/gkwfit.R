@@ -263,239 +263,6 @@
 }
 
 
-
-
-#' Fit GKw family distributions using enhanced optimization methods
-#'
-#' @param data Numeric vector with values in the (0, 1) interval.
-#' @param family Character string specifying the distribution family.
-#' @param start List with initial parameter values.
-#' @param fixed List of parameters to be held fixed.
-#' @param hessian Logical; if TRUE, computes standard errors and covariance matrix.
-#' @param conf.level Confidence level for intervals.
-#' @param optimizer.control List of control parameters for the optimizer.
-#' @param silent Logical; if TRUE, suppresses messages.
-#'
-#' @importFrom utils modifyList
-#'
-#' @return List containing fit results.
-#' @keywords internal
-.fit_nr <- function(data, family, start, fixed, hessian, conf.level, optimizer.control, silent) {
-  # Create full parameter vector with all parameters (fixed and free)
-  full_params <- c(1, 1, 1, 0, 1) # Default values for GKw (alpha, beta, gamma, delta, lambda)
-  names(full_params) <- c("alpha", "beta", "gamma", "delta", "lambda")
-
-  # Update with start values
-  for (param in names(start)) {
-    full_params[param] <- start[[param]]
-  }
-
-  # Apply fixed parameters
-  if (!is.null(fixed)) {
-    for (param in names(fixed)) {
-      full_params[param] <- fixed[[param]]
-    }
-  }
-
-  # Extract only the parameters needed for the specific family
-  param_names <- .get_family_param_info(family)$names
-  start_vec <- full_params[param_names]
-
-  # Set up enhanced optimizer default control parameters
-  nr_defaults <- list(
-    tol = 1e-6,
-    max_iter = 100,
-    verbose = !silent,
-    optimization_method = "trust-region", # Default to trust-region method
-    enforce_bounds = TRUE,
-    min_param_val = 1e-5,
-    max_param_val = 1e5,
-    adaptive_scaling = TRUE, # Enable adaptive parameter scaling
-    use_stochastic_perturbation = TRUE, # Use stochastic perturbation to escape local minima
-    get_num_hess = !hessian, # Get numerical Hessian if analytical one not requested
-    multi_start_attempts = ifelse(is.null(start), 3, 1), # Multiple starts if no user start values
-    eigenvalue_hessian_reg = TRUE, # Use eigenvalue-based Hessian regularization
-    max_backtrack = 20, # Maximum line search backtracking steps
-    initial_trust_radius = 1.0 # Initial trust region radius
-  )
-
-  # Merge user controls with defaults, with user controls taking precedence
-  nr_control <- modifyList(nr_defaults, optimizer.control)
-
-  # Run enhanced optimization
-  nr_result <- tryCatch(
-    {
-      nrgkw(
-        start = start_vec,
-        data = data,
-        family = family,
-        tol = nr_control$tol,
-        max_iter = nr_control$max_iter,
-        verbose = nr_control$verbose,
-        optimization_method = nr_control$optimization_method,
-        enforce_bounds = nr_control$enforce_bounds,
-        min_param_val = nr_control$min_param_val,
-        max_param_val = nr_control$max_param_val,
-        adaptive_scaling = nr_control$adaptive_scaling,
-        use_stochastic_perturbation = nr_control$use_stochastic_perturbation,
-        get_num_hess = nr_control$get_num_hess,
-        multi_start_attempts = nr_control$multi_start_attempts,
-        eigenvalue_hessian_reg = nr_control$eigenvalue_hessian_reg,
-        max_backtrack = nr_control$max_backtrack,
-        initial_trust_radius = nr_control$initial_trust_radius
-      )
-    },
-    error = function(e) {
-      stop("Optimization failed: ", e$message)
-    }
-  )
-
-  # Extract and process results
-  params <- nr_result$parameters
-  names(params) <- param_names
-
-  # We only need the parameters specific to this family
-  filtered_coefficients <- params
-
-  # Process standard errors (with NAs for fixed parameters)
-  filtered_std_errors <- rep(NA, length(param_names))
-  names(filtered_std_errors) <- param_names
-
-  if (!is.null(nr_result$std_errors)) {
-    for (i in seq_along(param_names)) {
-      if (i <= length(nr_result$std_errors)) {
-        filtered_std_errors[i] <- nr_result$std_errors[i]
-      }
-    }
-  }
-
-  # Process z-values and p-values
-  filtered_z_values <- rep(NA, length(param_names))
-  filtered_p_values <- rep(NA, length(param_names))
-  names(filtered_z_values) <- names(filtered_p_values) <- param_names
-
-  if (!is.null(nr_result$z_values)) {
-    for (i in seq_along(param_names)) {
-      if (i <= length(nr_result$z_values) && !is.na(nr_result$z_values[i])) {
-        filtered_z_values[i] <- nr_result$z_values[i]
-        filtered_p_values[i] <- nr_result$p_values[i]
-      }
-    }
-  }
-
-  # Create coefficient summary table
-  coef_summary <- data.frame(
-    Estimate = filtered_coefficients,
-    `Std. Error` = filtered_std_errors,
-    `z value` = filtered_z_values,
-    `Pr(>|z|)` = filtered_p_values,
-    row.names = param_names,
-    check.names = FALSE
-  )
-
-  # Calculate confidence intervals if valid standard errors are available
-  conf_int <- NULL
-  if (any(!is.na(filtered_std_errors))) {
-    z_value <- stats::qnorm(1 - (1 - conf.level) / 2)
-    conf_int_params <- character()
-    conf_int_estimates <- numeric()
-    conf_int_se <- numeric()
-    conf_int_lower <- numeric()
-    conf_int_upper <- numeric()
-
-    for (i in seq_along(param_names)) {
-      param <- param_names[i]
-      if (!is.na(filtered_std_errors[i])) {
-        conf_int_params <- c(conf_int_params, param)
-        conf_int_estimates <- c(conf_int_estimates, filtered_coefficients[i])
-        conf_int_se <- c(conf_int_se, filtered_std_errors[i])
-
-        # Ensure lower bound is valid for the parameter
-        # For delta it can be 0, for others it must be positive
-        if (param == "delta") {
-          lower <- max(filtered_coefficients[i] - z_value * filtered_std_errors[i], 0)
-        } else {
-          lower <- max(filtered_coefficients[i] - z_value * filtered_std_errors[i], .Machine$double.eps)
-        }
-
-        upper <- filtered_coefficients[i] + z_value * filtered_std_errors[i]
-        conf_int_lower <- c(conf_int_lower, lower)
-        conf_int_upper <- c(conf_int_upper, upper)
-      }
-    }
-
-    if (length(conf_int_params) > 0) {
-      conf_int <- data.frame(
-        parameter = conf_int_params,
-        estimate = conf_int_estimates,
-        std.error = conf_int_se,
-        lower = conf_int_lower,
-        upper = conf_int_upper,
-        row.names = NULL, check.names = FALSE
-      )
-    }
-  }
-
-  # Extract the correct Hessian/covariance matrix
-  vcov_matrix <- NULL
-  if (!is.null(nr_result$hessian)) {
-    if (hessian) {
-      # If hessian requested, invert the Hessian to get the covariance matrix
-      tryCatch(
-        {
-          vcov_matrix <- solve(-nr_result$hessian)
-        },
-        error = function(e) {
-          warning("Could not invert Hessian: ", e$message)
-          vcov_matrix <- matrix(NA, nrow = length(param_names), ncol = length(param_names))
-        }
-      )
-    } else {
-      # Otherwise, just store the Hessian itself
-      vcov_matrix <- nr_result$hessian
-    }
-  }
-
-  # Calculate corrected AICc
-  aicc <- nr_result$aic +
-    (2 * length(param_names) * (length(param_names) + 1)) /
-      (length(data) - length(param_names) - 1)
-
-  # Create comprehensive result object
-  result <- list(
-    coefficients = filtered_coefficients,
-    std.errors = filtered_std_errors,
-    coef_summary = coef_summary,
-    vcov = vcov_matrix,
-    loglik = nr_result$loglik,
-    AIC = nr_result$aic,
-    BIC = nr_result$bic,
-    AICc = aicc,
-    data = data,
-    nobs = length(data),
-    df = length(param_names),
-    convergence = nr_result$converged,
-    message = nr_result$status,
-    method = "enhanced_nr",
-    optimizer_method = nr_result$optimization_method,
-    conf.int = conf_int,
-    conf.level = conf.level,
-    optimizer = nr_result,
-    fixed = fixed,
-    iterations = nr_result$iterations,
-    param_history = nr_result$param_history,
-    loglik_history = nr_result$loglik_history,
-    gradient = nr_result$gradient,
-    condition_number = if (!is.null(nr_result$condition_number)) nr_result$condition_number else NA,
-    scaling_factors = if (!is.null(nr_result$scaling_factors)) nr_result$scaling_factors else NA
-  )
-
-  # Add class for potential custom methods
-  class(result) <- "gkwfit"
-
-  return(result)
-}
-
 #' Fit GKw family distributions using TMB
 #'
 #' @param data Numeric vector with values in the (0, 1) interval.
@@ -638,14 +405,14 @@
 
     opt$convergence <- opt$convergence == 0
     opt$message <- opt$message
-  } else if (method == "optim") {
+  } else {
     opt <- tryCatch(
       {
         optim(
           par = obj$par,
           fn = obj$fn,
           gr = obj$gr,
-          method = "BFGS",
+          method = method,
           control = control
         )
       },
@@ -653,6 +420,8 @@
         stop("Optimization with optim failed: ", e$message)
       }
     )
+
+    opt$objective <- opt$value
 
     opt$convergence <- opt$convergence == 0
     opt$message <- if (opt$convergence) "Successful convergence" else "Optimization failed to converge"
@@ -824,795 +593,6 @@
 
   return(result)
 }
-
-
-
-
-#' Fit GKw family distributions using optim() + BFGS
-#'
-#' This function implements maximum likelihood estimation (MLE) of the GKw family
-#' distributions using the base R \code{optim()} function with the BFGS method and
-#' an analytical gradient. It follows the same input-output signature as \code{.fit_nr}.
-#'
-#' @param data Numeric vector with values in the (0, 1) interval.
-#' @param family Character string specifying the distribution family (e.g. "gkw", "kw", "beta", etc.).
-#' @param start Named list with initial parameter values.
-#' @param fixed Named list of parameters to be held fixed (not estimated).
-#' @param hessian Logical; if \code{TRUE}, attempts to compute standard errors and covariance matrix
-#'   using an analytic Hessian (if available) or numeric approximations in a fallback order.
-#' @param conf.level Confidence level for intervals (e.g. 0.95).
-#' @param optimizer.control List of control parameters passed to \code{optim()}.
-#' @param silent Logical; if \code{TRUE}, suppresses certain messages during the fitting procedure.
-#'
-#' @details
-#' Hessian-based standard error calculation follows this priority:
-#' \enumerate{
-#'   \item If an analytic Hessian \code{hs<family>} is found and succeeds, use it.
-#'   \item Otherwise, attempt a numeric Hessian using \code{numDeriv::hessian}.
-#'   \item Otherwise, if \code{hessian=TRUE} was requested in \code{optim()}, use \code{optim}'s Hessian.
-#' }
-#'
-#' Note: The C++ functions for log-likelihood, gradient, and Hessian must each have the signature:
-#'   \code{function(par, data)}, where both \code{par} and \code{data} are numeric vectors.
-#'
-#' @return A list containing the fitted results with the same structure as \code{.fit_nr}.
-#' @keywords internal
-.fit_optim <- function(data,
-                       family,
-                       start,
-                       fixed,
-                       hessian,
-                       conf.level,
-                       optimizer.control,
-                       silent) {
-  # 1) Retrieve parameter names for this family (e.g. c("alpha","beta") for "kw")
-
-  family_info <- .get_family_param_info(family)
-  param_names <- family_info$names
-
-
-  # 2) Build a full param vector, but only use relevant ones for 'family'
-
-  # Possible full set (for gkw style), but default values
-  full_params <- c(
-    alpha  = 1,
-    beta   = 1,
-    gamma  = 1,
-    delta  = 0,
-    lambda = 1
-  )
-
-  # Overwrite with user-provided start
-  if (!is.null(start)) {
-    for (p in names(start)) {
-      full_params[p] <- start[[p]]
-    }
-  }
-
-  # Overwrite with fixed
-  if (!is.null(fixed)) {
-    for (p in names(fixed)) {
-      full_params[p] <- fixed[[p]]
-    }
-  }
-
-  # Identify free vs. fixed
-  fixed_param_names <- if (!is.null(fixed)) names(fixed) else character(0)
-  free_param_names <- setdiff(param_names, fixed_param_names)
-
-  # The initial vector for the FREE parameters
-  start_vec <- full_params[free_param_names]
-
-  # We'll need data as a numeric vector
-  data_vec <- as.numeric(data)
-
-
-  # 3) Construct function names for ll, gr, hs
-
-  ll_fun_name <- paste0("ll", family) # e.g. "llgkw"
-  gr_fun_name <- paste0("gr", family) # e.g. "grgkw"
-  hs_fun_name <- paste0("hs", family) # e.g. "hsgkw"
-
-  # Retrieve or error out
-  if (!exists(ll_fun_name, mode = "function")) {
-    stop("Function '", ll_fun_name, "' not found. Ensure it is defined or in scope.")
-  }
-  if (!exists(gr_fun_name, mode = "function")) {
-    stop("Function '", gr_fun_name, "' not found. Ensure it is defined or in scope.")
-  }
-  ll_fun <- get(ll_fun_name, mode = "function")
-  gr_fun <- get(gr_fun_name, mode = "function")
-
-  # Observing that .exists doesn't suffice for an analytic Hessian, we'll check later
-
-
-  # 4) Define objective and gradient for 'optim'
-  #    par => current vector (free params). We rebuild the full param set,
-  #    subset to param_names, then pass as numeric vector to ll_fun(parVec, dataVec).
-
-  objective_fn <- function(par) {
-    # Rebuild
-    current_params <- full_params
-    current_params[free_param_names] <- par
-
-    # Convert only the needed param_names to a numeric vector, in correct order
-    par_vec <- as.numeric(current_params[param_names])
-
-    # Evaluate negative log-likelihood
-    ll_val <- ll_fun(par_vec, data_vec)
-    return(ll_val)
-  }
-
-  gradient_fn <- function(par) {
-    # Rebuild
-    current_params <- full_params
-    current_params[free_param_names] <- par
-
-    # numeric vector
-    par_vec <- as.numeric(current_params[param_names])
-
-    # Evaluate gradient
-    g_val <- gr_fun(par_vec, data_vec)
-
-    # g_val is presumably a numeric vector of length length(param_names)
-    # We only return the components for the free parameters
-    idx_free <- match(free_param_names, param_names)
-    return(unname(g_val[idx_free]))
-  }
-
-
-  # 5) Merge user-defined optimizer controls with BFGS defaults
-
-  bfgs_defaults <- list(
-    maxit  = 500,
-    reltol = 1e-8,
-    trace  = ifelse(silent, 0, 1)
-  )
-  bfgs_control <- utils::modifyList(bfgs_defaults, optimizer.control)
-
-
-  # 6) Run optim with BFGS
-
-  opt_res <- tryCatch(
-    stats::optim(
-      par     = start_vec,
-      fn      = objective_fn,
-      gr      = gradient_fn,
-      method  = "BFGS",
-      hessian = hessian, # might compute numeric Hessian if hessian=TRUE
-      control = bfgs_control
-    ),
-    error = function(e) {
-      stop("Optimization with BFGS failed: ", e$message)
-    }
-  )
-
-
-  # 7) Final estimates: reconstruct full param set
-
-  final_free_par <- opt_res$par
-  final_full_par <- full_params
-  final_full_par[free_param_names] <- final_free_par
-
-  # Keep only the relevant family ones
-  fitted_params <- final_full_par[param_names]
-
-  # We'll also define a helper to get par_vec in final form
-  final_par_vec <- as.numeric(fitted_params)
-
-
-  # 8) Attempt to derive Hessian in order: analytic -> numDeriv -> optim
-
-  final_hessian <- NULL
-  if (hessian) {
-    # Attempt 1: analytic Hessian
-    if (exists(hs_fun_name, mode = "function")) {
-      hs_fun <- get(hs_fun_name, mode = "function")
-      tmp_hs <- try(hs_fun(final_par_vec, data_vec), silent = TRUE)
-      if (!inherits(tmp_hs, "try-error")) {
-        # Expect matrix NxN with N = length(param_names)
-        # Then we subset to free parameters
-        if (is.matrix(tmp_hs) && all(dim(tmp_hs) == c(length(param_names), length(param_names)))) {
-          idx_free <- match(free_param_names, param_names)
-          final_hessian <- tmp_hs[idx_free, idx_free, drop = FALSE]
-        } else {
-          if (!silent) {
-            warning("Analytic Hessian has unexpected dimensions; ignoring it.")
-          }
-        }
-      }
-    }
-
-    # Attempt 2: if still NULL, try numDeriv
-    if (is.null(final_hessian)) {
-      if (requireNamespace("numDeriv", quietly = TRUE)) {
-        local_obj_fn <- function(par) {
-          # Rebuild in free param space
-          cparams <- full_params
-          cparams[free_param_names] <- par
-          par_vec <- as.numeric(cparams[param_names])
-          ll_fun(par_vec, data_vec)
-        }
-        tmp_num_hs <- try(numDeriv::hessian(local_obj_fn, final_free_par), silent = TRUE)
-        if (!inherits(tmp_num_hs, "try-error")) {
-          final_hessian <- tmp_num_hs
-        }
-      } else {
-        if (!silent) {
-          warning("Package 'numDeriv' is not available, skipping numeric Hessian from numDeriv.")
-        }
-      }
-    }
-
-    # Attempt 3: if still NULL, fallback to optim's Hessian if computed
-    if (is.null(final_hessian) && !is.null(opt_res$hessian)) {
-      final_hessian <- opt_res$hessian
-    }
-  }
-
-
-  # 9) Compute standard errors, if we have a valid Hessian
-
-  vcov_matrix <- NULL
-  std_errors <- rep(NA_real_, length(param_names))
-  names(std_errors) <- param_names
-
-  if (!is.null(final_hessian)) {
-    cov_free <- tryCatch(
-      solve(final_hessian),
-      error = function(e) {
-        warning("Could not invert Hessian: ", e$message)
-        matrix(NA_real_, nrow = nrow(final_hessian), ncol = ncol(final_hessian))
-      }
-    )
-    se_free <- sqrt(diag(cov_free))
-
-    # Place into std_errors
-    for (i in seq_along(free_param_names)) {
-      std_errors[free_param_names[i]] <- se_free[i]
-    }
-
-    # Now build the full VCOV for param_names
-    vcov_matrix <- matrix(
-      NA_real_,
-      nrow = length(param_names),
-      ncol = length(param_names),
-      dimnames = list(param_names, param_names)
-    )
-    idx_free <- match(free_param_names, param_names)
-    vcov_matrix[idx_free, idx_free] <- cov_free
-  }
-
-
-  # 10) Summaries: z-values, p-values
-
-  z_values <- rep(NA_real_, length(param_names))
-  p_values <- rep(NA_real_, length(param_names))
-  names(z_values) <- names(p_values) <- param_names
-
-  valid_se <- !is.na(std_errors) & (std_errors > 0)
-  z_values[valid_se] <- fitted_params[valid_se] / std_errors[valid_se]
-  p_values[valid_se] <- 2 * stats::pnorm(abs(z_values[valid_se]), lower.tail = FALSE)
-
-  coef_summary <- data.frame(
-    Estimate     = fitted_params,
-    `Std. Error` = std_errors,
-    `z value`    = z_values,
-    `Pr(>|z|)`   = p_values,
-    row.names    = param_names,
-    check.names  = FALSE
-  )
-
-
-  # 11) Confidence intervals
-
-  conf_int <- NULL
-  if (any(valid_se)) {
-    z_crit <- stats::qnorm(1 - (1 - conf.level) / 2)
-    ci_params <- character()
-    ci_est <- numeric()
-    ci_se <- numeric()
-    ci_low <- numeric()
-    ci_high <- numeric()
-
-    for (i in seq_along(param_names)) {
-      if (valid_se[i]) {
-        param_i <- param_names[i]
-        ci_params <- c(ci_params, param_i)
-        ci_est <- c(ci_est, fitted_params[i])
-        ci_se <- c(ci_se, std_errors[i])
-
-        lower_raw <- fitted_params[i] - z_crit * std_errors[i]
-        upper_raw <- fitted_params[i] + z_crit * std_errors[i]
-
-        # delta >= 0, os outros > 0
-        if (param_i == "delta") {
-          lower_bound <- max(0, lower_raw)
-        } else {
-          lower_bound <- max(.Machine$double.eps, lower_raw)
-        }
-        ci_low <- c(ci_low, lower_bound)
-        ci_high <- c(ci_high, upper_raw)
-      }
-    }
-
-    if (length(ci_params) > 0) {
-      conf_int <- data.frame(
-        parameter = ci_params,
-        estimate = ci_est,
-        std.error = ci_se,
-        lower = ci_low,
-        upper = ci_high,
-        row.names = NULL,
-        check.names = FALSE
-      )
-    }
-  }
-
-
-  # 12) Log-likelihood, AIC, BIC, AICc
-
-  fn_val <- opt_res$value # final negative log-likelihood
-  loglik <- -fn_val
-  nobs <- length(data)
-  k <- length(free_param_names)
-
-  AIC_val <- 2 * fn_val + 2 * k
-  BIC_val <- 2 * fn_val + log(nobs) * k
-  AICc_val <- AIC_val + (2 * k * (k + 1)) / (nobs - k - 1)
-
-
-  # 13) Compile final result
-
-  result <- list(
-    coefficients     = fitted_params,
-    std.errors       = std_errors,
-    coef_summary     = coef_summary,
-    vcov             = vcov_matrix,
-    loglik           = loglik,
-    AIC              = AIC_val,
-    BIC              = BIC_val,
-    AICc             = AICc_val,
-    data             = data,
-    nobs             = nobs,
-    df               = k,
-    convergence      = (opt_res$convergence == 0),
-    message          = opt_res$message,
-    method           = "optim_bfgs",
-    optimizer_method = "BFGS",
-    conf.int         = conf_int,
-    conf.level       = conf.level,
-    optimizer        = opt_res,
-    fixed            = fixed,
-    iterations       = opt_res$counts[1],
-    param_history    = NA, # base optim doesn't track it
-    loglik_history   = NA, # likewise
-    gradient         = if (!is.null(opt_res$grad)) opt_res$grad else NA,
-    condition_number = NA,
-    scaling_factors  = NA
-  )
-
-  class(result) <- "gkwfit"
-  return(result)
-}
-
-
-
-
-#' Fit GKw family distributions using nlminb
-#'
-#' This function implements maximum likelihood estimation (MLE) of the GKw family
-#' distributions using the base R \code{nlminb} optimizer with an analytical gradient.
-#' It follows the same input-output signature as \code{.fit_nr}, but uses a different
-#' optimization routine.
-#'
-#' @param data Numeric vector with values in the (0, 1) interval.
-#' @param family Character string specifying the distribution family (e.g. "gkw", "kw", "beta", etc.).
-#' @param start Named list with initial parameter values.
-#' @param fixed Named list of parameters to be held fixed (not estimated).
-#' @param hessian Logical; if \code{TRUE}, attempts to compute standard errors and covariance matrix
-#'   using an analytic Hessian (if available) or numeric approximations in a fallback order.
-#' @param conf.level Confidence level for intervals (e.g. 0.95).
-#' @param optimizer.control List of control parameters passed to \code{nlminb()}.
-#'   For example: \code{list(eval.max=300, iter.max=200)}.
-#' @param silent Logical; if \code{TRUE}, suppresses certain messages during the fitting procedure.
-#'
-#' @details
-#' Hessian-based standard error calculation follows this priority:
-#' \enumerate{
-#'   \item If an analytic Hessian \code{hs<family>} is found and succeeds, use it.
-#'   \item Otherwise, attempt a numeric Hessian using \code{numDeriv::hessian}.
-#'   \item Otherwise, use \code{stats::optimHess} at the final solution for \code{nlminb}.
-#' }
-#'
-#' The C++ functions for log-likelihood, gradient, and Hessian must each have the signature:
-#' \code{function(par, data)}, where both \code{par} and \code{data} are numeric vectors
-#' (and \code{par} must match the order given by \code{.get_family_param_info(family)$names}).
-#'
-#' @return A list containing the fitted results with the same structure as \code{.fit_nr}:
-#'   \describe{
-#'     \item{\code{coefficients}}{Estimated parameters for the specified family.}
-#'     \item{\code{std.errors}}{Standard errors (NA for fixed parameters or if no valid Hessian is found).}
-#'     \item{\code{coef_summary}}{A data frame summarizing coefficients, standard errors, z-values, and p-values.}
-#'     \item{\code{vcov}}{Covariance matrix (if successfully computed, otherwise \code{NULL}).}
-#'     \item{\code{loglik}}{Log-likelihood at the optimum.}
-#'     \item{\code{AIC}, \code{BIC}, \code{AICc}}{Information criteria.}
-#'     \item{\code{data}}{The original data used.}
-#'     \item{\code{nobs}}{Number of observations used.}
-#'     \item{\code{df}}{Number of free parameters estimated.}
-#'     \item{\code{convergence}}{Logical indicating whether \code{nlminb} converged successfully.}
-#'     \item{\code{message}}{Optimizer status message from \code{nlminb}.}
-#'     \item{\code{method}}{String indicating the fitting method (\code{"nlminb"}).}
-#'     \item{\code{optimizer_method}}{String \code{"nlminb"}.}
-#'     \item{\code{conf.int}}{Data frame with confidence intervals (if standard errors are available).}
-#'     \item{\code{conf.level}}{Confidence level used.}
-#'     \item{\code{optimizer}}{The raw output list from \code{nlminb()}.}
-#'     \item{\code{fixed}}{Named list of parameters that were held fixed.}
-#'     \item{\code{iterations}}{Number of iterations used (if available).}
-#'     \item{\code{param_history}}{NA, since \code{nlminb} does not track parameter history by default.}
-#'     \item{\code{loglik_history}}{NA, since \code{nlminb} does not track log-likelihood history.}
-#'     \item{\code{gradient}}{Final gradient at the solution (if available).}
-#'     \item{\code{condition_number}}{NA, not computed in this method.}
-#'     \item{\code{scaling_factors}}{NA, not used in this method.}
-#'   }
-#'
-#' @keywords internal
-#'
-#' @examples
-#' \dontrun{
-#' # Suppose you have ll<family>, gr<family>, and hs<family> defined,
-#' # all returning negative log-likelihood, negative gradient, etc.
-#' # Then call:
-#' # fit <- .fit_nlminb(
-#' #   data = runif(100, min=0.01, max=0.99),
-#' #   family = "gkw",
-#' #   start = list(alpha=2, beta=2, gamma=1, delta=0.5, lambda=2),
-#' #   fixed = NULL,
-#' #   hessian = TRUE,
-#' #   conf.level = 0.95,
-#' #   optimizer.control = list(eval.max=300, iter.max=200),
-#' #   silent = FALSE
-#' # )
-#' }
-.fit_nlminb <- function(data,
-                        family,
-                        start,
-                        fixed,
-                        hessian,
-                        conf.level,
-                        optimizer.control,
-                        silent) {
-  # 1) Retrieve parameter names for this family
-
-  family_info <- .get_family_param_info(family)
-  param_names <- family_info$names
-
-
-  # 2) Build a full param vector for (alpha, beta, gamma, delta, lambda),
-  #    then subset to the relevant family parameters
-
-  full_params <- c(
-    alpha  = 1,
-    beta   = 1,
-    gamma  = 1,
-    delta  = 0,
-    lambda = 1
-  )
-
-  # Overwrite with user-provided start values
-  if (!is.null(start)) {
-    for (p in names(start)) {
-      full_params[p] <- start[[p]]
-    }
-  }
-
-  # Overwrite with fixed values
-  if (!is.null(fixed)) {
-    for (p in names(fixed)) {
-      full_params[p] <- fixed[[p]]
-    }
-  }
-
-  # Identify free vs. fixed
-  fixed_param_names <- if (!is.null(fixed)) names(fixed) else character(0)
-  free_param_names <- setdiff(param_names, fixed_param_names)
-
-  # Initial vector for the FREE parameters
-  start_vec <- full_params[free_param_names]
-  data_vec <- as.numeric(data)
-
-
-  # 3) Identify the log-likelihood, gradient, Hessian functions
-  #    (they must be of the form function(par_vec, data_vec)).
-
-  ll_fun_name <- paste0("ll", family)
-  gr_fun_name <- paste0("gr", family)
-  hs_fun_name <- paste0("hs", family)
-
-  if (!exists(ll_fun_name, mode = "function")) {
-    stop("Function '", ll_fun_name, "' not found. Ensure it is defined or in scope.")
-  }
-  if (!exists(gr_fun_name, mode = "function")) {
-    stop("Function '", gr_fun_name, "' not found. Ensure it is defined or in scope.")
-  }
-  ll_fun <- get(ll_fun_name, mode = "function")
-  gr_fun <- get(gr_fun_name, mode = "function")
-
-
-  # 4) Define objective, gradient for nlminb
-  #    We minimize negative log-likelihood, so ll_fun is already negative
-
-  objective_fn <- function(par) {
-    # Reconstruct
-    current_params <- full_params
-    current_params[free_param_names] <- par
-    par_vec <- as.numeric(current_params[param_names])
-
-    # Negative log-likelihood
-    ll_val <- ll_fun(par_vec, data_vec)
-    return(ll_val)
-  }
-
-  gradient_fn <- function(par) {
-    # Reconstruct
-    current_params <- full_params
-    current_params[free_param_names] <- par
-    par_vec <- as.numeric(current_params[param_names])
-
-    g_val <- gr_fun(par_vec, data_vec)
-    # Return only the free components
-    idx_free <- match(free_param_names, param_names)
-    return(unname(g_val[idx_free]))
-  }
-
-  # nlminb does not have a 'hessian' argument in the same sense as optim,
-  # we can do Hessian fallback after we get the final solution.
-
-
-  # 5) Merge user-defined control parameters with defaults for nlminb
-
-  nlminb_defaults <- list(
-    eval.max = 500,
-    iter.max = 500,
-    rel.tol  = 1e-8
-    # 'trace' is an integer in nlminb. We can omit or set it conditionally if desired.
-  )
-  nlminb_control <- utils::modifyList(nlminb_defaults, optimizer.control)
-
-
-  # 6) Call nlminb
-
-  opt_res <- tryCatch(
-    nlminb(
-      start     = start_vec,
-      objective = objective_fn,
-      gradient  = gradient_fn,
-      control   = nlminb_control
-    ),
-    error = function(e) {
-      stop("Optimization with nlminb failed: ", e$message)
-    }
-  )
-
-
-  # 7) Extract final parameters
-
-  final_free_par <- opt_res$par
-  final_full_par <- full_params
-  final_full_par[free_param_names] <- final_free_par
-  fitted_params <- final_full_par[param_names]
-
-  final_par_vec <- as.numeric(fitted_params) # for Hessian calls
-
-
-  # 8) Attempt Hessian in the same fallback order:
-  #    1) analytic, 2) numDeriv, 3) stats::optimHess on final solution
-
-  final_hessian <- NULL
-  if (hessian) {
-    # Attempt 1: analytic
-    if (exists(hs_fun_name, mode = "function")) {
-      hs_fun <- get(hs_fun_name, mode = "function")
-      tmp_hs <- try(hs_fun(final_par_vec, data_vec), silent = TRUE)
-      if (!inherits(tmp_hs, "try-error")) {
-        if (is.matrix(tmp_hs) && all(dim(tmp_hs) == c(length(param_names), length(param_names)))) {
-          idx_free <- match(free_param_names, param_names)
-          final_hessian <- tmp_hs[idx_free, idx_free, drop = FALSE]
-        } else if (!silent) {
-          warning("Analytic Hessian has unexpected dimensions; ignoring it.")
-        }
-      }
-    }
-
-    # Attempt 2: numDeriv, if we still have no Hessian
-    if (is.null(final_hessian)) {
-      if (requireNamespace("numDeriv", quietly = TRUE)) {
-        local_obj_fn <- function(par) {
-          cp <- full_params
-          cp[free_param_names] <- par
-          ll_fun(as.numeric(cp[param_names]), data_vec)
-        }
-        tmp_hs <- try(numDeriv::hessian(local_obj_fn, final_free_par), silent = TRUE)
-        if (!inherits(tmp_hs, "try-error")) {
-          final_hessian <- tmp_hs
-        }
-      } else if (!silent) {
-        warning("Package 'numDeriv' not available; skipping numeric Hessian from numDeriv.")
-      }
-    }
-
-    # Attempt 3: stats::optimHess on the final solution
-    if (is.null(final_hessian)) {
-      # We can call stats::optimHess with objective_fn, gradient_fn
-      # It's the same approach used to get a Hessian after an nlminb fit.
-      ohess <- try(
-        stats::optimHess(
-          par = final_free_par,
-          fn  = objective_fn,
-          gr  = gradient_fn
-        ),
-        silent = TRUE
-      )
-      if (!inherits(ohess, "try-error")) {
-        final_hessian <- ohess
-      }
-    }
-  }
-
-
-  # 9) Compute standard errors
-
-  vcov_matrix <- NULL
-  std_errors <- rep(NA_real_, length(param_names))
-  names(std_errors) <- param_names
-
-  if (!is.null(final_hessian)) {
-    inv_try <- tryCatch(
-      solve(final_hessian),
-      error = function(e) {
-        warning("Could not invert Hessian: ", e$message)
-        matrix(NA_real_, nrow = nrow(final_hessian), ncol = ncol(final_hessian))
-      }
-    )
-    se_free <- sqrt(diag(inv_try))
-    # place in std_errors for free params
-    for (i in seq_along(free_param_names)) {
-      std_errors[free_param_names[i]] <- se_free[i]
-    }
-
-    # Build vcov for param_names
-    vcov_matrix <- matrix(
-      NA_real_,
-      nrow = length(param_names),
-      ncol = length(param_names),
-      dimnames = list(param_names, param_names)
-    )
-    idx_free <- match(free_param_names, param_names)
-    vcov_matrix[idx_free, idx_free] <- inv_try
-  }
-
-
-  # 10) Summaries: z-values, p-values
-
-  z_values <- rep(NA_real_, length(param_names))
-  p_values <- rep(NA_real_, length(param_names))
-  names(z_values) <- names(p_values) <- param_names
-
-  valid_se <- !is.na(std_errors) & (std_errors > 0)
-  z_values[valid_se] <- fitted_params[valid_se] / std_errors[valid_se]
-  p_values[valid_se] <- 2 * stats::pnorm(abs(z_values[valid_se]), lower.tail = FALSE)
-
-  coef_summary <- data.frame(
-    Estimate = fitted_params,
-    `Std. Error` = std_errors,
-    `z value` = z_values,
-    `Pr(>|z|)` = p_values,
-    row.names = param_names,
-    check.names = FALSE
-  )
-
-
-  # 11) Confidence intervals
-
-  conf_int <- NULL
-  if (any(valid_se)) {
-    z_crit <- stats::qnorm(1 - (1 - conf.level) / 2)
-    ci_params <- character()
-    ci_est <- numeric()
-    ci_se <- numeric()
-    ci_low <- numeric()
-    ci_high <- numeric()
-
-    for (i in seq_along(param_names)) {
-      if (valid_se[i]) {
-        param_i <- param_names[i]
-        ci_params <- c(ci_params, param_i)
-        ci_est <- c(ci_est, fitted_params[i])
-        ci_se <- c(ci_se, std_errors[i])
-
-        lower_raw <- fitted_params[i] - z_crit * std_errors[i]
-        upper_raw <- fitted_params[i] + z_crit * std_errors[i]
-
-        # For delta >=0; for others >0
-        if (param_i == "delta") {
-          lower_bound <- max(0, lower_raw)
-        } else {
-          lower_bound <- max(.Machine$double.eps, lower_raw)
-        }
-        ci_low <- c(ci_low, lower_bound)
-        ci_high <- c(ci_high, upper_raw)
-      }
-    }
-
-    if (length(ci_params) > 0) {
-      conf_int <- data.frame(
-        parameter = ci_params,
-        estimate = ci_est,
-        std.error = ci_se,
-        lower = ci_low,
-        upper = ci_high,
-        row.names = NULL,
-        check.names = FALSE
-      )
-    }
-  }
-
-
-  # 12) Log-likelihood, AIC, BIC, AICc
-
-  fn_val <- opt_res$objective # final negative log-likelihood from nlminb
-  loglik <- -fn_val
-  nobs <- length(data)
-  k <- length(free_param_names)
-
-  AIC_val <- 2 * fn_val + 2 * k
-  BIC_val <- 2 * fn_val + log(nobs) * k
-  AICc_val <- AIC_val + (2 * k * (k + 1)) / (nobs - k - 1)
-
-
-  # 13) Prepare the final result object
-
-  # nlminb convergence = 0 => success
-  conv_status <- (opt_res$convergence == 0)
-  conv_msg <- opt_res$message
-
-  result <- list(
-    coefficients     = fitted_params,
-    std.errors       = std_errors,
-    coef_summary     = coef_summary,
-    vcov             = vcov_matrix,
-    loglik           = loglik,
-    AIC              = AIC_val,
-    BIC              = BIC_val,
-    AICc             = AICc_val,
-    data             = data,
-    nobs             = nobs,
-    df               = k,
-    convergence      = conv_status,
-    message          = conv_msg,
-    method           = "nlminb",
-    optimizer_method = "nlminb",
-    conf.int         = conf_int,
-    conf.level       = conf.level,
-    optimizer        = opt_res, # The full nlminb result
-    fixed            = fixed,
-    iterations       = opt_res$iterations,
-    param_history    = NA, # not tracked by nlminb
-    loglik_history   = NA, # not tracked
-    gradient         = NA, # final gradient is not directly stored in nlminb$xxx, we can compute or skip
-    condition_number = NA,
-    scaling_factors  = NA
-  )
-
-  class(result) <- "gkwfit"
-  return(result)
-}
-
-
-
-
-
-
 
 
 
@@ -2194,14 +1174,160 @@
   return(list(gof = gof, diagnostics = diagnostics))
 }
 
+#' Get default fixed parameters for each GKw family
+#'
+#' @param family Character string, the family name
+#' @return Named list of parameters that are fixed by default for this family
+#' @keywords internal
+.get_family_fixed_defaults <- function(family) {
+  fixed_params <- switch(family,
+    "gkw" = list(), # All parameters free
+    "bkw" = list(lambda = 1.0),
+    "kkw" = list(gamma = 1.0),
+    "ekw" = list(gamma = 1.0, delta = 0.0),
+    "mc" = list(alpha = 1.0, beta = 1.0),
+    "kw" = list(gamma = 1.0, delta = 0.0, lambda = 1.0),
+    "beta" = list(alpha = 1.0, beta = 1.0, lambda = 1.0),
+    list() # Default case: no fixed parameters
+  )
 
-#' @title Fit Generalized Kumaraswamy Distribution via Maximum Likelihood Estimation
+  return(fixed_params)
+}
+
+
+#' Fit submodels for the GKw family for model comparison
+#'
+#' This internal function fits nested submodels for a given GKw family model,
+#' to facilitate likelihood ratio testing and model comparison.
+#'
+#' @param data Original data used for the main model.
+#' @param result Result from the main model fit.
+#' @param method Optimization method used.
+#' @param hessian Logical; if TRUE, compute standard errors for submodels.
+#' @param optimizer.control Control parameters for optimization.
+#' @param silent Logical; if TRUE, suppress messages.
+#'
+#' @return A list containing submodel fits and likelihood ratio test results.
+#' @keywords internal
+.fit_submodels_tmb <- function(data, result, method, hessian, optimizer.control, silent) {
+  # Define the chain of nested models for each family
+  model_chain <- list(
+    gkw = c("gkw", "bkw", "kkw", "ekw", "kw", "beta"),
+    bkw = c("bkw", "ekw", "kw"),
+    kkw = c("kkw", "ekw", "kw"),
+    ekw = c("ekw", "kw"),
+    mc = c("mc", "beta"),
+    kw = c("kw"),
+    beta = c("beta")
+  )
+
+  family <- result$family
+  subchain <- model_chain[[family]]
+
+  # Remove the current model from the chain (we already have it)
+  subchain <- subchain[subchain != family]
+
+  if (length(subchain) == 0) {
+    if (!silent) message("No submodels to fit for family ", family)
+    return(NULL)
+  }
+
+  # Prepare results containers
+  submodels <- list()
+  lrt_results <- data.frame(
+    model1 = character(),
+    model2 = character(),
+    statistic = numeric(),
+    df = numeric(),
+    p.value = numeric(),
+    stringsAsFactors = FALSE
+  )
+
+  # Fixed parameters for the main model
+  original_fixed <- result$fixed
+
+  # Fit each submodel
+  for (subfam in subchain) {
+    if (!silent) message("Fitting submodel: ", subfam)
+
+    # Get default fixed parameters for this subfamily
+    default_fixed <- .get_family_fixed_defaults(subfam)
+
+    # Combine with user's original fixed parameters (already included in result$fixed)
+    submodel_fixed <- original_fixed
+    for (param in names(default_fixed)) {
+      if (!param %in% names(submodel_fixed)) {
+        submodel_fixed[[param]] <- default_fixed[[param]]
+      }
+    }
+
+    # Use existing parameter estimates as starting values when possible
+    start_from_parent <- result$coefficients
+    start_for_sub <- list()
+    for (param in names(start_from_parent)) {
+      if (!param %in% names(submodel_fixed)) {
+        start_for_sub[[param]] <- start_from_parent[[param]]
+      }
+    }
+
+    # Fit the submodel
+    sub_result <- tryCatch(
+      {
+        gkwfit(
+          data = data,
+          family = subfam,
+          start = start_for_sub,
+          fixed = submodel_fixed,
+          method = method,
+          hessian = hessian,
+          profile = FALSE,
+          plot = FALSE,
+          optimizer.control = optimizer.control,
+          silent = silent
+        )
+      },
+      error = function(e) {
+        warning("Failed to fit submodel ", subfam, ": ", e$message)
+        NULL
+      }
+    )
+
+    if (!is.null(sub_result)) {
+      submodels[[subfam]] <- sub_result
+
+      # Calculate LRT between parent and this submodel
+      lr_stat <- 2 * (result$loglik - sub_result$loglik)
+      df_diff <- result$df - sub_result$df
+      p_val <- stats::pchisq(lr_stat, df = df_diff, lower.tail = FALSE)
+
+      lrt_results <- rbind(lrt_results, data.frame(
+        model1 = result$family,
+        model2 = subfam,
+        statistic = lr_stat,
+        df = df_diff,
+        p.value = p_val,
+        stringsAsFactors = FALSE
+      ))
+    }
+  }
+
+  # Combine results
+  out <- list(
+    submodels = submodels,
+    lrt = lrt_results
+  )
+
+  return(out)
+}
+
+
+
+#' @title Fit Generalized Kumaraswamy Distribution via Maximum Likelihood Estimation using TMB
 #'
 #' @description
 #' Fits any distribution from the Generalized Kumaraswamy (GKw) family to data using maximum
-#' likelihood estimation. The function supports several optimization backends, including
-#' TMB (Template Model Builder), a custom Newton-Raphson implementation, and R's built-in
-#' optimizers (`nlminb` and `optim` with L-BFGS-B).
+#' likelihood estimation through Template Model Builder (TMB). The function supports several
+#' optimization methods including R's nlminb and various optim algorithms.
 #'
 #' @param data A numeric vector with values strictly between 0 and 1. Values at the boundaries
 #'   (0 or 1) may cause issues; consider slight adjustments if necessary (see Details).
@@ -2210,29 +1336,20 @@
 #' @param start Optional list with initial parameter values (using natural parameter names like `alpha`, `beta`, etc.).
 #'   If \code{NULL}, reasonable starting values will be determined, potentially using the method of moments if \code{use_moments = TRUE}.
 #' @param fixed Optional list of parameters to be held fixed at specific values during estimation (e.g., \code{list(lambda = 1)}).
-#' @param fit Estimation method/backend to be used:
-#'   \itemize{
-#'     \item \code{"tmb"}: (Recommended) Uses Template Model Builder for robust fitting via automatic differentiation. Can use `nlminb` or `optim` as the internal optimizer (see `method` argument). Requires the TMB package.
-#'     \item \code{"nr"}: Uses a custom C++ Newton-Raphson/Trust-Region implementation (`gkwreg::nrgkw`). Often fast but potentially less stable than TMB for complex cases.
-#'     \item \code{"nlminb"}: Uses R's \code{\link[stats]{nlminb}} function for optimization with box constraints. Requires analytic gradients for best performance.
-#'     \item \code{"optim"}: Uses R's \code{\link[stats]{optim}} function with the "L-BFGS-B" method for optimization with box constraints. Requires analytic gradients.
-#'   }
-#'   Default is \code{"nr"}.
-#' @param method Character string specifying the internal optimizer when \code{fit = "tmb"}.
-#'   Choices are \code{"nlminb"} (default) or \code{"optim"} (which uses "BFGS" internally within TMB's optim call). This argument is ignored if \code{fit} is not \code{"tmb"}.
+#' @param method Optimization method to use. One of: \code{"nlminb"} (default), \code{"Nelder-Mead"}, \code{"BFGS"},
+#'   \code{"CG"}, \code{"L-BFGS-B"} or \code{"SANN"}. If \code{"nlminb"} is selected, R's \code{\link[stats]{nlminb}} function is used;
+#'   otherwise, R's \code{\link[stats]{optim}} function is used with the specified method.
 #' @param use_moments Logical; if \code{TRUE} and \code{start = NULL}, attempts to use method of moments estimates
 #'   (via `gkwgetstartvalues`) as initial values. Default: \code{FALSE}.
 #' @param hessian Logical; if \code{TRUE}, attempts to compute the Hessian matrix at the MLE to estimate
-#'   standard errors and the variance-covariance matrix. For `fit = "tmb"`, uses TMB's `sdreport`.
-#'   For `fit = "nr"`, uses the Hessian from the C++ optimizer. For `fit = "nlminb"` or `fit = "optim"`,
-#'   uses numerical differentiation via `numDeriv::hessian` (requires the `numDeriv` package). Default: \code{TRUE}.
-#' @param profile Logical; if \code{TRUE} and \code{fit = "tmb"}, computes likelihood profiles for parameters using TMB's profiling capabilities. Default: \code{FALSE}. (Currently only implemented for TMB).
+#'   standard errors and the variance-covariance matrix using TMB's `sdreport`. Default: \code{TRUE}.
+#' @param profile Logical; if \code{TRUE}, computes likelihood profiles for parameters using TMB's profiling capabilities. Default: \code{FALSE}.
 #' @param npoints Integer; number of points to use in profile likelihood calculations (minimum 5). Only relevant if \code{profile = TRUE}. Default: 20.
 #' @param plot Logical; if \code{TRUE}, generates diagnostic plots (histogram with fitted density, QQ-plot) using `ggplot2` and `patchwork`. Default: \code{TRUE}.
 #' @param conf.level Numeric, the confidence level for confidence intervals calculated from standard errors (requires \code{hessian = TRUE}). Default: 0.95.
 #' @param optimizer.control List of control parameters passed to the chosen optimizer.
-#'   The valid parameters depend on the `fit` (and potentially `method`) chosen. See Details for defaults and links to specific optimizer documentation (`?TMB::MakeADFun`, `?gkwreg::nrgkw`, `?stats::nlminb`, `?stats::optim`).
-#' @param submodels Logical; if \code{TRUE}, fits relevant nested submodels for comparison via likelihood ratio tests. Default: \code{FALSE}. (Implementation might depend on helper functions).
+#'   The valid parameters depend on the `method` chosen. See Details.
+#' @param submodels Logical; if \code{TRUE}, fits relevant nested submodels for comparison via likelihood ratio tests. Default: \code{FALSE}.
 #' @param silent Logical; if \code{TRUE}, suppresses messages during fitting. Default: \code{FALSE}.
 #' @param ... Additional arguments (currently unused).
 #'
@@ -2240,8 +1357,7 @@
 #' \item{coefficients}{Named vector of estimated parameters (on their natural scale).}
 #' \item{std.errors}{Named vector of estimated standard errors (if \code{hessian = TRUE}).}
 #' \item{coef_summary}{Data frame summarizing estimates, SEs, z-values, and p-values.}
-#' \item{vcov}{Variance-covariance matrix of the estimates (if \code{hessian = TRUE}). For `nlminb`/`optim`, relates to free parameters only.}
-#' \item{hessian}{(If computed) The Hessian matrix evaluated at the MLE. For `nlminb`/`optim`, relates to the negative log-likelihood of free parameters.}
+#' \item{vcov}{Variance-covariance matrix of the estimates (if \code{hessian = TRUE}).}
 #' \item{loglik}{Log-likelihood value at the maximum.}
 #' \item{AIC}{Akaike Information Criterion.}
 #' \item{BIC}{Bayesian Information Criterion.}
@@ -2249,23 +1365,21 @@
 #' \item{data}{The input data vector used for fitting.}
 #' \item{nobs}{Number of observations used.}
 #' \item{df}{Number of estimated parameters.}
-#' \item{convergence}{Logical indicating successful convergence (typically TRUE if optimizer code is 0).}
+#' \item{convergence}{Logical indicating successful convergence.}
 #' \item{message}{Convergence message from the optimizer.}
 #' \item{family}{The specified distribution family.}
-#' \item{method}{The core fitting method used (`"tmb"`, `"nr"`, `"nlminb"`, `"optim"`).}
-#' \item{optimizer_method}{The specific optimizer algorithm used (e.g., `"nlminb"`, `"L-BFGS-B"`, `"trust-region"`).}
+#' \item{method}{The specific optimization method used.}
 #' \item{conf.int}{Data frame with confidence intervals (if \code{hessian = TRUE}).}
 #' \item{conf.level}{The confidence level used.}
 #' \item{optimizer}{The raw output object from the optimizer function.}
+#' \item{obj}{The TMB object used for fitting (if available).}
 #' \item{fixed}{The list of fixed parameters used.}
-#' \item{iterations}{(If available) Number of iterations or function calls used by the optimizer.}
-#' \item{condition_number}{(If available/calculated) Condition number of the Hessian, indicating potential multicollinearity or identifiability issues.}
-#' \item{plots}{A list or `patchwork` object containing ggplot objects for diagnostics (if \code{plot = TRUE}).}
-#' \item{profile}{A list containing likelihood profile results (if \code{profile = TRUE} and \code{fit = "tmb"}).}
+#' \item{profile}{A list containing likelihood profile results (if \code{profile = TRUE}).}
 #' \item{submodels}{A list of fitted submodels (if \code{submodels = TRUE}).}
 #' \item{lrt}{A list of likelihood ratio test results comparing nested models (if \code{submodels = TRUE}).}
 #' \item{gof}{Goodness-of-fit statistics (e.g., AD, CvM, KS).}
 #' \item{diagnostics}{Diagnostic information related to GOF tests.}
+#' \item{plots}{A list or `patchwork` object containing ggplot objects for diagnostics (if \code{plot = TRUE}).}
 #' \item{call}{The matched function call.}
 #'
 #' @details
@@ -2279,23 +1393,24 @@
 #'   \item \strong{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha, \beta}), \eqn{\gamma = 1, \delta = 0, \lambda = 1} fixed - All positive.
 #'   \item \strong{Beta}: 2 parameters (\eqn{\gamma, \delta}), \eqn{\alpha = 1, \beta = 1, \lambda = 1} fixed - All positive. (\eqn{\gamma, \delta} correspond to standard Beta shape1, shape2).
 #' }
-#' Note: While the theoretical range for \eqn{\delta} is often \eqn{\delta \ge 0}, the `"nlminb"` and `"optim"` fitting methods currently enforce a strict positive lower bound (\code{> 1e-5}) by default for numerical stability, matching the other parameters.
 #'
-#' **Choosing the Fitting Method (`fit` argument):**
+#' This function uses Template Model Builder (TMB) for parameter estimation, which provides accurate and efficient automatic differentiation.
+#'
+#' **Optimizer Method (`method` argument):**
 #' \itemize{
-#'   \item \code{"tmb"}: Generally recommended. Uses C++ templates via the TMB package for automatic differentiation, which is accurate and efficient. Requires TMB installation. The internal optimizer used by TMB can be chosen with the `method` argument (`"nlminb"` or `"optim"`).
-#'   \item \code{"nr"}: Uses a custom C++ implementation (`gkwreg::nrgkw`) featuring Newton-Raphson and Trust-Region methods with adaptive scaling and regularization. Can be very fast but might be sensitive to starting values or complex likelihood surfaces. Does not require TMB.
-#'   \item \code{"nlminb"}: Uses R's built-in `stats::nlminb` optimizer. Good for problems with box constraints. Relies on user-provided analytic gradients (via `gr*` functions) for efficiency.
-#'   \item \code{"optim"}: Uses R's built-in `stats::optim` optimizer with the "L-BFGS-B" method, suitable for box constraints. Also relies on analytic gradients.
+#'   \item \code{"nlminb"}: Uses R's built-in `stats::nlminb` optimizer. Good for problems with box constraints. Default option.
+#'   \item \code{"Nelder-Mead"}: Uses R's `stats::optim` with the Nelder-Mead simplex algorithm, which doesn't require derivatives.
+#'   \item \code{"BFGS"}: Uses R's `stats::optim` with the BFGS quasi-Newton method for unconstrained optimization.
+#'   \item \code{"CG"}: Uses R's `stats::optim` with conjugate gradients method for unconstrained optimization.
+#'   \item \code{"L-BFGS-B"}: Uses R's `stats::optim` with the limited-memory BFGS method with box constraints.
+#'   \item \code{"SANN"}: Uses R's stats::optim with simulated annealing, a global optimization method useful for problems with multiple local minima.
 #' }
 #'
 #' **Optimizer Control (`optimizer.control`):**
 #' Pass a list with parameters specific to the chosen optimizer:
 #' \itemize{
-#'   \item For \code{fit = "tmb"}: Controls are passed to `TMB::MakeADFun`'s internal call to `nlminb` or `optim`. See `?nlminb` or `?optim` for options like `eval.max`, `iter.max`, `trace`, `rel.tol` (for nlminb) or `maxit`, `trace`, `factr`, `pgtol` (for optim/BFGS).
-#'   \item For \code{fit = "nr"}: Controls are passed to `gkwreg::nrgkw`. See `?gkwreg::nrgkw` for options like `tol`, `max_iter`, `optimization_method` (within `nrgkw`), `adaptive_scaling`, `min_param_val`, etc.
-#'   \item For \code{fit = "nlminb"}: Controls passed to `stats::nlminb`. See `?nlminb` (e.g., `eval.max`, `iter.max`, `trace`, `rel.tol`, `abs.tol`).
-#'   \item For \code{fit = "optim"}: Controls passed to `stats::optim`. See `?optim` (e.g., `maxit`, `trace`, `factr`, `pgtol`).
+#'   \item For \code{method = "nlminb"}: Controls are passed to `stats::nlminb`. See `?nlminb` for options like `eval.max`, `iter.max`, `trace`, `rel.tol`, etc.
+#'   \item For other methods: Controls are passed to `stats::optim`. See `?optim` for options like `maxit`, `trace`, `factr`, `pgtol`, etc.
 #' }
 #' If `optimizer.control` is empty, reasonable defaults are used for each method.
 #'
@@ -2303,37 +1418,31 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Ensure the package and dependencies (like TMB, numDeriv, ggplot2) are loaded
-#' # library(gkwreg) # Or your package name
-#' # library(TMB) # Needed for fit = "tmb"
-#' # library(numDeriv) # Needed for hessian = TRUE with nlminb/optim
+#' # Ensure the package and dependencies (like TMB, ggplot2) are loaded
+#' # library(TMB) # Required for all fitting methods
 #' # library(ggplot2) # Needed for plot = TRUE
 #' # library(patchwork) # Needed for plot = TRUE
 #'
-#' ## Example 1: Fit Kumaraswamy using different methods
+#' ## Example 1: Fit Kumaraswamy using different optimization methods
 #' set.seed(123)
 #' n <- 200
 #' # Assuming rkw is available
 #' kw_data <- rkw(n, alpha = 2.5, beta = 1.5)
 #'
-#' # Fit using TMB (default internal method nlminb)
-#' fit_tmb <- gkwfit(data = kw_data, family = "kw", fit = "tmb", silent = TRUE)
+#' # Fit using default nlminb
+#' fit_nlminb <- gkwfit(data = kw_data, family = "kw", method = "nlminb", silent = TRUE)
 #'
-#' # Fit using custom Newton-Raphson
-#' fit_nr <- gkwfit(data = kw_data, family = "kw", fit = "nr", silent = TRUE)
+#' # Fit using Nelder-Mead
+#' fit_nm <- gkwfit(data = kw_data, family = "kw", method = "Nelder-Mead", silent = TRUE)
 #'
-#' # Fit using R's nlminb
-#' fit_nlminb <- gkwfit(data = kw_data, family = "kw", fit = "nlminb", silent = TRUE)
-#'
-#' # Fit using R's optim (L-BFGS-B)
-#' fit_optim <- gkwfit(data = kw_data, family = "kw", fit = "optim", silent = TRUE)
+#' # Fit using BFGS
+#' fit_bfgs <- gkwfit(data = kw_data, family = "kw", method = "BFGS", silent = TRUE)
 #'
 #' # Compare coefficients
 #' coef_compare <- data.frame(
-#'   TMB = coef(fit_tmb),
-#'   NR = coef(fit_nr),
 #'   NLMINB = coef(fit_nlminb),
-#'   OPTIM = coef(fit_optim)
+#'   NM = coef(fit_nm),
+#'   BFGS = coef(fit_bfgs)
 #' )
 #' print(round(coef_compare, 3))
 #'
@@ -2346,26 +1455,28 @@
 #' fit_gkw_fix <- gkwfit(
 #'   data = gkw_data, family = "gkw",
 #'   fixed = list(delta = 0), # Fix delta
-#'   fit = "nlminb",
+#'   method = "nlminb",
 #'   optimizer.control = list(iter.max = 500, trace = 1)
 #' )
 #'
 #' summary(fit_gkw_fix)
 #'
-#' ## Example 3: Fit Beta using optim and check SEs
+#' ## Example 3: Fit Beta using L-BFGS-B and check profile likelihoods
 #' set.seed(404)
 #' beta_data <- stats::rbeta(n, shape1 = 2.0, shape2 = 3.0)
 #'
-#' fit_beta_optim <- gkwfit(
+#' fit_beta <- gkwfit(
 #'   data = beta_data, family = "beta",
-#'   fit = "optim", hessian = TRUE
+#'   method = "L-BFGS-B",
+#'   hessian = TRUE,
+#'   profile = TRUE
 #' )
 #'
 #' # Display summary with SEs
-#' summary(fit_beta_optim)
+#' summary(fit_beta)
 #'
-#' # Check variance-covariance matrix
-#' vcov(fit_beta_optim)
+#' # Check profile likelihood
+#' plot(fit_beta$profile)
 #'
 #' # End dontrun
 #' }
@@ -2376,13 +1487,9 @@
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
 #' *Journal of Statistical Computation and Simulation*, 81(7), 883-898. \doi{10.1080/00949650903530745}
 #'
-#' Nash, J. C. (1990). *Compact numerical methods for computers: linear algebra and function minimisation*. Adam Hilger. (Basis for optim)
-#'
-#' Gay, D. M. (1990). Usage summary for selected optimization routines. *Computing Science Technical Report*, 153. AT&T Bell Laboratories. (nlminb based on PORT library)
-#'
 #' Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016). TMB: Automatic Differentiation and Laplace Approximation. *Journal of Statistical Software*, 70(5), 1–21. \doi{10.18637/jss.v070.i05}
 #'
-#' @seealso Provided internal functions: \code{\link{.fit_tmb}}, \code{\link{.fit_nr}}, \code{\link{.fit_nlminb}}, \code{\link{.fit_optim}}. User-facing S3 methods: \code{\link{summary.gkwfit}}, \code{\link{print.gkwfit}}, \code{\link{plot.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{confint.gkwfit}}. Density/distribution functions: \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}}.
+#' @seealso User-facing S3 methods: \code{\link{summary.gkwfit}}, \code{\link{print.gkwfit}}, \code{\link{plot.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{confint.gkwfit}}. Density/distribution functions: \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}}.
 #' @keywords distribution models mle optimization hplot
 #' @author Lopes, J. E.
 #' @export
@@ -2390,7 +1497,6 @@ gkwfit <- function(data,
                    family = "gkw",
                    start = NULL,
                    fixed = NULL,
-                   fit = "tmb",
                    method = "nlminb",
                    use_moments = FALSE,
                    hessian = TRUE,
@@ -2400,41 +1506,32 @@ gkwfit <- function(data,
                    conf.level = 0.95,
                    optimizer.control = list(),
                    submodels = FALSE,
-                   silent = TRUE,
+                   silent = FALSE,
                    ...) {
   # --- Argument Matching and Validation ---
   call <- match.call()
   family <- match.arg(family, choices = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"))
-  fit <- match.arg(fit, choices = c("nr", "tmb", "nlminb", "optim"))
-  method <- match.arg(method, choices = c("nlminb", "optim"))
 
+  # Validate optimization method
+  method <- match.arg(method, choices = c("nlminb", "Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN"))
 
-  # Only match method if fit is tmb, otherwise use its default interpretation
-  if (fit == "tmb") {
-    method <- match.arg(method, choices = c("nlminb", "optim"))
-  } else {
-    # Set method to NA or some indicator that it's not used by the top-level fit choice
-    method <- NA
+  # Determine if we're using nlminb or optim (with the specified method)
+  use_nlminb <- method == "nlminb"
+
+  # Package checks
+  if (!requireNamespace("TMB", quietly = TRUE)) {
+    stop("Package 'TMB' is required but not installed. Please install it with install.packages('TMB')")
   }
 
-
-  if (profile && !(fit %in% c("tmb"))) {
-    warning("Likelihood profiles currently only implemented for fit = 'tmb'. Setting profile = FALSE.")
+  if (profile && !requireNamespace("TMB", quietly = TRUE)) {
+    warning("Package 'TMB' needed for profile likelihoods. Setting profile=FALSE.")
     profile <- FALSE
   }
-  if (profile && !requireNamespace("TMB", quietly = TRUE) && fit == "tmb") {
-    warning("Package 'TMB' needed for profile likelihoods with fit='tmb'. Setting profile=FALSE.")
-    profile <- FALSE
-  }
-  if (hessian && !(fit %in% c("tmb", "nr")) && !requireNamespace("numDeriv", quietly = TRUE)) {
-    warning("Package 'numDeriv' needed for hessian=TRUE with fit='nlminb' or fit='optim'. Setting hessian=FALSE.")
-    hessian <- FALSE
-  }
+
   if (plot && (!requireNamespace("ggplot2", quietly = TRUE) || !requireNamespace("patchwork", quietly = TRUE))) {
     warning("Packages 'ggplot2' and 'patchwork' needed for plot=TRUE. Setting plot=FALSE.")
     plot <- FALSE
   }
-
 
   # Parameter validation
   if (!is.numeric(conf.level) || conf.level <= 0 || conf.level >= 1) {
@@ -2460,62 +1557,341 @@ gkwfit <- function(data,
   fixed <- start_info$fixed # This now includes user + family default fixed
 
   # --- Core Fitting Call ---
-  if (!silent) message("Fitting model using method: ", fit)
+  if (!silent) message("Fitting model using TMB with method: ", method)
 
-  fit_result <- switch(fit,
-    tmb = .fit_tmb(
-      data = data, family = family, start = start, fixed = fixed,
-      method = method, hessian = hessian, conf.level = conf.level,
-      optimizer.control = optimizer.control, silent = silent
-    ),
-    nr = .fit_nr(
-      data = data, family = family, start = start, fixed = fixed,
-      hessian = hessian, conf.level = conf.level,
-      optimizer.control = optimizer.control, silent = silent
-    ),
-    nlminb = .fit_nlminb(
-      data = data, family = family, start = start, fixed = fixed,
-      hessian = hessian, conf.level = conf.level,
-      optimizer.control = optimizer.control, silent = silent
-    ),
-    optim = .fit_optim(
-      data = data, family = family, start = start, fixed = fixed,
-      hessian = hessian, conf.level = conf.level,
-      optimizer.control = optimizer.control, silent = silent
-    ),
-    # Default case (should not happen due to match.arg)
-    stop("Invalid 'fit' method specified.")
+  # Check and compile TMB code
+  tryCatch(
+    {
+      .check_and_compile_TMB_code("gkwmletmb", verbose = !silent)
+    },
+    error = function(e) {
+      stop("Failed to compile TMB code: ", e$message)
+    }
+  )
+
+  if (!silent) {
+    message("Checking TMB model compilation...")
+  }
+
+  # Get the numeric code for family
+  family_code <- .family_to_code(family)
+
+  # Create full parameter list for TMB
+  full_start_tmb <- list(
+    log_alpha = log(1), # Default values, will be overwritten if needed
+    log_beta = log(1),
+    log_gamma = log(1),
+    log_delta = log(0.0001), # Small value for delta to avoid log(0)
+    log_lambda = log(1)
+  )
+
+  # Update with user-provided start values
+  for (param in names(start)) {
+    full_start_tmb[[paste0("log_", param)]] <- log(start[[param]])
+  }
+
+  # Apply fixed parameters for TMB
+  map <- list()
+
+  # Add family-specific fixed parameters to the map
+  all_fixed_params <- c(names(fixed), setdiff(
+    c("alpha", "beta", "gamma", "delta", "lambda"),
+    c(param_names, names(fixed))
+  ))
+
+  for (param in all_fixed_params) {
+    param_name <- paste0("log_", param)
+    if (param %in% names(fixed)) {
+      # User or family provided fixed value
+      full_start_tmb[[param_name]] <- log(fixed[[param]])
+    } else if (param == "alpha" || param == "beta") {
+      # Default α, β = 1 when not specified
+      full_start_tmb[[param_name]] <- log(1)
+    } else if (param == "gamma") {
+      # Default γ = 1 when not specified
+      full_start_tmb[[param_name]] <- log(1)
+    } else if (param == "delta") {
+      # Default δ = 0 when not specified (use small value to avoid log(0))
+      full_start_tmb[[param_name]] <- log(0.0001)
+    } else if (param == "lambda") {
+      # Default λ = 1 when not specified
+      full_start_tmb[[param_name]] <- log(1)
+    }
+
+    # Add to map to keep parameter fixed
+    map[[param_name]] <- factor(NA)
+  }
+
+  # Prepare data for TMB
+  tmb_data <- list(
+    x = data,
+    family = family_code
+  )
+
+  # Create TMB object
+  obj <- tryCatch(
+    {
+      TMB::MakeADFun(
+        data = tmb_data,
+        parameters = full_start_tmb,
+        map = if (length(map) > 0) map else NULL,
+        DLL = "gkwmletmb",
+        silent = silent
+      )
+    },
+    error = function(e) {
+      stop("Error creating TMB model: ", e$message)
+    }
+  )
+
+  # Set up optimizer controls based on the chosen method
+  if (use_nlminb) {
+    control_defaults <- list(eval.max = 500, iter.max = 300, trace = ifelse(silent, 0, 1))
+  } else { # optim methods
+    control_defaults <- list(maxit = 500, trace = ifelse(silent, 0, 1))
+  }
+
+  # Merge user controls with defaults, with user controls taking precedence
+  control <- utils::modifyList(control_defaults, optimizer.control)
+
+  # Run optimization
+  if (use_nlminb) {
+    opt <- tryCatch(
+      {
+        stats::nlminb(
+          start = obj$par,
+          objective = obj$fn,
+          gradient = obj$gr,
+          control = control
+        )
+      },
+      error = function(e) {
+        stop("Optimization with nlminb failed: ", e$message)
+      }
+    )
+
+    opt$convergence <- opt$convergence == 0
+    opt$message <- opt$message
+    opt$objective <- opt$objective
+  } else {
+    opt <- tryCatch(
+      {
+        stats::optim(
+          par = obj$par,
+          fn = obj$fn,
+          gr = obj$gr,
+          method = method,
+          control = control
+        )
+      },
+      error = function(e) {
+        stop(paste("Optimization with optim method", method, "failed:", e$message))
+      }
+    )
+
+    opt$objective <- opt$value
+    opt$convergence <- opt$convergence == 0
+    opt$message <- if (opt$convergence) "Successful convergence" else "Optimization failed to converge"
+  }
+
+  if (!opt$convergence) {
+    warning("Model did not converge: ", opt$message)
+  }
+
+  # Get parameter estimates for all parameters
+  all_params <- exp(opt$par)
+  names(all_params) <- sub("log_", "", names(opt$par))
+
+  # Filter parameters to include only those relevant for the family
+  filtered_coefficients <- all_params[paste0("log_", param_names) %in% names(opt$par)]
+  names(filtered_coefficients) <- param_names[param_names %in% sub("log_", "", names(opt$par))]
+
+  # If some parameters are missing (fixed), add them from the fixed list
+  for (param in param_names) {
+    if (!param %in% names(filtered_coefficients)) {
+      if (param %in% names(fixed)) {
+        filtered_coefficients[param] <- fixed[[param]]
+      } else {
+        # Use default values for missing parameters
+        if (param == "alpha" || param == "beta" || param == "gamma" || param == "lambda") {
+          filtered_coefficients[param] <- 1.0
+        } else if (param == "delta") {
+          filtered_coefficients[param] <- 0.0
+        }
+      }
+    }
+  }
+
+  # Ensure the order matches param_names
+  filtered_coefficients <- filtered_coefficients[param_names]
+
+  # Calculate standard errors and Hessian if requested
+  filtered_std_errors <- rep(NA, length(param_names))
+  names(filtered_std_errors) <- param_names
+
+  cov_matrix <- NULL
+  coef_summary <- NULL
+  conf_int <- NULL
+
+  if (hessian) {
+    sd_report <- tryCatch(
+      {
+        TMB::sdreport(obj)
+      },
+      error = function(e) {
+        warning("Error calculating standard errors: ", e$message)
+        NULL
+      }
+    )
+
+    if (!is.null(sd_report) && !is.character(sd_report)) {
+      # Extract parameter estimates, SEs, and covariance matrix
+      cov_matrix <- sd_report$cov.fixed
+      std_errors_log <- sqrt(diag(cov_matrix))
+
+      # Get the SEs only for non-fixed parameters
+      for (i in seq_along(param_names)) {
+        param <- param_names[i]
+        log_param <- paste0("log_", param)
+
+        if (log_param %in% names(std_errors_log)) {
+          # Use the Delta method to transform SEs to original scale
+          filtered_std_errors[i] <- std_errors_log[log_param] * filtered_coefficients[i]
+        }
+      }
+
+      # Create coefficient summary
+      coef_summary <- data.frame(
+        Estimate = filtered_coefficients,
+        `Std. Error` = filtered_std_errors,
+        `z value` = filtered_coefficients / filtered_std_errors,
+        `Pr(>|z|)` = 2 * stats::pnorm(abs(filtered_coefficients / filtered_std_errors), lower.tail = FALSE),
+        row.names = param_names,
+        check.names = FALSE
+      )
+
+      # Calculate confidence intervals
+      z_value <- stats::qnorm(1 - (1 - conf.level) / 2)
+      conf_int_params <- character()
+      conf_int_estimates <- numeric()
+      conf_int_se <- numeric()
+      conf_int_lower <- numeric()
+      conf_int_upper <- numeric()
+
+      for (i in seq_along(param_names)) {
+        if (!is.na(filtered_std_errors[i])) {
+          param <- param_names[i]
+          conf_int_params <- c(conf_int_params, param)
+          conf_int_estimates <- c(conf_int_estimates, filtered_coefficients[i])
+          conf_int_se <- c(conf_int_se, filtered_std_errors[i])
+
+          # For delta, lower bound is 0, for others it's machine epsilon
+          if (param == "delta") {
+            lower <- max(filtered_coefficients[i] - z_value * filtered_std_errors[i], 0)
+          } else {
+            lower <- max(filtered_coefficients[i] - z_value * filtered_std_errors[i], .Machine$double.eps)
+          }
+
+          upper <- filtered_coefficients[i] + z_value * filtered_std_errors[i]
+          conf_int_lower <- c(conf_int_lower, lower)
+          conf_int_upper <- c(conf_int_upper, upper)
+        }
+      }
+
+      if (length(conf_int_params) > 0) {
+        conf_int <- data.frame(
+          parameter = conf_int_params,
+          estimate = conf_int_estimates,
+          std.error = conf_int_se,
+          lower = conf_int_lower,
+          upper = conf_int_upper,
+          row.names = NULL, check.names = FALSE
+        )
+      }
+    } else {
+      warning("Hessian calculation failed, standard errors not available")
+
+      # Create coefficient summary without SEs
+      coef_summary <- data.frame(
+        Estimate = filtered_coefficients,
+        `Std. Error` = filtered_std_errors,
+        `z value` = rep(NA, length(param_names)),
+        `Pr(>|z|)` = rep(NA, length(param_names)),
+        row.names = param_names,
+        check.names = FALSE
+      )
+    }
+  } else {
+    # If hessian = FALSE, only report parameter estimates
+    coef_summary <- data.frame(
+      Estimate = filtered_coefficients,
+      `Std. Error` = filtered_std_errors,
+      `z value` = rep(NA, length(param_names)),
+      `Pr(>|z|)` = rep(NA, length(param_names)),
+      row.names = param_names,
+      check.names = FALSE
+    )
+  }
+
+  # Calculate log likelihood, AIC, BIC
+  loglik <- -opt$objective
+  n <- length(data)
+  k <- sum(!is.na(opt$par)) # Count non-fixed parameters
+  aic <- -2 * loglik + 2 * k
+  bic <- -2 * loglik + log(n) * k
+  aicc <- aic + (2 * k * (k + 1)) / (n - k - 1)
+
+  # Compile core results
+  fit_result <- list(
+    coefficients = filtered_coefficients,
+    std.errors = filtered_std_errors,
+    coef_summary = coef_summary,
+    vcov = cov_matrix,
+    loglik = loglik,
+    AIC = aic,
+    BIC = bic,
+    AICc = aicc,
+    data = data,
+    nobs = n,
+    df = k,
+    convergence = opt$convergence,
+    message = opt$message,
+    method = method,
+    conf.int = conf_int,
+    conf.level = conf.level,
+    optimizer = opt,
+    obj = obj,
+    fixed = fixed
   )
 
   # Merge fit results into the main result object
   # Preserve call and family from the initial list
   result <- c(result, fit_result[!names(fit_result) %in% names(result)])
 
-
   # --- Post-fitting Analysis ---
 
-  # Calculate profile likelihoods if requested (currently TMB only)
-  if (profile && fit == "tmb") {
-    # Check if sdreport ran successfully in .fit_tmb needed for profiles usually
+  # Calculate profile likelihoods if requested
+  if (profile) {
+    # Check if sdreport ran successfully
     if (!is.null(result$obj)) {
-      prof_list <- .calculate_profiles(result, data, family, fixed, fit, method, npoints, silent)
+      prof_list <- .calculate_profiles(result, data, family, fixed, "tmb", method, npoints, silent)
       result$profile <- prof_list
     } else {
-      warning("Cannot calculate profiles as TMB object or sdreport was not available.")
+      warning("Cannot calculate profiles as TMB object was not available.")
     }
   }
 
-  # Fit submodels if requested (implementation depends on .fit_submodels)
+  # Fit submodels if requested
   if (submodels) {
     if (!silent) message("Fitting submodels...")
-    submodel_results <- .fit_submodels(data, result, fit, method, hessian, optimizer.control, silent)
+    submodel_results <- .fit_submodels_tmb(data, result, method, hessian, optimizer.control, silent)
     if (!is.null(submodel_results)) {
       result$submodels <- submodel_results$submodels
       result$lrt <- submodel_results$lrt
     }
   }
 
-  # Calculate goodness of fit tests (implementation depends on .calculate_gof)
+  # Calculate goodness of fit tests
   if (!silent) message("Calculating goodness-of-fit statistics...")
   gof_results <- .calculate_gof(result, data, family, silent)
   result$gof <- gof_results$gof
@@ -2525,16 +1901,14 @@ gkwfit <- function(data,
   if (plot) {
     plots <- .generate_plots(result, data, family, silent)
 
-    plots <- patchwork::wrap_plots(plots) +
-      patchwork::plot_annotation(
-        title = paste("Diagnostic Plots for Fitted", toupper(family), "Model")
-      )
-
-    if (!is.null(plots)) {
+    if (!is.null(plots) && requireNamespace("patchwork", quietly = TRUE)) {
+      plots <- patchwork::wrap_plots(plots) +
+        patchwork::plot_annotation(
+          title = paste("Diagnostic Plots for Fitted", toupper(family), "Model")
+        )
       result$plots <- plots
     }
   }
-
 
   # Ensure class is set correctly
   class(result) <- "gkwfit"
@@ -2543,6 +1917,8 @@ gkwfit <- function(data,
   if (!silent) message("Fitting complete.")
   return(result)
 }
+
+
 
 
 
@@ -3036,7 +2412,7 @@ plot.gkwfit <- function(x, ...) {
     stop("Input 'x' must be of class 'gkwfit'")
   }
 
-  plots_list <- gkwgof(x, simulate_p_values = FALSE, plot = TRUE, print_summary = FALSE)
+  plots_list <- gkwgof(x, simulate_p_values = FALSE, plot = TRUE, print_summary = FALSE, ...)
 
   invisible(plots_list)
 }

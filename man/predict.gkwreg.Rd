@@ -7,8 +7,7 @@
 \method{predict}{gkwreg}(
   object,
   newdata = NULL,
-  type = c("response", "link", "parameter", "alpha", "beta", "gamma", "delta", "lambda",
-    "variance", "density", "pdf", "probability", "cdf", "quantile"),
+  type = "response",
   na.action = stats::na.pass,
   at = 0.5,
   elementwise = NULL,

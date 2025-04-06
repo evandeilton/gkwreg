@@ -11,8 +11,7 @@ gkwreg(
   link = NULL,
   start = NULL,
   fixed = NULL,
-  fit = "tmb",
-  method = c("nlminb", "optim"),
+  method = c("nlminb", "BFGS", "Nelder-Mead", "CG", "SANN", "L-BFGS-B"),
   hessian = TRUE,
   plot = TRUE,
   conf.level = 0.95,
@@ -79,12 +78,11 @@ global parameter estimates.}
 \item{fixed}{An optional named list specifying parameters or coefficients to be
 held fixed at specific values during estimation. Currently not fully implemented.}
 
-\item{fit}{Character string specifying the estimation engine. Currently, only
-\code{"tmb"} (Template Model Builder) is supported and required.}
-
-\item{method}{Character string specifying the optimization algorithm used by TMB.
-Options are \code{"nlminb"} (default, using \code{\link[stats]{nlminb}}) or
-\code{"optim"} (using \code{\link[stats]{optim}} with \code{method = "BFGS"}).}
+\item{method}{Character string specifying the optimization algorithm to use.
+Options are \code{"nlminb"} (default, using \code{\link[stats]{nlminb}}),
+\code{"BFGS"}, \code{"Nelder-Mead"}, \code{"CG"}, \code{"SANN"}, or \code{"L-BFGS-B"}.
+If \code{"nlminb"} is selected, R's \code{\link[stats]{nlminb}} function is used;
+otherwise, R's \code{\link[stats]{optim}} function is used with the specified method.}
 
 \item{hessian}{Logical. If \code{TRUE} (default), the Hessian matrix is computed
 via \code{\link[TMB]{sdreport}} to obtain standard errors and the covariance
@@ -220,6 +218,16 @@ The function automatically handles parameter fixing based on the chosen \code{fa
 Maximum Likelihood Estimation (MLE) is performed using C++ templates via the
 \code{TMB} package, which provides automatic differentiation and efficient
 optimization capabilities. The specific TMB template used depends on the chosen \code{family}.
+
+\strong{Optimizer Method (\code{method} argument):}
+\itemize{
+\item \code{"nlminb"}: Uses R's built-in \code{stats::nlminb} optimizer. Good for problems with box constraints. Default option.
+\item \code{"Nelder-Mead"}: Uses R's \code{stats::optim} with the Nelder-Mead simplex algorithm, which doesn't require derivatives.
+\item \code{"BFGS"}: Uses R's \code{stats::optim} with the BFGS quasi-Newton method for unconstrained optimization.
+\item \code{"CG"}: Uses R's \code{stats::optim} with conjugate gradients method for unconstrained optimization.
+\item \code{"SANN"}: Uses R's \code{stats::optim} with simulated annealing, a global optimization method useful for problems with multiple local minima.
+\item \code{"L-BFGS-B"}: Uses R's \code{stats::optim} with the limited-memory BFGS method with box constraints.
+}
 }
 \examples{
 \dontrun{

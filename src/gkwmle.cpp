@@ -3,7 +3,6 @@
 #include <RcppArmadillo.h>
 #include <cmath>
 #include <limits>
-
 #include <algorithm>
 #include <string>
 #include <functional>
@@ -25,8 +24,8 @@ static const double EPSILON      = std::numeric_limits<double>::epsilon();
 static const double DBL_MIN_SAFE = std::numeric_limits<double>::min() * 10.0;
 static const double LOG_DBL_MIN  = std::log(DBL_MIN_SAFE);
 static const double LOG_DBL_MAX  = std::log(std::numeric_limits<double>::max() / 10.0);
-static const double LN2          = 0.6931471805599453;
-static const double SQRT_EPSILON = 1.4901161193847656e-08; // sqrt(EPSILON)
+static const double LN2          = std::log(2.0); // More direct computation
+static const double SQRT_EPSILON = std::sqrt(EPSILON); // More accurate calculation
 
 /**
 * log1mexp(u) calculates log(1 - exp(u)) with enhanced numerical stability
@@ -44,6 +43,11 @@ if (u > 0.0) {
   return R_NaN;  // log(1 - exp(positive)) would yield log of negative number
 }
 
+// For values very close to 0, avoid potential instability
+if (u > -SQRT_EPSILON) {
+  return std::log(-u); // Approximation for u ≈ 0-
+}
+
 // For u in (-ln(2), 0], use log(-expm1(u)) for better accuracy
 if (u > -LN2) {
   return std::log(-std::expm1(u));
@@ -57,16 +61,19 @@ return std::log1p(-std::exp(u));
 * log1pexp(x) calculates log(1 + exp(x)) with protection against overflow
 *
 * This function handles various regimes of x with appropriate approximations
-* to maintain numerical stability.
+* to maintain numerical stability across the entire real line.
 *
 * @param x Input value
 * @return log(1 + exp(x)) calculated with numerical stability
 */
 inline double log1pexp(double x) {
+// Improved cutoff points based on numerical analysis
 if (x > 700.0)    return x;                      // For very large x, log(1+exp(x)) ≈ x
-if (x > 18.0)     return x + std::log1p(std::exp(-x)); // For large x
+if (x > 37.0)     return x + std::exp(-x);       // For large x, more efficient approximation
+if (x > 18.0)     return x + std::log1p(std::exp(-x)); // For moderately large x
 if (x > -37.0)    return std::log1p(std::exp(x));      // For moderate x
-return std::exp(x);                              // For very negative x, where exp(x) ≈ 0
+if (x > -700.0)   return std::exp(x);            // For negative x, where exp(x) is small but not negligible
+return 0.0;                                       // For extremely negative x, where exp(x) ≈ 0
 }
 
 /**
@@ -76,8 +83,15 @@ return std::exp(x);                              // For very negative x, where e
 * @return log(x) or appropriate limiting value for x <= 0 or very small x
 */
 inline double safe_log(double x) {
-if (x <= 0.0)        return R_NegInf;   // Log of non-positive number
-if (x < DBL_MIN_SAFE) return LOG_DBL_MIN; // Prevent underflow
+// Handle invalid or problematic inputs
+if (x <= 0.0) {
+  if (x == 0.0) return R_NegInf;  // Log of zero is -Infinity
+  return R_NaN;                   // Log of negative is NaN
+}
+
+// Handle potential underflow
+if (x < DBL_MIN_SAFE) return LOG_DBL_MIN + std::log(x / DBL_MIN_SAFE); // More accurate scaling
+
 return std::log(x);
 }
 
@@ -88,16 +102,21 @@ return std::log(x);
 * @return exp(x) or appropriate limiting value for extreme x
 */
 inline double safe_exp(double x) {
+// Handle extreme values to prevent overflow/underflow
 if (x > LOG_DBL_MAX) return R_PosInf;  // Prevent overflow
-if (x < LOG_DBL_MIN) return 0.0;       // Prevent underflow
+if (x < LOG_DBL_MIN) {
+  if (x < LOG_DBL_MIN - 10.0) return 0.0; // Far below threshold - return 0
+  return DBL_MIN_SAFE * std::exp(x - LOG_DBL_MIN); // Scaled computation near threshold
+}
+
 return std::exp(x);
 }
 
 /**
 * safe_pow(x, y) computes x^y with robust error handling
 *
-* Handles special cases like negative base with non-integer exponent,
-* and uses logarithmic transformation for numerical stability with positive base.
+* Handles special cases and applies logarithmic transformation for stability with positive base.
+* Also properly handles edge cases like 0^0, negative bases, and extreme values.
 *
 * @param x Base value
 * @param y Exponent value
@@ -105,28 +124,58 @@ return std::exp(x);
 */
 inline double safe_pow(double x, double y) {
 // Handle special cases
+if (std::isnan(x) || std::isnan(y)) return R_NaN;
+
+// Handle x = 0 cases
 if (x == 0.0) {
   if (y > 0.0)  return 0.0;
   if (y == 0.0) return 1.0;   // 0^0 convention
   return R_PosInf;            // 0^negative is undefined/infinity
 }
+
+// Common trivial cases
 if (x == 1.0 || y == 0.0) return 1.0;
 if (y == 1.0) return x;
 
 // Check for negative base with non-integer exponent (undefined in real domain)
-if (x < 0.0 && std::abs(y - std::round(y)) > SQRT_EPSILON) {
-  return R_NaN;
+if (x < 0.0) {
+  // Check if y is effectively an integer
+  double y_rounded = std::round(y);
+  if (std::abs(y - y_rounded) > SQRT_EPSILON) {
+    return R_NaN;  // Non-integer power of negative number
+  }
+
+  // Handle integer powers of negative numbers
+  int y_int = static_cast<int>(y_rounded);
+  double abs_result = std::pow(std::abs(x), std::abs(y));
+
+  // Apply sign: negative^odd = negative, negative^even = positive
+  bool negative_result = (y_int % 2 != 0);
+
+  // Handle potential over/underflow
+  if (y < 0) {
+    if (abs_result > 1.0/DBL_MIN_SAFE && negative_result) return -R_PosInf;
+    if (abs_result > 1.0/DBL_MIN_SAFE) return R_PosInf;
+    return negative_result ? -1.0/abs_result : 1.0/abs_result;
+  }
+
+  return negative_result ? -abs_result : abs_result;
 }
 
 // For positive base, compute via logarithm for better numerical stability
-if (x > 0.0) {
+if (std::abs(y) > 1e10) {
+  // Handle extreme exponents separately
   double lx = std::log(x);
-  double log_result = y * lx;
-  return safe_exp(log_result);
+  if (lx < 0.0 && y > 0.0 && y * std::abs(lx) > LOG_DBL_MAX) return 0.0; // Very small result
+  if (lx > 0.0 && y > 0.0 && y * lx > LOG_DBL_MAX) return R_PosInf;      // Very large result
+  if (lx < 0.0 && y < 0.0 && y * lx < -LOG_DBL_MAX) return R_PosInf;     // Very large result
+  if (lx > 0.0 && y < 0.0 && y * std::abs(lx) > LOG_DBL_MAX) return 0.0; // Very small result
 }
 
-// For negative base with integer exponent, use standard pow
-return std::pow(x, y);
+// Normal case: compute via logarithm
+double lx = std::log(x);
+double log_result = y * lx;
+return safe_exp(log_result);
 }
 
 /**
@@ -137,9 +186,33 @@ return std::pow(x, y);
 */
 inline arma::vec vec_log1mexp(const arma::vec& u) {
 arma::vec result(u.n_elem);
+
+// Process each element individually for maximum reliability
 for (size_t i = 0; i < u.n_elem; ++i) {
-  result[i] = log1mexp(u[i]);
+  double ui = u(i);
+
+  // Input validation - ui must be non-positive
+  if (ui > 0.0) {
+    result(i) = arma::datum::nan;
+    continue;
+  }
+
+  // For values very close to 0, avoid potential instability
+  if (ui > -SQRT_EPSILON) {
+    result(i) = std::log(-ui);
+    continue;
+  }
+
+  // For ui in (-ln(2), 0], use log(-expm1(ui)) for better accuracy
+  if (ui > -LN2) {
+    result(i) = std::log(-std::expm1(ui));
+    continue;
+  }
+
+  // For ui <= -ln(2), use log1p(-exp(ui)) for better accuracy
+  result(i) = std::log1p(-std::exp(ui));
 }
+
 return result;
 }
 
@@ -151,9 +224,27 @@ return result;
 */
 inline arma::vec vec_log1pexp(const arma::vec& x) {
 arma::vec result(x.n_elem);
+
+// Process each element individually with optimized computation
 for (size_t i = 0; i < x.n_elem; ++i) {
-  result[i] = log1pexp(x[i]);
+  double xi = x(i);
+
+  // Apply appropriate approximation based on value range
+  if (xi > 700.0) {
+    result(i) = xi;
+  } else if (xi > 37.0) {
+    result(i) = xi + std::exp(-xi);
+  } else if (xi > 18.0) {
+    result(i) = xi + std::log1p(std::exp(-xi));
+  } else if (xi > -37.0) {
+    result(i) = std::log1p(std::exp(xi));
+  } else if (xi > -700.0) {
+    result(i) = std::exp(xi);
+  } else {
+    result(i) = 0.0;  // For extremely negative values
+  }
 }
+
 return result;
 }
 
@@ -165,9 +256,24 @@ return result;
 */
 inline arma::vec vec_safe_log(const arma::vec& x) {
 arma::vec result(x.n_elem);
+
+// Process each element individually
 for (size_t i = 0; i < x.n_elem; ++i) {
-  result[i] = safe_log(x[i]);
+  double xi = x(i);
+
+  // Handle invalid or problematic inputs
+  if (xi < 0.0) {
+    result(i) = arma::datum::nan;
+  } else if (xi == 0.0) {
+    result(i) = -arma::datum::inf;
+  } else if (xi < DBL_MIN_SAFE) {
+    // Handle potential underflow with better scaling
+    result(i) = LOG_DBL_MIN + std::log(xi / DBL_MIN_SAFE);
+  } else {
+    result(i) = std::log(xi);
+  }
 }
+
 return result;
 }
 
@@ -179,9 +285,24 @@ return result;
 */
 inline arma::vec vec_safe_exp(const arma::vec& x) {
 arma::vec result(x.n_elem);
+
+// Process each element individually
 for (size_t i = 0; i < x.n_elem; ++i) {
-  result[i] = safe_exp(x[i]);
+  double xi = x(i);
+
+  // Handle extreme values to prevent overflow/underflow
+  if (xi > LOG_DBL_MAX) {
+    result(i) = arma::datum::inf;
+  } else if (xi < LOG_DBL_MIN - 10.0) {
+    result(i) = 0.0;  // Far below threshold
+  } else if (xi < LOG_DBL_MIN) {
+    // Scaled computation near threshold for better accuracy
+    result(i) = DBL_MIN_SAFE * std::exp(xi - LOG_DBL_MIN);
+  } else {
+    result(i) = std::exp(xi);
+  }
 }
+
 return result;
 }
 
@@ -194,9 +315,100 @@ return result;
 */
 inline arma::vec vec_safe_pow(const arma::vec& x, double y) {
 arma::vec result(x.n_elem);
-for (size_t i = 0; i < x.n_elem; ++i) {
-  result[i] = safe_pow(x[i], y);
+
+// Special case handling for trivial exponents
+if (y == 0.0) {
+  return arma::vec(x.n_elem, arma::fill::ones);
 }
+
+if (y == 1.0) {
+  return x;
+}
+
+// Check if y is effectively an integer for negative base handling
+bool y_is_int = (std::abs(y - std::round(y)) <= SQRT_EPSILON);
+int y_int = static_cast<int>(std::round(y));
+bool y_is_odd = y_is_int && (y_int % 2 != 0);
+
+// Process each element individually
+for (size_t i = 0; i < x.n_elem; ++i) {
+  double xi = x(i);
+
+  // Handle special cases
+  if (std::isnan(xi)) {
+    result(i) = arma::datum::nan;
+    continue;
+  }
+
+  // Handle x = 0 cases
+  if (xi == 0.0) {
+    if (y > 0.0) {
+      result(i) = 0.0;
+    } else if (y == 0.0) {
+      result(i) = 1.0;  // 0^0 convention
+    } else {
+      result(i) = arma::datum::inf;  // 0^negative
+    }
+    continue;
+  }
+
+  // Handle x = 1 case
+  if (xi == 1.0) {
+    result(i) = 1.0;
+    continue;
+  }
+
+  // Handle negative base cases
+  if (xi < 0.0) {
+    if (!y_is_int) {
+      // Non-integer power of negative not defined in reals
+      result(i) = arma::datum::nan;
+    } else {
+      // Process integer powers of negative numbers
+      double abs_xi = std::abs(xi);
+      double abs_result = std::pow(abs_xi, std::abs(y));
+
+      // Apply sign for odd powers
+      if (y < 0) {
+        if (y_is_odd) {
+          result(i) = -1.0 / abs_result;
+        } else {
+          result(i) = 1.0 / abs_result;
+        }
+      } else {
+        if (y_is_odd) {
+          result(i) = -abs_result;
+        } else {
+          result(i) = abs_result;
+        }
+      }
+    }
+    continue;
+  }
+
+  // For positive base, compute via logarithm for better numerical stability
+  // Handle extreme exponents separately
+  if (std::abs(y) > 1e10) {
+    double lx = std::log(xi);
+    if (lx < 0.0 && y > 0.0 && y * std::abs(lx) > LOG_DBL_MAX) {
+      result(i) = 0.0;  // Very small result
+    } else if (lx > 0.0 && y > 0.0 && y * lx > LOG_DBL_MAX) {
+      result(i) = arma::datum::inf;  // Very large result
+    } else if (lx < 0.0 && y < 0.0 && y * lx < -LOG_DBL_MAX) {
+      result(i) = arma::datum::inf;  // Very large result
+    } else if (lx > 0.0 && y < 0.0 && y * std::abs(lx) > LOG_DBL_MAX) {
+      result(i) = 0.0;  // Very small result
+    } else {
+      double log_result = y * lx;
+      result(i) = safe_exp(log_result);
+    }
+  } else {
+    // Normal case: compute via logarithm
+    double log_result = y * std::log(xi);
+    result(i) = safe_exp(log_result);
+  }
+}
+
 return result;
 }
 
@@ -213,9 +425,12 @@ if (x.n_elem != y.n_elem) {
 }
 
 arma::vec result(x.n_elem);
+
+// Process element-wise with scalar function for maximum reliability
 for (size_t i = 0; i < x.n_elem; ++i) {
-  result[i] = safe_pow(x[i], y[i]);
+  result(i) = safe_pow(x(i), y(i));
 }
+
 return result;
 }
 
@@ -241,6 +456,12 @@ inline bool check_pars(double alpha,
                      double delta,
                      double lambda,
                      bool strict = false) {
+// Check for NaN values first
+if (std::isnan(alpha) || std::isnan(beta) || std::isnan(gamma) ||
+    std::isnan(delta) || std::isnan(lambda)) {
+  return false;
+}
+
 // Basic parameter constraints
 if (alpha <= 0.0 || beta <= 0.0 || gamma <= 0.0 || delta < 0.0 || lambda <= 0.0) {
   return false;
@@ -251,7 +472,8 @@ if (strict) {
   const double MIN_PARAM = 1e-5;
   const double MAX_PARAM = 1e5;
 
-  if (alpha < MIN_PARAM || beta < MIN_PARAM || gamma < MIN_PARAM || lambda < MIN_PARAM) {
+  if (alpha < MIN_PARAM || beta < MIN_PARAM || gamma < MIN_PARAM || lambda < MIN_PARAM ||
+      (delta > 0.0 && delta < MIN_PARAM)) {
     return false;
   }
   if (alpha > MAX_PARAM || beta > MAX_PARAM || gamma > MAX_PARAM ||
@@ -300,6 +522,299 @@ for (size_t i = 0; i < n; ++i) {
 
 return valid;
 }
+
+
+// // [[Rcpp::plugins(cpp11)]]
+// // [[Rcpp::depends(RcppArmadillo)]]
+// #include <RcppArmadillo.h>
+// #include <cmath>
+// #include <limits>
+//
+// #include <algorithm>
+// #include <string>
+// #include <functional>
+// #include <vector>
+//
+// #include <stdexcept>
+//
+// using namespace Rcpp;
+// using namespace arma;
+//
+//
+// /*
+// * ===========================================================================
+// * NUMERIC STABILITY AUXILIARY FUNCTIONS
+// * ===========================================================================
+// * These functions ensure accurate numerical calculations even in extreme
+// * situations, near distribution boundaries, or with very small/large values.
+// */
+//
+// // Constants for numeric stability and precision
+// static const double EPSILON      = std::numeric_limits<double>::epsilon();
+// static const double DBL_MIN_SAFE = std::numeric_limits<double>::min() * 10.0;
+// static const double LOG_DBL_MIN  = std::log(DBL_MIN_SAFE);
+// static const double LOG_DBL_MAX  = std::log(std::numeric_limits<double>::max() / 10.0);
+// static const double LN2          = 0.6931471805599453;
+// static const double SQRT_EPSILON = 1.4901161193847656e-08; // sqrt(EPSILON)
+//
+// /**
+// * log1mexp(u) calculates log(1 - exp(u)) with enhanced numerical stability
+// *
+// * This function is crucial for accurate calculations when u is negative and
+// * close to zero, where direct computation would suffer catastrophic cancellation.
+// * Uses different approximation methods depending on the range of u.
+// *
+// * @param u A negative value (log(x) where x < 1)
+// * @return log(1 - exp(u)), or NaN if u > 0
+// */
+// inline double log1mexp(double u) {
+// // Input validation - u must be non-positive
+// if (u > 0.0) {
+//   return R_NaN;  // log(1 - exp(positive)) would yield log of negative number
+// }
+//
+// // For u in (-ln(2), 0], use log(-expm1(u)) for better accuracy
+// if (u > -LN2) {
+//   return std::log(-std::expm1(u));
+// }
+//
+// // For u <= -ln(2), use log1p(-exp(u)) for better accuracy
+// return std::log1p(-std::exp(u));
+// }
+//
+// /**
+// * log1pexp(x) calculates log(1 + exp(x)) with protection against overflow
+// *
+// * This function handles various regimes of x with appropriate approximations
+// * to maintain numerical stability.
+// *
+// * @param x Input value
+// * @return log(1 + exp(x)) calculated with numerical stability
+// */
+// inline double log1pexp(double x) {
+// if (x > 700.0)    return x;                      // For very large x, log(1+exp(x)) ≈ x
+// if (x > 18.0)     return x + std::log1p(std::exp(-x)); // For large x
+// if (x > -37.0)    return std::log1p(std::exp(x));      // For moderate x
+// return std::exp(x);                              // For very negative x, where exp(x) ≈ 0
+// }
+//
+// /**
+// * safe_log(x) computes log(x) with protection against invalid inputs
+// *
+// * @param x Input value
+// * @return log(x) or appropriate limiting value for x <= 0 or very small x
+// */
+// inline double safe_log(double x) {
+// if (x <= 0.0)        return R_NegInf;   // Log of non-positive number
+// if (x < DBL_MIN_SAFE) return LOG_DBL_MIN; // Prevent underflow
+// return std::log(x);
+// }
+//
+// /**
+// * safe_exp(x) computes exp(x) with protection against overflow/underflow
+// *
+// * @param x Input value
+// * @return exp(x) or appropriate limiting value for extreme x
+// */
+// inline double safe_exp(double x) {
+// if (x > LOG_DBL_MAX) return R_PosInf;  // Prevent overflow
+// if (x < LOG_DBL_MIN) return 0.0;       // Prevent underflow
+// return std::exp(x);
+// }
+//
+// /**
+// * safe_pow(x, y) computes x^y with robust error handling
+// *
+// * Handles special cases like negative base with non-integer exponent,
+// * and uses logarithmic transformation for numerical stability with positive base.
+// *
+// * @param x Base value
+// * @param y Exponent value
+// * @return x^y calculated with numerical stability
+// */
+// inline double safe_pow(double x, double y) {
+// // Handle special cases
+// if (x == 0.0) {
+//   if (y > 0.0)  return 0.0;
+//   if (y == 0.0) return 1.0;   // 0^0 convention
+//   return R_PosInf;            // 0^negative is undefined/infinity
+// }
+// if (x == 1.0 || y == 0.0) return 1.0;
+// if (y == 1.0) return x;
+//
+// // Check for negative base with non-integer exponent (undefined in real domain)
+// if (x < 0.0 && std::abs(y - std::round(y)) > SQRT_EPSILON) {
+//   return R_NaN;
+// }
+//
+// // For positive base, compute via logarithm for better numerical stability
+// if (x > 0.0) {
+//   double lx = std::log(x);
+//   double log_result = y * lx;
+//   return safe_exp(log_result);
+// }
+//
+// // For negative base with integer exponent, use standard pow
+// return std::pow(x, y);
+// }
+//
+// /**
+// * Vector version of log1mexp for element-wise operations on arma::vec
+// *
+// * @param u Vector of input values
+// * @return Vector of log(1 - exp(u)) values
+// */
+// inline arma::vec vec_log1mexp(const arma::vec& u) {
+// arma::vec result(u.n_elem);
+// for (size_t i = 0; i < u.n_elem; ++i) {
+//   result[i] = log1mexp(u[i]);
+// }
+// return result;
+// }
+//
+// /**
+// * Vector version of log1pexp for element-wise operations on arma::vec
+// *
+// * @param x Vector of input values
+// * @return Vector of log(1 + exp(x)) values
+// */
+// inline arma::vec vec_log1pexp(const arma::vec& x) {
+// arma::vec result(x.n_elem);
+// for (size_t i = 0; i < x.n_elem; ++i) {
+//   result[i] = log1pexp(x[i]);
+// }
+// return result;
+// }
+//
+// /**
+// * Vector version of safe_log for element-wise operations on arma::vec
+// *
+// * @param x Vector of input values
+// * @return Vector of safe_log(x) values
+// */
+// inline arma::vec vec_safe_log(const arma::vec& x) {
+// arma::vec result(x.n_elem);
+// for (size_t i = 0; i < x.n_elem; ++i) {
+//   result[i] = safe_log(x[i]);
+// }
+// return result;
+// }
+//
+// /**
+// * Vector version of safe_exp for element-wise operations on arma::vec
+// *
+// * @param x Vector of input values
+// * @return Vector of safe_exp(x) values
+// */
+// inline arma::vec vec_safe_exp(const arma::vec& x) {
+// arma::vec result(x.n_elem);
+// for (size_t i = 0; i < x.n_elem; ++i) {
+//   result[i] = safe_exp(x[i]);
+// }
+// return result;
+// }
+//
+// /**
+//  * Vector version of safe_pow with vector exponents
+//  *
+//  * @param x Vector of base values
+//  * @param y Vector of exponent values (must match size of x)
+//  * @return Vector of x[i]^y[i] values
+//  */
+// inline arma::vec vec_safe_pow(const arma::vec& x, const arma::vec& y) {
+//   if (x.n_elem != y.n_elem) {
+//     Rcpp::stop("Vectors must have same length in vec_safe_pow");
+//   }
+//
+//   arma::vec result(x.n_elem);
+//   for (size_t i = 0; i < x.n_elem; ++i) {
+//     result[i] = safe_pow(x[i], y[i]);
+//   }
+//   return result;
+// }
+//
+// /**
+// * Checks if GKw parameters are in the valid domain
+// *
+// * Verifies that all parameters satisfy the constraints:
+// * alpha > 0, beta > 0, gamma > 0, delta >= 0, lambda > 0
+// *
+// * With strict=true, also enforces reasonable bounds to avoid numerical issues.
+// *
+// * @param alpha Shape parameter
+// * @param beta Shape parameter
+// * @param gamma Shape parameter
+// * @param delta Shape parameter
+// * @param lambda Shape parameter
+// * @param strict Whether to enforce additional bounds for numerical stability
+// * @return true if parameters are valid, false otherwise
+// */
+// inline bool check_pars(double alpha,
+//                      double beta,
+//                      double gamma,
+//                      double delta,
+//                      double lambda,
+//                      bool strict = false) {
+// // Basic parameter constraints
+// if (alpha <= 0.0 || beta <= 0.0 || gamma <= 0.0 || delta < 0.0 || lambda <= 0.0) {
+//   return false;
+// }
+//
+// // Optional stricter constraints to avoid numerical issues
+// if (strict) {
+//   const double MIN_PARAM = 1e-5;
+//   const double MAX_PARAM = 1e5;
+//
+//   if (alpha < MIN_PARAM || beta < MIN_PARAM || gamma < MIN_PARAM || lambda < MIN_PARAM) {
+//     return false;
+//   }
+//   if (alpha > MAX_PARAM || beta > MAX_PARAM || gamma > MAX_PARAM ||
+//       delta > MAX_PARAM || lambda > MAX_PARAM) {
+//     return false;
+//   }
+// }
+// return true;
+// }
+//
+// /**
+// * Vector version of parameter checker for GKw distribution
+// *
+// * Checks all combinations of parameter values for validity.
+// *
+// * @param alpha Vector of alpha values
+// * @param beta Vector of beta values
+// * @param gamma Vector of gamma values
+// * @param delta Vector of delta values
+// * @param lambda Vector of lambda values
+// * @param strict Whether to enforce additional bounds for numerical stability
+// * @return arma::uvec of boolean values indicating parameter validity
+// */
+// inline arma::uvec check_pars_vec(const arma::vec& alpha,
+//                                const arma::vec& beta,
+//                                const arma::vec& gamma,
+//                                const arma::vec& delta,
+//                                const arma::vec& lambda,
+//                                bool strict = false) {
+// // Find maximum length for broadcasting
+// size_t n = std::max({alpha.n_elem, beta.n_elem, gamma.n_elem,
+//                     delta.n_elem, lambda.n_elem});
+//
+// arma::uvec valid(n, arma::fill::ones);
+//
+// for (size_t i = 0; i < n; ++i) {
+//   // Get parameter values with proper cycling/broadcasting
+//   double a = alpha[i % alpha.n_elem];
+//   double b = beta[i % beta.n_elem];
+//   double g = gamma[i % gamma.n_elem];
+//   double d = delta[i % delta.n_elem];
+//   double l = lambda[i % lambda.n_elem];
+//
+//   valid[i] = check_pars(a, b, g, d, l, strict);
+// }
+//
+// return valid;
+// }
+
 
 /*
 * ===========================================================================
@@ -415,119 +930,119 @@ return valid;
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec dgkw(
-   const arma::vec& x,
-   const Rcpp::NumericVector& alpha = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& beta = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& gamma = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& delta = Rcpp::NumericVector::create(0.0),
-   const Rcpp::NumericVector& lambda = Rcpp::NumericVector::create(1.0),
-   bool log_prob = false
+Rcpp::NumericVector dgkw(
+ const arma::vec& x,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool log_prob = false
 ) {
- // Convert NumericVector to arma::vec
- arma::vec alpha_vec(alpha.begin(), alpha.size());
- arma::vec beta_vec(beta.begin(), beta.size());
- arma::vec gamma_vec(gamma.begin(), gamma.size());
- arma::vec delta_vec(delta.begin(), delta.size());
- arma::vec lambda_vec(lambda.begin(), lambda.size());
+// Convert NumericVector to arma::vec
+arma::vec alpha_vec(alpha.begin(), alpha.size());
+arma::vec beta_vec(beta.begin(), beta.size());
+arma::vec gamma_vec(gamma.begin(), gamma.size());
+arma::vec delta_vec(delta.begin(), delta.size());
+arma::vec lambda_vec(lambda.begin(), lambda.size());
 
- // Find the maximum length for broadcasting
- size_t n = std::max({x.n_elem, alpha_vec.n_elem, beta_vec.n_elem,
-                     gamma_vec.n_elem, delta_vec.n_elem, lambda_vec.n_elem});
+// Find the maximum length for broadcasting
+size_t n = std::max({x.n_elem, alpha_vec.n_elem, beta_vec.n_elem,
+                   gamma_vec.n_elem, delta_vec.n_elem, lambda_vec.n_elem});
 
- // Initialize result vector
- arma::vec result(n);
- if (log_prob) {
-   result.fill(R_NegInf);
- } else {
-   result.fill(0.0);
+// Initialize result vector
+arma::vec result(n);
+if (log_prob) {
+ result.fill(R_NegInf);
+} else {
+ result.fill(0.0);
+}
+
+// Process each element
+for (size_t i = 0; i < n; ++i) {
+ // Get parameter values with broadcasting/recycling
+ double a = alpha_vec[i % alpha_vec.n_elem];
+ double b = beta_vec[i % beta_vec.n_elem];
+ double g = gamma_vec[i % gamma_vec.n_elem];
+ double d = delta_vec[i % delta_vec.n_elem];
+ double l = lambda_vec[i % lambda_vec.n_elem];
+ double xi = x[i % x.n_elem];
+
+ // Validate parameters
+ if (!check_pars(a, b, g, d, l)) {
+   Rcpp::warning("dgkw: invalid parameters at index %d (alpha,beta,gamma>0, delta>=0, lambda>0)", i+1);
+   continue;
  }
 
- // Process each element
- for (size_t i = 0; i < n; ++i) {
-   // Get parameter values with broadcasting/recycling
-   double a = alpha_vec[i % alpha_vec.n_elem];
-   double b = beta_vec[i % beta_vec.n_elem];
-   double g = gamma_vec[i % gamma_vec.n_elem];
-   double d = delta_vec[i % delta_vec.n_elem];
-   double l = lambda_vec[i % lambda_vec.n_elem];
-   double xi = x[i % x.n_elem];
-
-   // Validate parameters
-   if (!check_pars(a, b, g, d, l)) {
-     Rcpp::warning("dgkw: invalid parameters at index %d (alpha,beta,gamma>0, delta>=0, lambda>0)", i+1);
-     continue;
-   }
-
-   // Check if x is within (0,1)
-   if (xi <= 0.0 || xi >= 1.0 || !R_finite(xi)) {
-     continue;
-   }
-
-   // Numerical stability: avoid calculations very close to 0 or 1
-   double x_near_zero = std::pow(SQRT_EPSILON, 1.0/a);
-   double x_near_one = 1.0 - std::pow(SQRT_EPSILON, 1.0/a);
-
-   if (xi < x_near_zero || xi > x_near_one) {
-     continue;
-   }
-
-   // Precalculate common terms used in the PDF formula
-   double log_beta_val = R::lgammafn(g) + R::lgammafn(d + 1.0) - R::lgammafn(g + d + 1.0);
-   double log_const = std::log(l) + std::log(a) + std::log(b) - log_beta_val;
-   double gamma_lambda = g * l;
-
-   // Calculate x^α
-   double log_xi = std::log(xi);
-   double log_x_alpha = a * log_xi;
-   double x_alpha = std::exp(log_x_alpha);
-
-   // Check if x^α < 1 for numerical stability
-   if (x_alpha >= 1.0 - SQRT_EPSILON) {
-     continue;
-   }
-
-   // Calculate (1 - x^α)
-   double log_one_minus_x_alpha = log1mexp(log_x_alpha);
-   if (!R_finite(log_one_minus_x_alpha)) {
-     continue;
-   }
-
-   // Calculate (1 - x^α)^β
-   double log_one_minus_x_alpha_beta = b * log_one_minus_x_alpha;
-
-   // Calculate 1 - (1 - x^α)^β
-   double log_term1 = log1mexp(log_one_minus_x_alpha_beta);
-   if (!R_finite(log_term1)) {
-     continue;
-   }
-
-   // Calculate [1-(1-x^α)^β]^λ
-   double log_term1_lambda = l * log_term1;
-
-   // Calculate 1 - [1-(1-x^α)^β]^λ
-   double log_term2 = log1mexp(log_term1_lambda);
-   if (!R_finite(log_term2)) {
-     continue;
-   }
-
-   // Assemble the full log-density expression
-   double logdens = log_const +
-     (a - 1.0) * log_xi +
-     (b - 1.0) * log_one_minus_x_alpha +
-     (gamma_lambda - 1.0) * log_term1 +
-     d * log_term2;
-
-   // Check for invalid result
-   if (!R_finite(logdens)) {
-     continue;
-   }
-
-   // Return log-density or density as requested
-   result(i) = log_prob ? logdens : safe_exp(logdens);
+ // Check if x is within (0,1)
+ if (xi <= 0.0 || xi >= 1.0 || !R_finite(xi)) {
+   continue;
  }
 
- return result;
+ // Numerical stability: avoid calculations very close to 0 or 1
+ double x_near_zero = std::pow(SQRT_EPSILON, 1.0/a);
+ double x_near_one = 1.0 - std::pow(SQRT_EPSILON, 1.0/a);
+
+ if (xi < x_near_zero || xi > x_near_one) {
+   continue;
+ }
+
+ // Precalculate common terms used in the PDF formula
+ double log_beta_val = R::lgammafn(g) + R::lgammafn(d + 1.0) - R::lgammafn(g + d + 1.0);
+ double log_const = std::log(l) + std::log(a) + std::log(b) - log_beta_val;
+ double gamma_lambda = g * l;
+
+ // Calculate x^α
+ double log_xi = std::log(xi);
+ double log_x_alpha = a * log_xi;
+ double x_alpha = std::exp(log_x_alpha);
+
+ // Check if x^α < 1 for numerical stability
+ if (x_alpha >= 1.0 - SQRT_EPSILON) {
+   continue;
+ }
+
+ // Calculate (1 - x^α)
+ double log_one_minus_x_alpha = log1mexp(log_x_alpha);
+ if (!R_finite(log_one_minus_x_alpha)) {
+   continue;
+ }
+
+ // Calculate (1 - x^α)^β
+ double log_one_minus_x_alpha_beta = b * log_one_minus_x_alpha;
+
+ // Calculate 1 - (1 - x^α)^β
+ double log_term1 = log1mexp(log_one_minus_x_alpha_beta);
+ if (!R_finite(log_term1)) {
+   continue;
+ }
+
+ // Calculate [1-(1-x^α)^β]^λ
+ double log_term1_lambda = l * log_term1;
+
+ // Calculate 1 - [1-(1-x^α)^β]^λ
+ double log_term2 = log1mexp(log_term1_lambda);
+ if (!R_finite(log_term2)) {
+   continue;
+ }
+
+ // Assemble the full log-density expression
+ double logdens = log_const +
+   (a - 1.0) * log_xi +
+   (b - 1.0) * log_one_minus_x_alpha +
+   (gamma_lambda - 1.0) * log_term1 +
+   d * log_term2;
+
+ // Check for invalid result
+ if (!R_finite(logdens)) {
+   continue;
+ }
+
+ // Return log-density or density as requested
+ result(i) = log_prob ? logdens : safe_exp(logdens);
+}
+
+return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 }
 
 //' @title Generalized Kumaraswamy Distribution CDF
@@ -640,141 +1155,141 @@ arma::vec dgkw(
 //'}
 //' @export
 // [[Rcpp::export]]
-arma::vec pgkw(
-   const arma::vec& q,
-   const Rcpp::NumericVector& alpha = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& beta = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& gamma = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& delta = Rcpp::NumericVector::create(0.0),
-   const Rcpp::NumericVector& lambda = Rcpp::NumericVector::create(1.0),
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector pgkw(
+ const arma::vec& q,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- // Convert NumericVector to arma::vec
- arma::vec alpha_vec(alpha.begin(), alpha.size());
- arma::vec beta_vec(beta.begin(), beta.size());
- arma::vec gamma_vec(gamma.begin(), gamma.size());
- arma::vec delta_vec(delta.begin(), delta.size());
- arma::vec lambda_vec(lambda.begin(), lambda.size());
+// Convert NumericVector to arma::vec
+arma::vec alpha_vec(alpha.begin(), alpha.size());
+arma::vec beta_vec(beta.begin(), beta.size());
+arma::vec gamma_vec(gamma.begin(), gamma.size());
+arma::vec delta_vec(delta.begin(), delta.size());
+arma::vec lambda_vec(lambda.begin(), lambda.size());
 
- // Find maximum length for broadcasting
- size_t n = std::max({q.n_elem, alpha_vec.n_elem, beta_vec.n_elem,
-                     gamma_vec.n_elem, delta_vec.n_elem, lambda_vec.n_elem});
+// Find maximum length for broadcasting
+size_t n = std::max({q.n_elem, alpha_vec.n_elem, beta_vec.n_elem,
+                   gamma_vec.n_elem, delta_vec.n_elem, lambda_vec.n_elem});
 
- // Initialize result vector
- arma::vec result(n);
+// Initialize result vector
+arma::vec result(n);
 
- // Process each element
- for (size_t i = 0; i < n; ++i) {
-   // Get parameter values with broadcasting/recycling
-   double a = alpha_vec[i % alpha_vec.n_elem];
-   double b = beta_vec[i % beta_vec.n_elem];
-   double g = gamma_vec[i % gamma_vec.n_elem];
-   double d = delta_vec[i % delta_vec.n_elem];
-   double l = lambda_vec[i % lambda_vec.n_elem];
-   double qi = q[i % q.n_elem];
+// Process each element
+for (size_t i = 0; i < n; ++i) {
+ // Get parameter values with broadcasting/recycling
+ double a = alpha_vec[i % alpha_vec.n_elem];
+ double b = beta_vec[i % beta_vec.n_elem];
+ double g = gamma_vec[i % gamma_vec.n_elem];
+ double d = delta_vec[i % delta_vec.n_elem];
+ double l = lambda_vec[i % lambda_vec.n_elem];
+ double qi = q[i % q.n_elem];
 
-   // Check parameter validity
-   if (!check_pars(a, b, g, d, l)) {
-     result(i) = NA_REAL;
-     Rcpp::warning("pgkw: invalid parameters at index %d (alpha,beta,gamma>0, delta>=0, lambda>0)", i+1);
-     continue;
-   }
-
-   // Check domain boundaries
-   if (!R_finite(qi) || qi <= 0.0) {
-     result(i) = lower_tail ? (log_p ? R_NegInf : 0.0) : (log_p ? 0.0 : 1.0);
-     continue;
-   }
-
-   if (qi >= 1.0) {
-     result(i) = lower_tail ? (log_p ? 0.0 : 1.0) : (log_p ? R_NegInf : 0.0);
-     continue;
-   }
-
-   // Compute CDF using stable numerical methods
-   double log_qi = std::log(qi);
-   double log_qi_alpha = a * log_qi;
-   double qi_alpha = safe_exp(log_qi_alpha);
-
-   // Calculate (1 - q^alpha) with numerical stability
-   double one_minus_qi_alpha;
-   if (qi_alpha < 0.5) {
-     one_minus_qi_alpha = 1.0 - qi_alpha;
-   } else {
-     // If close to 1, use expm1 for better precision
-     one_minus_qi_alpha = -std::expm1(log_qi_alpha);
-   }
-
-   // Boundary checks
-   if (one_minus_qi_alpha <= 0.0) {
-     result(i) = lower_tail ? (log_p ? 0.0 : 1.0) : (log_p ? R_NegInf : 0.0);
-     continue;
-   }
-
-   if (one_minus_qi_alpha >= 1.0) {
-     result(i) = lower_tail ? (log_p ? R_NegInf : 0.0) : (log_p ? 0.0 : 1.0);
-     continue;
-   }
-
-   // Calculate (1 - q^alpha)^beta
-   double log_oma = std::log(one_minus_qi_alpha);
-   double log_oma_beta = b * log_oma;
-   double oma_beta = safe_exp(log_oma_beta);
-
-   // Calculate 1 - (1 - q^alpha)^beta
-   double term = 1.0 - oma_beta;
-
-   // Boundary checks
-   if (term <= 0.0) {
-     result(i) = lower_tail ? (log_p ? R_NegInf : 0.0) : (log_p ? 0.0 : 1.0);
-     continue;
-   }
-
-   if (term >= 1.0) {
-     result(i) = lower_tail ? (log_p ? 0.0 : 1.0) : (log_p ? R_NegInf : 0.0);
-     continue;
-   }
-
-   // Calculate [1 - (1 - q^alpha)^beta]^lambda
-   double log_term = std::log(term);
-   double log_y = l * log_term;
-   double y = safe_exp(log_y);
-
-   // Boundary checks
-   if (y <= 0.0) {
-     result(i) = lower_tail ? (log_p ? R_NegInf : 0.0) : (log_p ? 0.0 : 1.0);
-     continue;
-   }
-
-   if (y >= 1.0) {
-     result(i) = lower_tail ? (log_p ? 0.0 : 1.0) : (log_p ? R_NegInf : 0.0);
-     continue;
-   }
-
-   // Use pbeta for the final calculation
-   double prob = R::pbeta(y, g, d + 1.0, /*lower_tail=*/true, /*log_p=*/false);
-
-   // Adjust for upper tail if requested
-   if (!lower_tail) {
-     prob = 1.0 - prob;
-   }
-
-   // Convert to log scale if requested
-   if (log_p) {
-     if (prob <= 0.0) {
-       prob = R_NegInf;
-     } else if (prob >= 1.0) {
-       prob = 0.0;
-     } else {
-       prob = std::log(prob);
-     }
-   }
-
-   result(i) = prob;
+ // Check parameter validity
+ if (!check_pars(a, b, g, d, l)) {
+   result(i) = NA_REAL;
+   Rcpp::warning("pgkw: invalid parameters at index %d (alpha,beta,gamma>0, delta>=0, lambda>0)", i+1);
+   continue;
  }
 
- return result;
+ // Check domain boundaries
+ if (!R_finite(qi) || qi <= 0.0) {
+   result(i) = lower_tail ? (log_p ? R_NegInf : 0.0) : (log_p ? 0.0 : 1.0);
+   continue;
+ }
+
+ if (qi >= 1.0) {
+   result(i) = lower_tail ? (log_p ? 0.0 : 1.0) : (log_p ? R_NegInf : 0.0);
+   continue;
+ }
+
+ // Compute CDF using stable numerical methods
+ double log_qi = std::log(qi);
+ double log_qi_alpha = a * log_qi;
+ double qi_alpha = safe_exp(log_qi_alpha);
+
+ // Calculate (1 - q^alpha) with numerical stability
+ double one_minus_qi_alpha;
+ if (qi_alpha < 0.5) {
+   one_minus_qi_alpha = 1.0 - qi_alpha;
+ } else {
+   // If close to 1, use expm1 for better precision
+   one_minus_qi_alpha = -std::expm1(log_qi_alpha);
+ }
+
+ // Boundary checks
+ if (one_minus_qi_alpha <= 0.0) {
+   result(i) = lower_tail ? (log_p ? 0.0 : 1.0) : (log_p ? R_NegInf : 0.0);
+   continue;
+ }
+
+ if (one_minus_qi_alpha >= 1.0) {
+   result(i) = lower_tail ? (log_p ? R_NegInf : 0.0) : (log_p ? 0.0 : 1.0);
+   continue;
+ }
+
+ // Calculate (1 - q^alpha)^beta
+ double log_oma = std::log(one_minus_qi_alpha);
+ double log_oma_beta = b * log_oma;
+ double oma_beta = safe_exp(log_oma_beta);
+
+ // Calculate 1 - (1 - q^alpha)^beta
+ double term = 1.0 - oma_beta;
+
+ // Boundary checks
+ if (term <= 0.0) {
+   result(i) = lower_tail ? (log_p ? R_NegInf : 0.0) : (log_p ? 0.0 : 1.0);
+   continue;
+ }
+
+ if (term >= 1.0) {
+   result(i) = lower_tail ? (log_p ? 0.0 : 1.0) : (log_p ? R_NegInf : 0.0);
+   continue;
+ }
+
+ // Calculate [1 - (1 - q^alpha)^beta]^lambda
+ double log_term = std::log(term);
+ double log_y = l * log_term;
+ double y = safe_exp(log_y);
+
+ // Boundary checks
+ if (y <= 0.0) {
+   result(i) = lower_tail ? (log_p ? R_NegInf : 0.0) : (log_p ? 0.0 : 1.0);
+   continue;
+ }
+
+ if (y >= 1.0) {
+   result(i) = lower_tail ? (log_p ? 0.0 : 1.0) : (log_p ? R_NegInf : 0.0);
+   continue;
+ }
+
+ // Use pbeta for the final calculation
+ double prob = R::pbeta(y, g, d + 1.0, /*lower_tail=*/true, /*log_p=*/false);
+
+ // Adjust for upper tail if requested
+ if (!lower_tail) {
+   prob = 1.0 - prob;
+ }
+
+ // Convert to log scale if requested
+ if (log_p) {
+   if (prob <= 0.0) {
+     prob = R_NegInf;
+   } else if (prob >= 1.0) {
+     prob = 0.0;
+   } else {
+     prob = std::log(prob);
+   }
+ }
+
+ result(i) = prob;
+}
+
+return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 }
 
 
@@ -893,162 +1408,162 @@ arma::vec pgkw(
 //'}
 //' @export
 // [[Rcpp::export]]
-arma::vec qgkw(
-   const arma::vec& p,
-   const Rcpp::NumericVector& alpha = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& beta = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& gamma = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& delta = Rcpp::NumericVector::create(0.0),
-   const Rcpp::NumericVector& lambda = Rcpp::NumericVector::create(1.0),
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector qgkw(
+ const arma::vec& p,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- // Convert NumericVector to arma::vec
- arma::vec alpha_vec(alpha.begin(), alpha.size());
- arma::vec beta_vec(beta.begin(), beta.size());
- arma::vec gamma_vec(gamma.begin(), gamma.size());
- arma::vec delta_vec(delta.begin(), delta.size());
- arma::vec lambda_vec(lambda.begin(), lambda.size());
+// Convert NumericVector to arma::vec
+arma::vec alpha_vec(alpha.begin(), alpha.size());
+arma::vec beta_vec(beta.begin(), beta.size());
+arma::vec gamma_vec(gamma.begin(), gamma.size());
+arma::vec delta_vec(delta.begin(), delta.size());
+arma::vec lambda_vec(lambda.begin(), lambda.size());
 
- // Find maximum length for broadcasting
- size_t n = std::max({p.n_elem, alpha_vec.n_elem, beta_vec.n_elem,
-                     gamma_vec.n_elem, delta_vec.n_elem, lambda_vec.n_elem});
+// Find maximum length for broadcasting
+size_t n = std::max({p.n_elem, alpha_vec.n_elem, beta_vec.n_elem,
+                   gamma_vec.n_elem, delta_vec.n_elem, lambda_vec.n_elem});
 
- // Initialize result vector
- arma::vec result(n);
+// Initialize result vector
+arma::vec result(n);
 
- // Process each element
- for (size_t i = 0; i < n; ++i) {
-   // Get parameter values with broadcasting/recycling
-   double a = alpha_vec[i % alpha_vec.n_elem];
-   double b = beta_vec[i % beta_vec.n_elem];
-   double g = gamma_vec[i % gamma_vec.n_elem];
-   double d = delta_vec[i % delta_vec.n_elem];
-   double l = lambda_vec[i % lambda_vec.n_elem];
-   double pp = p[i % p.n_elem];
+// Process each element
+for (size_t i = 0; i < n; ++i) {
+ // Get parameter values with broadcasting/recycling
+ double a = alpha_vec[i % alpha_vec.n_elem];
+ double b = beta_vec[i % beta_vec.n_elem];
+ double g = gamma_vec[i % gamma_vec.n_elem];
+ double d = delta_vec[i % delta_vec.n_elem];
+ double l = lambda_vec[i % lambda_vec.n_elem];
+ double pp = p[i % p.n_elem];
 
-   // Validate parameters
-   if (!check_pars(a, b, g, d, l)) {
-     result(i) = NA_REAL;
-     Rcpp::warning("qgkw: invalid parameters at index %d (alpha,beta,gamma>0, delta>=0, lambda>0)", i+1);
-     continue;
-   }
-
-   // Process log_p and lower_tail
-   if (log_p) {
-     if (pp > 0.0) {
-       // log(p) > 0 implies p > 1, which is invalid
-       result(i) = NA_REAL;
-       continue;
-     }
-     pp = std::exp(pp);  // Convert from log-scale
-   }
-
-   if (!lower_tail) {
-     pp = 1.0 - pp;  // Convert from upper tail to lower tail
-   }
-
-   // Check probability bounds
-   if (!R_finite(pp) || pp < 0.0) {
-     result(i) = 0.0;  // For p ≤ 0, quantile is 0
-     continue;
-   }
-
-   if (pp > 1.0) {
-     result(i) = 1.0;  // For p > 1, quantile is 1
-     continue;
-   }
-
-   if (pp <= 0.0) {
-     result(i) = 0.0;  // For p = 0, quantile is 0
-     continue;
-   }
-
-   if (pp >= 1.0) {
-     result(i) = 1.0;  // For p = 1, quantile is 1
-     continue;
-   }
-
-   // Step 1: Find y = qbeta(p, γ, δ+1)
-   double y = R::qbeta(pp, g, d + 1.0, /*lower_tail=*/true, /*log_p=*/false);
-
-   // Check for boundary conditions
-   if (y <= 0.0) {
-     result(i) = 0.0;
-     continue;
-   }
-
-   if (y >= 1.0) {
-     result(i) = 1.0;
-     continue;
-   }
-
-   // Step 2: Compute v = y^(1/λ)
-   double v;
-   if (l == 1.0) {
-     v = y;  // Optimization for λ=1
-   } else {
-     v = safe_pow(y, 1.0/l);
-   }
-
-   // Step 3: Compute tmp = 1 - v
-   double tmp = 1.0 - v;
-
-   // Check for boundary conditions
-   if (tmp <= 0.0) {
-     result(i) = 1.0;
-     continue;
-   }
-
-   if (tmp >= 1.0) {
-     result(i) = 0.0;
-     continue;
-   }
-
-   // Step 4: Compute tmp2 = tmp^(1/β)
-   double tmp2;
-   if (b == 1.0) {
-     tmp2 = tmp;  // Optimization for β=1
-   } else {
-     tmp2 = safe_pow(tmp, 1.0/b);
-   }
-
-   // Check for boundary conditions
-   if (tmp2 <= 0.0) {
-     result(i) = 1.0;
-     continue;
-   }
-
-   if (tmp2 >= 1.0) {
-     result(i) = 0.0;
-     continue;
-   }
-
-   // Step 5: Compute q = (1 - tmp2)^(1/α)
-   double one_minus_tmp2 = 1.0 - tmp2;
-   double qq;
-
-   if (one_minus_tmp2 <= 0.0) {
-     qq = 0.0;
-   } else if (one_minus_tmp2 >= 1.0) {
-     qq = 1.0;
-   } else if (a == 1.0) {
-     qq = one_minus_tmp2;  // Optimization for α=1
-   } else {
-     qq = safe_pow(one_minus_tmp2, 1.0/a);
-   }
-
-   // Final boundary check to ensure result is in (0,1)
-   if (qq < 0.0) {
-     qq = 0.0;
-   } else if (qq > 1.0) {
-     qq = 1.0;
-   }
-
-   result(i) = qq;
+ // Validate parameters
+ if (!check_pars(a, b, g, d, l)) {
+   result(i) = NA_REAL;
+   Rcpp::warning("qgkw: invalid parameters at index %d (alpha,beta,gamma>0, delta>=0, lambda>0)", i+1);
+   continue;
  }
 
- return result;
+ // Process log_p and lower_tail
+ if (log_p) {
+   if (pp > 0.0) {
+     // log(p) > 0 implies p > 1, which is invalid
+     result(i) = NA_REAL;
+     continue;
+   }
+   pp = std::exp(pp);  // Convert from log-scale
+ }
+
+ if (!lower_tail) {
+   pp = 1.0 - pp;  // Convert from upper tail to lower tail
+ }
+
+ // Check probability bounds
+ if (!R_finite(pp) || pp < 0.0) {
+   result(i) = 0.0;  // For p ≤ 0, quantile is 0
+   continue;
+ }
+
+ if (pp > 1.0) {
+   result(i) = 1.0;  // For p > 1, quantile is 1
+   continue;
+ }
+
+ if (pp <= 0.0) {
+   result(i) = 0.0;  // For p = 0, quantile is 0
+   continue;
+ }
+
+ if (pp >= 1.0) {
+   result(i) = 1.0;  // For p = 1, quantile is 1
+   continue;
+ }
+
+ // Step 1: Find y = qbeta(p, γ, δ+1)
+ double y = R::qbeta(pp, g, d + 1.0, /*lower_tail=*/true, /*log_p=*/false);
+
+ // Check for boundary conditions
+ if (y <= 0.0) {
+   result(i) = 0.0;
+   continue;
+ }
+
+ if (y >= 1.0) {
+   result(i) = 1.0;
+   continue;
+ }
+
+ // Step 2: Compute v = y^(1/λ)
+ double v;
+ if (l == 1.0) {
+   v = y;  // Optimization for λ=1
+ } else {
+   v = safe_pow(y, 1.0/l);
+ }
+
+ // Step 3: Compute tmp = 1 - v
+ double tmp = 1.0 - v;
+
+ // Check for boundary conditions
+ if (tmp <= 0.0) {
+   result(i) = 1.0;
+   continue;
+ }
+
+ if (tmp >= 1.0) {
+   result(i) = 0.0;
+   continue;
+ }
+
+ // Step 4: Compute tmp2 = tmp^(1/β)
+ double tmp2;
+ if (b == 1.0) {
+   tmp2 = tmp;  // Optimization for β=1
+ } else {
+   tmp2 = safe_pow(tmp, 1.0/b);
+ }
+
+ // Check for boundary conditions
+ if (tmp2 <= 0.0) {
+   result(i) = 1.0;
+   continue;
+ }
+
+ if (tmp2 >= 1.0) {
+   result(i) = 0.0;
+   continue;
+ }
+
+ // Step 5: Compute q = (1 - tmp2)^(1/α)
+ double one_minus_tmp2 = 1.0 - tmp2;
+ double qq;
+
+ if (one_minus_tmp2 <= 0.0) {
+   qq = 0.0;
+ } else if (one_minus_tmp2 >= 1.0) {
+   qq = 1.0;
+ } else if (a == 1.0) {
+   qq = one_minus_tmp2;  // Optimization for α=1
+ } else {
+   qq = safe_pow(one_minus_tmp2, 1.0/a);
+ }
+
+ // Final boundary check to ensure result is in (0,1)
+ if (qq < 0.0) {
+   qq = 0.0;
+ } else if (qq > 1.0) {
+   qq = 1.0;
+ }
+
+ result(i) = qq;
+}
+
+return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 }
 
 
@@ -1149,133 +1664,127 @@ arma::vec qgkw(
 //'}
 //' @export
 // [[Rcpp::export]]
-arma::vec rgkw(
-   int n,
-   const Rcpp::NumericVector& alpha = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& beta = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& gamma = Rcpp::NumericVector::create(1.0),
-   const Rcpp::NumericVector& delta = Rcpp::NumericVector::create(0.0),
-   const Rcpp::NumericVector& lambda = Rcpp::NumericVector::create(1.0)
+Rcpp::NumericVector rgkw(
+ int n,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda
 ) {
- // Convert NumericVector to arma::vec
- arma::vec alpha_vec(alpha.begin(), alpha.size());
- arma::vec beta_vec(beta.begin(), beta.size());
- arma::vec gamma_vec(gamma.begin(), gamma.size());
- arma::vec delta_vec(delta.begin(), delta.size());
- arma::vec lambda_vec(lambda.begin(), lambda.size());
+// Convert NumericVector to arma::vec
+arma::vec alpha_vec(alpha.begin(), alpha.size());
+arma::vec beta_vec(beta.begin(), beta.size());
+arma::vec gamma_vec(gamma.begin(), gamma.size());
+arma::vec delta_vec(delta.begin(), delta.size());
+arma::vec lambda_vec(lambda.begin(), lambda.size());
 
- // Input validation for n
- if (n <= 0) {
-   Rcpp::stop("rgkw: n must be a positive integer");
-   return arma::vec();
+// Count of parameter combinations for vectorization
+size_t k = std::max({alpha_vec.n_elem, beta_vec.n_elem, gamma_vec.n_elem,
+                   delta_vec.n_elem, lambda_vec.n_elem});
+
+// Initialize result vector
+arma::vec result(n);
+
+// Process each element
+for (int i = 0; i < n; ++i) {
+ // Index for parameter combination (cycling through k combinations)
+ size_t idx = i % k;
+
+ // Get parameter values with broadcasting/recycling
+ double a = alpha_vec[idx % alpha_vec.n_elem];
+ double b = beta_vec[idx % beta_vec.n_elem];
+ double g = gamma_vec[idx % gamma_vec.n_elem];
+ double d = delta_vec[idx % delta_vec.n_elem];
+ double l = lambda_vec[idx % lambda_vec.n_elem];
+
+ // Validate parameters
+ if (!check_pars(a, b, g, d, l)) {
+   result(i) = NA_REAL;
+   Rcpp::warning("rgkw: invalid parameters at index %d (alpha,beta,gamma>0, delta>=0, lambda>0)", idx+1);
+   continue;
  }
 
- // Count of parameter combinations for vectorization
- size_t k = std::max({alpha_vec.n_elem, beta_vec.n_elem, gamma_vec.n_elem,
-                     delta_vec.n_elem, lambda_vec.n_elem});
+ // Generate Beta(γ, δ+1) random value
+ double vi = R::rbeta(g, d + 1.0);
 
- // Initialize result vector
- arma::vec result(n);
-
- // Process each element
- for (int i = 0; i < n; ++i) {
-   // Index for parameter combination (cycling through k combinations)
-   size_t idx = i % k;
-
-   // Get parameter values with broadcasting/recycling
-   double a = alpha_vec[idx % alpha_vec.n_elem];
-   double b = beta_vec[idx % beta_vec.n_elem];
-   double g = gamma_vec[idx % gamma_vec.n_elem];
-   double d = delta_vec[idx % delta_vec.n_elem];
-   double l = lambda_vec[idx % lambda_vec.n_elem];
-
-   // Validate parameters
-   if (!check_pars(a, b, g, d, l)) {
-     result(i) = NA_REAL;
-     Rcpp::warning("rgkw: invalid parameters at index %d (alpha,beta,gamma>0, delta>=0, lambda>0)", idx+1);
-     continue;
-   }
-
-   // Generate Beta(γ, δ+1) random value
-   double vi = R::rbeta(g, d + 1.0);
-
-   // Check for boundary conditions
-   if (vi <= 0.0) {
-     result(i) = 0.0;
-     continue;
-   }
-
-   if (vi >= 1.0) {
-     result(i) = 1.0;
-     continue;
-   }
-
-   // Compute v = V^(1/λ)
-   double vl;
-   if (l == 1.0) {
-     vl = vi;  // Optimization for λ=1
-   } else {
-     vl = safe_pow(vi, 1.0/l);
-   }
-
-   // Compute tmp = 1 - v
-   double tmp = 1.0 - vl;
-
-   // Check for boundary conditions
-   if (tmp <= 0.0) {
-     result(i) = 1.0;
-     continue;
-   }
-
-   if (tmp >= 1.0) {
-     result(i) = 0.0;
-     continue;
-   }
-
-   // Compute tmp2 = tmp^(1/β)
-   double tmp2;
-   if (b == 1.0) {
-     tmp2 = tmp;  // Optimization for β=1
-   } else {
-     tmp2 = safe_pow(tmp, 1.0/b);
-   }
-
-   // Check for boundary conditions
-   if (tmp2 <= 0.0) {
-     result(i) = 1.0;
-     continue;
-   }
-
-   if (tmp2 >= 1.0) {
-     result(i) = 0.0;
-     continue;
-   }
-
-   // Compute x = (1 - tmp2)^(1/α)
-   double one_minus_tmp2 = 1.0 - tmp2;
-   double xx;
-
-   if (one_minus_tmp2 <= 0.0) {
-     xx = 0.0;
-   } else if (one_minus_tmp2 >= 1.0) {
-     xx = 1.0;
-   } else if (a == 1.0) {
-     xx = one_minus_tmp2;  // Optimization for α=1
-   } else {
-     xx = safe_pow(one_minus_tmp2, 1.0/a);
-   }
-
-   // Final boundary check to ensure result is in (0,1)
-   if (xx < 0.0) {
-     xx = 0.0;
-   } else if (xx > 1.0) {
-     xx = 1.0;
-   }
-
-   result(i) = xx;
+ // Check for boundary conditions
+ if (vi <= 0.0) {
+   result(i) = 0.0;
+   continue;
  }
 
- return result;
+ if (vi >= 1.0) {
+   result(i) = 1.0;
+   continue;
+ }
+
+ // Compute v = V^(1/λ)
+ double vl;
+ if (l == 1.0) {
+   vl = vi;  // Optimization for λ=1
+ } else {
+   vl = safe_pow(vi, 1.0/l);
+ }
+
+ // Compute tmp = 1 - v
+ double tmp = 1.0 - vl;
+
+ // Check for boundary conditions
+ if (tmp <= 0.0) {
+   result(i) = 1.0;
+   continue;
+ }
+
+ if (tmp >= 1.0) {
+   result(i) = 0.0;
+   continue;
+ }
+
+ // Compute tmp2 = tmp^(1/β)
+ double tmp2;
+ if (b == 1.0) {
+   tmp2 = tmp;  // Optimization for β=1
+ } else {
+   tmp2 = safe_pow(tmp, 1.0/b);
+ }
+
+ // Check for boundary conditions
+ if (tmp2 <= 0.0) {
+   result(i) = 1.0;
+   continue;
+ }
+
+ if (tmp2 >= 1.0) {
+   result(i) = 0.0;
+   continue;
+ }
+
+ // Compute x = (1 - tmp2)^(1/α)
+ double one_minus_tmp2 = 1.0 - tmp2;
+ double xx;
+
+ if (one_minus_tmp2 <= 0.0) {
+   xx = 0.0;
+ } else if (one_minus_tmp2 >= 1.0) {
+   xx = 1.0;
+ } else if (a == 1.0) {
+   xx = one_minus_tmp2;  // Optimization for α=1
+ } else {
+   xx = safe_pow(one_minus_tmp2, 1.0/a);
+ }
+
+ // Final boundary check to ensure result is in (0,1)
+ if (xx < 0.0) {
+   xx = 0.0;
+ } else if (xx > 1.0) {
+   xx = 1.0;
+ }
+
+ result(i) = xx;
+}
+
+return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 }
 
 
@@ -1419,81 +1928,81 @@ arma::vec rgkw(
 //' @export
 // [[Rcpp::export]]
 double llgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha = par[0];   // Shape parameter α > 0
- double beta = par[1];    // Shape parameter β > 0
- double gamma = par[2];   // Shape parameter γ > 0
- double delta = par[3];   // Shape parameter δ > 0
- double lambda = par[4];  // Shape parameter λ > 0
+// Parameter extraction
+double alpha = par[0];   // Shape parameter α > 0
+double beta = par[1];    // Shape parameter β > 0
+double gamma = par[2];   // Shape parameter γ > 0
+double delta = par[3];   // Shape parameter δ > 0
+double lambda = par[4];  // Shape parameter λ > 0
 
- // Parameter validation - all parameters must be positive
- if (alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0 || lambda <= 0) {
-   return R_NegInf;  // Return negative infinity for invalid parameters
+// Parameter validation - all parameters must be positive
+if (alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0 || lambda <= 0) {
+ return R_NegInf;  // Return negative infinity for invalid parameters
+}
+
+// Convert data to arma::vec for more efficient operations
+// Use aliasing (false) to avoid copying the data
+// arma::vec x(data.begin(), data.size(), false);
+arma::vec x = Rcpp::as<arma::vec>(data);
+
+// Data validation - all values must be in the range (0,1)
+if (arma::any(x <= 0) || arma::any(x >= 1)) {
+ return R_NegInf;  // Return negative infinity for invalid data
+}
+
+int n = x.n_elem;  // Sample size
+
+// Calculate log of Beta function for constant term
+// Use R's lbeta function for better numerical stability
+double log_beta_term = R::lbeta(gamma, delta + 1);
+
+// Calculate the constant term: n*log(λαβ/B(γ,δ+1))
+double constant_term = n * (std::log(lambda) + std::log(alpha) + std::log(beta) - log_beta_term);
+
+// Calculate log(x) and sum (α-1)*log(x) terms
+arma::vec log_x = arma::log(x);
+double term1 = arma::sum((alpha - 1.0) * log_x);
+
+// Calculate v = 1-x^α and sum (β-1)*log(v) terms
+arma::vec x_alpha = arma::pow(x, alpha);
+arma::vec v = 1.0 - x_alpha;
+arma::vec log_v = arma::log(v);
+double term2 = arma::sum((beta - 1.0) * log_v);
+
+// Calculate w = 1-v^β = 1-(1-x^α)^β and sum (γλ-1)*log(w) terms
+arma::vec v_beta = arma::pow(v, beta);
+arma::vec w = 1.0 - v_beta;
+
+// Handle numerical stability for log(w) when w is close to zero
+arma::vec log_w(n);
+for (int i = 0; i < n; i++) {
+ if (w(i) < 1e-10) {
+   // Use log1p for numerical stability: log(w) = log(1-v^β) = log1p(-v^β)
+   log_w(i) = std::log1p(-v_beta(i));
+ } else {
+   log_w(i) = std::log(w(i));
  }
+}
+double term3 = arma::sum((gamma * lambda - 1.0) * log_w);
 
- // Convert data to arma::vec for more efficient operations
- // Use aliasing (false) to avoid copying the data
- // arma::vec x(data.begin(), data.size(), false);
- arma::vec x = Rcpp::as<arma::vec>(data);
+// Calculate z = 1-w^λ = 1-[1-(1-x^α)^β]^λ and sum δ*log(z) terms
+arma::vec w_lambda = arma::pow(w, lambda);
+arma::vec z = 1.0 - w_lambda;
 
- // Data validation - all values must be in the range (0,1)
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
-   return R_NegInf;  // Return negative infinity for invalid data
+// Handle numerical stability for log(z) when z is close to zero
+arma::vec log_z(n);
+for (int i = 0; i < n; i++) {
+ if (z(i) < 1e-10) {
+   // Use log1p for numerical stability: log(z) = log(1-w^λ) = log1p(-w^λ)
+   log_z(i) = std::log1p(-w_lambda(i));
+ } else {
+   log_z(i) = std::log(z(i));
  }
+}
+double term4 = arma::sum(delta * log_z);
 
- int n = x.n_elem;  // Sample size
-
- // Calculate log of Beta function for constant term
- // Use R's lbeta function for better numerical stability
- double log_beta_term = R::lbeta(gamma, delta + 1);
-
- // Calculate the constant term: n*log(λαβ/B(γ,δ+1))
- double constant_term = n * (std::log(lambda) + std::log(alpha) + std::log(beta) - log_beta_term);
-
- // Calculate log(x) and sum (α-1)*log(x) terms
- arma::vec log_x = arma::log(x);
- double term1 = arma::sum((alpha - 1.0) * log_x);
-
- // Calculate v = 1-x^α and sum (β-1)*log(v) terms
- arma::vec x_alpha = arma::pow(x, alpha);
- arma::vec v = 1.0 - x_alpha;
- arma::vec log_v = arma::log(v);
- double term2 = arma::sum((beta - 1.0) * log_v);
-
- // Calculate w = 1-v^β = 1-(1-x^α)^β and sum (γλ-1)*log(w) terms
- arma::vec v_beta = arma::pow(v, beta);
- arma::vec w = 1.0 - v_beta;
-
- // Handle numerical stability for log(w) when w is close to zero
- arma::vec log_w(n);
- for (int i = 0; i < n; i++) {
-   if (w(i) < 1e-10) {
-     // Use log1p for numerical stability: log(w) = log(1-v^β) = log1p(-v^β)
-     log_w(i) = std::log1p(-v_beta(i));
-   } else {
-     log_w(i) = std::log(w(i));
-   }
- }
- double term3 = arma::sum((gamma * lambda - 1.0) * log_w);
-
- // Calculate z = 1-w^λ = 1-[1-(1-x^α)^β]^λ and sum δ*log(z) terms
- arma::vec w_lambda = arma::pow(w, lambda);
- arma::vec z = 1.0 - w_lambda;
-
- // Handle numerical stability for log(z) when z is close to zero
- arma::vec log_z(n);
- for (int i = 0; i < n; i++) {
-   if (z(i) < 1e-10) {
-     // Use log1p for numerical stability: log(z) = log(1-w^λ) = log1p(-w^λ)
-     log_z(i) = std::log1p(-w_lambda(i));
-   } else {
-     log_z(i) = std::log(z(i));
-   }
- }
- double term4 = arma::sum(delta * log_z);
-
- // Return final minus-log-likelihood: constant term + sum of all individual terms
- return -(constant_term + term1 + term2 + term3 + term4);
+// Return final minus-log-likelihood: constant term + sum of all individual terms
+return -(constant_term + term1 + term2 + term3 + term4);
 }
 
 
@@ -1636,102 +2145,102 @@ double llgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector grgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha = par[0];   // Shape parameter α > 0
- double beta = par[1];    // Shape parameter β > 0
- double gamma = par[2];   // Shape parameter γ > 0
- double delta = par[3];   // Shape parameter δ > 0
- double lambda = par[4];  // Shape parameter λ > 0
+// Parameter extraction
+double alpha = par[0];   // Shape parameter α > 0
+double beta = par[1];    // Shape parameter β > 0
+double gamma = par[2];   // Shape parameter γ > 0
+double delta = par[3];   // Shape parameter δ > 0
+double lambda = par[4];  // Shape parameter λ > 0
 
- // Parameter validation
- if (alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0 || lambda <= 0) {
-   Rcpp::NumericVector grad(5, R_NaN);
-   return grad;
- }
-
- // Data conversion and validation
- arma::vec x = Rcpp::as<arma::vec>(data);
-
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
-   Rcpp::NumericVector grad(5, R_NaN);
-   return grad;
- }
-
- int n = x.n_elem;  // Sample size
-
- // Initialize gradient vector
- Rcpp::NumericVector grad(5, 0.0);
-
- // Small constant to avoid numerical issues
- double eps = std::numeric_limits<double>::epsilon() * 100;
-
- // Compute transformations and intermediate values
- arma::vec log_x = arma::log(x);                // log(x_i)
- arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
- arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
-
- // v_i = 1 - x_i^α
- arma::vec v = 1.0 - x_alpha;
- v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
-
- arma::vec log_v = arma::log(v);                // log(v_i)
- arma::vec v_beta_m1 = arma::pow(v, beta - 1.0); // v_i^(β-1)
- arma::vec v_beta = arma::pow(v, beta);          // v_i^β
- arma::vec v_beta_log_v = v_beta % log_v;        // v_i^β * log(v_i)
-
- // w_i = 1 - v_i^β = 1 - (1-x_i^α)^β
- arma::vec w = 1.0 - v_beta;
- w = arma::clamp(w, eps, 1.0 - eps);            // Prevent numerical issues
-
- arma::vec log_w = arma::log(w);                // log(w_i)
- arma::vec w_lambda_m1 = arma::pow(w, lambda - 1.0); // w_i^(λ-1)
- arma::vec w_lambda = arma::pow(w, lambda);          // w_i^λ
- arma::vec w_lambda_log_w = w_lambda % log_w;        // w_i^λ * log(w_i)
-
- // z_i = 1 - w_i^λ = 1 - [1-(1-x_i^α)^β]^λ
- arma::vec z = 1.0 - w_lambda;
- z = arma::clamp(z, eps, 1.0 - eps);            // Prevent numerical issues
-
- arma::vec log_z = arma::log(z);                // log(z_i)
-
- // Calculate partial derivatives for each parameter (for log-likelihood)
-
- // ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - Σᵢ[xᵢ^α * log(xᵢ) * ((β-1)/vᵢ - (γλ-1) * β * vᵢ^(β-1) / wᵢ + δ * λ * β * vᵢ^(β-1) * wᵢ^(λ-1) / zᵢ)]
- double d_alpha = n / alpha + arma::sum(log_x);
-
- // Calculate the complex term in the α gradient
- arma::vec alpha_term2 = (beta - 1.0) / v;                // (β-1)/v_i
- arma::vec alpha_term3 = (gamma * lambda - 1.0) * beta * v_beta_m1 / w;  // (γλ-1) * β * v_i^(β-1) / w_i
- arma::vec alpha_term4 = delta * lambda * beta * v_beta_m1 % w_lambda_m1 / z;  // δ * λ * β * v_i^(β-1) * w_i^(λ-1) / z_i
-
- d_alpha -= arma::sum(x_alpha_log_x % (alpha_term2 - alpha_term3 + alpha_term4));
-
- // ∂ℓ/∂β = n/β + Σᵢlog(vᵢ) - Σᵢ[vᵢ^β * log(vᵢ) * ((γλ-1) / wᵢ - δ * λ * wᵢ^(λ-1) / zᵢ)]
- double d_beta = n / beta + arma::sum(log_v);
-
- // Calculate the complex term in the β gradient
- arma::vec beta_term2 = (gamma * lambda - 1.0) / w;       // (γλ-1) / w_i
- arma::vec beta_term3 = delta * lambda * w_lambda_m1 / z; // δ * λ * w_i^(λ-1) / z_i
-
- d_beta -= arma::sum(v_beta_log_v % (beta_term2 - beta_term3));
-
- // ∂ℓ/∂γ = -n[ψ(γ) - ψ(γ+δ+1)] + λΣᵢlog(wᵢ)
- double d_gamma = -n * (R::digamma(gamma) - R::digamma(gamma + delta + 1)) + lambda * arma::sum(log_w);
-
- // ∂ℓ/∂δ = -n[ψ(δ+1) - ψ(γ+δ+1)] + Σᵢlog(zᵢ)
- double d_delta = -n * (R::digamma(delta + 1) - R::digamma(gamma + delta + 1)) + arma::sum(log_z);
-
- // ∂ℓ/∂λ = n/λ + γΣᵢlog(wᵢ) - δΣᵢ[(wᵢ^λ*log(wᵢ))/zᵢ]
- double d_lambda = n / lambda + gamma * arma::sum(log_w) - delta * arma::sum(w_lambda_log_w / z);
-
- // Since we're optimizing negative log-likelihood, negate all derivatives
- grad[0] = -d_alpha;
- grad[1] = -d_beta;
- grad[2] = -d_gamma;
- grad[3] = -d_delta;
- grad[4] = -d_lambda;
-
+// Parameter validation
+if (alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0 || lambda <= 0) {
+ Rcpp::NumericVector grad(5, R_NaN);
  return grad;
+}
+
+// Data conversion and validation
+arma::vec x = Rcpp::as<arma::vec>(data);
+
+if (arma::any(x <= 0) || arma::any(x >= 1)) {
+ Rcpp::NumericVector grad(5, R_NaN);
+ return grad;
+}
+
+int n = x.n_elem;  // Sample size
+
+// Initialize gradient vector
+Rcpp::NumericVector grad(5, 0.0);
+
+// Small constant to avoid numerical issues
+double eps = std::numeric_limits<double>::epsilon() * 100;
+
+// Compute transformations and intermediate values
+arma::vec log_x = arma::log(x);                // log(x_i)
+arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
+arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
+
+// v_i = 1 - x_i^α
+arma::vec v = 1.0 - x_alpha;
+v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
+
+arma::vec log_v = arma::log(v);                // log(v_i)
+arma::vec v_beta_m1 = arma::pow(v, beta - 1.0); // v_i^(β-1)
+arma::vec v_beta = arma::pow(v, beta);          // v_i^β
+arma::vec v_beta_log_v = v_beta % log_v;        // v_i^β * log(v_i)
+
+// w_i = 1 - v_i^β = 1 - (1-x_i^α)^β
+arma::vec w = 1.0 - v_beta;
+w = arma::clamp(w, eps, 1.0 - eps);            // Prevent numerical issues
+
+arma::vec log_w = arma::log(w);                // log(w_i)
+arma::vec w_lambda_m1 = arma::pow(w, lambda - 1.0); // w_i^(λ-1)
+arma::vec w_lambda = arma::pow(w, lambda);          // w_i^λ
+arma::vec w_lambda_log_w = w_lambda % log_w;        // w_i^λ * log(w_i)
+
+// z_i = 1 - w_i^λ = 1 - [1-(1-x_i^α)^β]^λ
+arma::vec z = 1.0 - w_lambda;
+z = arma::clamp(z, eps, 1.0 - eps);            // Prevent numerical issues
+
+arma::vec log_z = arma::log(z);                // log(z_i)
+
+// Calculate partial derivatives for each parameter (for log-likelihood)
+
+// ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - Σᵢ[xᵢ^α * log(xᵢ) * ((β-1)/vᵢ - (γλ-1) * β * vᵢ^(β-1) / wᵢ + δ * λ * β * vᵢ^(β-1) * wᵢ^(λ-1) / zᵢ)]
+double d_alpha = n / alpha + arma::sum(log_x);
+
+// Calculate the complex term in the α gradient
+arma::vec alpha_term2 = (beta - 1.0) / v;                // (β-1)/v_i
+arma::vec alpha_term3 = (gamma * lambda - 1.0) * beta * v_beta_m1 / w;  // (γλ-1) * β * v_i^(β-1) / w_i
+arma::vec alpha_term4 = delta * lambda * beta * v_beta_m1 % w_lambda_m1 / z;  // δ * λ * β * v_i^(β-1) * w_i^(λ-1) / z_i
+
+d_alpha -= arma::sum(x_alpha_log_x % (alpha_term2 - alpha_term3 + alpha_term4));
+
+// ∂ℓ/∂β = n/β + Σᵢlog(vᵢ) - Σᵢ[vᵢ^β * log(vᵢ) * ((γλ-1) / wᵢ - δ * λ * wᵢ^(λ-1) / zᵢ)]
+double d_beta = n / beta + arma::sum(log_v);
+
+// Calculate the complex term in the β gradient
+arma::vec beta_term2 = (gamma * lambda - 1.0) / w;       // (γλ-1) / w_i
+arma::vec beta_term3 = delta * lambda * w_lambda_m1 / z; // δ * λ * w_i^(λ-1) / z_i
+
+d_beta -= arma::sum(v_beta_log_v % (beta_term2 - beta_term3));
+
+// ∂ℓ/∂γ = -n[ψ(γ) - ψ(γ+δ+1)] + λΣᵢlog(wᵢ)
+double d_gamma = -n * (R::digamma(gamma) - R::digamma(gamma + delta + 1)) + lambda * arma::sum(log_w);
+
+// ∂ℓ/∂δ = -n[ψ(δ+1) - ψ(γ+δ+1)] + Σᵢlog(zᵢ)
+double d_delta = -n * (R::digamma(delta + 1) - R::digamma(gamma + delta + 1)) + arma::sum(log_z);
+
+// ∂ℓ/∂λ = n/λ + γΣᵢlog(wᵢ) - δΣᵢ[(wᵢ^λ*log(wᵢ))/zᵢ]
+double d_lambda = n / lambda + gamma * arma::sum(log_w) - delta * arma::sum(w_lambda_log_w / z);
+
+// Since we're optimizing negative log-likelihood, negate all derivatives
+grad[0] = -d_alpha;
+grad[1] = -d_beta;
+grad[2] = -d_gamma;
+grad[3] = -d_delta;
+grad[4] = -d_lambda;
+
+return grad;
 }
 
 
@@ -1873,226 +2382,226 @@ Rcpp::NumericVector grgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix hsgkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha  = par[0];   // θ[0] = α
- double beta   = par[1];   // θ[1] = β
- double gamma  = par[2];   // θ[2] = γ
- double delta  = par[3];   // θ[3] = δ
- double lambda = par[4];   // θ[4] = λ
+// Parameter extraction
+double alpha  = par[0];   // θ[0] = α
+double beta   = par[1];   // θ[1] = β
+double gamma  = par[2];   // θ[2] = γ
+double delta  = par[3];   // θ[3] = δ
+double lambda = par[4];   // θ[4] = λ
 
- // Simple parameter validation (all > 0)
- if(alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0 || lambda <= 0) {
-   Rcpp::NumericMatrix nanH(5,5);
-   nanH.fill(R_NaN);
-   return nanH;
- }
+// Simple parameter validation (all > 0)
+if(alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0 || lambda <= 0) {
+ Rcpp::NumericMatrix nanH(5,5);
+ nanH.fill(R_NaN);
+ return nanH;
+}
 
- // Data conversion and basic validation
- arma::vec x = Rcpp::as<arma::vec>(data);
- if(arma::any(x <= 0) || arma::any(x >= 1)) {
-   Rcpp::NumericMatrix nanH(5,5);
-   nanH.fill(R_NaN);
-   return nanH;
- }
+// Data conversion and basic validation
+arma::vec x = Rcpp::as<arma::vec>(data);
+if(arma::any(x <= 0) || arma::any(x >= 1)) {
+ Rcpp::NumericMatrix nanH(5,5);
+ nanH.fill(R_NaN);
+ return nanH;
+}
 
- int n = x.n_elem;  // sample size
+int n = x.n_elem;  // sample size
 
- // Initialize Hessian matrix H (of ℓ(θ)) as 5x5
- arma::mat H(5,5, arma::fill::zeros);
+// Initialize Hessian matrix H (of ℓ(θ)) as 5x5
+arma::mat H(5,5, arma::fill::zeros);
 
- // --- CONSTANT TERMS (do not depend on x) ---
- // L1: n ln(λ)  => d²/dλ² = -n/λ²
- H(4,4) += - n/(lambda*lambda);
- // L2: n ln(α)  => d²/dα² = -n/α²
- H(0,0) += - n/(alpha*alpha);
- // L3: n ln(β)  => d²/dβ² = -n/β²
- H(1,1) += - n/(beta*beta);
- // L4: - n ln[B(γ, δ+1)]
- //   d²/dγ² = -n [ψ₁(γ) - ψ₁(γ+δ+1)]  where ψ₁ is the trigamma function
- H(2,2) += - n * ( R::trigamma(gamma) - R::trigamma(gamma+delta+1) );
- //   d²/dδ² = -n [ψ₁(δ+1) - ψ₁(γ+δ+1)]
- H(3,3) += - n * ( R::trigamma(delta+1) - R::trigamma(gamma+delta+1) );
- //   Mixed derivative (γ,δ): = n ψ₁(γ+δ+1)
- H(2,3) += n * R::trigamma(gamma+delta+1);
- H(3,2) = H(2,3);
- // L5: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
+// --- CONSTANT TERMS (do not depend on x) ---
+// L1: n ln(λ)  => d²/dλ² = -n/λ²
+H(4,4) += - n/(lambda*lambda);
+// L2: n ln(α)  => d²/dα² = -n/α²
+H(0,0) += - n/(alpha*alpha);
+// L3: n ln(β)  => d²/dβ² = -n/β²
+H(1,1) += - n/(beta*beta);
+// L4: - n ln[B(γ, δ+1)]
+//   d²/dγ² = -n [ψ₁(γ) - ψ₁(γ+δ+1)]  where ψ₁ is the trigamma function
+H(2,2) += - n * ( R::trigamma(gamma) - R::trigamma(gamma+delta+1) );
+//   d²/dδ² = -n [ψ₁(δ+1) - ψ₁(γ+δ+1)]
+H(3,3) += - n * ( R::trigamma(delta+1) - R::trigamma(gamma+delta+1) );
+//   Mixed derivative (γ,δ): = n ψ₁(γ+δ+1)
+H(2,3) += n * R::trigamma(gamma+delta+1);
+H(3,2) = H(2,3);
+// L5: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
 
- // Accumulators for mixed derivatives with λ
- double acc_gamma_lambda = 0.0;  // Sum of ln(w)
- double acc_delta_lambda = 0.0;  // Sum of dz_dlambda / z
- double acc_alpha_lambda = 0.0;  // For α,λ contributions
- double acc_beta_lambda = 0.0;   // For β,λ contributions
+// Accumulators for mixed derivatives with λ
+double acc_gamma_lambda = 0.0;  // Sum of ln(w)
+double acc_delta_lambda = 0.0;  // Sum of dz_dlambda / z
+double acc_alpha_lambda = 0.0;  // For α,λ contributions
+double acc_beta_lambda = 0.0;   // For β,λ contributions
 
- // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
- // Loop over each observation to accumulate contributions from:
- // L6: (β-1) Σ ln(v), where v = 1 - x^α
- // L7: (γλ-1) Σ ln(w), where w = 1 - v^β
- // L8: δ Σ ln(z), where z = 1 - w^λ
- for (int i = 0; i < n; i++) {
-   double xi    = x(i);
-   double ln_xi = std::log(xi);
+// --- TERMS THAT INVOLVE THE OBSERVATIONS ---
+// Loop over each observation to accumulate contributions from:
+// L6: (β-1) Σ ln(v), where v = 1 - x^α
+// L7: (γλ-1) Σ ln(w), where w = 1 - v^β
+// L8: δ Σ ln(z), where z = 1 - w^λ
+for (int i = 0; i < n; i++) {
+ double xi    = x(i);
+ double ln_xi = std::log(xi);
 
-   // -- Compute A = x^α and its derivatives --
-   double A = std::pow(xi, alpha);                  // A = x^α
-   double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
-   double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+ // -- Compute A = x^α and its derivatives --
+ double A = std::pow(xi, alpha);                  // A = x^α
+ double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
+ double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
 
-   // -- v = 1 - A and its derivatives --
-   double v = 1.0 - A;                              // v = 1 - x^α
-   double ln_v = std::log(v);                       // ln(v)
-   double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
-   double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+ // -- v = 1 - A and its derivatives --
+ double v = 1.0 - A;                              // v = 1 - x^α
+ double ln_v = std::log(v);                       // ln(v)
+ double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
+ double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
 
-   // --- L6: (β-1) ln(v) ---
-   // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
-   double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
-   // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
-   double d2L6_dalpha_dbeta = dv_dalpha / v;
+ // --- L6: (β-1) ln(v) ---
+ // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
+ double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
+ // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
+ double d2L6_dalpha_dbeta = dv_dalpha / v;
 
-   // --- L7: (γλ - 1) ln(w), where w = 1 - v^β ---
-   double v_beta = std::pow(v, beta);               // v^β
-   double w = 1.0 - v_beta;                         // w = 1 - v^β
-   double ln_w = std::log(w);                       // ln(w)
-   // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
-   double dw_dv = -beta * std::pow(v, beta - 1.0);
-   // Chain rule: dw/dα = dw/dv * dv/dα
-   double dw_dalpha = dw_dv * dv_dalpha;
-   // Second derivative w.r.t. α for L7:
-   // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
-   // Computing d²w/dα²:
-   //   dw/dα = -β * v^(β-1)*dv_dalpha,
-   //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
-   double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
-                                   + std::pow(v, beta-1.0) * d2v_dalpha2);
-   double d2L7_dalpha2 = (gamma * lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
-   // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
-   double dw_dbeta = -v_beta * ln_v;
-   // Second derivative w.r.t. β for L7:
-   // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
-   double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
-   double d2L7_dbeta2 = (gamma * lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
-   // Mixed derivative L7 (α,β): d²/(dα dβ) ln(w) =
-   //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
-   // Approximate d/dβ dw_dalpha:
-   double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
-   double d2L7_dalpha_dbeta = (gamma * lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+ // --- L7: (γλ - 1) ln(w), where w = 1 - v^β ---
+ double v_beta = std::pow(v, beta);               // v^β
+ double w = 1.0 - v_beta;                         // w = 1 - v^β
+ double ln_w = std::log(w);                       // ln(w)
+ // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
+ double dw_dv = -beta * std::pow(v, beta - 1.0);
+ // Chain rule: dw/dα = dw/dv * dv/dα
+ double dw_dalpha = dw_dv * dv_dalpha;
+ // Second derivative w.r.t. α for L7:
+ // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
+ // Computing d²w/dα²:
+ //   dw/dα = -β * v^(β-1)*dv_dalpha,
+ //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
+ double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
+                                 + std::pow(v, beta-1.0) * d2v_dalpha2);
+ double d2L7_dalpha2 = (gamma * lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+ // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
+ double dw_dbeta = -v_beta * ln_v;
+ // Second derivative w.r.t. β for L7:
+ // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
+ double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+ double d2L7_dbeta2 = (gamma * lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+ // Mixed derivative L7 (α,β): d²/(dα dβ) ln(w) =
+ //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
+ // Approximate d/dβ dw_dalpha:
+ double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
+ double d2L7_dalpha_dbeta = (gamma * lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
 
-   // --- L8: δ ln(z), where z = 1 - w^λ ---
-   double w_lambda_val = std::pow(w, lambda);       // w^λ
-   double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
-   // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
-   double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
-   // Second derivative w.r.t. α for L8:
-   // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
-   double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
-                                     + std::pow(w, lambda-1.0) * d2w_dalpha2);
-   double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
+ // --- L8: δ ln(z), where z = 1 - w^λ ---
+ double w_lambda_val = std::pow(w, lambda);       // w^λ
+ double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
+ // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
+ double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
+ // Second derivative w.r.t. α for L8:
+ // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
+ double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
+                                   + std::pow(w, lambda-1.0) * d2w_dalpha2);
+ double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
 
-   // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
-   double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
-   // Second derivative w.r.t. β for L8:
-   // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
-   double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
-                                    + std::pow(w, lambda-1.0) * d2w_dbeta2);
-   double d2L8_dbeta2 = delta * ((d2z_dbeta2 * z - dz_dbeta*dz_dbeta)/(z*z));
+ // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
+ double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
+ // Second derivative w.r.t. β for L8:
+ // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
+ double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
+                                  + std::pow(w, lambda-1.0) * d2w_dbeta2);
+ double d2L8_dbeta2 = delta * ((d2z_dbeta2 * z - dz_dbeta*dz_dbeta)/(z*z));
 
-   // Mixed derivative L8 (α,β): d²/(dα dβ) ln(z)
-   // = (d/dβ dz_dalpha)/z - (dz_dalpha*dz_dbeta)/(z*z)
-   // Approximate d/dβ dz_dalpha = -λ * [(λ-1)*w^(λ-2)*(dw_dβ*dw_dα) + w^(λ-1)*(d/dβ dw_dalpha)]
-   double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * dw_dbeta * dw_dalpha
-                                             + std::pow(w, lambda-1.0) * d_dw_dalpha_dbeta);
-   double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha*dz_dbeta)/(z*z));
+ // Mixed derivative L8 (α,β): d²/(dα dβ) ln(z)
+ // = (d/dβ dz_dalpha)/z - (dz_dalpha*dz_dbeta)/(z*z)
+ // Approximate d/dβ dz_dalpha = -λ * [(λ-1)*w^(λ-2)*(dw_dβ*dw_dα) + w^(λ-1)*(d/dβ dw_dalpha)]
+ double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * dw_dbeta * dw_dalpha
+                                           + std::pow(w, lambda-1.0) * d_dw_dalpha_dbeta);
+ double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha*dz_dbeta)/(z*z));
 
-   // Derivatives of L8 with respect to λ:
-   // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
-   double dz_dlambda = -w_lambda_val * ln_w;
-   // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
-   double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
-   double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
+ // Derivatives of L8 with respect to λ:
+ // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
+ double dz_dlambda = -w_lambda_val * ln_w;
+ // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
+ double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
+ double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
 
-   // Mixed derivative L8 (α,λ): d²/(dα dλ) ln(z) = (d/dα dz_dλ)/z - (dz_dλ*dz_dalpha)/(z*z)
-   // Correct formula: sum of two terms, not multiplication
-   double d_dalpha_dz_dlambda = -std::pow(w, lambda-1.0) * dw_dalpha -
-     lambda * ln_w * std::pow(w, lambda-1.0) * dw_dalpha;
-   double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda*dz_dalpha)/(z*z));
+ // Mixed derivative L8 (α,λ): d²/(dα dλ) ln(z) = (d/dα dz_dλ)/z - (dz_dλ*dz_dalpha)/(z*z)
+ // Correct formula: sum of two terms, not multiplication
+ double d_dalpha_dz_dlambda = -std::pow(w, lambda-1.0) * dw_dalpha -
+   lambda * ln_w * std::pow(w, lambda-1.0) * dw_dalpha;
+ double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda*dz_dalpha)/(z*z));
 
-   // Mixed derivative L8 (β,λ): d²/(dβ dλ) ln(z) = (d/dβ dz_dλ)/z - (dz_dlambda*dz_dbeta)/(z*z)
-   // Correct formula: sum of two terms, not multiplication
-   double d_dbeta_dz_dlambda = -std::pow(w, lambda-1.0) * dw_dbeta -
-     lambda * ln_w * std::pow(w, lambda-1.0) * dw_dbeta;
-   double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda*dz_dbeta)/(z*z));
+ // Mixed derivative L8 (β,λ): d²/(dβ dλ) ln(z) = (d/dβ dz_dλ)/z - (dz_dlambda*dz_dbeta)/(z*z)
+ // Correct formula: sum of two terms, not multiplication
+ double d_dbeta_dz_dlambda = -std::pow(w, lambda-1.0) * dw_dbeta -
+   lambda * ln_w * std::pow(w, lambda-1.0) * dw_dbeta;
+ double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda*dz_dbeta)/(z*z));
 
-   // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
-   // Index: 0 = α, 1 = β, 2 = γ, 3 = δ, 4 = λ
+ // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
+ // Index: 0 = α, 1 = β, 2 = γ, 3 = δ, 4 = λ
 
-   // H(α,α): sum of L2, L6, L7, and L8 (constants already added)
-   H(0,0) += d2L6_dalpha2 + d2L7_dalpha2 + d2L8_dalpha2;
+ // H(α,α): sum of L2, L6, L7, and L8 (constants already added)
+ H(0,0) += d2L6_dalpha2 + d2L7_dalpha2 + d2L8_dalpha2;
 
-   // H(α,β): mixed from L6, L7, and L8
-   H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta + d2L8_dalpha_dbeta;
-   H(1,0) = H(0,1);
+ // H(α,β): mixed from L6, L7, and L8
+ H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta + d2L8_dalpha_dbeta;
+ H(1,0) = H(0,1);
 
-   // H(β,β): contributions from L3, L7, and L8
-   H(1,1) += d2L7_dbeta2 + d2L8_dbeta2;
+ // H(β,β): contributions from L3, L7, and L8
+ H(1,1) += d2L7_dbeta2 + d2L8_dbeta2;
 
-   // H(λ,λ): contains L1 and L8 (L1 already added)
-   H(4,4) += d2L8_dlambda2;
+ // H(λ,λ): contains L1 and L8 (L1 already added)
+ H(4,4) += d2L8_dlambda2;
 
-   // H(γ,α): from L7 - derivative of ln(w) in α multiplied by λ factor of (γλ-1)
-   H(2,0) += lambda * (dw_dalpha / w);
-   H(0,2) = H(2,0);
+ // H(γ,α): from L7 - derivative of ln(w) in α multiplied by λ factor of (γλ-1)
+ H(2,0) += lambda * (dw_dalpha / w);
+ H(0,2) = H(2,0);
 
-   // H(γ,β): from L7 - derivative of ln(w) in β multiplied by λ
-   H(2,1) += lambda * (dw_dbeta / w);
-   H(1,2) = H(2,1);
+ // H(γ,β): from L7 - derivative of ln(w) in β multiplied by λ
+ H(2,1) += lambda * (dw_dbeta / w);
+ H(1,2) = H(2,1);
 
-   // H(δ,α): L8 - mixed derivative: d/dα ln(z)
-   H(3,0) += dz_dalpha / z;
-   H(0,3) = H(3,0);
+ // H(δ,α): L8 - mixed derivative: d/dα ln(z)
+ H(3,0) += dz_dalpha / z;
+ H(0,3) = H(3,0);
 
-   // H(δ,β): L8 - d/dβ ln(z)
-   H(3,1) += dz_dbeta / z;
-   H(1,3) = H(3,1);
+ // H(δ,β): L8 - d/dβ ln(z)
+ H(3,1) += dz_dbeta / z;
+ H(1,3) = H(3,1);
 
-   // Accumulating terms for mixed derivatives with λ
-   // (α,λ): Term from L7 (γ contribution) + term from L8 (δ contribution)
-   double term1_alpha_lambda = gamma * (dw_dalpha / w);
-   double term2_alpha_lambda = d2L8_dalpha_dlambda;
-   acc_alpha_lambda += term1_alpha_lambda + term2_alpha_lambda;
+ // Accumulating terms for mixed derivatives with λ
+ // (α,λ): Term from L7 (γ contribution) + term from L8 (δ contribution)
+ double term1_alpha_lambda = gamma * (dw_dalpha / w);
+ double term2_alpha_lambda = d2L8_dalpha_dlambda;
+ acc_alpha_lambda += term1_alpha_lambda + term2_alpha_lambda;
 
-   // (β,λ): Term from L7 (γ contribution) + term from L8 (δ contribution)
-   double term1_beta_lambda = gamma * (dw_dbeta / w);
-   double term2_beta_lambda = d2L8_dbeta_dlambda;
-   acc_beta_lambda += term1_beta_lambda + term2_beta_lambda;
+ // (β,λ): Term from L7 (γ contribution) + term from L8 (δ contribution)
+ double term1_beta_lambda = gamma * (dw_dbeta / w);
+ double term2_beta_lambda = d2L8_dbeta_dlambda;
+ acc_beta_lambda += term1_beta_lambda + term2_beta_lambda;
 
-   // (γ,λ): Contribution from L7 (γλ-1)*ln(w)
-   acc_gamma_lambda += ln_w;
+ // (γ,λ): Contribution from L7 (γλ-1)*ln(w)
+ acc_gamma_lambda += ln_w;
 
-   // (δ,λ): Contribution from L8 δ*ln(z)
-   acc_delta_lambda += dz_dlambda / z;
- } // end of loop
+ // (δ,λ): Contribution from L8 δ*ln(z)
+ acc_delta_lambda += dz_dlambda / z;
+} // end of loop
 
- // Applying mixed derivatives with λ
- // Note: All signs are positive for log-likelihood (not negative log-likelihood)
+// Applying mixed derivatives with λ
+// Note: All signs are positive for log-likelihood (not negative log-likelihood)
 
- // H(α,λ): Positive sign for log-likelihood
- H(0,4) = acc_alpha_lambda;
- H(4,0) = H(0,4);
+// H(α,λ): Positive sign for log-likelihood
+H(0,4) = acc_alpha_lambda;
+H(4,0) = H(0,4);
 
- // H(β,λ): Positive sign for log-likelihood
- H(1,4) = acc_beta_lambda;
- H(4,1) = H(1,4);
+// H(β,λ): Positive sign for log-likelihood
+H(1,4) = acc_beta_lambda;
+H(4,1) = H(1,4);
 
- // H(γ,λ): Positive sign for log-likelihood
- H(2,4) = acc_gamma_lambda;
- H(4,2) = H(2,4);
+// H(γ,λ): Positive sign for log-likelihood
+H(2,4) = acc_gamma_lambda;
+H(4,2) = H(2,4);
 
- // H(δ,λ): Positive sign for log-likelihood
- H(3,4) = acc_delta_lambda;
- H(4,3) = H(3,4);
+// H(δ,λ): Positive sign for log-likelihood
+H(3,4) = acc_delta_lambda;
+H(4,3) = H(3,4);
 
- // Returns the analytic Hessian matrix of the log-likelihood
- return Rcpp::wrap(-H);
+// Returns the analytic Hessian matrix of the log-likelihood
+return Rcpp::wrap(-H);
 }
 
 
@@ -2123,22 +2632,22 @@ check_kkw_pars(alpha,beta,delta,lambda) => boolean
 // kkw(α, β, 1, δ, λ) => alpha>0, beta>0, delta≥0, λ>0
 // -----------------------------------------------------------------------------
 inline bool check_kkw_pars(double alpha,
-                         double beta,
-                         double delta,
-                         double lambda,
-                         bool strict = false) {
+                       double beta,
+                       double delta,
+                       double lambda,
+                       bool strict = false) {
 if (alpha <= 0.0 || beta <= 0.0 || delta < 0.0 || lambda <= 0.0) {
-  return false;
+return false;
 }
 if (strict) {
-  const double MINP = 1e-5;
-  const double MAXP = 1e5;
-  if (alpha < MINP || beta < MINP || lambda < MINP) {
-    return false;
-  }
-  if (alpha > MAXP || beta > MAXP || delta > MAXP || lambda > MAXP) {
-    return false;
-  }
+const double MINP = 1e-5;
+const double MAXP = 1e5;
+if (alpha < MINP || beta < MINP || lambda < MINP) {
+  return false;
+}
+if (alpha > MAXP || beta > MAXP || delta > MAXP || lambda > MAXP) {
+  return false;
+}
 }
 return true;
 }
@@ -2306,97 +2815,97 @@ Then sum across data, multiply n to the constants, etc.
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec dkkw(
-   const arma::vec& x,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& delta,
-   const Rcpp::NumericVector& lambda,
-   bool log_prob = false
+Rcpp::NumericVector dkkw(
+ const arma::vec& x,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool log_prob = false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
- arma::vec d_vec(delta.begin(), delta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+arma::vec d_vec(delta.begin(), delta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- // broadcast
- size_t N = std::max({x.n_elem,
-                     a_vec.n_elem,
-                     b_vec.n_elem,
-                     d_vec.n_elem,
-                     l_vec.n_elem});
+// broadcast
+size_t N = std::max({x.n_elem,
+                   a_vec.n_elem,
+                   b_vec.n_elem,
+                   d_vec.n_elem,
+                   l_vec.n_elem});
 
- arma::vec out(N);
- out.fill(log_prob ? R_NegInf : 0.0);
+arma::vec out(N);
+out.fill(log_prob ? R_NegInf : 0.0);
 
- for (size_t i = 0; i < N; ++i) {
-   double a = a_vec[i % a_vec.n_elem];
-   double b = b_vec[i % b_vec.n_elem];
-   double dd = d_vec[i % d_vec.n_elem];
-   double ll = l_vec[i % l_vec.n_elem];
-   double xx = x[i % x.n_elem];
+for (size_t i = 0; i < N; ++i) {
+ double a = a_vec[i % a_vec.n_elem];
+ double b = b_vec[i % b_vec.n_elem];
+ double dd = d_vec[i % d_vec.n_elem];
+ double ll = l_vec[i % l_vec.n_elem];
+ double xx = x[i % x.n_elem];
 
-   if (!check_kkw_pars(a, b, dd, ll)) {
-     // invalid => 0 or -Inf
-     continue;
-   }
-   // domain
-   if (xx <= 0.0 || xx >= 1.0 || !R_finite(xx)) {
-     continue;
-   }
-
-   // Precompute logs for PDF
-   // log(f(x)) = log(λ) + log(α) + log(β) + log(δ+1)
-   //            + (α-1)*log(x)
-   //            + (β-1)*log(1 - x^α)
-   //            + (λ-1)*log(1 - (1 - x^α)^β)
-   //            + δ* log(1 - [1 - (1 - x^α)^β]^λ)
-   double logCst = std::log(ll) + std::log(a) + std::log(b) + std::log(dd + 1.0);
-
-   // x^alpha
-   double lx = std::log(xx);
-   double log_xalpha = a * lx;  // log(x^alpha)= alpha*log(x)
-   // 1 - x^alpha
-   double log_1_minus_xalpha = log1mexp(log_xalpha); // stable
-   if (!R_finite(log_1_minus_xalpha)) {
-     continue;
-   }
-
-   // (β-1)* log(1 - x^alpha)
-   double term1 = (b - 1.0) * log_1_minus_xalpha;
-
-   // let A = (1 - x^alpha)^β => logA = b * log_1_minus_xalpha
-   double logA = b * log_1_minus_xalpha;
-   double log_1_minusA = log1mexp(logA); // stable => log(1 - A)
-   if (!R_finite(log_1_minusA)) {
-     continue;
-   }
-   // (λ-1)* log(1 - A)
-   double term2 = (ll - 1.0) * log_1_minusA;
-
-   // let B = [1 - (1 - x^alpha)^β]^λ => logB = λ*log(1 - A)
-   double logB = ll * log_1_minusA;
-   double log_1_minus_B = log1mexp(logB);
-   if (!R_finite(log_1_minus_B)) {
-     continue;
-   }
-   // δ * log( 1 - B )
-   double term3 = dd * log_1_minus_B;
-
-   double log_pdf = logCst
-   + (a - 1.0)*lx
-   + term1
-   + term2
-   + term3;
-
-   if (log_prob) {
-     out(i) = log_pdf;
-   } else {
-     out(i) = std::exp(log_pdf);
-   }
+ if (!check_kkw_pars(a, b, dd, ll)) {
+   // invalid => 0 or -Inf
+   continue;
+ }
+ // domain
+ if (xx <= 0.0 || xx >= 1.0 || !R_finite(xx)) {
+   continue;
  }
 
- return out;
+ // Precompute logs for PDF
+ // log(f(x)) = log(λ) + log(α) + log(β) + log(δ+1)
+ //            + (α-1)*log(x)
+ //            + (β-1)*log(1 - x^α)
+ //            + (λ-1)*log(1 - (1 - x^α)^β)
+ //            + δ* log(1 - [1 - (1 - x^α)^β]^λ)
+ double logCst = std::log(ll) + std::log(a) + std::log(b) + std::log(dd + 1.0);
+
+ // x^alpha
+ double lx = std::log(xx);
+ double log_xalpha = a * lx;  // log(x^alpha)= alpha*log(x)
+ // 1 - x^alpha
+ double log_1_minus_xalpha = log1mexp(log_xalpha); // stable
+ if (!R_finite(log_1_minus_xalpha)) {
+   continue;
+ }
+
+ // (β-1)* log(1 - x^alpha)
+ double term1 = (b - 1.0) * log_1_minus_xalpha;
+
+ // let A = (1 - x^alpha)^β => logA = b * log_1_minus_xalpha
+ double logA = b * log_1_minus_xalpha;
+ double log_1_minusA = log1mexp(logA); // stable => log(1 - A)
+ if (!R_finite(log_1_minusA)) {
+   continue;
+ }
+ // (λ-1)* log(1 - A)
+ double term2 = (ll - 1.0) * log_1_minusA;
+
+ // let B = [1 - (1 - x^alpha)^β]^λ => logB = λ*log(1 - A)
+ double logB = ll * log_1_minusA;
+ double log_1_minus_B = log1mexp(logB);
+ if (!R_finite(log_1_minus_B)) {
+   continue;
+ }
+ // δ * log( 1 - B )
+ double term3 = dd * log_1_minus_B;
+
+ double log_pdf = logCst
+ + (a - 1.0)*lx
+ + term1
+ + term2
+ + term3;
+
+ if (log_prob) {
+   out(i) = log_pdf;
+ } else {
+   out(i) = std::exp(log_pdf);
+ }
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -2514,109 +3023,109 @@ arma::vec dkkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec pkkw(
-   const arma::vec& q,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& delta,
-   const Rcpp::NumericVector& lambda,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector pkkw(
+ const arma::vec& q,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
- arma::vec d_vec(delta.begin(), delta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+arma::vec d_vec(delta.begin(), delta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- size_t N = std::max({q.n_elem,
-                     a_vec.n_elem,
-                     b_vec.n_elem,
-                     d_vec.n_elem,
-                     l_vec.n_elem});
+size_t N = std::max({q.n_elem,
+                   a_vec.n_elem,
+                   b_vec.n_elem,
+                   d_vec.n_elem,
+                   l_vec.n_elem});
 
- arma::vec out(N);
+arma::vec out(N);
 
- for (size_t i = 0; i < N; ++i) {
-   double a = a_vec[i % a_vec.n_elem];
-   double b = b_vec[i % b_vec.n_elem];
-   double dd = d_vec[i % d_vec.n_elem];
-   double ll = l_vec[i % l_vec.n_elem];
-   double xx = q[i % q.n_elem];
+for (size_t i = 0; i < N; ++i) {
+ double a = a_vec[i % a_vec.n_elem];
+ double b = b_vec[i % b_vec.n_elem];
+ double dd = d_vec[i % d_vec.n_elem];
+ double ll = l_vec[i % l_vec.n_elem];
+ double xx = q[i % q.n_elem];
 
-   if (!check_kkw_pars(a, b, dd, ll)) {
-     out(i) = NA_REAL;
-     continue;
-   }
-
-   // boundaries
-   if (!R_finite(xx) || xx <= 0.0) {
-     // F(0) = 0
-     double val0 = (lower_tail ? 0.0 : 1.0);
-     out(i) = log_p ? std::log(val0) : val0;
-     continue;
-   }
-   if (xx >= 1.0) {
-     // F(1)=1
-     double val1 = (lower_tail ? 1.0 : 0.0);
-     out(i) = log_p ? std::log(val1) : val1;
-     continue;
-   }
-
-   // x^alpha
-   double lx = std::log(xx);
-   double log_xalpha = a * lx;
-   double xalpha = std::exp(log_xalpha);
-
-   double one_minus_xalpha = 1.0 - xalpha;
-   if (one_minus_xalpha <= 0.0) {
-     // near 1 => F ~ 1
-     double val1 = (lower_tail ? 1.0 : 0.0);
-     out(i) = log_p ? std::log(val1) : val1;
-     continue;
-   }
-   // (1 - x^alpha)^beta => ...
-   double vbeta = std::pow(one_minus_xalpha, b);
-   double y = 1.0 - vbeta;  // [1-(1 - x^alpha)^β]
-   if (y <= 0.0) {
-     // => F=0
-     double val0 = (lower_tail ? 0.0 : 1.0);
-     out(i) = log_p ? std::log(val0) : val0;
-     continue;
-   }
-   if (y >= 1.0) {
-     // => F=1
-     double val1 = (lower_tail ? 1.0 : 0.0);
-     out(i) = log_p ? std::log(val1) : val1;
-     continue;
-   }
-
-   double ylambda = std::pow(y, ll);   // [1-(1-x^alpha)^β]^λ
-   if (ylambda <= 0.0) {
-     // => F=0
-     double val0 = (lower_tail ? 0.0 : 1.0);
-     out(i) = log_p ? std::log(val0) : val0;
-     continue;
-   }
-   if (ylambda >= 1.0) {
-     // => F=1
-     double val1 = (lower_tail ? 1.0 : 0.0);
-     out(i) = log_p ? std::log(val1) : val1;
-     continue;
-   }
-
-   double outer = 1.0 - ylambda; // 1 - ...
-   double cdfval = 1.0 - std::pow(outer, dd+1.0);
-
-   if (!lower_tail) {
-     cdfval = 1.0 - cdfval;
-   }
-   if (log_p) {
-     cdfval = std::log(cdfval);
-   }
-   out(i) = cdfval;
+ if (!check_kkw_pars(a, b, dd, ll)) {
+   out(i) = NA_REAL;
+   continue;
  }
 
- return out;
+ // boundaries
+ if (!R_finite(xx) || xx <= 0.0) {
+   // F(0) = 0
+   double val0 = (lower_tail ? 0.0 : 1.0);
+   out(i) = log_p ? std::log(val0) : val0;
+   continue;
+ }
+ if (xx >= 1.0) {
+   // F(1)=1
+   double val1 = (lower_tail ? 1.0 : 0.0);
+   out(i) = log_p ? std::log(val1) : val1;
+   continue;
+ }
+
+ // x^alpha
+ double lx = std::log(xx);
+ double log_xalpha = a * lx;
+ double xalpha = std::exp(log_xalpha);
+
+ double one_minus_xalpha = 1.0 - xalpha;
+ if (one_minus_xalpha <= 0.0) {
+   // near 1 => F ~ 1
+   double val1 = (lower_tail ? 1.0 : 0.0);
+   out(i) = log_p ? std::log(val1) : val1;
+   continue;
+ }
+ // (1 - x^alpha)^beta => ...
+ double vbeta = std::pow(one_minus_xalpha, b);
+ double y = 1.0 - vbeta;  // [1-(1 - x^alpha)^β]
+ if (y <= 0.0) {
+   // => F=0
+   double val0 = (lower_tail ? 0.0 : 1.0);
+   out(i) = log_p ? std::log(val0) : val0;
+   continue;
+ }
+ if (y >= 1.0) {
+   // => F=1
+   double val1 = (lower_tail ? 1.0 : 0.0);
+   out(i) = log_p ? std::log(val1) : val1;
+   continue;
+ }
+
+ double ylambda = std::pow(y, ll);   // [1-(1-x^alpha)^β]^λ
+ if (ylambda <= 0.0) {
+   // => F=0
+   double val0 = (lower_tail ? 0.0 : 1.0);
+   out(i) = log_p ? std::log(val0) : val0;
+   continue;
+ }
+ if (ylambda >= 1.0) {
+   // => F=1
+   double val1 = (lower_tail ? 1.0 : 0.0);
+   out(i) = log_p ? std::log(val1) : val1;
+   continue;
+ }
+
+ double outer = 1.0 - ylambda; // 1 - ...
+ double cdfval = 1.0 - std::pow(outer, dd+1.0);
+
+ if (!lower_tail) {
+   cdfval = 1.0 - cdfval;
+ }
+ if (log_p) {
+   cdfval = std::log(cdfval);
+ }
+ out(i) = cdfval;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -2740,103 +3249,103 @@ arma::vec pkkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec qkkw(
-   const arma::vec& p,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& delta,
-   const Rcpp::NumericVector& lambda,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector qkkw(
+ const arma::vec& p,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
- arma::vec d_vec(delta.begin(), delta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+arma::vec d_vec(delta.begin(), delta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- size_t N = std::max({p.n_elem,
-                     a_vec.n_elem,
-                     b_vec.n_elem,
-                     d_vec.n_elem,
-                     l_vec.n_elem});
+size_t N = std::max({p.n_elem,
+                   a_vec.n_elem,
+                   b_vec.n_elem,
+                   d_vec.n_elem,
+                   l_vec.n_elem});
 
- arma::vec out(N);
+arma::vec out(N);
 
- for (size_t i = 0; i < N; ++i) {
-   double a = a_vec[i % a_vec.n_elem];
-   double b = b_vec[i % b_vec.n_elem];
-   double dd = d_vec[i % d_vec.n_elem];
-   double ll = l_vec[i % l_vec.n_elem];
-   double pp = p[i % p.n_elem];
+for (size_t i = 0; i < N; ++i) {
+ double a = a_vec[i % a_vec.n_elem];
+ double b = b_vec[i % b_vec.n_elem];
+ double dd = d_vec[i % d_vec.n_elem];
+ double ll = l_vec[i % l_vec.n_elem];
+ double pp = p[i % p.n_elem];
 
-   if (!check_kkw_pars(a, b, dd, ll)) {
+ if (!check_kkw_pars(a, b, dd, ll)) {
+   out(i) = NA_REAL;
+   continue;
+ }
+
+ // Convert p if log_p
+ if (log_p) {
+   if (pp > 0.0) {
+     // log(p)>0 => p>1 => invalid
      out(i) = NA_REAL;
      continue;
    }
-
-   // Convert p if log_p
-   if (log_p) {
-     if (pp > 0.0) {
-       // log(p)>0 => p>1 => invalid
-       out(i) = NA_REAL;
-       continue;
-     }
-     pp = std::exp(pp);
-   }
-   // if upper tail
-   if (!lower_tail) {
-     pp = 1.0 - pp;
-   }
-
-   // boundaries
-   if (pp <= 0.0) {
-     out(i) = 0.0;
-     continue;
-   }
-   if (pp >= 1.0) {
-     out(i) = 1.0;
-     continue;
-   }
-
-   // formula:
-   // F(x)=p => 1 - [1 - (1 - x^α)^β]^λ]^(δ+1) = p
-   // => [1 - (1 - x^α)^β]^λ = 1 - (1-p)^(1/(δ+1))
-   double tmp1 = 1.0 - std::pow(1.0 - pp, 1.0/(dd+1.0));
-   if (tmp1 < 0.0)  tmp1=0.0;
-   if (tmp1>1.0)    tmp1=1.0;  // safety
-
-   // let T= tmp1^(1/λ)
-   double T;
-   if (ll==1.0) {
-     T=tmp1;
-   } else {
-     T=std::pow(tmp1, 1.0/ll);
-   }
-   // => (1 - x^α)^β = 1 - T
-   double M=1.0 - T;
-   if (M<0.0)  M=0.0;
-   if (M>1.0)  M=1.0;
-   // => 1 - x^α= M^(1/β)
-   double Mpow= std::pow(M, 1.0/b);
-   double xalpha=1.0 - Mpow;
-   if (xalpha<0.0)  xalpha=0.0;
-   if (xalpha>1.0)  xalpha=1.0;
-
-   // x= xalpha^(1/α) => actually => x= [1 - M^(1/β)]^(1/α)
-   double xx;
-   if (a==1.0) {
-     xx=xalpha;
-   } else {
-     xx=std::pow(xalpha, 1.0/a);
-   }
-
-   if (xx<0.0)  xx=0.0;
-   if (xx>1.0)  xx=1.0;
-
-   out(i)= xx;
+   pp = std::exp(pp);
+ }
+ // if upper tail
+ if (!lower_tail) {
+   pp = 1.0 - pp;
  }
 
- return out;
+ // boundaries
+ if (pp <= 0.0) {
+   out(i) = 0.0;
+   continue;
+ }
+ if (pp >= 1.0) {
+   out(i) = 1.0;
+   continue;
+ }
+
+ // formula:
+ // F(x)=p => 1 - [1 - (1 - x^α)^β]^λ]^(δ+1) = p
+ // => [1 - (1 - x^α)^β]^λ = 1 - (1-p)^(1/(δ+1))
+ double tmp1 = 1.0 - std::pow(1.0 - pp, 1.0/(dd+1.0));
+ if (tmp1 < 0.0)  tmp1=0.0;
+ if (tmp1>1.0)    tmp1=1.0;  // safety
+
+ // let T= tmp1^(1/λ)
+ double T;
+ if (ll==1.0) {
+   T=tmp1;
+ } else {
+   T=std::pow(tmp1, 1.0/ll);
+ }
+ // => (1 - x^α)^β = 1 - T
+ double M=1.0 - T;
+ if (M<0.0)  M=0.0;
+ if (M>1.0)  M=1.0;
+ // => 1 - x^α= M^(1/β)
+ double Mpow= std::pow(M, 1.0/b);
+ double xalpha=1.0 - Mpow;
+ if (xalpha<0.0)  xalpha=0.0;
+ if (xalpha>1.0)  xalpha=1.0;
+
+ // x= xalpha^(1/α) => actually => x= [1 - M^(1/β)]^(1/α)
+ double xx;
+ if (a==1.0) {
+   xx=xalpha;
+ } else {
+   xx=std::pow(xalpha, 1.0/a);
+ }
+
+ if (xx<0.0)  xx=0.0;
+ if (xx>1.0)  xx=1.0;
+
+ out(i)= xx;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -2959,72 +3468,75 @@ arma::vec qkkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec rkkw(
-   int n,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& delta,
-   const Rcpp::NumericVector& lambda
+Rcpp::NumericVector rkkw(
+ int n,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda
 ) {
- if (n<=0) {
-   Rcpp::stop("rkkw: n must be positive");
- }
-
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
- arma::vec d_vec(delta.begin(), delta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
-
- size_t k= std::max({a_vec.n_elem, b_vec.n_elem, d_vec.n_elem, l_vec.n_elem});
- arma::vec out(n);
-
- for (int i=0; i<n; i++) {
-   size_t idx= i % k;
-   double a= a_vec[idx % a_vec.n_elem];
-   double b= b_vec[idx % b_vec.n_elem];
-   double dd= d_vec[idx % d_vec.n_elem];
-   double ll= l_vec[idx % l_vec.n_elem];
-
-   if (!check_kkw_pars(a,b,dd,ll)) {
-     out(i)= NA_REAL;
-     Rcpp::warning("rkkw: invalid parameters at index %d", i+1);
-     continue;
-   }
-
-   double V= R::runif(0.0,1.0);
-   // U=1 - (1 - V)^(1/(δ+1))
-   double U = 1.0 - std::pow(1.0 - V, 1.0/(dd+1.0));
-   if (U<0.0)  U=0.0;
-   if (U>1.0)  U=1.0;
-
-   // x = {1 - [1 - U^(1/λ}]^(1/β)}^(1/α)
-   double u_pow;
-   if (ll==1.0) {
-     u_pow=U;
-   } else {
-     u_pow=std::pow(U, 1.0/ll);
-   }
-   double bracket= 1.0- u_pow;
-   if (bracket<0.0) bracket=0.0;
-   if (bracket>1.0) bracket=1.0;
-   double bracket2= std::pow(bracket, 1.0/b);
-   double xalpha= 1.0 - bracket2;
-   if (xalpha<0.0) xalpha=0.0;
-   if (xalpha>1.0) xalpha=1.0;
-
-   double xx;
-   if (a==1.0) {
-     xx=xalpha;
-   } else {
-     xx= std::pow(xalpha, 1.0/a);
-     if (!R_finite(xx) || xx<0.0) xx=0.0;
-     if (xx>1.0) xx=1.0;
-   }
-   out(i)=xx;
- }
-
- return out;
+if (n<=0) {
+ Rcpp::stop("rkkw: n must be positive");
 }
+
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+arma::vec d_vec(delta.begin(), delta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
+
+size_t k= std::max({a_vec.n_elem, b_vec.n_elem, d_vec.n_elem, l_vec.n_elem});
+arma::vec out(n);
+
+for (int i=0; i<n; i++) {
+ size_t idx= i % k;
+ double a= a_vec[idx % a_vec.n_elem];
+ double b= b_vec[idx % b_vec.n_elem];
+ double dd= d_vec[idx % d_vec.n_elem];
+ double ll= l_vec[idx % l_vec.n_elem];
+
+ if (!check_kkw_pars(a,b,dd,ll)) {
+   out(i)= NA_REAL;
+   Rcpp::warning("rkkw: invalid parameters at index %d", i+1);
+   continue;
+ }
+
+ double V= R::runif(0.0,1.0);
+ // U=1 - (1 - V)^(1/(δ+1))
+ double U = 1.0 - std::pow(1.0 - V, 1.0/(dd+1.0));
+ if (U<0.0)  U=0.0;
+ if (U>1.0)  U=1.0;
+
+ // x = {1 - [1 - U^(1/λ}]^(1/β)}^(1/α)
+ double u_pow;
+ if (ll==1.0) {
+   u_pow=U;
+ } else {
+   u_pow=std::pow(U, 1.0/ll);
+ }
+ double bracket= 1.0- u_pow;
+ if (bracket<0.0) bracket=0.0;
+ if (bracket>1.0) bracket=1.0;
+ double bracket2= std::pow(bracket, 1.0/b);
+ double xalpha= 1.0 - bracket2;
+ if (xalpha<0.0) xalpha=0.0;
+ if (xalpha>1.0) xalpha=1.0;
+
+ double xx;
+ if (a==1.0) {
+   xx=xalpha;
+ } else {
+   xx= std::pow(xalpha, 1.0/a);
+   if (!R_finite(xx) || xx<0.0) xx=0.0;
+   if (xx>1.0) xx=1.0;
+ }
+ out(i)=xx;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
+}
+
+
+
 
 
 //' @title Negative Log-Likelihood for the kkw Distribution
@@ -3158,63 +3670,180 @@ arma::vec rkkw(
 //'
 //' @export
 // [[Rcpp::export]]
-double llkkw(const Rcpp::NumericVector& par,
-            const Rcpp::NumericVector& data) {
- if (par.size()<4) {
-   return R_PosInf; // invalid
- }
- double a= par[0];
- double b= par[1];
- double dd= par[2];
- double ll= par[3];
+double llkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+ // Parameter validation
+ if (par.size() < 4) return R_PosInf;
 
- if (!check_kkw_pars(a,b,dd,ll)) {
-   return R_PosInf; // param invalid => +Inf for negative log-likelihood
- }
+ double alpha = par[0];
+ double beta = par[1];
+ double delta = par[2];
+ double lambda = par[3];
+
+ if (!check_kkw_pars(alpha, beta, delta, lambda)) return R_PosInf;
 
  arma::vec x = Rcpp::as<arma::vec>(data);
- if (x.n_elem<1) {
+ if (x.n_elem < 1 || arma::any(x <= 0.0) || arma::any(x >= 1.0)) return R_PosInf;
+
+ int n = x.n_elem;
+
+ // Stability constants
+ const double min_eps = std::numeric_limits<double>::min() * 1e4;
+ const double eps = 1e-10;
+ const double exp_threshold = -700.0;
+
+ // Special case optimization: when delta = 0, use EKw implementation
+ bool is_ekw = (delta < min_eps);
+
+ // Safe parameter logs
+ double log_alpha = safe_log(alpha);
+ double log_beta = safe_log(beta);
+ double log_lambda = safe_log(lambda);
+ double log_delta_plus_1 = is_ekw ? 0.0 : std::log1p(delta);
+
+ // Constant term
+ double const_term = n * (log_lambda + log_alpha + log_beta + log_delta_plus_1);
+
+ // Initialize component accumulators
+ double sum_term1 = 0.0;  // (alpha-1) * sum(log(x))
+ double sum_term2 = 0.0;  // (beta-1) * sum(log(1-x^alpha))
+ double sum_term3 = 0.0;  // (lambda-1) * sum(log(1-(1-x^alpha)^beta))
+ double sum_term4 = 0.0;  // delta * sum(log(1-[1-(1-x^alpha)^beta]^lambda))
+
+ for (int i = 0; i < n; i++) {
+   double xi = x(i);
+
+   // Handle boundary cases
+   if (xi < eps) xi = eps;
+   if (xi > 1.0 - eps) xi = 1.0 - eps;
+
+   double log_xi = std::log(xi);
+   sum_term1 += (alpha - 1.0) * log_xi;
+
+   // Calculate x^alpha stably
+   double x_alpha, log_x_alpha;
+   if (alpha * std::abs(log_xi) > 1.0) {
+     // Use log-domain for potential overflow/underflow
+     log_x_alpha = alpha * log_xi;
+     x_alpha = std::exp(log_x_alpha);
+   } else {
+     x_alpha = std::pow(xi, alpha);
+     log_x_alpha = std::log(x_alpha);
+   }
+
+   // Calculate v = 1-x^alpha stably
+   double v, log_v;
+   if (x_alpha > 0.9999) {
+     // Use complementary calculation for x^alpha near 1
+     v = -std::expm1(log_x_alpha);
+     log_v = std::log(v);
+   } else {
+     v = 1.0 - x_alpha;
+     log_v = log1p(-x_alpha); // More accurate than log(1-x^alpha)
+   }
+
+   // Ensure v is within valid range
+   if (v < min_eps) {
+     v = min_eps;
+     log_v = std::log(v);
+   }
+
+   sum_term2 += (beta - 1.0) * log_v;
+
+   // Calculate v^beta stably
+   double v_beta, log_v_beta;
+   if (beta * std::abs(log_v) > 1.0) {
+     // Use log-domain for potential overflow/underflow
+     log_v_beta = beta * log_v;
+     v_beta = std::exp(log_v_beta);
+   } else {
+     v_beta = std::pow(v, beta);
+     log_v_beta = std::log(v_beta);
+   }
+
+   // Calculate w = 1-v^beta stably
+   double w, log_w;
+   if (v_beta > 0.9999) {
+     // Use complementary calculation for v^beta near 1
+     w = -std::expm1(log_v_beta);
+     log_w = std::log(w);
+   } else {
+     w = 1.0 - v_beta;
+     log_w = log1p(-v_beta); // More accurate than log(1-v^beta)
+   }
+
+   // Ensure w is within valid range
+   if (w < min_eps) {
+     w = min_eps;
+     log_w = std::log(w);
+   }
+
+   // Critical lambda handling - carefully treat lambda near 1
+   if (std::abs(lambda - 1.0) < 1e-6) {
+     if (lambda > 1.0) {
+       // Use Taylor approximation for (lambda-1)*log(w) when lambda ≈ 1+
+       sum_term3 += (lambda - 1.0) * log_w;
+     } else if (lambda < 1.0) {
+       // Use Taylor approximation for (lambda-1)*log(w) when lambda ≈ 1-
+       sum_term3 += (lambda - 1.0) * log_w;
+     }
+     // When lambda = 1 exactly, term is zero
+   } else {
+     sum_term3 += (lambda - 1.0) * log_w;
+   }
+
+   // Skip last term calculation if delta ≈ 0 (EKw case)
+   if (!is_ekw) {
+     // Calculate w^lambda stably
+     double w_lambda, log_w_lambda;
+     if (lambda * std::abs(log_w) > 1.0) {
+       // Use log-domain for potential overflow/underflow
+       log_w_lambda = lambda * log_w;
+       w_lambda = std::exp(log_w_lambda);
+     } else {
+       w_lambda = std::pow(w, lambda);
+       log_w_lambda = std::log(w_lambda);
+     }
+
+     // Calculate z = 1-w^lambda stably
+     double z, log_z;
+     if (w_lambda > 0.9999) {
+       // Use complementary calculation for w^lambda near 1
+       z = -std::expm1(log_w_lambda);
+       log_z = std::log(z);
+     } else {
+       z = 1.0 - w_lambda;
+       log_z = log1p(-w_lambda); // More accurate than log(1-w^lambda)
+     }
+
+     // Ensure z is within valid range
+     if (z < min_eps) {
+       z = min_eps;
+       log_z = std::log(z);
+     }
+
+     // Special case for very large delta
+     if (delta > 1000.0) {
+       // Scale to prevent overflow
+       double scaled_delta = std::min(delta, 1000.0);
+       sum_term4 += scaled_delta * log_z;
+     } else {
+       sum_term4 += delta * log_z;
+     }
+   }
+ }
+
+ double loglike = const_term + sum_term1 + sum_term2 + sum_term3 + sum_term4;
+
+ // Guard against NaN/Inf
+ if (!std::isfinite(loglike)) {
    return R_PosInf;
  }
- // check data in (0,1)
- if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
-   return R_PosInf;
- }
 
- int n= x.n_elem;
- // sum of log-likelihood
-
- // constant part: n * [ log(λ)+ log(α)+ log(β)+ log(δ+1) ]
- double cst = n*( std::log(ll) + std::log(a) + std::log(b) + std::log(dd+1.0) );
-
- // sum parts
- // sum((α-1)*log(x))
- arma::vec lx = arma::log(x);
- double term1= (a-1.0)*arma::sum(lx);
-
- // sum((β-1)* log(1 - x^α))
- arma::vec xalpha = arma::pow(x,a);
- arma::vec log1mxalpha = arma::log(1.0 - xalpha);
- double term2= (b-1.0)*arma::sum(log1mxalpha);
-
- // sum((λ-1)* log(1 - (1 - x^α)^β))
- arma::vec vbeta = arma::pow(1.0 - xalpha, b);
- arma::vec one_minus_vbeta = 1.0 - vbeta;
- // safe log
- arma::vec log_omv = arma::log(one_minus_vbeta);
- double term3= (ll-1.0)*arma::sum(log_omv);
-
- // sum( δ* log(1 - [1-(1-x^α)^β]^λ ) )
- // let w= one_minus_vbeta => [1-w]^λ => so 1- w^λ is the factor
- arma::vec wlambda= arma::pow(one_minus_vbeta, ll);
- arma::vec one_minus_wlambda= 1.0 - wlambda;
- arma::vec log_1mw= arma::log(one_minus_wlambda);
- double term4= dd* arma::sum(log_1mw);
-
- double loglike = cst + term1 + term2 + term3 + term4;
- // negative
  return -loglike;
 }
+
+
+
 
 
 //' @title Gradient of the Negative Log-Likelihood for the kkw Distribution
@@ -3362,96 +3991,195 @@ double llkkw(const Rcpp::NumericVector& par,
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector grkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha = par[0];   // Shape parameter α > 0
- double beta = par[1];    // Shape parameter β > 0
- double delta = par[2];   // Shape parameter δ > 0
- double lambda = par[3];  // Shape parameter λ > 0
-
  // Parameter validation
- if (alpha <= 0 || beta <= 0 || delta <= 0 || lambda <= 0) {
+ if (par.size() < 4) {
    Rcpp::NumericVector grad(4, R_NaN);
    return grad;
  }
 
- // Data conversion and validation
+ double alpha = par[0];
+ double beta = par[1];
+ double delta = par[2];
+ double lambda = par[3];
+
+ if (alpha <= 0 || beta <= 0 || delta < 0 || lambda <= 0) {
+   Rcpp::NumericVector grad(4, R_NaN);
+   return grad;
+ }
+
  arma::vec x = Rcpp::as<arma::vec>(data);
-
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
+ if (x.n_elem < 1 || arma::any(x <= 0) || arma::any(x >= 1)) {
    Rcpp::NumericVector grad(4, R_NaN);
    return grad;
  }
 
- int n = x.n_elem;  // Sample size
-
- // Initialize gradient vector
+ int n = x.n_elem;
  Rcpp::NumericVector grad(4, 0.0);
 
- // Small constant to avoid numerical issues
- double eps = std::numeric_limits<double>::epsilon() * 100;
+ // Constants for numerical stability
+ const double min_eps = 1e-15;
+ const double eps = 1e-10;
+ const double exp_threshold = -700.0;
 
- // Compute transformations and intermediate values
- arma::vec log_x = arma::log(x);                // log(x_i)
- arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
- arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
+ // Initialize component accumulators
+ double d_alpha = n / alpha;
+ double d_beta = n / beta;
+ double d_delta = n / (delta + 1.0);
+ double d_lambda = n / lambda;
 
- // v_i = 1 - x_i^α
- arma::vec v = 1.0 - x_alpha;
- v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
+ // Special case for delta ≈ 0 (reduces to EKw)
+ bool delta_near_zero = (delta < min_eps);
 
- arma::vec log_v = arma::log(v);                // log(v_i)
- arma::vec v_beta_m1 = arma::pow(v, beta - 1.0); // v_i^(β-1)
- arma::vec v_beta = arma::pow(v, beta);          // v_i^β
- arma::vec v_beta_log_v = v_beta % log_v;        // v_i^β * log(v_i)
+ for (int i = 0; i < n; i++) {
+   double xi = x(i);
 
- // w_i = 1 - v_i^β = 1 - (1-x_i^α)^β
- arma::vec w = 1.0 - v_beta;
- w = arma::clamp(w, eps, 1.0 - eps);            // Prevent numerical issues
+   // Ensure xi is within safe bounds
+   if (xi < eps) xi = eps;
+   if (xi > 1.0 - eps) xi = 1.0 - eps;
 
- arma::vec log_w = arma::log(w);                // log(w_i)
- arma::vec w_lambda_m1 = arma::pow(w, lambda - 1.0); // w_i^(λ-1)
- arma::vec w_lambda = arma::pow(w, lambda);          // w_i^λ
- arma::vec w_lambda_log_w = w_lambda % log_w;        // w_i^λ * log(w_i)
+   double log_xi = std::log(xi);
+   d_alpha += log_xi;
 
- // z_i = 1 - w_i^λ = 1 - [1-(1-x_i^α)^β]^λ
- arma::vec z = 1.0 - w_lambda;
- z = arma::clamp(z, eps, 1.0 - eps);            // Prevent numerical issues
+   // Calculate x^alpha in log domain for large alpha
+   double x_alpha, x_alpha_log_x;
+   if (alpha > 100.0 || alpha * std::abs(log_xi) > 1.0) {
+     double log_x_alpha = alpha * log_xi;
+     x_alpha = std::exp(log_x_alpha);
+     x_alpha_log_x = x_alpha * log_xi;
+   } else {
+     x_alpha = std::pow(xi, alpha);
+     x_alpha_log_x = x_alpha * log_xi;
+   }
 
- arma::vec log_z = arma::log(z);                // log(z_i)
+   // Calculate v = 1-x^alpha with complementary precision
+   double v, log_v;
+   if (x_alpha > 0.9995) {
+     v = -std::expm1(alpha * log_xi);
+     log_v = std::log(v);
+   } else {
+     v = 1.0 - x_alpha;
+     log_v = log1p(-x_alpha);  // More precise than log(1-x^alpha)
+   }
 
- // Calculate partial derivatives for each parameter (for log-likelihood)
+   // Ensure v is not too small
+   v = std::max(v, eps);
+   d_beta += log_v;
 
- // ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - (β-1)Σᵢ[xᵢ^α*log(xᵢ)/vᵢ] + (λ-1)Σᵢ[β*vᵢ^(β-1)*xᵢ^α*log(xᵢ)/wᵢ] - δΣᵢ[λ*wᵢ^(λ-1)*β*vᵢ^(β-1)*xᵢ^α*log(xᵢ)/zᵢ]
- double d_alpha = n / alpha + arma::sum(log_x);
+   // Calculate v^beta in log domain for large beta
+   double v_beta, v_beta_m1, v_beta_log_v;
+   if (beta > 100.0 || beta * std::abs(log_v) > 1.0) {
+     double log_v_beta = beta * log_v;
+     v_beta = std::exp(log_v_beta);
+     v_beta_m1 = std::exp((beta - 1.0) * log_v);
+     v_beta_log_v = v_beta * log_v;
+   } else {
+     v_beta = std::pow(v, beta);
+     v_beta_m1 = std::pow(v, beta - 1.0);
+     v_beta_log_v = v_beta * log_v;
+   }
 
- // Calculate terms separately with correct signs
- arma::vec alpha_term1 = (beta - 1.0) / v;                       // (β-1)/v_i
- arma::vec alpha_term2 = (lambda - 1.0) * beta * v_beta_m1 / w;  // (λ-1)*β*v_i^(β-1)/w_i
- arma::vec alpha_term3 = delta * lambda * beta * v_beta_m1 % w_lambda_m1 / z;  // δ*λ*β*v_i^(β-1)*w_i^(λ-1)/z_i
+   // Calculate w = 1-v^beta with complementary precision
+   double w, log_w;
+   if (v_beta > 0.9995) {
+     w = -std::expm1(beta * log_v);
+     log_w = std::log(w);
+   } else {
+     w = 1.0 - v_beta;
+     log_w = log1p(-v_beta);  // More precise than log(1-v^beta)
+   }
 
- // Combine terms with correct signs
- d_alpha -= arma::sum(x_alpha_log_x % alpha_term1);  // Subtract term with (β-1)
- d_alpha += arma::sum(x_alpha_log_x % alpha_term2);  // Add term with (λ-1)
- d_alpha -= arma::sum(x_alpha_log_x % alpha_term3);  // Subtract term with δ
+   // Ensure w is not too small
+   w = std::max(w, eps);
+   d_lambda += log_w;
 
- // ∂ℓ/∂β = n/β + Σᵢlog(vᵢ) - (λ-1)Σᵢ[vᵢ^β*log(vᵢ)/wᵢ] + δΣᵢ[λ*wᵢ^(λ-1)*vᵢ^β*log(vᵢ)/zᵢ]
- double d_beta = n / beta + arma::sum(log_v);
+   // Handle lambda ≈ 1 (critical case)
+   double lambda_factor = 0.0;
+   if (std::abs(lambda - 1.0) > min_eps) {
+     lambda_factor = lambda - 1.0;
+   }
 
- // Calculate terms separately with correct signs
- arma::vec beta_term1 = (lambda - 1.0) / w;       // (λ-1)/w_i
- arma::vec beta_term2 = delta * lambda * w_lambda_m1 / z; // δ*λ*w_i^(λ-1)/z_i
+   // Calculate term for alpha gradient: (beta-1)/v
+   double alpha_term1 = 0.0;
+   if (std::abs(beta - 1.0) > min_eps) {
+     alpha_term1 = (beta - 1.0) / v;
+   }
 
- // CORRECTED: These signs were wrong in the previous implementation
- d_beta -= arma::sum(v_beta_log_v % beta_term1);  // Subtract term with (λ-1)
- d_beta += arma::sum(v_beta_log_v % beta_term2);  // Add term with δ
+   // Calculate term for alpha gradient: (lambda-1)*beta*v^(beta-1)/w
+   double alpha_term2 = 0.0;
+   if (lambda_factor != 0.0) {
+     alpha_term2 = lambda_factor * beta * v_beta_m1 / w;
+   }
 
- // ∂ℓ/∂δ = n/(δ+1) + Σᵢlog(zᵢ)
- double d_delta = n / (delta + 1.0) + arma::sum(log_z);
+   // For delta > 0, calculate additional terms
+   if (!delta_near_zero) {
+     // Calculate w^lambda in log domain for large lambda
+     double w_lambda, w_lambda_m1, w_lambda_log_w;
+     if (lambda > 100.0 || lambda * std::abs(log_w) > 1.0) {
+       double log_w_lambda = lambda * log_w;
+       w_lambda = std::exp(log_w_lambda);
+       w_lambda_m1 = std::exp((lambda - 1.0) * log_w);
+       w_lambda_log_w = w_lambda * log_w;
+     } else {
+       w_lambda = std::pow(w, lambda);
+       w_lambda_m1 = std::pow(w, lambda - 1.0);
+       w_lambda_log_w = w_lambda * log_w;
+     }
 
- // ∂ℓ/∂λ = n/λ + Σᵢlog(wᵢ) - δΣᵢ[(wᵢ^λ*log(wᵢ))/zᵢ]
- double d_lambda = n / lambda + arma::sum(log_w) - delta * arma::sum(w_lambda_log_w / z);
+     // Calculate z = 1-w^lambda with complementary precision
+     double z, log_z;
+     if (w_lambda > 0.9995) {
+       z = -std::expm1(lambda * log_w);
+       log_z = std::log(z);
+     } else {
+       z = 1.0 - w_lambda;
+       log_z = log1p(-w_lambda);  // More precise than log(1-w^lambda)
+     }
 
- // Since we're optimizing negative log-likelihood, negate all derivatives
+     // Ensure z is not too small
+     z = std::max(z, eps);
+     d_delta += log_z;
+
+     // Calculate term for alpha gradient: delta*lambda*beta*v^(beta-1)*w^(lambda-1)/z
+     double alpha_term3 = delta * lambda * beta * v_beta_m1 * w_lambda_m1 / z;
+
+     // Prevent excessive values for large parameters
+     if (delta > 1000.0 || lambda > 1000.0) {
+       alpha_term3 = std::min(alpha_term3, 1000.0);
+     }
+
+     // Combine terms for alpha gradient
+     d_alpha -= x_alpha_log_x * (alpha_term1 - alpha_term2 + alpha_term3);
+
+     // Calculate term for beta gradient: (lambda-1)/w
+     double beta_term1 = 0.0;
+     if (lambda_factor != 0.0) {
+       beta_term1 = lambda_factor / w;
+     }
+
+     // Calculate term for beta gradient: delta*lambda*w^(lambda-1)/z
+     double beta_term2 = delta * lambda * w_lambda_m1 / z;
+
+     // Prevent excessive values for large parameters
+     if (delta > 1000.0 || lambda > 1000.0) {
+       beta_term2 = std::min(beta_term2, 1000.0);
+     }
+
+     // Combine terms for beta gradient
+     d_beta -= v_beta_log_v * (beta_term1 - beta_term2);
+
+     // lambda gradient term: delta*(w^lambda*log(w))/z
+     d_lambda -= delta * w_lambda_log_w / z;
+   } else {
+     // Simplified calculations for delta ≈ 0 (EKw case)
+     d_alpha -= x_alpha_log_x * (alpha_term1 - alpha_term2);
+
+     if (lambda_factor != 0.0) {
+       d_beta -= v_beta_log_v * (lambda_factor / w);
+     }
+   }
+ }
+
+ // Return negative gradient for negative log-likelihood
  grad[0] = -d_alpha;
  grad[1] = -d_beta;
  grad[2] = -d_delta;
@@ -3598,194 +4326,1046 @@ Rcpp::NumericVector grkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha  = par[0];   // θ[0] = α
- double beta   = par[1];   // θ[1] = β
- double delta  = par[2];   // θ[2] = δ
- double lambda = par[3];   // θ[3] = λ
-
- // Simple parameter validation (all > 0)
- if(alpha <= 0 || beta <= 0 || delta <= 0 || lambda <= 0) {
+ // Parameter validation
+ if (par.size() < 4) {
    Rcpp::NumericMatrix nanH(4,4);
    nanH.fill(R_NaN);
    return nanH;
  }
 
- // Data conversion and basic validation
+ double alpha = par[0];
+ double beta = par[1];
+ double delta = par[2];
+ double lambda = par[3];
+
+ if (alpha <= 0 || beta <= 0 || delta < 0 || lambda <= 0) {
+   Rcpp::NumericMatrix nanH(4,4);
+   nanH.fill(R_NaN);
+   return nanH;
+ }
+
  arma::vec x = Rcpp::as<arma::vec>(data);
- if(arma::any(x <= 0) || arma::any(x >= 1)) {
+ if (x.n_elem < 1 || arma::any(x <= 0) || arma::any(x >= 1)) {
    Rcpp::NumericMatrix nanH(4,4);
    nanH.fill(R_NaN);
    return nanH;
  }
 
- int n = x.n_elem;  // sample size
+ int n = x.n_elem;
 
- // Initialize Hessian matrix H (of ℓ(θ)) as 4x4
+ // Stability constants
+ const double min_eps = 1e-15;
+ const double eps = 1e-10;
+ const double exp_threshold = -700.0;
+ const double max_contrib = 1e6;  // Limit for individual contributions
+
+ // Initialize Hessian matrix
  arma::mat H(4,4, arma::fill::zeros);
 
- // --- CONSTANT TERMS (do not depend on x) ---
- // L1: n ln(λ)  => d²/dλ² = -n/λ²
- H(3,3) += -n/(lambda*lambda);
- // L2: n ln(α)  => d²/dα² = -n/α²
- H(0,0) += -n/(alpha*alpha);
- // L3: n ln(β)  => d²/dβ² = -n/β²
- H(1,1) += -n/(beta*beta);
- // L4: n ln(δ+1) => d²/dδ² = -n/(δ+1)²
- H(2,2) += -n/std::pow(delta+1.0, 2.0);
+ // Special case: delta ≈ 0 (reduces to EKw)
+ bool delta_near_zero = (delta < min_eps);
 
- // Accumulators for mixed derivatives with λ
- double acc_delta_lambda = 0.0;  // Sum of dz_dlambda / z
- double acc_alpha_lambda = 0.0;  // For α,λ contributions
- double acc_beta_lambda = 0.0;   // For β,λ contributions
+ // Constant diagonal terms
+ H(0,0) = -n/(alpha*alpha);
+ H(1,1) = -n/(beta*beta);
+ H(3,3) = -n/(lambda*lambda);
 
- // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
- // Loop over each observation to accumulate contributions from:
- // L5: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
- // L6: (β-1) Σ ln(v), where v = 1 - x^α
- // L7: (λ-1) Σ ln(w), where w = 1 - v^β
- // L8: δ Σ ln(z), where z = 1 - w^λ
+ // Handle delta term carefully
+ if (delta_near_zero) {
+   H(2,2) = -n;  // Limit as delta→0 of -n/(delta+1)²
+ } else {
+   H(2,2) = -n/std::pow(delta+1.0, 2.0);
+ }
+
+ // Accumulators for mixed derivatives
+ double acc_alpha_lambda = 0.0;
+ double acc_beta_lambda = 0.0;
+ double acc_delta_lambda = 0.0;
+
  for (int i = 0; i < n; i++) {
-   double xi    = x(i);
-   double ln_xi = std::log(xi);
+   double xi = x(i);
 
-   // -- Compute A = x^α and its derivatives --
-   double A = std::pow(xi, alpha);                  // A = x^α
-   double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
-   double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+   // Ensure xi is within safe bounds
+   if (xi < eps) xi = eps;
+   if (xi > 1.0 - eps) xi = 1.0 - eps;
 
-   // -- v = 1 - A and its derivatives --
-   double v = 1.0 - A;                              // v = 1 - x^α
-   double ln_v = std::log(v);                       // ln(v)
-   double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
-   double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+   double log_xi = std::log(xi);
 
-   // --- L6: (β-1) ln(v) ---
-   // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
-   double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
-   // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
-   double d2L6_dalpha_dbeta = dv_dalpha / v;
+   // --- Calculate A = x^α and derivatives ---
+   double A, dA_dalpha, d2A_dalpha2;
 
-   // --- L7: (λ - 1) ln(w), where w = 1 - v^β ---
-   double v_beta = std::pow(v, beta);               // v^β
-   double w = 1.0 - v_beta;                         // w = 1 - v^β
-   double ln_w = std::log(w);                       // ln(w)
-   // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
-   double dw_dv = -beta * std::pow(v, beta - 1.0);
-   // Chain rule: dw/dα = dw/dv * dv/dα
+   if (alpha > 100.0 || alpha * std::abs(log_xi) > 1.0) {
+     // Log-domain calculation for large alpha
+     double log_A = alpha * log_xi;
+     A = std::exp(log_A);
+     dA_dalpha = A * log_xi;
+     d2A_dalpha2 = A * log_xi * log_xi;
+   } else {
+     A = std::pow(xi, alpha);
+     dA_dalpha = A * log_xi;
+     d2A_dalpha2 = A * log_xi * log_xi;
+   }
+
+   // --- Calculate v = 1-A and derivatives ---
+   double v, log_v, dv_dalpha, d2v_dalpha2;
+
+   if (A > 0.9995) {
+     // Complementary precision for A near 1
+     v = -std::expm1(alpha * log_xi);
+     log_v = std::log(v);
+   } else {
+     v = 1.0 - A;
+     log_v = log1p(-A);  // More accurate than log(1-A)
+   }
+
+   // Ensure v is not too small
+   v = std::max(v, eps);
+   dv_dalpha = -dA_dalpha;
+   d2v_dalpha2 = -d2A_dalpha2;
+
+   // --- Terms for (β-1)ln(v) ---
+   double d2L6_dalpha2 = 0.0;
+   double d2L6_dalpha_dbeta = 0.0;
+
+   if (std::abs(beta - 1.0) > min_eps) {
+     double v_squared = v * v;
+     d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / v_squared);
+     d2L6_dalpha_dbeta = dv_dalpha / v;
+   }
+
+   // --- Calculate w = 1-v^β and derivatives ---
+   double v_beta, v_beta_m1, v_beta_m2, w, log_w;
+
+   if (beta > 100.0 || beta * std::abs(log_v) > 1.0) {
+     // Log-domain calculation for large beta
+     double log_v_beta = beta * log_v;
+     v_beta = std::exp(log_v_beta);
+     v_beta_m1 = std::exp((beta - 1.0) * log_v);
+     v_beta_m2 = std::exp((beta - 2.0) * log_v);
+   } else {
+     v_beta = std::pow(v, beta);
+     v_beta_m1 = std::pow(v, beta - 1.0);
+     v_beta_m2 = std::pow(v, beta - 2.0);
+   }
+
+   if (v_beta > 0.9995) {
+     // Complementary precision for v^β near 1
+     w = -std::expm1(beta * log_v);
+     log_w = std::log(w);
+   } else {
+     w = 1.0 - v_beta;
+     log_w = log1p(-v_beta);  // More accurate than log(1-v_beta)
+   }
+
+   // Ensure w is not too small
+   w = std::max(w, eps);
+   double w_squared = w * w;
+
+   // Derivatives of w
+   double dw_dv = -beta * v_beta_m1;
    double dw_dalpha = dw_dv * dv_dalpha;
-   // Second derivative w.r.t. α for L7:
-   // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
-   // Computing d²w/dα²:
-   //   dw/dα = -β * v^(β-1)*dv_dalpha,
-   //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
-   double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
-                                   + std::pow(v, beta-1.0) * d2v_dalpha2);
-   double d2L7_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
-   // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
-   double dw_dbeta = -v_beta * ln_v;
-   // Second derivative w.r.t. β for L7:
-   // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
-   double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
-   double d2L7_dbeta2 = (lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
-   // Mixed derivative L7 (α,β): d²/(dα dβ) ln(w) =
-   //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
-   double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
-   double d2L7_dalpha_dbeta = (lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+   double dw_dbeta = -v_beta * log_v;
 
-   // --- L8: δ ln(z), where z = 1 - w^λ ---
-   double w_lambda_val = std::pow(w, lambda);       // w^λ
-   double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
-   // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
-   double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
-   // Second derivative w.r.t. α for L8:
-   // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
-   double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
-                                     + std::pow(w, lambda-1.0) * d2w_dalpha2);
-   double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
+   // Second derivatives of w
+   double d2w_dalpha2 = -beta * ((beta - 1.0) * v_beta_m2 * (dv_dalpha * dv_dalpha) +
+                                 v_beta_m1 * d2v_dalpha2);
+   double d2w_dbeta2 = -v_beta * (log_v * log_v);
+   double d_dw_dalpha_dbeta = -v_beta_m1 * (1.0 + beta * log_v) * dv_dalpha;
 
-   // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
-   double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
-   // Second derivative w.r.t. β for L8:
-   // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
-   double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
-                                    + std::pow(w, lambda-1.0) * d2w_dbeta2);
-   double d2L8_dbeta2 = delta * ((d2z_dbeta2 * z - dz_dbeta*dz_dbeta)/(z*z));
+   // --- Terms for (λ-1)ln(w) ---
+   double d2L7_dalpha2 = 0.0;
+   double d2L7_dbeta2 = 0.0;
+   double d2L7_dalpha_dbeta = 0.0;
 
-   // Mixed derivative L8 (α,β): d²/(dα dβ) ln(z)
-   // = (d/dβ dz_dalpha)/z - (dz_dalpha*dz_dbeta)/(z*z)
-   double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * dw_dbeta * dw_dalpha
-                                             + std::pow(w, lambda-1.0) * d_dw_dalpha_dbeta);
-   double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha*dz_dbeta)/(z*z));
+   // Handle lambda near 1 carefully
+   double lambda_minus_1 = lambda - 1.0;
+   if (std::abs(lambda_minus_1) > min_eps) {
+     d2L7_dalpha2 = lambda_minus_1 * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / w_squared);
+     d2L7_dbeta2 = lambda_minus_1 * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta)) / w_squared);
+     d2L7_dalpha_dbeta = lambda_minus_1 * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta) / w_squared);
 
-   // Derivatives of L8 with respect to λ:
-   // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
-   double dz_dlambda = -w_lambda_val * ln_w;
-   // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
-   double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
-   double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
+     // Clamp extreme values
+     d2L7_dalpha2 = std::min(std::max(d2L7_dalpha2, -max_contrib), max_contrib);
+     d2L7_dbeta2 = std::min(std::max(d2L7_dbeta2, -max_contrib), max_contrib);
+     d2L7_dalpha_dbeta = std::min(std::max(d2L7_dalpha_dbeta, -max_contrib), max_contrib);
+   }
 
-   // Mixed derivative L8 (α,λ): d²/(dα dλ) ln(z) = (d/dα dz_dλ)/z - (dz_dλ*dz_dalpha)/(z*z)
-   double d_dalpha_dz_dlambda = -lambda * std::pow(w, lambda-1.0) * dw_dalpha * ln_w -
-     w_lambda_val * (dw_dalpha / w);
-   double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda*dz_dalpha)/(z*z));
+   // For delta ≈ 0, skip z calculations (EKw case)
+   if (delta_near_zero) {
+     // Update Hessian elements
+     H(0,0) += d2L6_dalpha2 + d2L7_dalpha2;
+     H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta;
+     H(1,0) = H(0,1);
+     H(1,1) += d2L7_dbeta2;
 
-   // Mixed derivative L8 (β,λ): d²/(dβ dλ) ln(z) = (d/dβ dz_dλ)/z - (dz_dlambda*dz_dbeta)/(z*z)
-   double d_dbeta_dz_dlambda = -lambda * std::pow(w, lambda-1.0) * dw_dbeta * ln_w -
-     w_lambda_val * (dw_dbeta / w);
-   double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda*dz_dbeta)/(z*z));
+     // Mixed derivatives with lambda (from L7 only)
+     acc_alpha_lambda += dw_dalpha / w;
+     acc_beta_lambda += dw_dbeta / w;
+   } else {
+     // --- Calculate z = 1-w^λ and derivatives ---
+     double w_lambda, w_lambda_m1, w_lambda_m2, z, log_z;
 
-   // Mixed derivative L8 (δ,λ): d²/(dδ dλ) ln(z) = d/dλ [δ * (dz_dlambda / z)] = dz_dlambda / z
-   double d2L8_ddelta_dlambda = dz_dlambda / z;
+     if (lambda > 100.0 || lambda * std::abs(log_w) > 1.0) {
+       // Log-domain calculation for large lambda
+       double log_w_lambda = lambda * log_w;
+       w_lambda = std::exp(log_w_lambda);
+       w_lambda_m1 = std::exp((lambda - 1.0) * log_w);
+       w_lambda_m2 = std::exp((lambda - 2.0) * log_w);
+     } else {
+       w_lambda = std::pow(w, lambda);
+       w_lambda_m1 = std::pow(w, lambda - 1.0);
+       w_lambda_m2 = std::pow(w, lambda - 2.0);
+     }
 
-   // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
-   // Index: 0 = α, 1 = β, 2 = δ, 3 = λ
+     if (w_lambda > 0.9995) {
+       // Complementary precision for w^λ near 1
+       z = -std::expm1(lambda * log_w);
+       log_z = std::log(z);
+     } else {
+       z = 1.0 - w_lambda;
+       log_z = log1p(-w_lambda);  // More accurate than log(1-w_lambda)
+     }
 
-   // H(α,α): sum of L2, L6, L7, and L8 (constants already added)
-   H(0,0) += d2L6_dalpha2 + d2L7_dalpha2 + d2L8_dalpha2;
+     // Ensure z is not too small
+     z = std::max(z, eps);
+     double z_squared = z * z;
 
-   // H(α,β): mixed from L6, L7, and L8
-   H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta + d2L8_dalpha_dbeta;
-   H(1,0) = H(0,1);
+     // First derivatives of z
+     double dz_dalpha = -lambda * w_lambda_m1 * dw_dalpha;
+     double dz_dbeta = -lambda * w_lambda_m1 * dw_dbeta;
+     double dz_dlambda = -w_lambda * log_w;
 
-   // H(β,β): contributions from L3, L7, and L8
-   H(1,1) += d2L7_dbeta2 + d2L8_dbeta2;
+     // Second derivatives of z
+     double d2z_dalpha2 = -lambda * ((lambda - 1.0) * w_lambda_m2 * (dw_dalpha * dw_dalpha) +
+                                     w_lambda_m1 * d2w_dalpha2);
+     double d2z_dbeta2 = -lambda * ((lambda - 1.0) * w_lambda_m2 * (dw_dbeta * dw_dbeta) +
+                                    w_lambda_m1 * d2w_dbeta2);
+     double d2z_dlambda2 = -w_lambda * (log_w * log_w);
 
-   // H(λ,λ): contributions from L1 and L8 (L1 already added)
-   H(3,3) += d2L8_dlambda2;
+     // Mixed derivatives of z
+     double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * w_lambda_m2 * dw_dbeta * dw_dalpha +
+                                             w_lambda_m1 * d_dw_dalpha_dbeta);
+     double d_dalpha_dz_dlambda = -lambda * w_lambda_m1 * dw_dalpha * log_w -
+       w_lambda * (dw_dalpha / w);
+     double d_dbeta_dz_dlambda = -lambda * w_lambda_m1 * dw_dbeta * log_w -
+       w_lambda * (dw_dbeta / w);
 
-   // H(α,δ): From L8 - d/dα ln(z)
-   H(0,2) += dz_dalpha / z;
-   H(2,0) = H(0,2);
+     // Terms for δln(z)
+     double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha * dz_dalpha) / z_squared);
+     double d2L8_dbeta2 = delta * ((d2z_dbeta2 * z - dz_dbeta * dz_dbeta) / z_squared);
+     double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda * dz_dlambda) / z_squared);
+     double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha * dz_dbeta) / z_squared);
+     double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda * dz_dalpha) / z_squared);
+     double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda * dz_dbeta) / z_squared);
+     double d2L8_ddelta_dlambda = dz_dlambda / z;
 
-   // H(β,δ): From L8 - d/dβ ln(z)
-   H(1,2) += dz_dbeta / z;
-   H(2,1) = H(1,2);
+     // Clamp extreme values for numerical stability
+     d2L8_dalpha2 = std::min(std::max(d2L8_dalpha2, -max_contrib), max_contrib);
+     d2L8_dbeta2 = std::min(std::max(d2L8_dbeta2, -max_contrib), max_contrib);
+     d2L8_dlambda2 = std::min(std::max(d2L8_dlambda2, -max_contrib), max_contrib);
+     d2L8_dalpha_dbeta = std::min(std::max(d2L8_dalpha_dbeta, -max_contrib), max_contrib);
+     d2L8_dalpha_dlambda = std::min(std::max(d2L8_dalpha_dlambda, -max_contrib), max_contrib);
+     d2L8_dbeta_dlambda = std::min(std::max(d2L8_dbeta_dlambda, -max_contrib), max_contrib);
 
-   // Accumulating terms for mixed derivatives with λ
-   // The term from L7 is Σ ln(w) derived w.r.t. α and Σ ln(w) derived w.r.t. β
-   acc_alpha_lambda += (dw_dalpha / w) + d2L8_dalpha_dlambda;
-   acc_beta_lambda += (dw_dbeta / w) + d2L8_dbeta_dlambda;
-   acc_delta_lambda += d2L8_ddelta_dlambda;
+     // Update Hessian elements
+     H(0,0) += d2L6_dalpha2 + d2L7_dalpha2 + d2L8_dalpha2;
+     H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta + d2L8_dalpha_dbeta;
+     H(1,0) = H(0,1);
+     H(1,1) += d2L7_dbeta2 + d2L8_dbeta2;
+     H(3,3) += d2L8_dlambda2;
 
- } // end of loop
+     // Mixed derivatives with delta
+     H(0,2) += dz_dalpha / z;
+     H(2,0) = H(0,2);
+     H(1,2) += dz_dbeta / z;
+     H(2,1) = H(1,2);
 
- // Applying mixed derivatives with λ
- // H(α,λ):
+     // Accumulators for mixed derivatives with lambda
+     acc_alpha_lambda += (dw_dalpha / w) + d2L8_dalpha_dlambda;
+     acc_beta_lambda += (dw_dbeta / w) + d2L8_dbeta_dlambda;
+     acc_delta_lambda += d2L8_ddelta_dlambda;
+   }
+ }
+
+ // Apply mixed derivatives with lambda
  H(0,3) = acc_alpha_lambda;
  H(3,0) = H(0,3);
-
- // H(β,λ):
  H(1,3) = acc_beta_lambda;
  H(3,1) = H(1,3);
-
- // H(δ,λ):
  H(2,3) = acc_delta_lambda;
  H(3,2) = H(2,3);
 
- // Returns the analytic Hessian matrix of the negative log-likelihood
+ // Final symmetry check
+ for (int i = 0; i < 4; i++) {
+   for (int j = i+1; j < 4; j++) {
+     double avg = (H(i,j) + H(j,i)) / 2.0;
+     H(i,j) = H(j,i) = avg;
+   }
+ }
+
  return Rcpp::wrap(-H);
 }
+
+
+// //' @title Negative Log-Likelihood for the kkw Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize
+// //'
+// //' @description
+// //' Computes the negative log-likelihood function for the Kumaraswamy-Kumaraswamy
+// //' (kkw) distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+// //' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}),
+// //' given a vector of observations. This distribution is a special case of the
+// //' Generalized Kumaraswamy (GKw) distribution where \eqn{\gamma = 1}.
+// //'
+// //' @param par A numeric vector of length 4 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{delta} (\eqn{\delta \ge 0}), \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a single \code{double} value representing the negative
+// //'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+// //'   if any parameter values in \code{par} are invalid according to their
+// //'   constraints, or if any value in \code{data} is not in the interval (0, 1).
+// //'
+// //' @details
+// //' The kkw distribution is the GKw distribution (\code{\link{dgkw}}) with \eqn{\gamma=1}.
+// //' Its probability density function (PDF) is:
+// //' \deqn{
+// //' f(x | \theta) = (\delta + 1) \lambda \alpha \beta x^{\alpha - 1} (1 - x^\alpha)^{\beta - 1} \bigl[1 - (1 - x^\alpha)^\beta\bigr]^{\lambda - 1} \bigl\{1 - \bigl[1 - (1 - x^\alpha)^\beta\bigr]^\lambda\bigr\}^{\delta}
+// //' }
+// //' for \eqn{0 < x < 1} and \eqn{\theta = (\alpha, \beta, \delta, \lambda)}.
+// //' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+// //' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+// //' \deqn{
+// //' \ell(\theta | \mathbf{x}) = n[\ln(\delta+1) + \ln(\lambda) + \ln(\alpha) + \ln(\beta)]
+// //' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i) + \delta\ln(z_i)]
+// //' }
+// //' where:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+// //' }
+// //' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+// //' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+// //' Numerical stability is maintained similarly to \code{\link{llgkw}}.
+// //'
+// //' @references
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //' @seealso
+// //' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+// //' \code{\link{dkkw}}, \code{\link{pkkw}}, \code{\link{qkkw}}, \code{\link{rkkw}},
+// //' \code{\link{grkkw}} (gradient, if available),
+// //' \code{\link{hskkw}} (Hessian, if available),
+// //' \code{\link[stats]{optim}}
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rkkw, grkkw, hskkw functions for kkw distribution
+// //'
+// //' # Generate sample data from a known kkw distribution
+// //' set.seed(123)
+// //' true_par_kkw <- c(alpha = 2, beta = 3, delta = 1.5, lambda = 0.5)
+// //' # Use rkkw if it exists, otherwise use rgkw with gamma=1
+// //' if (exists("rkkw")) {
+// //'   sample_data_kkw <- rkkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+// //'                          delta = true_par_kkw[3], lambda = true_par_kkw[4])
+// //' } else {
+// //'   sample_data_kkw <- rgkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+// //'                          gamma = 1, delta = true_par_kkw[3], lambda = true_par_kkw[4])
+// //' }
+// //' hist(sample_data_kkw, breaks = 20, main = "kkw(2, 3, 1.5, 0.5) Sample")
+// //'
+// //' # --- Maximum Likelihood Estimation using optim ---
+// //' # Initial parameter guess
+// //' start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
+// //'
+// //' # Perform optimization (minimizing negative log-likelihood)
+// //' mle_result_kkw <- stats::optim(par = start_par_kkw,
+// //'                                fn = llkkw, # Use the kkw neg-log-likelihood
+// //'                                method = "BFGS",
+// //'                                hessian = TRUE,
+// //'                                data = sample_data_kkw)
+// //'
+// //' # Check convergence and results
+// //' if (mle_result_kkw$convergence == 0) {
+// //'   print("Optimization converged successfully.")
+// //'   mle_par_kkw <- mle_result_kkw$par
+// //'   print("Estimated kkw parameters:")
+// //'   print(mle_par_kkw)
+// //'   print("True kkw parameters:")
+// //'   print(true_par_kkw)
+// //' } else {
+// //'   warning("Optimization did not converge!")
+// //'   print(mle_result_kkw$message)
+// //' }
+// //'
+// //' # --- Compare numerical and analytical derivatives (if available) ---
+// //' # Requires 'numDeriv' package and analytical functions 'grkkw', 'hskkw'
+// //' if (mle_result_kkw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) &&
+// //'     exists("grkkw") && exists("hskkw")) {
+// //'
+// //'   cat("\nComparing Derivatives at kkw MLE estimates:\n")
+// //'
+// //'   # Numerical derivatives of llkkw
+// //'   num_grad_kkw <- numDeriv::grad(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
+// //'   num_hess_kkw <- numDeriv::hessian(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
+// //'
+// //'   # Analytical derivatives (assuming they return derivatives of negative LL)
+// //'   ana_grad_kkw <- grkkw(par = mle_par_kkw, data = sample_data_kkw)
+// //'   ana_hess_kkw <- hskkw(par = mle_par_kkw, data = sample_data_kkw)
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between gradients:\n")
+// //'   print(max(abs(num_grad_kkw - ana_grad_kkw)))
+// //'   cat("Max absolute difference between Hessians:\n")
+// //'   print(max(abs(num_hess_kkw - ana_hess_kkw)))
+// //'
+// //' } else {
+// //'    cat("\nSkipping derivative comparison for kkw.\n")
+// //'    cat("Requires convergence, 'numDeriv' package and functions 'grkkw', 'hskkw'.\n")
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// double llkkw(const Rcpp::NumericVector& par,
+//             const Rcpp::NumericVector& data) {
+//  if (par.size()<4) {
+//    return R_PosInf; // invalid
+//  }
+//  double a= par[0];
+//  double b= par[1];
+//  double dd= par[2];
+//  double ll= par[3];
+//
+//  if (!check_kkw_pars(a,b,dd,ll)) {
+//    return R_PosInf; // param invalid => +Inf for negative log-likelihood
+//  }
+//
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if (x.n_elem<1) {
+//    return R_PosInf;
+//  }
+//  // check data in (0,1)
+//  if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
+//    return R_PosInf;
+//  }
+//
+//  int n= x.n_elem;
+//  // sum of log-likelihood
+//
+//  // constant part: n * [ log(λ)+ log(α)+ log(β)+ log(δ+1) ]
+//  double cst = n*( std::log(ll) + std::log(a) + std::log(b) + std::log(dd+1.0) );
+//
+//  // sum parts
+//  // sum((α-1)*log(x))
+//  arma::vec lx = arma::log(x);
+//  double term1= (a-1.0)*arma::sum(lx);
+//
+//  // sum((β-1)* log(1 - x^α))
+//  arma::vec xalpha = arma::pow(x,a);
+//  arma::vec log1mxalpha = arma::log(1.0 - xalpha);
+//  double term2= (b-1.0)*arma::sum(log1mxalpha);
+//
+//  // sum((λ-1)* log(1 - (1 - x^α)^β))
+//  arma::vec vbeta = arma::pow(1.0 - xalpha, b);
+//  arma::vec one_minus_vbeta = 1.0 - vbeta;
+//  // safe log
+//  arma::vec log_omv = arma::log(one_minus_vbeta);
+//  double term3= (ll-1.0)*arma::sum(log_omv);
+//
+//  // sum( δ* log(1 - [1-(1-x^α)^β]^λ ) )
+//  // let w= one_minus_vbeta => [1-w]^λ => so 1- w^λ is the factor
+//  arma::vec wlambda= arma::pow(one_minus_vbeta, ll);
+//  arma::vec one_minus_wlambda= 1.0 - wlambda;
+//  arma::vec log_1mw= arma::log(one_minus_wlambda);
+//  double term4= dd* arma::sum(log_1mw);
+//
+//  double loglike = cst + term1 + term2 + term3 + term4;
+//  // negative
+//  return -loglike;
+// }
+//
+//
+// //' @title Gradient of the Negative Log-Likelihood for the kkw Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize gradient
+// //'
+// //' @description
+// //' Computes the gradient vector (vector of first partial derivatives) of the
+// //' negative log-likelihood function for the Kumaraswamy-Kumaraswamy (kkw)
+// //' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+// //' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+// //' This distribution is the special case of the Generalized Kumaraswamy (GKw)
+// //' distribution where \eqn{\gamma = 1}. The gradient is typically used in
+// //' optimization algorithms for maximum likelihood estimation.
+// //'
+// //' @param par A numeric vector of length 4 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{delta} (\eqn{\delta \ge 0}), \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a numeric vector of length 4 containing the partial derivatives
+// //'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+// //'   respect to each parameter:
+// //'   \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \delta, -\partial \ell/\partial \lambda)}.
+// //'   Returns a vector of \code{NaN} if any parameter values are invalid according
+// //'   to their constraints, or if any value in \code{data} is not in the
+// //'   interval (0, 1).
+// //'
+// //' @details
+// //' The components of the gradient vector of the negative log-likelihood
+// //' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the kkw (\eqn{\gamma=1}) model are:
+// //'
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
+// //' + (\beta-1)\sum_{i=1}^{n}\frac{x_i^{\alpha}\ln(x_i)}{v_i}
+// //' - (\lambda-1)\sum_{i=1}^{n}\frac{\beta v_i^{\beta-1} x_i^{\alpha}\ln(x_i)}{w_i}
+// //' + \delta\sum_{i=1}^{n}\frac{\lambda w_i^{\lambda-1} \beta v_i^{\beta-1} x_i^{\alpha}\ln(x_i)}{z_i}
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - \sum_{i=1}^{n}\ln(v_i)
+// //' + (\lambda-1)\sum_{i=1}^{n}\frac{v_i^{\beta}\ln(v_i)}{w_i}
+// //' - \delta\sum_{i=1}^{n}\frac{\lambda w_i^{\lambda-1} v_i^{\beta}\ln(v_i)}{z_i}
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \delta} = -\frac{n}{\delta+1} - \sum_{i=1}^{n}\ln(z_i)
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \sum_{i=1}^{n}\ln(w_i)
+// //' + \delta\sum_{i=1}^{n}\frac{w_i^{\lambda}\ln(w_i)}{z_i}
+// //' }
+// //'
+// //' where:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+// //' }
+// //' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+// //' minimizing the negative log-likelihood. They correspond to the general GKw
+// //' gradient (\code{\link{grgkw}}) components for \eqn{\alpha, \beta, \delta, \lambda}
+// //' evaluated at \eqn{\gamma=1}. Note that the component for \eqn{\gamma} is omitted.
+// //' Numerical stability is maintained through careful implementation.
+// //'
+// //' @references
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //' @seealso
+// //' \code{\link{grgkw}} (parent distribution gradient),
+// //' \code{\link{llkkw}} (negative log-likelihood for kkw),
+// //' \code{\link{hskkw}} (Hessian for kkw),
+// //' \code{\link{dkkw}} (density for kkw),
+// //' \code{\link[stats]{optim}},
+// //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
+// //'
+// //' # Generate sample data
+// //' set.seed(123)
+// //' true_par_kkw <- c(alpha = 2, beta = 3, delta = 1.5, lambda = 0.5)
+// //' if (exists("rkkw")) {
+// //'   sample_data_kkw <- rkkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+// //'                          delta = true_par_kkw[3], lambda = true_par_kkw[4])
+// //' } else {
+// //'   sample_data_kkw <- rgkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+// //'                          gamma = 1, delta = true_par_kkw[3], lambda = true_par_kkw[4])
+// //' }
+// //'
+// //' # --- Find MLE estimates ---
+// //' start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
+// //' mle_result_kkw <- stats::optim(par = start_par_kkw,
+// //'                                fn = llkkw,
+// //'                                gr = grkkw, # Use analytical gradient for kkw
+// //'                                method = "BFGS",
+// //'                                hessian = TRUE,
+// //'                                data = sample_data_kkw)
+// //'
+// //' # --- Compare analytical gradient to numerical gradient ---
+// //' if (mle_result_kkw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE)) {
+// //'
+// //'   mle_par_kkw <- mle_result_kkw$par
+// //'   cat("\nComparing Gradients for kkw at MLE estimates:\n")
+// //'
+// //'   # Numerical gradient of llkkw
+// //'   num_grad_kkw <- numDeriv::grad(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
+// //'
+// //'   # Analytical gradient from grkkw
+// //'   ana_grad_kkw <- grkkw(par = mle_par_kkw, data = sample_data_kkw)
+// //'
+// //'   cat("Numerical Gradient (kkw):\n")
+// //'   print(num_grad_kkw)
+// //'   cat("Analytical Gradient (kkw):\n")
+// //'   print(ana_grad_kkw)
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between kkw gradients:\n")
+// //'   print(max(abs(num_grad_kkw - ana_grad_kkw)))
+// //'
+// //' } else {
+// //'   cat("\nSkipping kkw gradient comparison.\n")
+// //' }
+// //'
+// //' # --- Optional: Compare with relevant components of GKw gradient ---
+// //' # Requires grgkw function
+// //' if (mle_result_kkw$convergence == 0 && exists("grgkw")) {
+// //'   # Create 5-param vector for grgkw (insert gamma=1)
+// //'   mle_par_gkw_equiv <- c(mle_par_kkw[1:2], gamma = 1.0, mle_par_kkw[3:4])
+// //'   ana_grad_gkw <- grgkw(par = mle_par_gkw_equiv, data = sample_data_kkw)
+// //'   # Extract components corresponding to alpha, beta, delta, lambda
+// //'   ana_grad_gkw_subset <- ana_grad_gkw[c(1, 2, 4, 5)]
+// //'
+// //'   cat("\nComparison with relevant components of GKw gradient:\n")
+// //'   cat("Max absolute difference:\n")
+// //'   print(max(abs(ana_grad_kkw - ana_grad_gkw_subset))) # Should be very small
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericVector grkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double alpha = par[0];   // Shape parameter α > 0
+//  double beta = par[1];    // Shape parameter β > 0
+//  double delta = par[2];   // Shape parameter δ > 0
+//  double lambda = par[3];  // Shape parameter λ > 0
+//
+//  // Parameter validation
+//  if (alpha <= 0 || beta <= 0 || delta <= 0 || lambda <= 0) {
+//    Rcpp::NumericVector grad(4, R_NaN);
+//    return grad;
+//  }
+//
+//  // Data conversion and validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//
+//  if (arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericVector grad(4, R_NaN);
+//    return grad;
+//  }
+//
+//  int n = x.n_elem;  // Sample size
+//
+//  // Initialize gradient vector
+//  Rcpp::NumericVector grad(4, 0.0);
+//
+//  // Small constant to avoid numerical issues
+//  double eps = std::numeric_limits<double>::epsilon() * 100;
+//
+//  // Compute transformations and intermediate values
+//  arma::vec log_x = arma::log(x);                // log(x_i)
+//  arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
+//  arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
+//
+//  // v_i = 1 - x_i^α
+//  arma::vec v = 1.0 - x_alpha;
+//  v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
+//
+//  arma::vec log_v = arma::log(v);                // log(v_i)
+//  arma::vec v_beta_m1 = arma::pow(v, beta - 1.0); // v_i^(β-1)
+//  arma::vec v_beta = arma::pow(v, beta);          // v_i^β
+//  arma::vec v_beta_log_v = v_beta % log_v;        // v_i^β * log(v_i)
+//
+//  // w_i = 1 - v_i^β = 1 - (1-x_i^α)^β
+//  arma::vec w = 1.0 - v_beta;
+//  w = arma::clamp(w, eps, 1.0 - eps);            // Prevent numerical issues
+//
+//  arma::vec log_w = arma::log(w);                // log(w_i)
+//  arma::vec w_lambda_m1 = arma::pow(w, lambda - 1.0); // w_i^(λ-1)
+//  arma::vec w_lambda = arma::pow(w, lambda);          // w_i^λ
+//  arma::vec w_lambda_log_w = w_lambda % log_w;        // w_i^λ * log(w_i)
+//
+//  // z_i = 1 - w_i^λ = 1 - [1-(1-x_i^α)^β]^λ
+//  arma::vec z = 1.0 - w_lambda;
+//  z = arma::clamp(z, eps, 1.0 - eps);            // Prevent numerical issues
+//
+//  arma::vec log_z = arma::log(z);                // log(z_i)
+//
+//  // Calculate partial derivatives for each parameter (for log-likelihood)
+//
+//  // ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - (β-1)Σᵢ[xᵢ^α*log(xᵢ)/vᵢ] + (λ-1)Σᵢ[β*vᵢ^(β-1)*xᵢ^α*log(xᵢ)/wᵢ] - δΣᵢ[λ*wᵢ^(λ-1)*β*vᵢ^(β-1)*xᵢ^α*log(xᵢ)/zᵢ]
+//  double d_alpha = n / alpha + arma::sum(log_x);
+//
+//  // Calculate terms separately with correct signs
+//  arma::vec alpha_term1 = (beta - 1.0) / v;                       // (β-1)/v_i
+//  arma::vec alpha_term2 = (lambda - 1.0) * beta * v_beta_m1 / w;  // (λ-1)*β*v_i^(β-1)/w_i
+//  arma::vec alpha_term3 = delta * lambda * beta * v_beta_m1 % w_lambda_m1 / z;  // δ*λ*β*v_i^(β-1)*w_i^(λ-1)/z_i
+//
+//  // Combine terms with correct signs
+//  d_alpha -= arma::sum(x_alpha_log_x % alpha_term1);  // Subtract term with (β-1)
+//  d_alpha += arma::sum(x_alpha_log_x % alpha_term2);  // Add term with (λ-1)
+//  d_alpha -= arma::sum(x_alpha_log_x % alpha_term3);  // Subtract term with δ
+//
+//  // ∂ℓ/∂β = n/β + Σᵢlog(vᵢ) - (λ-1)Σᵢ[vᵢ^β*log(vᵢ)/wᵢ] + δΣᵢ[λ*wᵢ^(λ-1)*vᵢ^β*log(vᵢ)/zᵢ]
+//  double d_beta = n / beta + arma::sum(log_v);
+//
+//  // Calculate terms separately with correct signs
+//  arma::vec beta_term1 = (lambda - 1.0) / w;       // (λ-1)/w_i
+//  arma::vec beta_term2 = delta * lambda * w_lambda_m1 / z; // δ*λ*w_i^(λ-1)/z_i
+//
+//  // CORRECTED: These signs were wrong in the previous implementation
+//  d_beta -= arma::sum(v_beta_log_v % beta_term1);  // Subtract term with (λ-1)
+//  d_beta += arma::sum(v_beta_log_v % beta_term2);  // Add term with δ
+//
+//  // ∂ℓ/∂δ = n/(δ+1) + Σᵢlog(zᵢ)
+//  double d_delta = n / (delta + 1.0) + arma::sum(log_z);
+//
+//  // ∂ℓ/∂λ = n/λ + Σᵢlog(wᵢ) - δΣᵢ[(wᵢ^λ*log(wᵢ))/zᵢ]
+//  double d_lambda = n / lambda + arma::sum(log_w) - delta * arma::sum(w_lambda_log_w / z);
+//
+//  // Since we're optimizing negative log-likelihood, negate all derivatives
+//  grad[0] = -d_alpha;
+//  grad[1] = -d_beta;
+//  grad[2] = -d_delta;
+//  grad[3] = -d_lambda;
+//
+//  return grad;
+// }
+//
+//
+//
+// //' @title Hessian Matrix of the Negative Log-Likelihood for the kkw Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize hessian
+// //'
+// //' @description
+// //' Computes the analytic 4x4 Hessian matrix (matrix of second partial derivatives)
+// //' of the negative log-likelihood function for the Kumaraswamy-Kumaraswamy (kkw)
+// //' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+// //' (\eqn{\beta}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}).
+// //' This distribution is the special case of the Generalized Kumaraswamy (GKw)
+// //' distribution where \eqn{\gamma = 1}. The Hessian is useful for estimating
+// //' standard errors and in optimization algorithms.
+// //'
+// //' @param par A numeric vector of length 4 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{delta} (\eqn{\delta \ge 0}), \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a 4x4 numeric matrix representing the Hessian matrix of the
+// //'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+// //'   where \eqn{\theta = (\alpha, \beta, \delta, \lambda)}.
+// //'   Returns a 4x4 matrix populated with \code{NaN} if any parameter values are
+// //'   invalid according to their constraints, or if any value in \code{data} is
+// //'   not in the interval (0, 1).
+// //'
+// //' @details
+// //' This function calculates the analytic second partial derivatives of the
+// //' negative log-likelihood function based on the kkw log-likelihood
+// //' (\eqn{\gamma=1} case of GKw, see \code{\link{llkkw}}):
+// //' \deqn{
+// //' \ell(\theta | \mathbf{x}) = n[\ln(\delta+1) + \ln(\lambda) + \ln(\alpha) + \ln(\beta)]
+// //' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i) + \delta\ln(z_i)]
+// //' }
+// //' where \eqn{\theta = (\alpha, \beta, \delta, \lambda)} and intermediate terms are:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //'   \item \eqn{z_i = 1 - w_i^{\lambda} = 1 - [1-(1-x_i^{\alpha})^{\beta}]^{\lambda}}
+// //' }
+// //' The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}
+// //' for \eqn{\theta_i, \theta_j \in \{\alpha, \beta, \delta, \lambda\}}.
+// //'
+// //' Key properties of the returned matrix:
+// //' \itemize{
+// //'   \item Dimensions: 4x4.
+// //'   \item Symmetry: The matrix is symmetric.
+// //'   \item Ordering: Rows and columns correspond to the parameters in the order
+// //'     \eqn{\alpha, \beta, \delta, \lambda}.
+// //'   \item Content: Analytic second derivatives of the *negative* log-likelihood.
+// //' }
+// //' This corresponds to the relevant submatrix of the 5x5 GKw Hessian (\code{\link{hsgkw}})
+// //' evaluated at \eqn{\gamma=1}. The exact analytical formulas are implemented directly.
+// //'
+// //' @references
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //' @seealso
+// //' \code{\link{hsgkw}} (parent distribution Hessian),
+// //' \code{\link{llkkw}} (negative log-likelihood for kkw),
+// //' \code{\link{grkkw}} (gradient for kkw),
+// //' \code{\link{dkkw}} (density for kkw),
+// //' \code{\link[stats]{optim}},
+// //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
+// //'
+// //' # Generate sample data
+// //' set.seed(123)
+// //' true_par_kkw <- c(alpha = 2, beta = 3, delta = 1.5, lambda = 0.5)
+// //' if (exists("rkkw")) {
+// //'   sample_data_kkw <- rkkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+// //'                          delta = true_par_kkw[3], lambda = true_par_kkw[4])
+// //' } else {
+// //'   sample_data_kkw <- rgkw(100, alpha = true_par_kkw[1], beta = true_par_kkw[2],
+// //'                          gamma = 1, delta = true_par_kkw[3], lambda = true_par_kkw[4])
+// //' }
+// //'
+// //' # --- Find MLE estimates ---
+// //' start_par_kkw <- c(1.5, 2.5, 1.0, 0.6)
+// //' mle_result_kkw <- stats::optim(par = start_par_kkw,
+// //'                                fn = llkkw,
+// //'                                gr = if (exists("grkkw")) grkkw else NULL,
+// //'                                method = "BFGS",
+// //'                                hessian = TRUE,
+// //'                                data = sample_data_kkw)
+// //'
+// //' # --- Compare analytical Hessian to numerical Hessian ---
+// //' if (mle_result_kkw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) &&
+// //'     exists("hskkw")) {
+// //'
+// //'   mle_par_kkw <- mle_result_kkw$par
+// //'   cat("\nComparing Hessians for kkw at MLE estimates:\n")
+// //'
+// //'   # Numerical Hessian of llkkw
+// //'   num_hess_kkw <- numDeriv::hessian(func = llkkw, x = mle_par_kkw, data = sample_data_kkw)
+// //'
+// //'   # Analytical Hessian from hskkw
+// //'   ana_hess_kkw <- hskkw(par = mle_par_kkw, data = sample_data_kkw)
+// //'
+// //'   cat("Numerical Hessian (kkw):\n")
+// //'   print(round(num_hess_kkw, 4))
+// //'   cat("Analytical Hessian (kkw):\n")
+// //'   print(round(ana_hess_kkw, 4))
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between kkw Hessians:\n")
+// //'   print(max(abs(num_hess_kkw - ana_hess_kkw)))
+// //'
+// //'   # Optional: Use analytical Hessian for Standard Errors
+// //'   # tryCatch({
+// //'   #   cov_matrix_kkw <- solve(ana_hess_kkw)
+// //'   #   std_errors_kkw <- sqrt(diag(cov_matrix_kkw))
+// //'   #   cat("Std. Errors from Analytical kkw Hessian:\n")
+// //'   #   print(std_errors_kkw)
+// //'   # }, error = function(e) {
+// //'   #   warning("Could not invert analytical kkw Hessian: ", e$message)
+// //'   # })
+// //'
+// //' } else {
+// //'   cat("\nSkipping kkw Hessian comparison.\n")
+// //'   cat("Requires convergence, 'numDeriv' package, and function 'hskkw'.\n")
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double alpha  = par[0];   // θ[0] = α
+//  double beta   = par[1];   // θ[1] = β
+//  double delta  = par[2];   // θ[2] = δ
+//  double lambda = par[3];   // θ[3] = λ
+//
+//  // Simple parameter validation (all > 0)
+//  if(alpha <= 0 || beta <= 0 || delta <= 0 || lambda <= 0) {
+//    Rcpp::NumericMatrix nanH(4,4);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  // Data conversion and basic validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if(arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericMatrix nanH(4,4);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  int n = x.n_elem;  // sample size
+//
+//  // Initialize Hessian matrix H (of ℓ(θ)) as 4x4
+//  arma::mat H(4,4, arma::fill::zeros);
+//
+//  // --- CONSTANT TERMS (do not depend on x) ---
+//  // L1: n ln(λ)  => d²/dλ² = -n/λ²
+//  H(3,3) += -n/(lambda*lambda);
+//  // L2: n ln(α)  => d²/dα² = -n/α²
+//  H(0,0) += -n/(alpha*alpha);
+//  // L3: n ln(β)  => d²/dβ² = -n/β²
+//  H(1,1) += -n/(beta*beta);
+//  // L4: n ln(δ+1) => d²/dδ² = -n/(δ+1)²
+//  H(2,2) += -n/std::pow(delta+1.0, 2.0);
+//
+//  // Accumulators for mixed derivatives with λ
+//  double acc_delta_lambda = 0.0;  // Sum of dz_dlambda / z
+//  double acc_alpha_lambda = 0.0;  // For α,λ contributions
+//  double acc_beta_lambda = 0.0;   // For β,λ contributions
+//
+//  // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
+//  // Loop over each observation to accumulate contributions from:
+//  // L5: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
+//  // L6: (β-1) Σ ln(v), where v = 1 - x^α
+//  // L7: (λ-1) Σ ln(w), where w = 1 - v^β
+//  // L8: δ Σ ln(z), where z = 1 - w^λ
+//  for (int i = 0; i < n; i++) {
+//    double xi    = x(i);
+//    double ln_xi = std::log(xi);
+//
+//    // -- Compute A = x^α and its derivatives --
+//    double A = std::pow(xi, alpha);                  // A = x^α
+//    double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
+//    double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+//
+//    // -- v = 1 - A and its derivatives --
+//    double v = 1.0 - A;                              // v = 1 - x^α
+//    double ln_v = std::log(v);                       // ln(v)
+//    double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
+//    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+//
+//    // --- L6: (β-1) ln(v) ---
+//    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
+//    double d2L6_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
+//    // Mixed derivative: d²L6/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
+//    double d2L6_dalpha_dbeta = dv_dalpha / v;
+//
+//    // --- L7: (λ - 1) ln(w), where w = 1 - v^β ---
+//    double v_beta = std::pow(v, beta);               // v^β
+//    double w = 1.0 - v_beta;                         // w = 1 - v^β
+//    double ln_w = std::log(w);                       // ln(w)
+//    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
+//    double dw_dv = -beta * std::pow(v, beta - 1.0);
+//    // Chain rule: dw/dα = dw/dv * dv/dα
+//    double dw_dalpha = dw_dv * dv_dalpha;
+//    // Second derivative w.r.t. α for L7:
+//    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
+//    // Computing d²w/dα²:
+//    //   dw/dα = -β * v^(β-1)*dv_dalpha,
+//    //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
+//    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
+//                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
+//    double d2L7_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+//    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
+//    double dw_dbeta = -v_beta * ln_v;
+//    // Second derivative w.r.t. β for L7:
+//    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
+//    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+//    double d2L7_dbeta2 = (lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+//    // Mixed derivative L7 (α,β): d²/(dα dβ) ln(w) =
+//    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
+//    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
+//    double d2L7_dalpha_dbeta = (lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+//
+//    // --- L8: δ ln(z), where z = 1 - w^λ ---
+//    double w_lambda_val = std::pow(w, lambda);       // w^λ
+//    double z = 1.0 - w_lambda_val;                   // z = 1 - w^λ
+//    // Derivative w.r.t. α: dz/dα = -λ * w^(λ-1) * dw/dα
+//    double dz_dalpha = -lambda * std::pow(w, lambda-1.0) * dw_dalpha;
+//    // Second derivative w.r.t. α for L8:
+//    // d²z/dα² = -λ * [(λ-1)*w^(λ-2)*(dw/dα)² + w^(λ-1)*d²w/dα²]
+//    double d2z_dalpha2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dalpha*dw_dalpha)
+//                                      + std::pow(w, lambda-1.0) * d2w_dalpha2);
+//    double d2L8_dalpha2 = delta * ((d2z_dalpha2 * z - dz_dalpha*dz_dalpha)/(z*z));
+//
+//    // Derivative w.r.t. β: dz/dβ = -λ * w^(λ-1) * dw/dβ
+//    double dz_dbeta = -lambda * std::pow(w, lambda-1.0) * dw_dbeta;
+//    // Second derivative w.r.t. β for L8:
+//    // d²z/dβ² = -λ * [(λ-1)*w^(λ-2)*(dw/dβ)² + w^(λ-1)*d²w/dβ²]
+//    double d2z_dbeta2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * (dw_dbeta*dw_dbeta)
+//                                     + std::pow(w, lambda-1.0) * d2w_dbeta2);
+//    double d2L8_dbeta2 = delta * ((d2z_dbeta2 * z - dz_dbeta*dz_dbeta)/(z*z));
+//
+//    // Mixed derivative L8 (α,β): d²/(dα dβ) ln(z)
+//    // = (d/dβ dz_dalpha)/z - (dz_dalpha*dz_dbeta)/(z*z)
+//    double d_dw_dalpha_dbeta_2 = -lambda * ((lambda - 1.0) * std::pow(w, lambda-2.0) * dw_dbeta * dw_dalpha
+//                                              + std::pow(w, lambda-1.0) * d_dw_dalpha_dbeta);
+//    double d2L8_dalpha_dbeta = delta * ((d_dw_dalpha_dbeta_2 / z) - (dz_dalpha*dz_dbeta)/(z*z));
+//
+//    // Derivatives of L8 with respect to λ:
+//    // d/dλ ln(z) = (1/z)*dz/dλ, with dz/dλ = -w^λ ln(w)
+//    double dz_dlambda = -w_lambda_val * ln_w;
+//    // d²/dλ² ln(z) = [d²z/dλ² * z - (dz_dlambda)²]/z² (assuming w constant in λ)
+//    double d2z_dlambda2 = -w_lambda_val * (ln_w * ln_w);
+//    double d2L8_dlambda2 = delta * ((d2z_dlambda2 * z - dz_dlambda*dz_dlambda)/(z*z));
+//
+//    // Mixed derivative L8 (α,λ): d²/(dα dλ) ln(z) = (d/dα dz_dλ)/z - (dz_dλ*dz_dalpha)/(z*z)
+//    double d_dalpha_dz_dlambda = -lambda * std::pow(w, lambda-1.0) * dw_dalpha * ln_w -
+//      w_lambda_val * (dw_dalpha / w);
+//    double d2L8_dalpha_dlambda = delta * ((d_dalpha_dz_dlambda / z) - (dz_dlambda*dz_dalpha)/(z*z));
+//
+//    // Mixed derivative L8 (β,λ): d²/(dβ dλ) ln(z) = (d/dβ dz_dλ)/z - (dz_dlambda*dz_dbeta)/(z*z)
+//    double d_dbeta_dz_dlambda = -lambda * std::pow(w, lambda-1.0) * dw_dbeta * ln_w -
+//      w_lambda_val * (dw_dbeta / w);
+//    double d2L8_dbeta_dlambda = delta * ((d_dbeta_dz_dlambda / z) - (dz_dlambda*dz_dbeta)/(z*z));
+//
+//    // Mixed derivative L8 (δ,λ): d²/(dδ dλ) ln(z) = d/dλ [δ * (dz_dlambda / z)] = dz_dlambda / z
+//    double d2L8_ddelta_dlambda = dz_dlambda / z;
+//
+//    // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
+//    // Index: 0 = α, 1 = β, 2 = δ, 3 = λ
+//
+//    // H(α,α): sum of L2, L6, L7, and L8 (constants already added)
+//    H(0,0) += d2L6_dalpha2 + d2L7_dalpha2 + d2L8_dalpha2;
+//
+//    // H(α,β): mixed from L6, L7, and L8
+//    H(0,1) += d2L6_dalpha_dbeta + d2L7_dalpha_dbeta + d2L8_dalpha_dbeta;
+//    H(1,0) = H(0,1);
+//
+//    // H(β,β): contributions from L3, L7, and L8
+//    H(1,1) += d2L7_dbeta2 + d2L8_dbeta2;
+//
+//    // H(λ,λ): contributions from L1 and L8 (L1 already added)
+//    H(3,3) += d2L8_dlambda2;
+//
+//    // H(α,δ): From L8 - d/dα ln(z)
+//    H(0,2) += dz_dalpha / z;
+//    H(2,0) = H(0,2);
+//
+//    // H(β,δ): From L8 - d/dβ ln(z)
+//    H(1,2) += dz_dbeta / z;
+//    H(2,1) = H(1,2);
+//
+//    // Accumulating terms for mixed derivatives with λ
+//    // The term from L7 is Σ ln(w) derived w.r.t. α and Σ ln(w) derived w.r.t. β
+//    acc_alpha_lambda += (dw_dalpha / w) + d2L8_dalpha_dlambda;
+//    acc_beta_lambda += (dw_dbeta / w) + d2L8_dbeta_dlambda;
+//    acc_delta_lambda += d2L8_ddelta_dlambda;
+//
+//  } // end of loop
+//
+//  // Applying mixed derivatives with λ
+//  // H(α,λ):
+//  H(0,3) = acc_alpha_lambda;
+//  H(3,0) = H(0,3);
+//
+//  // H(β,λ):
+//  H(1,3) = acc_beta_lambda;
+//  H(3,1) = H(1,3);
+//
+//  // H(δ,λ):
+//  H(2,3) = acc_delta_lambda;
+//  H(3,2) = H(2,3);
+//
+//  // Returns the analytic Hessian matrix of the negative log-likelihood
+//  return Rcpp::wrap(-H);
+// }
 
 // //' @title Analytic Hessian Matrix for Kumaraswamy-Kumaraswamy Distribution
 // //'
@@ -4103,24 +5683,24 @@ gamma>0, delta>=0. We do NOT have lambda in BKw because it's fixed at 1.
 // Parameter Checker for Beta-Kumaraswamy (BKw) distribution
 // -----------------------------------------------------------------------------
 inline bool check_bkw_pars(double alpha,
-                         double beta,
-                         double gamma,
-                         double delta,
-                         bool strict = false) {
+                       double beta,
+                       double gamma,
+                       double delta,
+                       bool strict = false) {
 if (alpha <= 0.0 || beta <= 0.0 || gamma <= 0.0 || delta < 0.0) {
-  return false;
+return false;
 }
 
 if (strict) {
-  // Optional stricter numeric bounds
-  const double MIN_PARAM = 1e-5;
-  const double MAX_PARAM = 1e5;
-  if (alpha < MIN_PARAM || beta < MIN_PARAM || gamma < MIN_PARAM || delta > MAX_PARAM) {
-    return false;
-  }
-  if (alpha > MAX_PARAM || beta > MAX_PARAM || gamma > MAX_PARAM) {
-    return false;
-  }
+// Optional stricter numeric bounds
+const double MIN_PARAM = 1e-5;
+const double MAX_PARAM = 1e5;
+if (alpha < MIN_PARAM || beta < MIN_PARAM || gamma < MIN_PARAM || delta > MAX_PARAM) {
+  return false;
+}
+if (alpha > MAX_PARAM || beta > MAX_PARAM || gamma > MAX_PARAM) {
+  return false;
+}
 }
 return true;
 }
@@ -4264,88 +5844,88 @@ This file defines:
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec dbkw(
-   const arma::vec& x,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   bool log_prob = false
+Rcpp::NumericVector dbkw(
+ const arma::vec& x,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ bool log_prob = false
 ) {
- // Convert to arma::vec
- arma::vec alpha_vec(alpha.begin(), alpha.size());
- arma::vec beta_vec(beta.begin(), beta.size());
- arma::vec gamma_vec(gamma.begin(), gamma.size());
- arma::vec delta_vec(delta.begin(), delta.size());
+// Convert to arma::vec
+arma::vec alpha_vec(alpha.begin(), alpha.size());
+arma::vec beta_vec(beta.begin(), beta.size());
+arma::vec gamma_vec(gamma.begin(), gamma.size());
+arma::vec delta_vec(delta.begin(), delta.size());
 
- // Broadcast length
- size_t n = std::max({x.n_elem,
-                     alpha_vec.n_elem,
-                     beta_vec.n_elem,
-                     gamma_vec.n_elem,
-                     delta_vec.n_elem});
+// Broadcast length
+size_t n = std::max({x.n_elem,
+                   alpha_vec.n_elem,
+                   beta_vec.n_elem,
+                   gamma_vec.n_elem,
+                   delta_vec.n_elem});
 
- // Result
- arma::vec result(n);
- result.fill(log_prob ? R_NegInf : 0.0);
+// Result
+arma::vec result(n);
+result.fill(log_prob ? R_NegInf : 0.0);
 
- for (size_t i = 0; i < n; ++i) {
-   double a = alpha_vec[i % alpha_vec.n_elem];
-   double b = beta_vec[i % beta_vec.n_elem];
-   double g = gamma_vec[i % gamma_vec.n_elem];
-   double d = delta_vec[i % delta_vec.n_elem];
-   double xx = x[i % x.n_elem];
+for (size_t i = 0; i < n; ++i) {
+ double a = alpha_vec[i % alpha_vec.n_elem];
+ double b = beta_vec[i % beta_vec.n_elem];
+ double g = gamma_vec[i % gamma_vec.n_elem];
+ double d = delta_vec[i % delta_vec.n_elem];
+ double xx = x[i % x.n_elem];
 
-   // Check parameter validity
-   if (!check_bkw_pars(a, b, g, d)) {
-     // Invalid params => density = 0 or -Inf
-     continue;
-   }
-
-   // Outside (0,1) => density=0 or log_density=-Inf
-   if (xx <= 0.0 || xx >= 1.0 || !R_finite(xx)) {
-     continue;
-   }
-
-   // PDF formula
-   // f(x) = (alpha*beta / B(gamma, delta+1)) *
-   //        x^(alpha-1) * (1 - x^alpha)^(beta*(delta+1) - 1) *
-   //        [1 - (1 - x^alpha)^beta]^(gamma - 1)
-
-   // Precompute log_B = lbeta(g, d+1)
-   double logB = R::lbeta(g, d + 1.0);
-   double log_const = std::log(a) + std::log(b) - logB;
-
-   double lx = std::log(xx);
-   double xalpha = a * lx;                    // log(x^alpha) = a * log(x)
-   double log_1_minus_xalpha = log1mexp(xalpha);
-
-   // (beta*(delta+1) - 1) * log(1 - x^alpha)
-   double exponent1 = b * (d + 1.0) - 1.0;
-   double term1 = exponent1 * log_1_minus_xalpha;
-
-   // [1 - (1 - x^alpha)^beta]^(gamma - 1)
-   // log(1 - (1 - x^alpha)^beta) = log1mexp( b * log(1 - x^alpha) )
-   double log_1_minus_xalpha_beta = b * log_1_minus_xalpha;
-   double log_bracket = log1mexp(log_1_minus_xalpha_beta);
-   double exponent2 = g - 1.0;
-   double term2 = exponent2 * log_bracket;
-
-   // Full log pdf
-   double log_pdf = log_const +
-     (a - 1.0) * lx +
-     term1 +
-     term2;
-
-   if (log_prob) {
-     result(i) = log_pdf;
-   } else {
-     // exp safely
-     result(i) = std::exp(log_pdf);
-   }
+ // Check parameter validity
+ if (!check_bkw_pars(a, b, g, d)) {
+   // Invalid params => density = 0 or -Inf
+   continue;
  }
 
- return result;
+ // Outside (0,1) => density=0 or log_density=-Inf
+ if (xx <= 0.0 || xx >= 1.0 || !R_finite(xx)) {
+   continue;
+ }
+
+ // PDF formula
+ // f(x) = (alpha*beta / B(gamma, delta+1)) *
+ //        x^(alpha-1) * (1 - x^alpha)^(beta*(delta+1) - 1) *
+ //        [1 - (1 - x^alpha)^beta]^(gamma - 1)
+
+ // Precompute log_B = lbeta(g, d+1)
+ double logB = R::lbeta(g, d + 1.0);
+ double log_const = std::log(a) + std::log(b) - logB;
+
+ double lx = std::log(xx);
+ double xalpha = a * lx;                    // log(x^alpha) = a * log(x)
+ double log_1_minus_xalpha = log1mexp(xalpha);
+
+ // (beta*(delta+1) - 1) * log(1 - x^alpha)
+ double exponent1 = b * (d + 1.0) - 1.0;
+ double term1 = exponent1 * log_1_minus_xalpha;
+
+ // [1 - (1 - x^alpha)^beta]^(gamma - 1)
+ // log(1 - (1 - x^alpha)^beta) = log1mexp( b * log(1 - x^alpha) )
+ double log_1_minus_xalpha_beta = b * log_1_minus_xalpha;
+ double log_bracket = log1mexp(log_1_minus_xalpha_beta);
+ double exponent2 = g - 1.0;
+ double term2 = exponent2 * log_bracket;
+
+ // Full log pdf
+ double log_pdf = log_const +
+   (a - 1.0) * lx +
+   term1 +
+   term2;
+
+ if (log_prob) {
+   result(i) = log_pdf;
+ } else {
+   // exp safely
+   result(i) = std::exp(log_pdf);
+ }
+}
+
+return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 }
 
 
@@ -4461,93 +6041,93 @@ arma::vec dbkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec pbkw(
-   const arma::vec& q,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector pbkw(
+ const arma::vec& q,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- // Convert
- arma::vec alpha_vec(alpha.begin(), alpha.size());
- arma::vec beta_vec(beta.begin(), beta.size());
- arma::vec gamma_vec(gamma.begin(), gamma.size());
- arma::vec delta_vec(delta.begin(), delta.size());
+// Convert
+arma::vec alpha_vec(alpha.begin(), alpha.size());
+arma::vec beta_vec(beta.begin(), beta.size());
+arma::vec gamma_vec(gamma.begin(), gamma.size());
+arma::vec delta_vec(delta.begin(), delta.size());
 
- // Broadcast
- size_t n = std::max({q.n_elem,
-                     alpha_vec.n_elem,
-                     beta_vec.n_elem,
-                     gamma_vec.n_elem,
-                     delta_vec.n_elem});
+// Broadcast
+size_t n = std::max({q.n_elem,
+                   alpha_vec.n_elem,
+                   beta_vec.n_elem,
+                   gamma_vec.n_elem,
+                   delta_vec.n_elem});
 
- arma::vec res(n);
+arma::vec res(n);
 
- for (size_t i = 0; i < n; ++i) {
-   double a = alpha_vec[i % alpha_vec.n_elem];
-   double b = beta_vec[i % beta_vec.n_elem];
-   double g = gamma_vec[i % gamma_vec.n_elem];
-   double d = delta_vec[i % delta_vec.n_elem];
-   double xx = q[i % q.n_elem];
+for (size_t i = 0; i < n; ++i) {
+ double a = alpha_vec[i % alpha_vec.n_elem];
+ double b = beta_vec[i % beta_vec.n_elem];
+ double g = gamma_vec[i % gamma_vec.n_elem];
+ double d = delta_vec[i % delta_vec.n_elem];
+ double xx = q[i % q.n_elem];
 
-   if (!check_bkw_pars(a, b, g, d)) {
-     res(i) = NA_REAL;
-     continue;
-   }
-
-   if (!R_finite(xx) || xx <= 0.0) {
-     // x=0 => F=0
-     double prob0 = lower_tail ? 0.0 : 1.0;
-     res(i) = log_p ? std::log(prob0) : prob0;
-     continue;
-   }
-
-   if (xx >= 1.0) {
-     // x=1 => F=1
-     double prob1 = lower_tail ? 1.0 : 0.0;
-     res(i) = log_p ? std::log(prob1) : prob1;
-     continue;
-   }
-
-   // We want z = 1 - (1 - x^alpha)^beta
-   double lx = std::log(xx);
-   double xalpha = std::exp(a * lx);
-   double one_minus_xalpha = 1.0 - xalpha;
-
-   if (one_minus_xalpha <= 0.0) {
-     // F(x) ~ 1 if x^alpha>=1
-     double prob1 = lower_tail ? 1.0 : 0.0;
-     res(i) = log_p ? std::log(prob1) : prob1;
-     continue;
-   }
-
-   double temp = 1.0 - std::pow(one_minus_xalpha, b);
-   if (temp <= 0.0) {
-     double prob0 = lower_tail ? 0.0 : 1.0;
-     res(i) = log_p ? std::log(prob0) : prob0;
-     continue;
-   }
-
-   if (temp >= 1.0) {
-     double prob1 = lower_tail ? 1.0 : 0.0;
-     res(i) = log_p ? std::log(prob1) : prob1;
-     continue;
-   }
-
-   // Then F(x) = pbeta(temp, gamma, delta+1, TRUE, FALSE)
-   double val = R::pbeta(temp, g, d+1.0, true, false); // F
-   if (!lower_tail) {
-     val = 1.0 - val;
-   }
-   if (log_p) {
-     val = std::log(val);
-   }
-   res(i) = val;
+ if (!check_bkw_pars(a, b, g, d)) {
+   res(i) = NA_REAL;
+   continue;
  }
 
- return res;
+ if (!R_finite(xx) || xx <= 0.0) {
+   // x=0 => F=0
+   double prob0 = lower_tail ? 0.0 : 1.0;
+   res(i) = log_p ? std::log(prob0) : prob0;
+   continue;
+ }
+
+ if (xx >= 1.0) {
+   // x=1 => F=1
+   double prob1 = lower_tail ? 1.0 : 0.0;
+   res(i) = log_p ? std::log(prob1) : prob1;
+   continue;
+ }
+
+ // We want z = 1 - (1 - x^alpha)^beta
+ double lx = std::log(xx);
+ double xalpha = std::exp(a * lx);
+ double one_minus_xalpha = 1.0 - xalpha;
+
+ if (one_minus_xalpha <= 0.0) {
+   // F(x) ~ 1 if x^alpha>=1
+   double prob1 = lower_tail ? 1.0 : 0.0;
+   res(i) = log_p ? std::log(prob1) : prob1;
+   continue;
+ }
+
+ double temp = 1.0 - std::pow(one_minus_xalpha, b);
+ if (temp <= 0.0) {
+   double prob0 = lower_tail ? 0.0 : 1.0;
+   res(i) = log_p ? std::log(prob0) : prob0;
+   continue;
+ }
+
+ if (temp >= 1.0) {
+   double prob1 = lower_tail ? 1.0 : 0.0;
+   res(i) = log_p ? std::log(prob1) : prob1;
+   continue;
+ }
+
+ // Then F(x) = pbeta(temp, gamma, delta+1, TRUE, FALSE)
+ double val = R::pbeta(temp, g, d+1.0, true, false); // F
+ if (!lower_tail) {
+   val = 1.0 - val;
+ }
+ if (log_p) {
+   val = std::log(val);
+ }
+ res(i) = val;
+}
+
+return Rcpp::NumericVector(res.memptr(), res.memptr() + res.n_elem);
 }
 
 
@@ -4675,100 +6255,100 @@ arma::vec pbkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec qbkw(
-   const arma::vec& p,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector qbkw(
+ const arma::vec& p,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- arma::vec alpha_vec(alpha.begin(), alpha.size());
- arma::vec beta_vec(beta.begin(), beta.size());
- arma::vec gamma_vec(gamma.begin(), gamma.size());
- arma::vec delta_vec(delta.begin(), delta.size());
+arma::vec alpha_vec(alpha.begin(), alpha.size());
+arma::vec beta_vec(beta.begin(), beta.size());
+arma::vec gamma_vec(gamma.begin(), gamma.size());
+arma::vec delta_vec(delta.begin(), delta.size());
 
- size_t n = std::max({p.n_elem,
-                     alpha_vec.n_elem,
-                     beta_vec.n_elem,
-                     gamma_vec.n_elem,
-                     delta_vec.n_elem});
+size_t n = std::max({p.n_elem,
+                   alpha_vec.n_elem,
+                   beta_vec.n_elem,
+                   gamma_vec.n_elem,
+                   delta_vec.n_elem});
 
- arma::vec res(n);
+arma::vec res(n);
 
- for (size_t i = 0; i < n; ++i) {
-   double a = alpha_vec[i % alpha_vec.n_elem];
-   double b = beta_vec[i % beta_vec.n_elem];
-   double g = gamma_vec[i % gamma_vec.n_elem];
-   double d = delta_vec[i % delta_vec.n_elem];
-   double pp = p[i % p.n_elem];
+for (size_t i = 0; i < n; ++i) {
+ double a = alpha_vec[i % alpha_vec.n_elem];
+ double b = beta_vec[i % beta_vec.n_elem];
+ double g = gamma_vec[i % gamma_vec.n_elem];
+ double d = delta_vec[i % delta_vec.n_elem];
+ double pp = p[i % p.n_elem];
 
-   if (!check_bkw_pars(a, b, g, d)) {
+ if (!check_bkw_pars(a, b, g, d)) {
+   res(i) = NA_REAL;
+   continue;
+ }
+
+ // Convert from log_p if needed
+ if (log_p) {
+   if (pp > 0.0) {
+     // log(p) > 0 => p>1 => invalid
      res(i) = NA_REAL;
      continue;
    }
-
-   // Convert from log_p if needed
-   if (log_p) {
-     if (pp > 0.0) {
-       // log(p) > 0 => p>1 => invalid
-       res(i) = NA_REAL;
-       continue;
-     }
-     pp = std::exp(pp);
-   }
-   // Convert if upper tail
-   if (!lower_tail) {
-     pp = 1.0 - pp;
-   }
-
-   // Check boundaries
-   if (pp <= 0.0) {
-     res(i) = 0.0;
-     continue;
-   } else if (pp >= 1.0) {
-     res(i) = 1.0;
-     continue;
-   }
-
-   // We do: y = qbeta(pp, gamma, delta+1)
-   double y = R::qbeta(pp, g, d+1.0, true, false);
-   if (y <= 0.0) {
-     res(i) = 0.0;
-     continue;
-   } else if (y >= 1.0) {
-     res(i) = 1.0;
-     continue;
-   }
-
-   // Then x = {1 - [1 - y]^(1/b)}^(1/a)
-   double part = 1.0 - y;
-   if (part <= 0.0) {
-     res(i) = 1.0;
-     continue;
-   } else if (part >= 1.0) {
-     res(i) = 0.0;
-     continue;
-   }
-
-   double inner = std::pow(part, 1.0/b);
-   double xval = 1.0 - inner;
-   if (xval < 0.0)  xval = 0.0;
-   if (xval > 1.0)  xval = 1.0;
-
-   if (a == 1.0) {
-     // small optimization
-     res(i) = xval;
-   } else {
-     double qv = std::pow(xval, 1.0/a);
-     if (qv < 0.0)      qv = 0.0;
-     else if (qv > 1.0) qv = 1.0;
-     res(i) = qv;
-   }
+   pp = std::exp(pp);
+ }
+ // Convert if upper tail
+ if (!lower_tail) {
+   pp = 1.0 - pp;
  }
 
- return res;
+ // Check boundaries
+ if (pp <= 0.0) {
+   res(i) = 0.0;
+   continue;
+ } else if (pp >= 1.0) {
+   res(i) = 1.0;
+   continue;
+ }
+
+ // We do: y = qbeta(pp, gamma, delta+1)
+ double y = R::qbeta(pp, g, d+1.0, true, false);
+ if (y <= 0.0) {
+   res(i) = 0.0;
+   continue;
+ } else if (y >= 1.0) {
+   res(i) = 1.0;
+   continue;
+ }
+
+ // Then x = {1 - [1 - y]^(1/b)}^(1/a)
+ double part = 1.0 - y;
+ if (part <= 0.0) {
+   res(i) = 1.0;
+   continue;
+ } else if (part >= 1.0) {
+   res(i) = 0.0;
+   continue;
+ }
+
+ double inner = std::pow(part, 1.0/b);
+ double xval = 1.0 - inner;
+ if (xval < 0.0)  xval = 0.0;
+ if (xval > 1.0)  xval = 1.0;
+
+ if (a == 1.0) {
+   // small optimization
+   res(i) = xval;
+ } else {
+   double qv = std::pow(xval, 1.0/a);
+   if (qv < 0.0)      qv = 0.0;
+   else if (qv > 1.0) qv = 1.0;
+   res(i) = qv;
+ }
+}
+
+return Rcpp::NumericVector(res.memptr(), res.memptr() + res.n_elem);
 }
 
 
@@ -4889,77 +6469,73 @@ arma::vec qbkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec rbkw(
-   int n,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta
+Rcpp::NumericVector rbkw(
+ int n,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta
 ) {
- if (n <= 0) {
-   Rcpp::stop("rbkw: n must be positive");
- }
-
- arma::vec alpha_vec(alpha.begin(), alpha.size());
- arma::vec beta_vec(beta.begin(), beta.size());
- arma::vec gamma_vec(gamma.begin(), gamma.size());
- arma::vec delta_vec(delta.begin(), delta.size());
-
- size_t k = std::max({alpha_vec.n_elem,
-                     beta_vec.n_elem,
-                     gamma_vec.n_elem,
-                     delta_vec.n_elem});
-
- arma::vec out(n);
-
- for (int i = 0; i < n; ++i) {
-   size_t idx = i % k;
-   double a = alpha_vec[idx % alpha_vec.n_elem];
-   double b = beta_vec[idx % beta_vec.n_elem];
-   double g = gamma_vec[idx % gamma_vec.n_elem];
-   double d = delta_vec[idx % delta_vec.n_elem];
-
-   if (!check_bkw_pars(a, b, g, d)) {
-     out(i) = NA_REAL;
-     Rcpp::warning("rbkw: invalid parameters at index %d", i+1);
-     continue;
-   }
-
-   // V ~ Beta(g, d+1)
-   double V = R::rbeta(g, d + 1.0);
-   // X = {1 - (1 - V)^(1/b)}^(1/a)
-   double one_minus_V = 1.0 - V;
-   if (one_minus_V <= 0.0) {
-     out(i) = 1.0;
-     continue;
-   }
-   if (one_minus_V >= 1.0) {
-     out(i) = 0.0;
-     continue;
-   }
-
-   double temp = std::pow(one_minus_V, 1.0/b);
-   double xval = 1.0 - temp;
-   if (xval < 0.0)  xval = 0.0;
-   if (xval > 1.0)  xval = 1.0;
-
-   if (a == 1.0) {
-     out(i) = xval;
-   } else {
-     double rv = std::pow(xval, 1.0/a);
-     if (rv < 0.0) rv = 0.0;
-     if (rv > 1.0) rv = 1.0;
-     out(i) = rv;
-   }
- }
-
- return out;
+if (n <= 0) {
+ Rcpp::stop("rbkw: n must be positive");
 }
 
+arma::vec alpha_vec(alpha.begin(), alpha.size());
+arma::vec beta_vec(beta.begin(), beta.size());
+arma::vec gamma_vec(gamma.begin(), gamma.size());
+arma::vec delta_vec(delta.begin(), delta.size());
 
-// -----------------------------------------------------------------------------
-// 5) llbkw: Negative Log-Likelihood for Beta-Kumaraswamy
-// -----------------------------------------------------------------------------
+size_t k = std::max({alpha_vec.n_elem,
+                   beta_vec.n_elem,
+                   gamma_vec.n_elem,
+                   delta_vec.n_elem});
+
+arma::vec out(n);
+
+for (int i = 0; i < n; ++i) {
+ size_t idx = i % k;
+ double a = alpha_vec[idx % alpha_vec.n_elem];
+ double b = beta_vec[idx % beta_vec.n_elem];
+ double g = gamma_vec[idx % gamma_vec.n_elem];
+ double d = delta_vec[idx % delta_vec.n_elem];
+
+ if (!check_bkw_pars(a, b, g, d)) {
+   out(i) = NA_REAL;
+   Rcpp::warning("rbkw: invalid parameters at index %d", i+1);
+   continue;
+ }
+
+ // V ~ Beta(g, d+1)
+ double V = R::rbeta(g, d + 1.0);
+ // X = {1 - (1 - V)^(1/b)}^(1/a)
+ double one_minus_V = 1.0 - V;
+ if (one_minus_V <= 0.0) {
+   out(i) = 1.0;
+   continue;
+ }
+ if (one_minus_V >= 1.0) {
+   out(i) = 0.0;
+   continue;
+ }
+
+ double temp = std::pow(one_minus_V, 1.0/b);
+ double xval = 1.0 - temp;
+ if (xval < 0.0)  xval = 0.0;
+ if (xval > 1.0)  xval = 1.0;
+
+ if (a == 1.0) {
+   out(i) = xval;
+ } else {
+   double rv = std::pow(xval, 1.0/a);
+   if (rv < 0.0) rv = 0.0;
+   if (rv > 1.0) rv = 1.0;
+   out(i) = rv;
+ }
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
+}
+
 
 //' @title Negative Log-Likelihood for Beta-Kumaraswamy (BKw) Distribution
 //' @author Lopes, J. E.
@@ -5096,63 +6672,122 @@ arma::vec rbkw(
 // [[Rcpp::export]]
 double llbkw(const Rcpp::NumericVector& par,
             const Rcpp::NumericVector& data) {
+ // Parameter validation
  if (par.size() < 4) {
-   return R_NegInf;
- }
- double a = par[0];  // alpha>0
- double b = par[1];  // beta>0
- double g = par[2];  // gamma>0
- double d = par[3];  // delta>=0
-
- if (!check_bkw_pars(a, b, g, d)) {
-   return R_NegInf;
+   return R_PosInf;
  }
 
- // Convert data
+ double a = par[0];  // alpha > 0
+ double b = par[1];  // beta > 0
+ double g = par[2];  // gamma > 0
+ double d = par[3];  // delta >= 0
+
+ // Basic parameter validation
+ if (a <= 0.0 || b <= 0.0 || g <= 0.0 || d < 0.0) {
+   return R_PosInf;
+ }
+
+ // Convert data to armadillo vector
  arma::vec x = Rcpp::as<arma::vec>(data);
- // Check data
- if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
-   return R_NegInf;
+ int n = x.n_elem;
+
+ // Basic data validation
+ if (n == 0 || arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
+   return R_PosInf;
  }
 
- int n = x.n_elem;
+ // ----- Compute log-likelihood with careful numerical handling -----
+
+ // Compute log-beta term
  double logB = R::lbeta(g, d + 1.0);
 
- // sum( log(f(x)) ) = n*log(alpha*beta) - n*logB + ...
+ // Constant part: n * (log(a) + log(b) - logB)
  double ll_const = n * (std::log(a) + std::log(b) - logB);
 
- // (alpha - 1)*sum(log(x))
+ // ----- Term 1: (alpha - 1) * sum(log(x)) -----
  arma::vec lx = arma::log(x);
  double sum1 = (a - 1.0) * arma::sum(lx);
 
- // exponent1 = beta*(delta+1) - 1
- double exp1 = b*(d+1.0) - 1.0;
- // sum( exp1 * log(1 - x^alpha) )
- arma::vec xalpha = arma::pow(x, a);
- arma::vec log_1_xalpha = arma::log(1.0 - xalpha);
- double sum2 = exp1 * arma::sum(log_1_xalpha);
+ // ----- Term 2: (beta*(delta+1) - 1) * sum(log(1 - x^alpha)) -----
+ double exp1 = b * (d + 1.0) - 1.0;
+ double sum2 = 0.0;
 
- // exponent2 = (gamma - 1)
- // sum( exponent2* log( 1 - (1 - x^alpha)^beta ) )
- // (1 - x^alpha)^beta => vbeta
- arma::vec vbeta = arma::pow(1.0 - xalpha, b);
- arma::vec one_minus_vbeta = 1.0 - vbeta;
- // safe log(1.0 - vbeta)
- arma::vec log_omv(vbeta.n_elem);
- for (int i = 0; i < (int)vbeta.n_elem; i++) {
-   double val = one_minus_vbeta[i];
-   if (val <= 0.0) {
-     return R_NegInf;  // invalid => -Inf
+ // ----- Term 3: (gamma - 1) * sum(log(1 - (1 - x^alpha)^beta)) -----
+ double sum3 = 0.0;
+
+ // Small constant for numerical stability
+ double eps = std::sqrt(std::numeric_limits<double>::epsilon());
+
+ // Process each observation for terms 2 and 3
+ for (int i = 0; i < n; i++) {
+   double xi = x(i);
+
+   // Compute x^alpha (more accurately in log domain for extreme values)
+   double xa;
+   if (a * std::log(xi) < -700.0) {
+     xa = 0.0;  // Underflow protection
+   } else if (a * std::log(xi) > 700.0) {
+     xa = 1e300;  // Overflow protection - will lead to v ≈ 0
+   } else {
+     xa = std::pow(xi, a);
    }
-   log_omv[i] = std::log(val);
- }
- double sum3 = (g - 1.0) * arma::sum(log_omv);
 
+   // Compute v = 1 - x^alpha (more accurately for x^alpha close to 1)
+   double v;
+   if (xa > 0.5) {
+     v = std::max(1.0 - xa, eps);  // Ensure v > 0
+   } else {
+     v = 1.0 - xa;
+   }
+
+   // Restrict v to valid range for numerical stability
+   v = std::max(std::min(v, 1.0 - eps), eps);
+
+   // Term 2 contribution: (beta*(delta+1) - 1) * log(v)
+   sum2 += exp1 * std::log(v);
+
+   // Compute v^beta (more accurately in log domain for extreme values)
+   double vb;
+   if (b * std::log(v) < -700.0) {
+     vb = 0.0;  // Underflow protection
+   } else if (b * std::log(v) > 700.0) {
+     vb = 1e300;  // Overflow protection - will lead to w ≈ 0
+   } else {
+     vb = std::pow(v, b);
+   }
+
+   // Compute w = 1 - v^beta (more accurately for v^beta close to 1)
+   double w;
+   if (vb > 0.5) {
+     w = std::max(1.0 - vb, eps);  // Ensure w > 0
+   } else {
+     w = 1.0 - vb;
+   }
+
+   // Restrict w to valid range for numerical stability
+   w = std::max(std::min(w, 1.0 - eps), eps);
+
+   // Term 3 contribution: (gamma - 1) * log(w)
+   if (g != 1.0) {  // Skip if gamma = 1
+     sum3 += (g - 1.0) * std::log(w);
+   }
+ }
+
+ // Combine all terms
  double ll = ll_const + sum1 + sum2 + sum3;
 
- // negative log-likelihood
+ // Final validity check
+ if (!std::isfinite(ll)) {
+   return R_PosInf;
+ }
+
+ // Return negative log-likelihood
  return -ll;
 }
+
+
+
+
 
 
 //' @title Gradient of the Negative Log-Likelihood for the BKw Distribution
@@ -5302,80 +6937,335 @@ double llbkw(const Rcpp::NumericVector& par,
 //' } # End of \dontrun block
 //'
 //' @export
+//' @title Gradient of the Negative Log-Likelihood for the BKw Distribution
+//' @author Lopes, J. E.
+//' @keywords distribution likelihood optimize gradient
+//'
+//' @description
+//' Computes the gradient vector (vector of first partial derivatives) of the
+//' negative log-likelihood function for the Beta-Kumaraswamy (BKw) distribution
+//' with parameters \code{alpha} (\eqn{\alpha}), \code{beta} (\eqn{\beta}),
+//' \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}). This distribution
+//' is the special case of the Generalized Kumaraswamy (GKw) distribution where
+//' \eqn{\lambda = 1}. The gradient is typically used in optimization algorithms
+//' for maximum likelihood estimation.
+//'
+//' @param par A numeric vector of length 4 containing the distribution parameters
+//'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+//'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+//' @param data A numeric vector of observations. All values must be strictly
+//'   between 0 and 1 (exclusive).
+//'
+//' @return Returns a numeric vector of length 4 containing the partial derivatives
+//'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+//'   respect to each parameter:
+//'   \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \gamma, -\partial \ell/\partial \delta)}.
+//'   Returns a vector of \code{NaN} if any parameter values are invalid according
+//'   to their constraints, or if any value in \code{data} is not in the
+//'   interval (0, 1).
+//'
+//' @details
+//' The components of the gradient vector of the negative log-likelihood
+//' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the BKw (\eqn{\lambda=1}) model are:
+//'
+//' \deqn{
+//' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
+//' + \sum_{i=1}^{n}\left[x_i^{\alpha} \ln(x_i) \left(\frac{\beta(\delta+1)-1}{v_i} -
+//' \frac{(\gamma-1) \beta v_i^{\beta-1}}{w_i}\right)\right]
+//' }
+//' \deqn{
+//' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - (\delta+1)\sum_{i=1}^{n}\ln(v_i)
+//' + \sum_{i=1}^{n}\left[\frac{(\gamma-1) v_i^{\beta} \ln(v_i)}{w_i}\right]
+//' }
+//' \deqn{
+//' -\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma) - \psi(\gamma+\delta+1)] -
+//' \sum_{i=1}^{n}\ln(w_i)
+//' }
+//' \deqn{
+//' -\frac{\partial \ell}{\partial \delta} = n[\psi(\delta+1) - \psi(\gamma+\delta+1)] -
+//' \beta\sum_{i=1}^{n}\ln(v_i)
+//' }
+//'
+//' where:
+//' \itemize{
+//'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+//'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+//'   \item \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
+//' }
+//' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+//' minimizing the negative log-likelihood. They correspond to the general GKw
+//' gradient (\code{\link{grgkw}}) components for \eqn{\alpha, \beta, \gamma, \delta}
+//' evaluated at \eqn{\lambda=1}. Note that the component for \eqn{\lambda} is omitted.
+//' Numerical stability is maintained through careful implementation.
+//'
+//' @references
+//' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+//' distributions. *Journal of Statistical Computation and Simulation*,
+//'
+//' Kumaraswamy, P. (1980). A generalized probability density function for
+//' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+//'
+//' (Note: Specific gradient formulas might be derived or sourced from additional references).
+//'
+//' @seealso
+//' \code{\link{grgkw}} (parent distribution gradient),
+//' \code{\link{llbkw}} (negative log-likelihood for BKw),
+//' \code{\link{hsbkw}} (Hessian for BKw, if available),
+//' \code{\link{dbkw}} (density for BKw),
+//' \code{\link[stats]{optim}},
+//' \code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+//' \code{\link[base]{digamma}}.
+//'
+//' @examples
+//' \dontrun{
+//' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
+//'
+//' # Generate sample data
+//' set.seed(123)
+//' true_par_bkw <- c(alpha = 2, beta = 3, gamma = 1, delta = 0.5)
+//' if (exists("rbkw")) {
+//'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+//'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
+//' } else {
+//'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+//'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
+//' }
+//' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
+//'
+//' # --- Find MLE estimates ---
+//' start_par_bkw <- c(1.5, 2.5, 0.8, 0.3)
+//' mle_result_bkw <- stats::optim(par = start_par_bkw,
+//'                                fn = llbkw,
+//'                                gr = grbkw, # Use analytical gradient for BKw
+//'                                method = "BFGS",
+//'                                hessian = TRUE,
+//'                                data = sample_data_bkw)
+//'
+//' # --- Compare analytical gradient to numerical gradient ---
+//' if (mle_result_bkw$convergence == 0 &&
+//'     requireNamespace("numDeriv", quietly = TRUE)) {
+//'
+//'   mle_par_bkw <- mle_result_bkw$par
+//'   cat("\nComparing Gradients for BKw at MLE estimates:\n")
+//'
+//'   # Numerical gradient of llbkw
+//'   num_grad_bkw <- numDeriv::grad(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+//'
+//'   # Analytical gradient from grbkw
+//'   ana_grad_bkw <- grbkw(par = mle_par_bkw, data = sample_data_bkw)
+//'
+//'   cat("Numerical Gradient (BKw):\n")
+//'   print(num_grad_bkw)
+//'   cat("Analytical Gradient (BKw):\n")
+//'   print(ana_grad_bkw)
+//'
+//'   # Check differences
+//'   cat("Max absolute difference between BKw gradients:\n")
+//'   print(max(abs(num_grad_bkw - ana_grad_bkw)))
+//'
+//' } else {
+//'   cat("\nSkipping BKw gradient comparison.\n")
+//' }
+//'
+//' # --- Optional: Compare with relevant components of GKw gradient ---
+//' # Requires grgkw function
+//' if (mle_result_bkw$convergence == 0 && exists("grgkw")) {
+//'   # Create 5-param vector for grgkw (insert lambda=1)
+//'   mle_par_gkw_equiv <- c(mle_par_bkw[1:4], lambda = 1.0)
+//'   ana_grad_gkw <- grgkw(par = mle_par_gkw_equiv, data = sample_data_bkw)
+//'   # Extract components corresponding to alpha, beta, gamma, delta
+//'   ana_grad_gkw_subset <- ana_grad_gkw[c(1, 2, 3, 4)]
+//'
+//'   cat("\nComparison with relevant components of GKw gradient:\n")
+//'   cat("Max absolute difference:\n")
+//'   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
+//' }
+//'
+//' } # End of \dontrun block
+//'
+//' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector grbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
+ // Initialize gradient vector for early return cases
+ Rcpp::NumericVector grad(4, R_NaN);
+
+ // Parameter extraction and validation
+ if (par.size() < 4) {
+   Rcpp::warning("Parameter vector must have at least 4 elements for BKw");
+   return grad;
+ }
+
  double alpha = par[0];   // Shape parameter α > 0
  double beta = par[1];    // Shape parameter β > 0
  double gamma = par[2];   // Shape parameter γ > 0
- double delta = par[3];   // Shape parameter δ > 0
+ double delta = par[3];   // Shape parameter δ ≥ 0
 
- // Parameter validation
- if (alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0) {
-   Rcpp::NumericVector grad(4, R_NaN);
+ // Enhanced parameter validation with NaN checks
+ if (std::isnan(alpha) || std::isnan(beta) || std::isnan(gamma) || std::isnan(delta) ||
+     alpha <= 0 || beta <= 0 || gamma <= 0 || delta < 0) {
+   Rcpp::warning("Invalid parameters in grbkw: all must be positive (delta can be zero)");
    return grad;
  }
 
  // Data conversion and validation
- arma::vec x = Rcpp::as<arma::vec>(data);
+ arma::vec x;
+ try {
+   x = Rcpp::as<arma::vec>(data);
+ } catch (...) {
+   Rcpp::warning("Failed to convert data to arma::vec in grbkw");
+   return grad;
+ }
 
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
-   Rcpp::NumericVector grad(4, R_NaN);
+ // Comprehensive data validation
+ if (x.n_elem == 0 || x.has_nan() || arma::any(x <= 0) || arma::any(x >= 1)) {
+   Rcpp::warning("Data must be strictly in (0,1) and non-empty for grbkw");
    return grad;
  }
 
  int n = x.n_elem;  // Sample size
 
- // Initialize gradient vector
- Rcpp::NumericVector grad(4, 0.0);
+ // Reset gradient to zeros (we'll compute actual values now)
+ grad = Rcpp::NumericVector(4, 0.0);
 
- // Small constant to avoid numerical issues
- double eps = std::numeric_limits<double>::epsilon() * 100;
+ // Small constant for numerical stability - adaptive to machine precision
+ double eps = std::sqrt(std::numeric_limits<double>::epsilon());
 
- // Compute transformations and intermediate values
- arma::vec log_x = arma::log(x);                // log(x_i)
- arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
- arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
+ // -------- Step 1: Compute base transformations safely --------
 
- // v_i = 1 - x_i^α
- arma::vec v = 1.0 - x_alpha;
- v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
+ // Compute log(x) safely
+ arma::vec log_x = vec_safe_log(x);
 
- arma::vec log_v = arma::log(v);                // log(v_i)
- arma::vec v_beta_m1 = arma::pow(v, beta - 1.0); // v_i^(β-1)
- arma::vec v_beta = arma::pow(v, beta);          // v_i^β
- arma::vec v_beta_log_v = v_beta % log_v;        // v_i^β * log(v_i)
+ // Compute x^α safely
+ arma::vec x_alpha = vec_safe_pow(x, alpha);
 
- // w_i = 1 - v_i^β = 1 - (1-x_i^α)^β
- arma::vec w = 1.0 - v_beta;
- w = arma::clamp(w, eps, 1.0 - eps);            // Prevent numerical issues
+ // Compute x^α * log(x) with check for potential overflow
+ arma::vec x_alpha_log_x = x_alpha % log_x;
 
- arma::vec log_w = arma::log(w);                // log(w_i)
+ // ----- Step 2: Compute v_i = 1 - x_i^α and related terms -----
 
- // Calculate partial derivatives for each parameter (for log-likelihood)
+ // Use log1p and expm1 for better precision near boundaries
+ arma::vec v(n);
+ for (int i = 0; i < n; i++) {
+   // v_i = 1 - x_i^α computed via v_i = -expm1(log(x_i^α)) for better precision
+   if (x_alpha(i) < 0.5) {
+     // Standard calculation is fine for smaller values
+     v(i) = 1.0 - x_alpha(i);
+   } else {
+     // For x_i^α close to 1, use more accurate formula
+     v(i) = -std::expm1(alpha * log_x(i));
+   }
 
- // ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - Σᵢ[xᵢ^α * log(xᵢ) * ((β(δ+1)-1)/vᵢ - (γ-1) * β * vᵢ^(β-1) / wᵢ)]
+   // Ensure v is in valid range
+   if (v(i) <= 0.0 || v(i) >= 1.0) {
+     // Apply very cautious clamping only at extremes
+     v(i) = std::max(std::min(v(i), 1.0 - eps), eps);
+   }
+ }
+
+ // Compute log(v) and v^β terms with proper safeguards
+ arma::vec log_v = vec_safe_log(v);
+
+ // Compute v^(β-1) with safety for β close to 1
+ arma::vec v_beta_m1;
+ if (std::abs(beta - 1.0) < eps) {
+   // For β ≈ 1, v^(β-1) ≈ 1
+   v_beta_m1.ones(n);
+ } else {
+   v_beta_m1 = vec_safe_pow(v, beta - 1.0);
+ }
+
+ // Compute v^β safely
+ arma::vec v_beta = v % v_beta_m1;  // More accurate than direct power
+
+ // Compute v^β * log(v) with check for potential issues
+ arma::vec v_beta_log_v = v_beta % log_v;
+
+ // ----- Step 3: Compute w_i = 1 - v_i^β safely -----
+
+ arma::vec w(n);
+ arma::vec log_w(n);
+
+ for (int i = 0; i < n; i++) {
+   // Compute w_i = 1 - v_i^β more accurately for v_i^β close to 1
+   if (v_beta(i) < 0.5) {
+     w(i) = 1.0 - v_beta(i);
+   } else {
+     // For v_i^β close to 1, use log-domain calculation
+     w(i) = -std::expm1(beta * log_v(i));
+   }
+
+   // Validate and apply safety bounds
+   if (w(i) <= 0.0 || w(i) >= 1.0) {
+     w(i) = std::max(std::min(w(i), 1.0 - eps), eps);
+   }
+
+   // Compute log(w) directly for better accuracy
+   log_w(i) = std::log(w(i));
+ }
+
+ // ----- Step 4: Calculate partial derivatives with careful factoring -----
+
+ // Compute digamma values once, with checks for large arguments
+ double digamma_gamma, digamma_delta_plus_1, digamma_sum;
+
+ if (gamma > 1e6 && delta > 1e6) {
+   // For very large parameters, use asymptotic approximation of digamma
+   digamma_gamma = std::log(gamma) - 1.0/(2.0*gamma);
+   digamma_delta_plus_1 = std::log(delta+1.0) - 1.0/(2.0*(delta+1.0));
+   digamma_sum = std::log(gamma+delta+1.0) - 1.0/(2.0*(gamma+delta+1.0));
+ } else {
+   // Use standard digamma for typical values
+   digamma_gamma = R::digamma(gamma);
+   digamma_delta_plus_1 = R::digamma(delta + 1.0);
+   digamma_sum = R::digamma(gamma + delta + 1.0);
+ }
+
+ // ----- Calculate gradient components -----
+
+ // d_alpha = n/α + Σᵢlog(xᵢ) - Σᵢ[xᵢ^α * log(xᵢ) * ((β(δ+1)-1)/vᵢ - (γ-1) * β * vᵢ^(β-1) / wᵢ)]
+ double term_beta_delta = beta * (delta + 1.0) - 1.0;
+ double term_gamma = gamma - 1.0;
+
  double d_alpha = n / alpha + arma::sum(log_x);
 
- // Calculate the terms in the α gradient
- arma::vec alpha_term1 = (beta * (delta + 1) - 1.0) / v;           // (β(δ+1)-1)/v_i
- arma::vec alpha_term2 = (gamma - 1.0) * beta * v_beta_m1 / w;     // (γ-1) * β * v_i^(β-1) / w_i
+ for (int i = 0; i < n; i++) {
+   double alpha_term = x_alpha_log_x(i) * (
+     term_beta_delta / v(i) -
+       term_gamma * beta * v_beta_m1(i) / w(i)
+   );
 
- d_alpha -= arma::sum(x_alpha_log_x % (alpha_term1 - alpha_term2));
+   // Check for invalid values before adding
+   if (std::isfinite(alpha_term)) {
+     d_alpha -= alpha_term;
+   }
+ }
 
- // ∂ℓ/∂β = n/β + (δ+1)Σᵢlog(vᵢ) - Σᵢ[vᵢ^β * log(vᵢ) * ((γ-1) / wᵢ)]
- double d_beta = n / beta + (delta + 1) * arma::sum(log_v);
+ // d_beta = n/β + (δ+1)Σᵢlog(vᵢ) - Σᵢ[(γ-1) * vᵢ^β * log(vᵢ) / wᵢ]
+ double d_beta = n / beta + (delta + 1.0) * arma::sum(log_v);
 
- // Calculate the term in the β gradient
- arma::vec beta_term = (gamma - 1.0) / w;                          // (γ-1) / w_i
+ if (term_gamma != 0.0) {  // Skip calculation if γ=1 (term_gamma=0)
+   for (int i = 0; i < n; i++) {
+     double beta_term = term_gamma * v_beta_log_v(i) / w(i);
 
- d_beta -= arma::sum(v_beta_log_v % beta_term);
+     // Check for invalid values before adding
+     if (std::isfinite(beta_term)) {
+       d_beta -= beta_term;
+     }
+   }
+ }
 
- // ∂ℓ/∂γ = -n[ψ(γ) - ψ(γ+δ+1)] + Σᵢlog(wᵢ)
- double d_gamma = -n * (R::digamma(gamma) - R::digamma(gamma + delta + 1)) + arma::sum(log_w);
+ // d_gamma = -n[ψ(γ) - ψ(γ+δ+1)] + Σᵢlog(wᵢ)
+ double d_gamma = -n * (digamma_gamma - digamma_sum) + arma::sum(log_w);
 
- // ∂ℓ/∂δ = -n[ψ(δ+1) - ψ(γ+δ+1)] + βΣᵢlog(vᵢ)
- double d_delta = -n * (R::digamma(delta + 1) - R::digamma(gamma + delta + 1)) + beta * arma::sum(log_v);
+ // d_delta = -n[ψ(δ+1) - ψ(γ+δ+1)] + βΣᵢlog(vᵢ)
+ double d_delta = -n * (digamma_delta_plus_1 - digamma_sum) + beta * arma::sum(log_v);
+
+ // Final check for NaN/Inf values
+ if (!std::isfinite(d_alpha) || !std::isfinite(d_beta) ||
+     !std::isfinite(d_gamma) || !std::isfinite(d_delta)) {
+     Rcpp::warning("Gradient calculation produced non-finite values in grbkw");
+   return Rcpp::NumericVector(4, R_NaN);
+ }
 
  // Since we're optimizing negative log-likelihood, negate all derivatives
  grad[0] = -d_alpha;
@@ -5385,6 +7275,8 @@ Rcpp::NumericVector grbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 
  return grad;
 }
+
+
 
 
 
@@ -5527,144 +7419,1008 @@ Rcpp::NumericVector grbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha  = par[0];   // θ[0] = α
- double beta   = par[1];   // θ[1] = β
- double gamma  = par[2];   // θ[2] = γ
- double delta  = par[3];   // θ[3] = δ
+ // Initialize return matrix for error cases
+ Rcpp::NumericMatrix nanH(4, 4);
+ nanH.fill(R_NaN);
 
- // Simple parameter validation (all > 0)
- if(alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0) {
-   Rcpp::NumericMatrix nanH(4,4);
-   nanH.fill(R_NaN);
+ // Parameter validation
+ if (par.size() < 4) {
+   Rcpp::warning("Parameter vector must have at least 4 elements for BKw");
    return nanH;
  }
 
- // Data conversion and basic validation
- arma::vec x = Rcpp::as<arma::vec>(data);
- if(arma::any(x <= 0) || arma::any(x >= 1)) {
-   Rcpp::NumericMatrix nanH(4,4);
-   nanH.fill(R_NaN);
+ double alpha = par[0];   // Shape parameter α > 0
+ double beta = par[1];    // Shape parameter β > 0
+ double gamma = par[2];   // Shape parameter γ > 0
+ double delta = par[3];   // Shape parameter δ ≥ 0
+
+ // Enhanced parameter validation with NaN checks
+ if (std::isnan(alpha) || std::isnan(beta) || std::isnan(gamma) || std::isnan(delta) ||
+     alpha <= 0 || beta <= 0 || gamma <= 0 || delta < 0) {
+   Rcpp::warning("Invalid parameters in hsbkw: alpha, beta, gamma must be positive; delta must be non-negative");
    return nanH;
  }
 
- int n = x.n_elem;  // sample size
+ // Data conversion and validation
+ arma::vec x;
+ try {
+   x = Rcpp::as<arma::vec>(data);
+ } catch (...) {
+   Rcpp::warning("Failed to convert data to arma::vec in hsbkw");
+   return nanH;
+ }
 
- // Initialize Hessian matrix H (of ℓ(θ)) as 4x4
- arma::mat H(4,4, arma::fill::zeros);
+ // Comprehensive data validation
+ if (x.n_elem == 0 || x.has_nan() || arma::any(x <= 0) || arma::any(x >= 1)) {
+   Rcpp::warning("Data must be strictly in (0,1) and non-empty for hsbkw");
+   return nanH;
+ }
 
- // --- CONSTANT TERMS (do not depend on x) ---
- // L1: n ln(α)  => d²/dα² = -n/α²
- H(0,0) += -n/(alpha*alpha);
- // L2: n ln(β)  => d²/dβ² = -n/β²
- H(1,1) += -n/(beta*beta);
- // L3: -n ln[B(γ, δ+1)]
- //   d²/dγ² = -n [ψ₁(γ) - ψ₁(γ+δ+1)]  where ψ₁ is the trigamma function
- H(2,2) += -n * (R::trigamma(gamma) - R::trigamma(gamma+delta+1));
- //   d²/dδ² = -n [ψ₁(δ+1) - ψ₁(γ+δ+1)]
- H(3,3) += -n * (R::trigamma(delta+1) - R::trigamma(gamma+delta+1));
- //   Mixed derivative (γ,δ): = n ψ₁(γ+δ+1)
- H(2,3) += n * R::trigamma(gamma+delta+1);
- H(3,2) = H(2,3);
+ int n = x.n_elem;  // Sample size
 
- // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
- // Loop over each observation to accumulate contributions from:
- // L4: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
- // L5: (β(δ+1)-1) Σ ln(v), where v = 1 - x^α
- // L6: (γ-1) Σ ln(w), where w = 1 - v^β
+ // Initialize Hessian matrix H (of the log-likelihood) as 4x4
+ arma::mat H(4, 4, arma::fill::zeros);
+
+ // Small constant for numerical stability
+ double eps = std::sqrt(std::numeric_limits<double>::epsilon());
+
+ // ---------------------------------------------------------------------
+ // STEP 1: Add constant terms (that don't depend on individual data points)
+ // ---------------------------------------------------------------------
+
+ // Second derivative of n*ln(α) with respect to α: -n/α²
+ H(0, 0) = -n / (alpha * alpha);
+
+ // Second derivative of n*ln(β) with respect to β: -n/β²
+ H(1, 1) = -n / (beta * beta);
+
+ // Compute trigamma values with protection for large arguments
+ double trigamma_gamma, trigamma_delta_plus_1, trigamma_sum;
+
+ if (gamma > 1e6 || delta > 1e6) {
+   // For very large parameters, use asymptotic approximation of trigamma
+   // ψ₁(x) ≈ 1/x + 1/(2x²) + ...
+   trigamma_gamma = 1.0/gamma + 1.0/(2.0*gamma*gamma);
+   trigamma_delta_plus_1 = 1.0/(delta+1.0) + 1.0/(2.0*(delta+1.0)*(delta+1.0));
+   trigamma_sum = 1.0/(gamma+delta+1.0) + 1.0/(2.0*(gamma+delta+1.0)*(gamma+delta+1.0));
+ } else {
+   // Use standard trigamma for typical values
+   trigamma_gamma = R::trigamma(gamma);
+   trigamma_delta_plus_1 = R::trigamma(delta + 1.0);
+   trigamma_sum = R::trigamma(gamma + delta + 1.0);
+ }
+
+ // Second derivative of -n*ln[B(γ,δ+1)] with respect to γ: -n*[ψ₁(γ) - ψ₁(γ+δ+1)]
+ H(2, 2) = -n * (trigamma_gamma - trigamma_sum);
+
+ // Second derivative of -n*ln[B(γ,δ+1)] with respect to δ: -n*[ψ₁(δ+1) - ψ₁(γ+δ+1)]
+ H(3, 3) = -n * (trigamma_delta_plus_1 - trigamma_sum);
+
+ // Mixed derivative (γ,δ): n*ψ₁(γ+δ+1)
+ H(2, 3) = n * trigamma_sum;
+ H(3, 2) = H(2, 3);  // Symmetric matrix
+
+ // ---------------------------------------------------------------------
+ // STEP 2: Loop through observations to accumulate data-dependent terms
+ // ---------------------------------------------------------------------
+
+ // Precompute common factor
+ double beta_delta_factor = beta * (delta + 1.0) - 1.0;
+ double gamma_minus_1 = gamma - 1.0;
+
  for (int i = 0; i < n; i++) {
-   double xi    = x(i);
-   double ln_xi = std::log(xi);
+   double xi = x(i);
 
-   // -- Compute A = x^α and its derivatives --
-   double A = std::pow(xi, alpha);                  // A = x^α
-   double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
-   double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+   // Compute log(x) safely
+   double ln_xi = safe_log(xi);
 
-   // -- v = 1 - A and its derivatives --
-   double v = 1.0 - A;                              // v = 1 - x^α
-   double ln_v = std::log(v);                       // ln(v)
-   double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
-   double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+   // ---- Compute x^α and its derivatives more safely ----
+   double A; // A = x^α
+   double dA_dalpha; // dA/dα = x^α * ln(x)
+   double d2A_dalpha2; // d²A/dα² = x^α * (ln(x))²
 
-   // --- L5: (β(δ+1)-1) ln(v) ---
-   double beta_delta_factor = beta * (delta + 1.0) - 1.0;
-   // Second derivative w.r.t. α: (β(δ+1)-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
-   double d2L5_dalpha2 = beta_delta_factor * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
-   // Mixed derivative: d²L5/(dα dβ) = d/dβ[(β(δ+1)-1)*(dv_dalpha/v)] = (δ+1)*(dv_dalpha/v)
+   // Use logarithmic domain for more stability
+   double log_A = alpha * ln_xi;
+
+   if (std::abs(log_A) > 700.0) {
+     // For extreme values, handle specially
+     if (log_A < -700.0) {
+       A = 0.0;
+       dA_dalpha = 0.0;
+       d2A_dalpha2 = 0.0;
+     } else {
+       // Very large - handle with care
+       A = safe_exp(log_A);
+       dA_dalpha = A * ln_xi;
+       d2A_dalpha2 = dA_dalpha * ln_xi;
+     }
+   } else {
+     // Normal range - standard calculation
+     A = std::exp(log_A);
+     dA_dalpha = A * ln_xi;
+     d2A_dalpha2 = dA_dalpha * ln_xi;
+   }
+
+   // ---- Compute v = 1-x^α and its derivatives safely ----
+   double v; // v = 1 - x^α
+   double ln_v; // ln(v)
+   double dv_dalpha; // dv/dα = -x^α * ln(x)
+   double d2v_dalpha2; // d²v/dα² = -x^α * (ln(x))²
+
+   if (A > 0.5) {
+     // For A close to 1, use more accurate computation
+     v = -std::expm1(log_A);  // v = 1-e^(α*ln(x)) more accurately
+     dv_dalpha = -dA_dalpha;
+     d2v_dalpha2 = -d2A_dalpha2;
+   } else {
+     // Standard computation is fine for smaller A
+     v = 1.0 - A;
+     dv_dalpha = -dA_dalpha;
+     d2v_dalpha2 = -d2A_dalpha2;
+   }
+
+   // Safety check - ensure v is strictly in (0,1)
+   if (v <= eps || v >= 1.0 - eps) {
+     v = std::max(std::min(v, 1.0 - eps), eps);
+   }
+
+   // Compute ln(v) safely
+   ln_v = safe_log(v);
+
+   // ---- Compute L5 derivatives: (β(δ+1)-1)*ln(v) ----
+   // Second derivative w.r.t. α: (β(δ+1)-1) * [(d²v/dα² * v - (dv/dα)²) / v²]
+   double d2L5_dalpha2 = 0.0;
+   if (std::abs(beta_delta_factor) > eps) {
+     double term = (d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v * v);
+     if (std::isfinite(term)) {
+       d2L5_dalpha2 = beta_delta_factor * term;
+     }
+   }
+
+   // Mixed derivative: d²L5/(dα dβ) = (δ+1) * (dv_dalpha/v)
    double d2L5_dalpha_dbeta = (delta + 1.0) * (dv_dalpha / v);
-   // Mixed derivative: d²L5/(dα dδ) = d/dδ[(β(δ+1)-1)*(dv_dalpha/v)] = β*(dv_dalpha/v)
+
+   // Mixed derivative: d²L5/(dα dδ) = β * (dv_dalpha/v)
    double d2L5_dalpha_ddelta = beta * (dv_dalpha / v);
-   // Mixed derivative: d²L5/(dβ dδ) = d/dδ[(δ+1)*ln(v)] = ln(v)
+
+   // Mixed derivative: d²L5/(dβ dδ) = ln(v)
    double d2L5_dbeta_ddelta = ln_v;
 
-   // --- L6: (γ - 1) ln(w), where w = 1 - v^β ---
-   double v_beta = std::pow(v, beta);              // v^β
-   double w = 1.0 - v_beta;                        // w = 1 - v^β
+   // ---- Compute w = 1-v^β and its derivatives safely ----
+   double v_beta; // v^β
+   double w; // w = 1 - v^β
+   double ln_w; // ln(w)
 
-   // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
-   double dw_dv = -beta * std::pow(v, beta - 1.0);
+   // Compute v^β safely using log domain when helpful
+   if (beta > 100 || v < 0.01) {
+     double log_v_beta = beta * ln_v;
+     v_beta = safe_exp(log_v_beta);
+   } else {
+     v_beta = safe_pow(v, beta);
+   }
+
+   // Compute w = 1-v^β carefully
+   if (v_beta > 0.5) {
+     // For v_beta close to 1, use more accurate computation
+     double log_v_beta = beta * ln_v;
+     w = -std::expm1(log_v_beta);  // w = 1-e^(β*ln(v)) more accurately
+   } else {
+     // Standard computation is fine for smaller v_beta
+     w = 1.0 - v_beta;
+   }
+
+   // Safety check - ensure w is strictly in (0,1)
+   if (w <= eps || w >= 1.0 - eps) {
+     w = std::max(std::min(w, 1.0 - eps), eps);
+   }
+
+   // Compute ln(w) safely
+   ln_w = safe_log(w);
+
+   // ---- Derivatives for w ----
+   // dw/dv = -β * v^(β-1)
+   double v_beta_m1 = (beta > 1.0) ? v_beta / v : 1.0;  // v^(β-1)
+   if (beta == 1.0) v_beta_m1 = 1.0;  // Special case
+
+   double dw_dv = -beta * v_beta_m1;
+
    // Chain rule: dw/dα = dw/dv * dv/dα
    double dw_dalpha = dw_dv * dv_dalpha;
-   // Second derivative w.r.t. α for L6:
-   // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
-   // Computing d²w/dα²:
-   //   dw/dα = -β * v^(β-1)*dv_dalpha,
-   //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
-   double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
-                                   + std::pow(v, beta-1.0) * d2v_dalpha2);
-   double d2L6_dalpha2 = (gamma - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
 
-   // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
-   double dw_dbeta = -v_beta * ln_v;
-   // Second derivative w.r.t. β for L6:
-   // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
-   double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
-   double d2L6_dbeta2 = (gamma - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+   // ---- Compute L6 derivatives: (γ-1)*ln(w) ----
+   // Only compute if γ != 1 to avoid unnecessary work
+   double d2L6_dalpha2 = 0.0;
+   double d2L6_dbeta2 = 0.0;
+   double d2L6_dalpha_dbeta = 0.0;
+   double d2L6_dalpha_dgamma = 0.0;
+   double d2L6_dbeta_dgamma = 0.0;
 
-   // Mixed derivative L6 (α,β): d²/(dα dβ) ln(w) =
-   //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
-   double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
-   double d2L6_dalpha_dbeta = (gamma - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+   if (std::abs(gamma_minus_1) > eps) {
+     // Second derivative of w w.r.t. α
+     double d2w_dalpha2 = -beta * ((beta - 1.0) * safe_pow(v, beta - 2.0) *
+                                   (dv_dalpha * dv_dalpha) +
+                                   v_beta_m1 * d2v_dalpha2);
 
-   // Mixed derivatives with γ
-   double d2L6_dalpha_dgamma = dw_dalpha / w;
-   double d2L6_dbeta_dgamma = dw_dbeta / w;
+     // Second derivative of ln(w) w.r.t. α
+     double term_alpha2 = (d2w_dalpha2 * w - dw_dalpha * dw_dalpha) / (w * w);
+     if (std::isfinite(term_alpha2)) {
+       d2L6_dalpha2 = gamma_minus_1 * term_alpha2;
+     }
 
-   // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
-   // Index: 0 = α, 1 = β, 2 = γ, 3 = δ
+     // Derivative w.r.t. β: d/dβ ln(w)
+     double dw_dbeta = -v_beta * ln_v;
 
-   // H(α,α): sum of L1, L5, and L6 (constants already added)
-   H(0,0) += d2L5_dalpha2 + d2L6_dalpha2;
+     // Second derivative of ln(w) w.r.t. β
+     double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+     double term_beta2 = (d2w_dbeta2 * w - dw_dbeta * dw_dbeta) / (w * w);
+     if (std::isfinite(term_beta2)) {
+       d2L6_dbeta2 = gamma_minus_1 * term_beta2;
+     }
 
-   // H(β,β): contributions from L2, L5, and L6
-   H(1,1) += d2L6_dbeta2;
+     // Mixed derivative (α,β)
+     double d_dw_dalpha_dbeta = -v_beta_m1 * (1.0 + beta * ln_v) * dv_dalpha;
+     double mixed_term = (d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta) / (w * w);
+     if (std::isfinite(mixed_term)) {
+       d2L6_dalpha_dbeta = gamma_minus_1 * mixed_term;
+     }
+
+     // Mixed derivatives with γ
+     d2L6_dalpha_dgamma = dw_dalpha / w;
+     d2L6_dbeta_dgamma = dw_dbeta / w;
+   }
+
+   // ---- Accumulate contributions to the Hessian matrix ----
+   // Check each contribution for finiteness before adding
+
+   // H(α,α): contributions from L5 and L6
+   if (std::isfinite(d2L5_dalpha2)) H(0, 0) += d2L5_dalpha2;
+   if (std::isfinite(d2L6_dalpha2)) H(0, 0) += d2L6_dalpha2;
+
+   // H(β,β): contributions from L6
+   if (std::isfinite(d2L6_dbeta2)) H(1, 1) += d2L6_dbeta2;
 
    // H(α,β): mixed from L5 and L6
-   H(0,1) += d2L5_dalpha_dbeta + d2L6_dalpha_dbeta;
-   H(1,0) = H(0,1);
+   if (std::isfinite(d2L5_dalpha_dbeta)) H(0, 1) += d2L5_dalpha_dbeta;
+   if (std::isfinite(d2L6_dalpha_dbeta)) H(0, 1) += d2L6_dalpha_dbeta;
+   H(1, 0) = H(0, 1);  // Symmetric
 
    // H(α,γ): mixed from L6
-   H(0,2) += d2L6_dalpha_dgamma;
-   H(2,0) = H(0,2);
+   if (std::isfinite(d2L6_dalpha_dgamma)) H(0, 2) += d2L6_dalpha_dgamma;
+   H(2, 0) = H(0, 2);  // Symmetric
 
    // H(α,δ): mixed from L5
-   H(0,3) += d2L5_dalpha_ddelta;
-   H(3,0) = H(0,3);
+   if (std::isfinite(d2L5_dalpha_ddelta)) H(0, 3) += d2L5_dalpha_ddelta;
+   H(3, 0) = H(0, 3);  // Symmetric
 
    // H(β,γ): mixed from L6
-   H(1,2) += d2L6_dbeta_dgamma;
-   H(2,1) = H(1,2);
+   if (std::isfinite(d2L6_dbeta_dgamma)) H(1, 2) += d2L6_dbeta_dgamma;
+   H(2, 1) = H(1, 2);  // Symmetric
 
    // H(β,δ): mixed from L5
-   H(1,3) += d2L5_dbeta_ddelta;
-   H(3,1) = H(1,3);
+   if (std::isfinite(d2L5_dbeta_ddelta)) H(1, 3) += d2L5_dbeta_ddelta;
+   H(3, 1) = H(1, 3);  // Symmetric
+ }
 
- } // end of loop
+ // Final safety check - verify the Hessian is valid
+ if (!H.is_finite()) {
+   Rcpp::warning("Hessian calculation produced non-finite values");
+   return nanH;
+ }
 
- // Returns the analytic Hessian matrix of the negative log-likelihood
+ // Return the analytic Hessian matrix of the negative log-likelihood
  return Rcpp::wrap(-H);
 }
+
+
+
+// // -----------------------------------------------------------------------------
+// // 5) llbkw: Negative Log-Likelihood for Beta-Kumaraswamy
+// // -----------------------------------------------------------------------------
+//
+// //' @title Negative Log-Likelihood for Beta-Kumaraswamy (BKw) Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize
+// //'
+// //' @description
+// //' Computes the negative log-likelihood function for the Beta-Kumaraswamy (BKw)
+// //' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+// //' (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}),
+// //' given a vector of observations. This distribution is the special case of the
+// //' Generalized Kumaraswamy (GKw) distribution where \eqn{\lambda = 1}. This function
+// //' is typically used for maximum likelihood estimation via numerical optimization.
+// //'
+// //' @param par A numeric vector of length 4 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a single \code{double} value representing the negative
+// //'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+// //'   if any parameter values in \code{par} are invalid according to their
+// //'   constraints, or if any value in \code{data} is not in the interval (0, 1).
+// //'
+// //' @details
+// //' The Beta-Kumaraswamy (BKw) distribution is the GKw distribution (\code{\link{dgkw}})
+// //' with \eqn{\lambda=1}. Its probability density function (PDF) is:
+// //' \deqn{
+// //' f(x | \theta) = \frac{\alpha \beta}{B(\gamma, \delta+1)} x^{\alpha - 1} \bigl(1 - x^\alpha\bigr)^{\beta(\delta+1) - 1} \bigl[1 - \bigl(1 - x^\alpha\bigr)^\beta\bigr]^{\gamma - 1}
+// //' }
+// //' for \eqn{0 < x < 1}, \eqn{\theta = (\alpha, \beta, \gamma, \delta)}, and \eqn{B(a,b)}
+// //' is the Beta function (\code{\link[base]{beta}}).
+// //' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+// //' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+// //' \deqn{
+// //' \ell(\theta | \mathbf{x}) = n[\ln(\alpha) + \ln(\beta) - \ln B(\gamma, \delta+1)]
+// //' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta(\delta+1)-1)\ln(v_i) + (\gamma-1)\ln(w_i)]
+// //' }
+// //' where:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //' }
+// //' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+// //' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+// //' Numerical stability is maintained similarly to \code{\link{llgkw}}.
+// //'
+// //' @references
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //'
+// //' @seealso
+// //' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+// //' \code{\link{dbkw}}, \code{\link{pbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}},
+// //' \code{grbkw} (gradient, if available),
+// //' \code{hsbkw} (Hessian, if available),
+// //' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rbkw, grbkw, hsbkw functions for BKw distribution
+// //'
+// //' # Generate sample data from a known BKw distribution
+// //' set.seed(124)
+// //' true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.0, delta = 0.5)
+// //' # Use rbkw if it exists, otherwise use rgkw with lambda=1
+// //' if (exists("rbkw")) {
+// //'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+// //'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
+// //' } else {
+// //'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+// //'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
+// //' }
+// //' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.0, 0.5) Sample")
+// //'
+// //' # --- Maximum Likelihood Estimation using optim ---
+// //' # Initial parameter guess
+// //' start_par_bkw <- c(1.8, 1.2, 1.1, 0.3)
+// //'
+// //' # Perform optimization (minimizing negative log-likelihood)
+// //' mle_result_bkw <- stats::optim(par = start_par_bkw,
+// //'                                fn = llbkw, # Use the BKw neg-log-likelihood
+// //'                                method = "BFGS", # Needs parameters > 0, consider L-BFGS-B
+// //'                                hessian = TRUE,
+// //'                                data = sample_data_bkw)
+// //'
+// //' # Check convergence and results
+// //' if (mle_result_bkw$convergence == 0) {
+// //'   print("Optimization converged successfully.")
+// //'   mle_par_bkw <- mle_result_bkw$par
+// //'   print("Estimated BKw parameters:")
+// //'   print(mle_par_bkw)
+// //'   print("True BKw parameters:")
+// //'   print(true_par_bkw)
+// //' } else {
+// //'   warning("Optimization did not converge!")
+// //'   print(mle_result_bkw$message)
+// //' }
+// //'
+// //' # --- Compare numerical and analytical derivatives (if available) ---
+// //' # Requires 'numDeriv' package and analytical functions 'grbkw', 'hsbkw'
+// //' if (mle_result_bkw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) &&
+// //'     exists("grbkw") && exists("hsbkw")) {
+// //'
+// //'   cat("\nComparing Derivatives at BKw MLE estimates:\n")
+// //'
+// //'   # Numerical derivatives of llbkw
+// //'   num_grad_bkw <- numDeriv::grad(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+// //'   num_hess_bkw <- numDeriv::hessian(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+// //'
+// //'   # Analytical derivatives (assuming they return derivatives of negative LL)
+// //'   ana_grad_bkw <- grbkw(par = mle_par_bkw, data = sample_data_bkw)
+// //'   ana_hess_bkw <- hsbkw(par = mle_par_bkw, data = sample_data_bkw)
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between gradients:\n")
+// //'   print(max(abs(num_grad_bkw - ana_grad_bkw)))
+// //'   cat("Max absolute difference between Hessians:\n")
+// //'   print(max(abs(num_hess_bkw - ana_hess_bkw)))
+// //'
+// //' } else {
+// //'    cat("\nSkipping derivative comparison for BKw.\n")
+// //'    cat("Requires convergence, 'numDeriv' package and functions 'grbkw', 'hsbkw'.\n")
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// double llbkw(const Rcpp::NumericVector& par,
+//             const Rcpp::NumericVector& data) {
+//  if (par.size() < 4) {
+//    return R_NegInf;
+//  }
+//  double a = par[0];  // alpha>0
+//  double b = par[1];  // beta>0
+//  double g = par[2];  // gamma>0
+//  double d = par[3];  // delta>=0
+//
+//  if (!check_bkw_pars(a, b, g, d)) {
+//    return R_NegInf;
+//  }
+//
+//  // Convert data
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  // Check data
+//  if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
+//    return R_NegInf;
+//  }
+//
+//  int n = x.n_elem;
+//  double logB = R::lbeta(g, d + 1.0);
+//
+//  // sum( log(f(x)) ) = n*log(alpha*beta) - n*logB + ...
+//  double ll_const = n * (std::log(a) + std::log(b) - logB);
+//
+//  // (alpha - 1)*sum(log(x))
+//  arma::vec lx = arma::log(x);
+//  double sum1 = (a - 1.0) * arma::sum(lx);
+//
+//  // exponent1 = beta*(delta+1) - 1
+//  double exp1 = b*(d+1.0) - 1.0;
+//  // sum( exp1 * log(1 - x^alpha) )
+//  arma::vec xalpha = arma::pow(x, a);
+//  arma::vec log_1_xalpha = arma::log(1.0 - xalpha);
+//  double sum2 = exp1 * arma::sum(log_1_xalpha);
+//
+//  // exponent2 = (gamma - 1)
+//  // sum( exponent2* log( 1 - (1 - x^alpha)^beta ) )
+//  // (1 - x^alpha)^beta => vbeta
+//  arma::vec vbeta = arma::pow(1.0 - xalpha, b);
+//  arma::vec one_minus_vbeta = 1.0 - vbeta;
+//  // safe log(1.0 - vbeta)
+//  arma::vec log_omv(vbeta.n_elem);
+//  for (int i = 0; i < (int)vbeta.n_elem; i++) {
+//    double val = one_minus_vbeta[i];
+//    if (val <= 0.0) {
+//      return R_NegInf;  // invalid => -Inf
+//    }
+//    log_omv[i] = std::log(val);
+//  }
+//  double sum3 = (g - 1.0) * arma::sum(log_omv);
+//
+//  double ll = ll_const + sum1 + sum2 + sum3;
+//
+//  // negative log-likelihood
+//  return -ll;
+// }
+//
+//
+// //' @title Gradient of the Negative Log-Likelihood for the BKw Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize gradient
+// //'
+// //' @description
+// //' Computes the gradient vector (vector of first partial derivatives) of the
+// //' negative log-likelihood function for the Beta-Kumaraswamy (BKw) distribution
+// //' with parameters \code{alpha} (\eqn{\alpha}), \code{beta} (\eqn{\beta}),
+// //' \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}). This distribution
+// //' is the special case of the Generalized Kumaraswamy (GKw) distribution where
+// //' \eqn{\lambda = 1}. The gradient is typically used in optimization algorithms
+// //' for maximum likelihood estimation.
+// //'
+// //' @param par A numeric vector of length 4 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a numeric vector of length 4 containing the partial derivatives
+// //'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+// //'   respect to each parameter:
+// //'   \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \gamma, -\partial \ell/\partial \delta)}.
+// //'   Returns a vector of \code{NaN} if any parameter values are invalid according
+// //'   to their constraints, or if any value in \code{data} is not in the
+// //'   interval (0, 1).
+// //'
+// //' @details
+// //' The components of the gradient vector of the negative log-likelihood
+// //' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the BKw (\eqn{\lambda=1}) model are:
+// //'
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
+// //' + \sum_{i=1}^{n}\left[x_i^{\alpha} \ln(x_i) \left(\frac{\beta(\delta+1)-1}{v_i} -
+// //' \frac{(\gamma-1) \beta v_i^{\beta-1}}{w_i}\right)\right]
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - (\delta+1)\sum_{i=1}^{n}\ln(v_i)
+// //' + \sum_{i=1}^{n}\left[\frac{(\gamma-1) v_i^{\beta} \ln(v_i)}{w_i}\right]
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma) - \psi(\gamma+\delta+1)] -
+// //' \sum_{i=1}^{n}\ln(w_i)
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \delta} = n[\psi(\delta+1) - \psi(\gamma+\delta+1)] -
+// //' \beta\sum_{i=1}^{n}\ln(v_i)
+// //' }
+// //'
+// //' where:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //'   \item \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
+// //' }
+// //' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+// //' minimizing the negative log-likelihood. They correspond to the general GKw
+// //' gradient (\code{\link{grgkw}}) components for \eqn{\alpha, \beta, \gamma, \delta}
+// //' evaluated at \eqn{\lambda=1}. Note that the component for \eqn{\lambda} is omitted.
+// //' Numerical stability is maintained through careful implementation.
+// //'
+// //' @references
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //' (Note: Specific gradient formulas might be derived or sourced from additional references).
+// //'
+// //' @seealso
+// //' \code{\link{grgkw}} (parent distribution gradient),
+// //' \code{\link{llbkw}} (negative log-likelihood for BKw),
+// //' \code{\link{hsbkw}} (Hessian for BKw, if available),
+// //' \code{\link{dbkw}} (density for BKw),
+// //' \code{\link[stats]{optim}},
+// //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+// //' \code{\link[base]{digamma}}.
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
+// //'
+// //' # Generate sample data
+// //' set.seed(123)
+// //' true_par_bkw <- c(alpha = 2, beta = 3, gamma = 1, delta = 0.5)
+// //' if (exists("rbkw")) {
+// //'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+// //'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
+// //' } else {
+// //'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+// //'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
+// //' }
+// //' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
+// //'
+// //' # --- Find MLE estimates ---
+// //' start_par_bkw <- c(1.5, 2.5, 0.8, 0.3)
+// //' mle_result_bkw <- stats::optim(par = start_par_bkw,
+// //'                                fn = llbkw,
+// //'                                gr = grbkw, # Use analytical gradient for BKw
+// //'                                method = "BFGS",
+// //'                                hessian = TRUE,
+// //'                                data = sample_data_bkw)
+// //'
+// //' # --- Compare analytical gradient to numerical gradient ---
+// //' if (mle_result_bkw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE)) {
+// //'
+// //'   mle_par_bkw <- mle_result_bkw$par
+// //'   cat("\nComparing Gradients for BKw at MLE estimates:\n")
+// //'
+// //'   # Numerical gradient of llbkw
+// //'   num_grad_bkw <- numDeriv::grad(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+// //'
+// //'   # Analytical gradient from grbkw
+// //'   ana_grad_bkw <- grbkw(par = mle_par_bkw, data = sample_data_bkw)
+// //'
+// //'   cat("Numerical Gradient (BKw):\n")
+// //'   print(num_grad_bkw)
+// //'   cat("Analytical Gradient (BKw):\n")
+// //'   print(ana_grad_bkw)
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between BKw gradients:\n")
+// //'   print(max(abs(num_grad_bkw - ana_grad_bkw)))
+// //'
+// //' } else {
+// //'   cat("\nSkipping BKw gradient comparison.\n")
+// //' }
+// //'
+// //' # --- Optional: Compare with relevant components of GKw gradient ---
+// //' # Requires grgkw function
+// //' if (mle_result_bkw$convergence == 0 && exists("grgkw")) {
+// //'   # Create 5-param vector for grgkw (insert lambda=1)
+// //'   mle_par_gkw_equiv <- c(mle_par_bkw[1:4], lambda = 1.0)
+// //'   ana_grad_gkw <- grgkw(par = mle_par_gkw_equiv, data = sample_data_bkw)
+// //'   # Extract components corresponding to alpha, beta, gamma, delta
+// //'   ana_grad_gkw_subset <- ana_grad_gkw[c(1, 2, 3, 4)]
+// //'
+// //'   cat("\nComparison with relevant components of GKw gradient:\n")
+// //'   cat("Max absolute difference:\n")
+// //'   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericVector grbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double alpha = par[0];   // Shape parameter α > 0
+//  double beta = par[1];    // Shape parameter β > 0
+//  double gamma = par[2];   // Shape parameter γ > 0
+//  double delta = par[3];   // Shape parameter δ > 0
+//
+//  // Parameter validation
+//  if (alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0) {
+//    Rcpp::NumericVector grad(4, R_NaN);
+//    return grad;
+//  }
+//
+//  // Data conversion and validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//
+//  if (arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericVector grad(4, R_NaN);
+//    return grad;
+//  }
+//
+//  int n = x.n_elem;  // Sample size
+//
+//  // Initialize gradient vector
+//  Rcpp::NumericVector grad(4, 0.0);
+//
+//  // Small constant to avoid numerical issues
+//  double eps = std::numeric_limits<double>::epsilon() * 100;
+//
+//  // Compute transformations and intermediate values
+//  arma::vec log_x = arma::log(x);                // log(x_i)
+//  arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
+//  arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
+//
+//  // v_i = 1 - x_i^α
+//  arma::vec v = 1.0 - x_alpha;
+//  v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
+//
+//  arma::vec log_v = arma::log(v);                // log(v_i)
+//  arma::vec v_beta_m1 = arma::pow(v, beta - 1.0); // v_i^(β-1)
+//  arma::vec v_beta = arma::pow(v, beta);          // v_i^β
+//  arma::vec v_beta_log_v = v_beta % log_v;        // v_i^β * log(v_i)
+//
+//  // w_i = 1 - v_i^β = 1 - (1-x_i^α)^β
+//  arma::vec w = 1.0 - v_beta;
+//  w = arma::clamp(w, eps, 1.0 - eps);            // Prevent numerical issues
+//
+//  arma::vec log_w = arma::log(w);                // log(w_i)
+//
+//  // Calculate partial derivatives for each parameter (for log-likelihood)
+//
+//  // ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - Σᵢ[xᵢ^α * log(xᵢ) * ((β(δ+1)-1)/vᵢ - (γ-1) * β * vᵢ^(β-1) / wᵢ)]
+//  double d_alpha = n / alpha + arma::sum(log_x);
+//
+//  // Calculate the terms in the α gradient
+//  arma::vec alpha_term1 = (beta * (delta + 1) - 1.0) / v;           // (β(δ+1)-1)/v_i
+//  arma::vec alpha_term2 = (gamma - 1.0) * beta * v_beta_m1 / w;     // (γ-1) * β * v_i^(β-1) / w_i
+//
+//  d_alpha -= arma::sum(x_alpha_log_x % (alpha_term1 - alpha_term2));
+//
+//  // ∂ℓ/∂β = n/β + (δ+1)Σᵢlog(vᵢ) - Σᵢ[vᵢ^β * log(vᵢ) * ((γ-1) / wᵢ)]
+//  double d_beta = n / beta + (delta + 1) * arma::sum(log_v);
+//
+//  // Calculate the term in the β gradient
+//  arma::vec beta_term = (gamma - 1.0) / w;                          // (γ-1) / w_i
+//
+//  d_beta -= arma::sum(v_beta_log_v % beta_term);
+//
+//  // ∂ℓ/∂γ = -n[ψ(γ) - ψ(γ+δ+1)] + Σᵢlog(wᵢ)
+//  double d_gamma = -n * (R::digamma(gamma) - R::digamma(gamma + delta + 1)) + arma::sum(log_w);
+//
+//  // ∂ℓ/∂δ = -n[ψ(δ+1) - ψ(γ+δ+1)] + βΣᵢlog(vᵢ)
+//  double d_delta = -n * (R::digamma(delta + 1) - R::digamma(gamma + delta + 1)) + beta * arma::sum(log_v);
+//
+//  // Since we're optimizing negative log-likelihood, negate all derivatives
+//  grad[0] = -d_alpha;
+//  grad[1] = -d_beta;
+//  grad[2] = -d_gamma;
+//  grad[3] = -d_delta;
+//
+//  return grad;
+// }
+//
+//
+//
+// //' @title Hessian Matrix of the Negative Log-Likelihood for the BKw Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize hessian
+// //'
+// //' @description
+// //' Computes the analytic 4x4 Hessian matrix (matrix of second partial derivatives)
+// //' of the negative log-likelihood function for the Beta-Kumaraswamy (BKw)
+// //' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+// //' (\eqn{\beta}), \code{gamma} (\eqn{\gamma}), and \code{delta} (\eqn{\delta}).
+// //' This distribution is the special case of the Generalized Kumaraswamy (GKw)
+// //' distribution where \eqn{\lambda = 1}. The Hessian is useful for estimating
+// //' standard errors and in optimization algorithms.
+// //'
+// //' @param par A numeric vector of length 4 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a 4x4 numeric matrix representing the Hessian matrix of the
+// //'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+// //'   where \eqn{\theta = (\alpha, \beta, \gamma, \delta)}.
+// //'   Returns a 4x4 matrix populated with \code{NaN} if any parameter values are
+// //'   invalid according to their constraints, or if any value in \code{data} is
+// //'   not in the interval (0, 1).
+// //'
+// //' @details
+// //' This function calculates the analytic second partial derivatives of the
+// //' negative log-likelihood function based on the BKw log-likelihood
+// //' (\eqn{\lambda=1} case of GKw, see \code{\link{llbkw}}):
+// //' \deqn{
+// //' \ell(\theta | \mathbf{x}) = n[\ln(\alpha) + \ln(\beta) - \ln B(\gamma, \delta+1)]
+// //' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta(\delta+1)-1)\ln(v_i) + (\gamma-1)\ln(w_i)]
+// //' }
+// //' where \eqn{\theta = (\alpha, \beta, \gamma, \delta)}, \eqn{B(a,b)}
+// //' is the Beta function (\code{\link[base]{beta}}), and intermediate terms are:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //' }
+// //' The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}
+// //' for \eqn{\theta_i, \theta_j \in \{\alpha, \beta, \gamma, \delta\}}.
+// //'
+// //' Key properties of the returned matrix:
+// //' \itemize{
+// //'   \item Dimensions: 4x4.
+// //'   \item Symmetry: The matrix is symmetric.
+// //'   \item Ordering: Rows and columns correspond to the parameters in the order
+// //'     \eqn{\alpha, \beta, \gamma, \delta}.
+// //'   \item Content: Analytic second derivatives of the *negative* log-likelihood.
+// //' }
+// //' This corresponds to the relevant 4x4 submatrix of the 5x5 GKw Hessian (\code{\link{hsgkw}})
+// //' evaluated at \eqn{\lambda=1}. The exact analytical formulas are implemented directly.
+// //'
+// //' @references
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+// //'
+// //' @seealso
+// //' \code{\link{hsgkw}} (parent distribution Hessian),
+// //' \code{\link{llbkw}} (negative log-likelihood for BKw),
+// //' \code{\link{grbkw}} (gradient for BKw, if available),
+// //' \code{\link{dbkw}} (density for BKw),
+// //' \code{\link[stats]{optim}},
+// //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
+// //'
+// //' # Generate sample data
+// //' set.seed(123)
+// //' true_par_bkw <- c(alpha = 2, beta = 3, gamma = 1, delta = 0.5)
+// //' if (exists("rbkw")) {
+// //'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+// //'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
+// //' } else {
+// //'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+// //'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
+// //' }
+// //' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 3, 1, 0.5) Sample")
+// //'
+// //' # --- Find MLE estimates ---
+// //' start_par_bkw <- c(1.5, 2.5, 0.8, 0.3)
+// //' mle_result_bkw <- stats::optim(par = start_par_bkw,
+// //'                                fn = llbkw,
+// //'                                gr = if (exists("grbkw")) grbkw else NULL,
+// //'                                method = "BFGS",
+// //'                                hessian = TRUE, # Ask optim for numerical Hessian
+// //'                                data = sample_data_bkw)
+// //'
+// //' # --- Compare analytical Hessian to numerical Hessian ---
+// //' if (mle_result_bkw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) &&
+// //'     exists("hsbkw")) {
+// //'
+// //'   mle_par_bkw <- mle_result_bkw$par
+// //'   cat("\nComparing Hessians for BKw at MLE estimates:\n")
+// //'
+// //'   # Numerical Hessian of llbkw
+// //'   num_hess_bkw <- numDeriv::hessian(func = llbkw, x = mle_par_bkw, data = sample_data_bkw)
+// //'
+// //'   # Analytical Hessian from hsbkw
+// //'   ana_hess_bkw <- hsbkw(par = mle_par_bkw, data = sample_data_bkw)
+// //'
+// //'   cat("Numerical Hessian (BKw):\n")
+// //'   print(round(num_hess_bkw, 4))
+// //'   cat("Analytical Hessian (BKw):\n")
+// //'   print(round(ana_hess_bkw, 4))
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between BKw Hessians:\n")
+// //'   print(max(abs(num_hess_bkw - ana_hess_bkw)))
+// //'
+// //'   # Optional: Use analytical Hessian for Standard Errors
+// //'   # tryCatch({
+// //'   #   cov_matrix_bkw <- solve(ana_hess_bkw)
+// //'   #   std_errors_bkw <- sqrt(diag(cov_matrix_bkw))
+// //'   #   cat("Std. Errors from Analytical BKw Hessian:\n")
+// //'   #   print(std_errors_bkw)
+// //'   # }, error = function(e) {
+// //'   #   warning("Could not invert analytical BKw Hessian: ", e$message)
+// //'   # })
+// //'
+// //' } else {
+// //'   cat("\nSkipping BKw Hessian comparison.\n")
+// //'   cat("Requires convergence, 'numDeriv' package, and function 'hsbkw'.\n")
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double alpha  = par[0];   // θ[0] = α
+//  double beta   = par[1];   // θ[1] = β
+//  double gamma  = par[2];   // θ[2] = γ
+//  double delta  = par[3];   // θ[3] = δ
+//
+//  // Simple parameter validation (all > 0)
+//  if(alpha <= 0 || beta <= 0 || gamma <= 0 || delta <= 0) {
+//    Rcpp::NumericMatrix nanH(4,4);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  // Data conversion and basic validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if(arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericMatrix nanH(4,4);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  int n = x.n_elem;  // sample size
+//
+//  // Initialize Hessian matrix H (of ℓ(θ)) as 4x4
+//  arma::mat H(4,4, arma::fill::zeros);
+//
+//  // --- CONSTANT TERMS (do not depend on x) ---
+//  // L1: n ln(α)  => d²/dα² = -n/α²
+//  H(0,0) += -n/(alpha*alpha);
+//  // L2: n ln(β)  => d²/dβ² = -n/β²
+//  H(1,1) += -n/(beta*beta);
+//  // L3: -n ln[B(γ, δ+1)]
+//  //   d²/dγ² = -n [ψ₁(γ) - ψ₁(γ+δ+1)]  where ψ₁ is the trigamma function
+//  H(2,2) += -n * (R::trigamma(gamma) - R::trigamma(gamma+delta+1));
+//  //   d²/dδ² = -n [ψ₁(δ+1) - ψ₁(γ+δ+1)]
+//  H(3,3) += -n * (R::trigamma(delta+1) - R::trigamma(gamma+delta+1));
+//  //   Mixed derivative (γ,δ): = n ψ₁(γ+δ+1)
+//  H(2,3) += n * R::trigamma(gamma+delta+1);
+//  H(3,2) = H(2,3);
+//
+//  // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
+//  // Loop over each observation to accumulate contributions from:
+//  // L4: (α-1) Σ ln(x_i)  --> contributes only to first derivatives
+//  // L5: (β(δ+1)-1) Σ ln(v), where v = 1 - x^α
+//  // L6: (γ-1) Σ ln(w), where w = 1 - v^β
+//  for (int i = 0; i < n; i++) {
+//    double xi    = x(i);
+//    double ln_xi = std::log(xi);
+//
+//    // -- Compute A = x^α and its derivatives --
+//    double A = std::pow(xi, alpha);                  // A = x^α
+//    double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
+//    double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+//
+//    // -- v = 1 - A and its derivatives --
+//    double v = 1.0 - A;                              // v = 1 - x^α
+//    double ln_v = std::log(v);                       // ln(v)
+//    double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
+//    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+//
+//    // --- L5: (β(δ+1)-1) ln(v) ---
+//    double beta_delta_factor = beta * (delta + 1.0) - 1.0;
+//    // Second derivative w.r.t. α: (β(δ+1)-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
+//    double d2L5_dalpha2 = beta_delta_factor * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
+//    // Mixed derivative: d²L5/(dα dβ) = d/dβ[(β(δ+1)-1)*(dv_dalpha/v)] = (δ+1)*(dv_dalpha/v)
+//    double d2L5_dalpha_dbeta = (delta + 1.0) * (dv_dalpha / v);
+//    // Mixed derivative: d²L5/(dα dδ) = d/dδ[(β(δ+1)-1)*(dv_dalpha/v)] = β*(dv_dalpha/v)
+//    double d2L5_dalpha_ddelta = beta * (dv_dalpha / v);
+//    // Mixed derivative: d²L5/(dβ dδ) = d/dδ[(δ+1)*ln(v)] = ln(v)
+//    double d2L5_dbeta_ddelta = ln_v;
+//
+//    // --- L6: (γ - 1) ln(w), where w = 1 - v^β ---
+//    double v_beta = std::pow(v, beta);              // v^β
+//    double w = 1.0 - v_beta;                        // w = 1 - v^β
+//
+//    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
+//    double dw_dv = -beta * std::pow(v, beta - 1.0);
+//    // Chain rule: dw/dα = dw/dv * dv/dα
+//    double dw_dalpha = dw_dv * dv_dalpha;
+//    // Second derivative w.r.t. α for L6:
+//    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
+//    // Computing d²w/dα²:
+//    //   dw/dα = -β * v^(β-1)*dv_dalpha,
+//    //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
+//    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
+//                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
+//    double d2L6_dalpha2 = (gamma - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+//
+//    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
+//    double dw_dbeta = -v_beta * ln_v;
+//    // Second derivative w.r.t. β for L6:
+//    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
+//    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+//    double d2L6_dbeta2 = (gamma - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+//
+//    // Mixed derivative L6 (α,β): d²/(dα dβ) ln(w) =
+//    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
+//    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
+//    double d2L6_dalpha_dbeta = (gamma - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+//
+//    // Mixed derivatives with γ
+//    double d2L6_dalpha_dgamma = dw_dalpha / w;
+//    double d2L6_dbeta_dgamma = dw_dbeta / w;
+//
+//    // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
+//    // Index: 0 = α, 1 = β, 2 = γ, 3 = δ
+//
+//    // H(α,α): sum of L1, L5, and L6 (constants already added)
+//    H(0,0) += d2L5_dalpha2 + d2L6_dalpha2;
+//
+//    // H(β,β): contributions from L2, L5, and L6
+//    H(1,1) += d2L6_dbeta2;
+//
+//    // H(α,β): mixed from L5 and L6
+//    H(0,1) += d2L5_dalpha_dbeta + d2L6_dalpha_dbeta;
+//    H(1,0) = H(0,1);
+//
+//    // H(α,γ): mixed from L6
+//    H(0,2) += d2L6_dalpha_dgamma;
+//    H(2,0) = H(0,2);
+//
+//    // H(α,δ): mixed from L5
+//    H(0,3) += d2L5_dalpha_ddelta;
+//    H(3,0) = H(0,3);
+//
+//    // H(β,γ): mixed from L6
+//    H(1,2) += d2L6_dbeta_dgamma;
+//    H(2,1) = H(1,2);
+//
+//    // H(β,δ): mixed from L5
+//    H(1,3) += d2L5_dbeta_ddelta;
+//    H(3,1) = H(1,3);
+//
+//  } // end of loop
+//
+//  // Returns the analytic Hessian matrix of the negative log-likelihood
+//  return Rcpp::wrap(-H);
+// }
 
 
 // //' @title Analytic Hessian Matrix for Beta-Kumaraswamy Distribution
@@ -5962,13 +8718,13 @@ Summation of log-likelihood over all x. We return negative of that for 'llekw'.
 // -----------------------------------------------------------------------------
 inline bool check_ekw_pars(double alpha, double beta, double lambda, bool strict=false) {
 if (alpha <= 0.0 || beta <= 0.0 || lambda <= 0.0) {
-  return false;
+return false;
 }
 if (strict) {
-  const double MINP = 1e-6;
-  const double MAXP = 1e6;
-  if (alpha < MINP || beta < MINP || lambda < MINP)  return false;
-  if (alpha > MAXP || beta > MAXP || lambda > MAXP)  return false;
+const double MINP = 1e-6;
+const double MAXP = 1e6;
+if (alpha < MINP || beta < MINP || lambda < MINP)  return false;
+if (alpha > MAXP || beta > MAXP || lambda > MAXP)  return false;
 }
 return true;
 }
@@ -6081,73 +8837,73 @@ return true;
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec dekw(
-   const arma::vec& x,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& lambda,
-   bool log_prob = false
+Rcpp::NumericVector dekw(
+ const arma::vec& x,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& lambda,
+ bool log_prob = false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- size_t N = std::max({ x.n_elem, a_vec.n_elem, b_vec.n_elem, l_vec.n_elem });
- arma::vec out(N);
- out.fill(log_prob ? R_NegInf : 0.0);
+size_t N = std::max({ x.n_elem, a_vec.n_elem, b_vec.n_elem, l_vec.n_elem });
+arma::vec out(N);
+out.fill(log_prob ? R_NegInf : 0.0);
 
- for (size_t i=0; i<N; i++) {
-   double a = a_vec[i % a_vec.n_elem];
-   double b = b_vec[i % b_vec.n_elem];
-   double l = l_vec[i % l_vec.n_elem];
-   double xx = x[i % x.n_elem];
+for (size_t i=0; i<N; i++) {
+ double a = a_vec[i % a_vec.n_elem];
+ double b = b_vec[i % b_vec.n_elem];
+ double l = l_vec[i % l_vec.n_elem];
+ double xx = x[i % x.n_elem];
 
-   if (!check_ekw_pars(a, b, l)) {
-     // invalid => PDF=0 or logPDF=-Inf
-     continue;
-   }
-   // domain check
-   if (xx <= 0.0 || xx >= 1.0 || !R_finite(xx)) {
-     continue;
-   }
-
-   // log f(x) = log(lambda) + log(a) + log(b) + (a-1)*log(x)
-   //            + (b-1)*log(1 - x^a)
-   //            + (lambda-1)*log(1 - (1 - x^a)^b)
-   double ll  = std::log(l);
-   double la  = std::log(a);
-   double lb  = std::log(b);
-   double lx  = std::log(xx);
-
-   double xalpha = a*lx; // log(x^a)
-   double log_1_xalpha = log1mexp(xalpha); // log(1 - x^a)
-   if (!R_finite(log_1_xalpha)) {
-     continue;
-   }
-
-   double term2 = (b - 1.0)*log_1_xalpha; // (b-1)* log(1 - x^a)
-
-   // let A= (1 - x^a)^b => logA= b*log_1_xalpha
-   double logA = b*log_1_xalpha;
-   double log_1_minus_A = log1mexp(logA); // log(1 - A)
-   if (!R_finite(log_1_minus_A)) {
-     continue;
-   }
-   double term3 = (l - 1.0)* log_1_minus_A;
-
-   double log_pdf = ll + la + lb
-   + (a - 1.0)* lx
-   + term2
-   + term3;
-
-   if (log_prob) {
-     out(i)= log_pdf;
-   } else {
-     out(i)= std::exp(log_pdf);
-   }
+ if (!check_ekw_pars(a, b, l)) {
+   // invalid => PDF=0 or logPDF=-Inf
+   continue;
+ }
+ // domain check
+ if (xx <= 0.0 || xx >= 1.0 || !R_finite(xx)) {
+   continue;
  }
 
- return out;
+ // log f(x) = log(lambda) + log(a) + log(b) + (a-1)*log(x)
+ //            + (b-1)*log(1 - x^a)
+ //            + (lambda-1)*log(1 - (1 - x^a)^b)
+ double ll  = std::log(l);
+ double la  = std::log(a);
+ double lb  = std::log(b);
+ double lx  = std::log(xx);
+
+ double xalpha = a*lx; // log(x^a)
+ double log_1_xalpha = log1mexp(xalpha); // log(1 - x^a)
+ if (!R_finite(log_1_xalpha)) {
+   continue;
+ }
+
+ double term2 = (b - 1.0)*log_1_xalpha; // (b-1)* log(1 - x^a)
+
+ // let A= (1 - x^a)^b => logA= b*log_1_xalpha
+ double logA = b*log_1_xalpha;
+ double log_1_minus_A = log1mexp(logA); // log(1 - A)
+ if (!R_finite(log_1_minus_A)) {
+   continue;
+ }
+ double term3 = (l - 1.0)* log_1_minus_A;
+
+ double log_pdf = ll + la + lb
+ + (a - 1.0)* lx
+ + term2
+ + term3;
+
+ if (log_prob) {
+   out(i)= log_pdf;
+ } else {
+   out(i)= std::exp(log_pdf);
+ }
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 // -----------------------------------------------------------------------------
@@ -6271,79 +9027,79 @@ arma::vec dekw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec pekw(
-   const arma::vec& q,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& lambda,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector pekw(
+ const arma::vec& q,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& lambda,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- size_t N = std::max({ q.n_elem, a_vec.n_elem, b_vec.n_elem, l_vec.n_elem });
- arma::vec out(N);
+size_t N = std::max({ q.n_elem, a_vec.n_elem, b_vec.n_elem, l_vec.n_elem });
+arma::vec out(N);
 
- for (size_t i=0; i<N; i++) {
-   double a = a_vec[i % a_vec.n_elem];
-   double b = b_vec[i % b_vec.n_elem];
-   double l = l_vec[i % l_vec.n_elem];
-   double xx = q[i % q.n_elem];
+for (size_t i=0; i<N; i++) {
+ double a = a_vec[i % a_vec.n_elem];
+ double b = b_vec[i % b_vec.n_elem];
+ double l = l_vec[i % l_vec.n_elem];
+ double xx = q[i % q.n_elem];
 
-   if (!check_ekw_pars(a, b, l)) {
-     out(i)= NA_REAL;
-     continue;
-   }
-
-   // boundary
-   if (!R_finite(xx) || xx <= 0.0) {
-     double val0 = (lower_tail ? 0.0 : 1.0);
-     out(i) = (log_p ? std::log(val0) : val0);
-     continue;
-   }
-   if (xx >= 1.0) {
-     double val1 = (lower_tail ? 1.0 : 0.0);
-     out(i) = (log_p ? std::log(val1) : val1);
-     continue;
-   }
-
-   // F(x)= [1 - (1 - x^a)^b]^lambda
-   double lx = std::log(xx);
-   double xalpha = std::exp(a*lx);
-   double omx = 1.0 - xalpha;         // (1 - x^α)
-   if (omx <= 0.0) {
-     // => F=1
-     double val1 = (lower_tail ? 1.0 : 0.0);
-     out(i) = (log_p ? std::log(val1) : val1);
-     continue;
-   }
-   double t = 1.0 - std::pow(omx, b);
-   if (t <= 0.0) {
-     // => F=0
-     double val0 = (lower_tail ? 0.0 : 1.0);
-     out(i) = (log_p ? std::log(val0) : val0);
-     continue;
-   }
-   if (t >= 1.0) {
-     // => F=1
-     double val1 = (lower_tail ? 1.0 : 0.0);
-     out(i) = (log_p ? std::log(val1) : val1);
-     continue;
-   }
-   double val = std::pow(t, l);
-   // F(x)=val => if not lower tail => 1-val
-   if (!lower_tail) {
-     val = 1.0 - val;
-   }
-   if (log_p) {
-     val = std::log(val);
-   }
-   out(i) = val;
+ if (!check_ekw_pars(a, b, l)) {
+   out(i)= NA_REAL;
+   continue;
  }
 
- return out;
+ // boundary
+ if (!R_finite(xx) || xx <= 0.0) {
+   double val0 = (lower_tail ? 0.0 : 1.0);
+   out(i) = (log_p ? std::log(val0) : val0);
+   continue;
+ }
+ if (xx >= 1.0) {
+   double val1 = (lower_tail ? 1.0 : 0.0);
+   out(i) = (log_p ? std::log(val1) : val1);
+   continue;
+ }
+
+ // F(x)= [1 - (1 - x^a)^b]^lambda
+ double lx = std::log(xx);
+ double xalpha = std::exp(a*lx);
+ double omx = 1.0 - xalpha;         // (1 - x^α)
+ if (omx <= 0.0) {
+   // => F=1
+   double val1 = (lower_tail ? 1.0 : 0.0);
+   out(i) = (log_p ? std::log(val1) : val1);
+   continue;
+ }
+ double t = 1.0 - std::pow(omx, b);
+ if (t <= 0.0) {
+   // => F=0
+   double val0 = (lower_tail ? 0.0 : 1.0);
+   out(i) = (log_p ? std::log(val0) : val0);
+   continue;
+ }
+ if (t >= 1.0) {
+   // => F=1
+   double val1 = (lower_tail ? 1.0 : 0.0);
+   out(i) = (log_p ? std::log(val1) : val1);
+   continue;
+ }
+ double val = std::pow(t, l);
+ // F(x)=val => if not lower tail => 1-val
+ if (!lower_tail) {
+   val = 1.0 - val;
+ }
+ if (log_p) {
+   val = std::log(val);
+ }
+ out(i) = val;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -6472,77 +9228,77 @@ arma::vec pekw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec qekw(
-   const arma::vec& p,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& lambda,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector qekw(
+ const arma::vec& p,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& lambda,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- size_t N = std::max({ p.n_elem, a_vec.n_elem, b_vec.n_elem, l_vec.n_elem });
- arma::vec out(N);
+size_t N = std::max({ p.n_elem, a_vec.n_elem, b_vec.n_elem, l_vec.n_elem });
+arma::vec out(N);
 
- for (size_t i=0; i<N; i++){
-   double a = a_vec[i % a_vec.n_elem];
-   double b = b_vec[i % b_vec.n_elem];
-   double l = l_vec[i % l_vec.n_elem];
-   double pp = p[i % p.n_elem];
+for (size_t i=0; i<N; i++){
+ double a = a_vec[i % a_vec.n_elem];
+ double b = b_vec[i % b_vec.n_elem];
+ double l = l_vec[i % l_vec.n_elem];
+ double pp = p[i % p.n_elem];
 
-   if (!check_ekw_pars(a, b, l)) {
+ if (!check_ekw_pars(a, b, l)) {
+   out(i) = NA_REAL;
+   continue;
+ }
+
+ // handle log_p
+ if (log_p) {
+   if (pp > 0.0) {
+     // log(p)>0 => p>1 => invalid
      out(i) = NA_REAL;
      continue;
    }
-
-   // handle log_p
-   if (log_p) {
-     if (pp > 0.0) {
-       // log(p)>0 => p>1 => invalid
-       out(i) = NA_REAL;
-       continue;
-     }
-     pp = std::exp(pp);
-   }
-   // handle tail
-   if (!lower_tail) {
-     pp = 1.0 - pp;
-   }
-
-   // boundaries
-   if (pp <= 0.0) {
-     out(i) = 0.0;
-     continue;
-   }
-   if (pp >= 1.0) {
-     out(i) = 1.0;
-     continue;
-   }
-
-   // Q(p)= {1 - [1 - p^(1/λ)]^(1/β)}^(1/α)
-   double step1 = std::pow(pp, 1.0/l);          // p^(1/λ)
-   double step2 = 1.0 - step1;                  // 1 - p^(1/λ)
-   if (step2 < 0.0) step2 = 0.0;
-   double step3 = std::pow(step2, 1.0/b);       // [1 - p^(1/λ)]^(1/β)
-   double step4 = 1.0 - step3;                  // 1 - ...
-   if (step4 < 0.0) step4 = 0.0;
-
-   double x;
-   if (a == 1.0) {
-     x = step4;
-   } else {
-     x = std::pow(step4, 1.0/a);
-     if (x < 0.0) x = 0.0;
-     if (x > 1.0) x = 1.0;
-   }
-
-   out(i) = x;
+   pp = std::exp(pp);
+ }
+ // handle tail
+ if (!lower_tail) {
+   pp = 1.0 - pp;
  }
 
- return out;
+ // boundaries
+ if (pp <= 0.0) {
+   out(i) = 0.0;
+   continue;
+ }
+ if (pp >= 1.0) {
+   out(i) = 1.0;
+   continue;
+ }
+
+ // Q(p)= {1 - [1 - p^(1/λ)]^(1/β)}^(1/α)
+ double step1 = std::pow(pp, 1.0/l);          // p^(1/λ)
+ double step2 = 1.0 - step1;                  // 1 - p^(1/λ)
+ if (step2 < 0.0) step2 = 0.0;
+ double step3 = std::pow(step2, 1.0/b);       // [1 - p^(1/λ)]^(1/β)
+ double step4 = 1.0 - step3;                  // 1 - ...
+ if (step4 < 0.0) step4 = 0.0;
+
+ double x;
+ if (a == 1.0) {
+   x = step4;
+ } else {
+   x = std::pow(step4, 1.0/a);
+   if (x < 0.0) x = 0.0;
+   if (x > 1.0) x = 1.0;
+ }
+
+ out(i) = x;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -6660,63 +9416,64 @@ arma::vec qekw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec rekw(
-   int n,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   const Rcpp::NumericVector& lambda
+Rcpp::NumericVector rekw(
+ int n,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ const Rcpp::NumericVector& lambda
 ) {
- if (n <= 0) {
-   Rcpp::stop("rekw: n must be positive");
+if (n <= 0) {
+ Rcpp::stop("rekw: n must be positive");
+}
+
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
+
+size_t k = std::max({ a_vec.n_elem, b_vec.n_elem, l_vec.n_elem });
+arma::vec out(n);
+
+for (int i=0; i<n; i++){
+ size_t idx = i % k;
+ double a = a_vec[idx % a_vec.n_elem];
+ double b = b_vec[idx % b_vec.n_elem];
+ double l = l_vec[idx % l_vec.n_elem];
+
+ if (!check_ekw_pars(a, b, l)) {
+   out(i) = NA_REAL;
+   Rcpp::warning("rekw: invalid parameters at index %d", i+1);
+   continue;
  }
 
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+ double U = R::runif(0.0, 1.0);
+ // X = Q(U)
+ double step1 = std::pow(U, 1.0/l);
+ double step2 = 1.0 - step1;
+ if (step2 < 0.0) step2 = 0.0;
+ double step3 = std::pow(step2, 1.0/b);
+ double step4 = 1.0 - step3;
+ if (step4 < 0.0) step4 = 0.0;
 
- size_t k = std::max({ a_vec.n_elem, b_vec.n_elem, l_vec.n_elem });
- arma::vec out(n);
-
- for (int i=0; i<n; i++){
-   size_t idx = i % k;
-   double a = a_vec[idx % a_vec.n_elem];
-   double b = b_vec[idx % b_vec.n_elem];
-   double l = l_vec[idx % l_vec.n_elem];
-
-   if (!check_ekw_pars(a, b, l)) {
-     out(i) = NA_REAL;
-     Rcpp::warning("rekw: invalid parameters at index %d", i+1);
-     continue;
-   }
-
-   double U = R::runif(0.0, 1.0);
-   // X = Q(U)
-   double step1 = std::pow(U, 1.0/l);
-   double step2 = 1.0 - step1;
-   if (step2 < 0.0) step2 = 0.0;
-   double step3 = std::pow(step2, 1.0/b);
-   double step4 = 1.0 - step3;
-   if (step4 < 0.0) step4 = 0.0;
-
-   double x;
-   if (a == 1.0) {
-     x = step4;
-   } else {
-     x = std::pow(step4, 1.0/a);
-     if (!R_finite(x) || x < 0.0) x = 0.0;
-     if (x > 1.0) x = 1.0;
-   }
-
-   out(i) = x;
+ double x;
+ if (a == 1.0) {
+   x = step4;
+ } else {
+   x = std::pow(step4, 1.0/a);
+   if (!R_finite(x) || x < 0.0) x = 0.0;
+   if (x > 1.0) x = 1.0;
  }
 
- return out;
+ out(i) = x;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
 // -----------------------------------------------------------------------------
 // 5) llekw: Negative Log-Likelihood of EKw
 // -----------------------------------------------------------------------------
+
 
 
 //' @title Negative Log-Likelihood for the Exponentiated Kumaraswamy (EKw) Distribution
@@ -6859,49 +9616,117 @@ arma::vec rekw(
 // [[Rcpp::export]]
 double llekw(const Rcpp::NumericVector& par,
             const Rcpp::NumericVector& data) {
- if (par.size() < 3) {
-   return R_PosInf; // no param
- }
- double a = par[0];
- double b = par[1];
- double l = par[2];
+ // Parameter validation
+ if (par.size() < 3) return R_PosInf;
 
- if (!check_ekw_pars(a, b, l)) {
-   return R_PosInf; // invalid => +Inf
- }
+ double alpha = par[0];
+ double beta = par[1];
+ double lambda = par[2];
+
+ if (!check_ekw_pars(alpha, beta, lambda)) return R_PosInf;
 
  arma::vec x = Rcpp::as<arma::vec>(data);
- if (x.n_elem < 1) {
-   return R_PosInf;
- }
- // check data
- if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
-   return R_PosInf;
- }
+ if (x.n_elem < 1) return R_PosInf;
+ if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) return R_PosInf;
 
  int n = x.n_elem;
- // constant part: n* [ log(l) + log(a) + log(b) ]
- double cst = n*( std::log(l) + std::log(a) + std::log(b) );
 
- // sum( (a-1)* log(x_i ) )
- arma::vec lx = arma::log(x);
- double sum1 = (a-1.0)* arma::sum(lx);
+ // Calculate log parameters for better precision
+ double log_alpha = safe_log(alpha);
+ double log_beta = safe_log(beta);
+ double log_lambda = safe_log(lambda);
 
- // sum( (b-1)* log(1- x^a ) )
- arma::vec xalpha = arma::pow(x, a);
- arma::vec log_1_xalpha = arma::log(1.0 - xalpha);
- double sum2 = (b-1.0)* arma::sum(log_1_xalpha);
+ // Constant term
+ double const_term = n * (log_lambda + log_alpha + log_beta);
 
- // sum( (l-1)* log(1- (1- x^a)^b ) )
- arma::vec vbeta = arma::pow((1.0 - xalpha), b);
- arma::vec one_minus_vbeta = 1.0 - vbeta;
- arma::vec log_1_mv = arma::log(one_minus_vbeta);
- double sum3 = (l-1.0)* arma::sum(log_1_mv);
+ // Initialize sum terms
+ double sum_term1 = 0.0; // (alpha-1) * sum(log(x))
+ double sum_term2 = 0.0; // (beta-1) * sum(log(1-x^alpha))
+ double sum_term3 = 0.0; // (lambda-1) * sum(log(1-(1-x^alpha)^beta))
 
- double loglike = cst + sum1 + sum2 + sum3;
- // negative
+ for (int i = 0; i < n; i++) {
+   double xi = x(i);
+   double log_xi = std::log(xi);
+
+   // Term 1: (alpha-1) * log(x)
+   sum_term1 += (alpha - 1.0) * log_xi;
+
+   // Stable calculation of x^alpha for large alpha
+   double x_alpha;
+   if (alpha > 100.0 || (alpha * log_xi < -700.0)) {
+     x_alpha = std::exp(alpha * log_xi);
+   } else {
+     x_alpha = std::pow(xi, alpha);
+   }
+
+   // Stable calculation of (1-x^alpha) and log(1-x^alpha)
+   double one_minus_x_alpha;
+   double log_one_minus_x_alpha;
+
+   if (x_alpha > 0.9995) {
+     // For x^alpha close to 1, use complement approach
+     one_minus_x_alpha = -std::expm1(alpha * log_xi);
+     log_one_minus_x_alpha = std::log(one_minus_x_alpha);
+   } else {
+     one_minus_x_alpha = 1.0 - x_alpha;
+     log_one_minus_x_alpha = std::log(one_minus_x_alpha);
+   }
+
+   // Term 2: (beta-1) * log(1-x^alpha)
+   sum_term2 += (beta - 1.0) * log_one_minus_x_alpha;
+
+   // Stable calculation of (1-x^alpha)^beta
+   double v_beta;
+   if (beta > 100.0 || (beta * log_one_minus_x_alpha < -700.0)) {
+     v_beta = std::exp(beta * log_one_minus_x_alpha);
+   } else {
+     v_beta = std::pow(one_minus_x_alpha, beta);
+   }
+
+   // Stable calculation of [1-(1-x^alpha)^beta]
+   double one_minus_v_beta;
+   double log_one_minus_v_beta;
+
+   if (v_beta > 0.9995) {
+     // When (1-x^alpha)^beta is close to 1
+     one_minus_v_beta = -std::expm1(beta * log_one_minus_x_alpha);
+   } else {
+     one_minus_v_beta = 1.0 - v_beta;
+   }
+
+   // CRITICAL: Handle extreme lambda values
+   // Prevent underflow when one_minus_v_beta is small and lambda is large
+   if (one_minus_v_beta < 1e-300) {
+     one_minus_v_beta = 1e-300;
+   }
+
+   log_one_minus_v_beta = std::log(one_minus_v_beta);
+
+   // Term 3: (lambda-1) * log(1-(1-x^alpha)^beta)
+   // Special handling for lambda near 1
+   if (std::abs(lambda - 1.0) < 1e-10) {
+     // For lambda ≈ 1, avoid numerical cancellation
+     if (std::abs(lambda - 1.0) > 1e-15) {
+       sum_term3 += (lambda - 1.0) * log_one_minus_v_beta;
+     }
+     // For lambda = 1 (machine precision), term is zero
+   } else if (lambda > 1000.0 && log_one_minus_v_beta < -0.01) {
+     // Special case for very large lambda
+     double scaled_term = std::max(log_one_minus_v_beta, -700.0 / lambda);
+     sum_term3 += (lambda - 1.0) * scaled_term;
+   } else {
+     // Standard case
+     sum_term3 += (lambda - 1.0) * log_one_minus_v_beta;
+   }
+ }
+
+ // Combine all terms
+ double loglike = const_term + sum_term1 + sum_term2 + sum_term3;
+
  return -loglike;
 }
+
+
 
 // -----------------------------------------------------------------------------
 // 6) grekw: Gradient of Negative Log-Likelihood of EKw
@@ -7048,82 +9873,135 @@ double llekw(const Rcpp::NumericVector& par,
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector grekw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha = par[0];   // Shape parameter α > 0
- double beta = par[1];    // Shape parameter β > 0
- double lambda = par[2];  // Shape parameter λ > 0
-
  // Parameter validation
+ if (par.size() < 3) {
+   Rcpp::NumericVector grad(3, R_NaN);
+   return grad;
+ }
+
+ double alpha = par[0];
+ double beta = par[1];
+ double lambda = par[2];
+
  if (alpha <= 0 || beta <= 0 || lambda <= 0) {
    Rcpp::NumericVector grad(3, R_NaN);
    return grad;
  }
 
- // Data conversion and validation
  arma::vec x = Rcpp::as<arma::vec>(data);
-
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
+ if (x.n_elem < 1 || arma::any(x <= 0) || arma::any(x >= 1)) {
    Rcpp::NumericVector grad(3, R_NaN);
    return grad;
  }
 
- int n = x.n_elem;  // Sample size
-
- // Initialize gradient vector
+ int n = x.n_elem;
  Rcpp::NumericVector grad(3, 0.0);
 
- // Small constant to avoid numerical issues
- double eps = std::numeric_limits<double>::epsilon() * 100;
+ // Constants for numerical stability
+ const double min_val = 1e-10;
+ const double exp_threshold = -700.0;
 
- // Compute transformations and intermediate values
- arma::vec log_x = arma::log(x);                // log(x_i)
- arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
- arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
+ // Initialize component accumulators
+ double d_alpha = n / alpha;
+ double d_beta = n / beta;
+ double d_lambda = n / lambda;
 
- // v_i = 1 - x_i^α
- arma::vec v = 1.0 - x_alpha;
- v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
+ for (int i = 0; i < n; i++) {
+   double xi = x(i);
+   double log_xi = std::log(xi);
+   d_alpha += log_xi;  // Accumulate (α-1) * log(x_i) term
 
- arma::vec log_v = arma::log(v);                // log(v_i)
- arma::vec v_beta_m1 = arma::pow(v, beta - 1.0); // v_i^(β-1)
- arma::vec v_beta = arma::pow(v, beta);          // v_i^β
- arma::vec v_beta_log_v = v_beta % log_v;        // v_i^β * log(v_i)
+   // Compute x^α stably (use log domain for large alpha)
+   double x_alpha;
+   if (alpha > 100.0 || (alpha * log_xi < exp_threshold)) {
+     x_alpha = std::exp(alpha * log_xi);
+   } else {
+     x_alpha = std::pow(xi, alpha);
+   }
 
- // w_i = 1 - v_i^β = 1 - (1-x_i^α)^β
- arma::vec w = 1.0 - v_beta;
- w = arma::clamp(w, eps, 1.0 - eps);            // Prevent numerical issues
+   // Compute v = 1-x^α with precision for x^α near 1
+   double v;
+   if (x_alpha > 0.9995) {
+     v = -std::expm1(alpha * log_xi);  // More precise than 1.0 - x_alpha
+   } else {
+     v = 1.0 - x_alpha;
+   }
 
- arma::vec log_w = arma::log(w);                // log(w_i)
+   // Ensure v is not too small
+   v = std::max(v, min_val);
+   double log_v = std::log(v);
+   d_beta += log_v;  // Accumulate (β-1) * log(v_i) term
 
- // Calculate partial derivatives for each parameter (for log-likelihood)
+   // Compute v^β stably
+   double v_beta, v_beta_m1;
+   if (beta > 100.0 || (beta * log_v < exp_threshold)) {
+     double log_v_beta = beta * log_v;
+     v_beta = std::exp(log_v_beta);
+     v_beta_m1 = std::exp((beta - 1.0) * log_v);
+   } else {
+     v_beta = std::pow(v, beta);
+     v_beta_m1 = std::pow(v, beta - 1.0);
+   }
 
- // ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - Σᵢ[xᵢ^α * log(xᵢ) * ((β-1)/vᵢ - (λ-1) * β * vᵢ^(β-1) / wᵢ)]
- double d_alpha = n / alpha + arma::sum(log_x);
+   // Compute w = 1-v^β with precision for v^β near 1
+   double w;
+   if (v_beta > 0.9995) {
+     w = -std::expm1(beta * log_v);
+   } else {
+     w = 1.0 - v_beta;
+   }
 
- // Calculate the complex term in the α gradient
- arma::vec alpha_term1 = (beta - 1.0) / v;                       // (β-1)/v_i
- arma::vec alpha_term2 = (lambda - 1.0) * beta * v_beta_m1 / w;  // (λ-1) * β * v_i^(β-1) / w_i
+   // Ensure w is not too small
+   w = std::max(w, min_val);
+   double log_w = std::log(w);
+   d_lambda += log_w;  // Accumulate (λ-1) * log(w_i) term
 
- d_alpha -= arma::sum(x_alpha_log_x % (alpha_term1 - alpha_term2));
+   // --- Alpha gradient component ---
+   // Calculate x^α * log(x) term
+   double x_alpha_log_x = x_alpha * log_xi;
 
- // ∂ℓ/∂β = n/β + Σᵢlog(vᵢ) - Σᵢ[vᵢ^β * log(vᵢ) * ((λ-1) / wᵢ)]
- double d_beta = n / beta + arma::sum(log_v);
+   // Calculate (β-1)/v term - stable for β ≈ 1
+   double alpha_term1 = 0.0;
+   if (std::abs(beta - 1.0) > 1e-14) {
+     alpha_term1 = (beta - 1.0) / v;
+   }
 
- // Calculate the term in the β gradient
- arma::vec beta_term = (lambda - 1.0) / w;       // (λ-1) / w_i
+   // Calculate (λ-1) * β * v^(β-1) / w term - with λ stability
+   double alpha_term2 = 0.0;
+   if (std::abs(lambda - 1.0) > 1e-14) {
+     double lambda_factor = lambda - 1.0;
+     // Clamp the factor for very large lambda to prevent overflow
+     if (lambda > 1000.0) {
+       lambda_factor = std::min(lambda_factor, 1000.0);
+     }
+     alpha_term2 = lambda_factor * beta * v_beta_m1 / w;
+   }
 
- d_beta -= arma::sum(v_beta_log_v % beta_term);
+   d_alpha -= x_alpha_log_x * (alpha_term1 - alpha_term2);
 
- // ∂ℓ/∂λ = n/λ + Σᵢlog(wᵢ)
- double d_lambda = n / lambda + arma::sum(log_w);
+   // --- Beta gradient component ---
+   // Calculate v^β * log(v) * (λ-1) / w term - with λ stability
+   double beta_term = 0.0;
+   if (std::abs(lambda - 1.0) > 1e-14) {
+     double lambda_factor = lambda - 1.0;
+     // Clamp the factor for very large lambda
+     if (lambda > 1000.0) {
+       lambda_factor = std::min(lambda_factor, 1000.0);
+     }
+     beta_term = v_beta * log_v * lambda_factor / w;
+   }
 
- // Since we're optimizing negative log-likelihood, negate all derivatives
+   d_beta -= beta_term;
+ }
+
+ // Negate for negative log-likelihood
  grad[0] = -d_alpha;
  grad[1] = -d_beta;
  grad[2] = -d_lambda;
 
  return grad;
 }
+
 
 
 //' @title Hessian Matrix of the Negative Log-Likelihood for the EKw Distribution
@@ -7269,126 +10147,851 @@ Rcpp::NumericVector grekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction - EKw has only 3 parameters
- double alpha  = par[0];   // θ[0] = α
- double beta   = par[1];   // θ[1] = β
- double lambda = par[2];   // θ[2] = λ
-
- // Simple parameter validation (all > 0)
- if(alpha <= 0 || beta <= 0 || lambda <= 0) {
+ // Parameter validation
+ if (par.size() < 3) {
    Rcpp::NumericMatrix nanH(3,3);
    nanH.fill(R_NaN);
    return nanH;
  }
 
- // Data conversion and basic validation
+ double alpha = par[0];
+ double beta = par[1];
+ double lambda = par[2];
+
+ if (alpha <= 0 || beta <= 0 || lambda <= 0) {
+   Rcpp::NumericMatrix nanH(3,3);
+   nanH.fill(R_NaN);
+   return nanH;
+ }
+
  arma::vec x = Rcpp::as<arma::vec>(data);
- if(arma::any(x <= 0) || arma::any(x >= 1)) {
+ if (x.n_elem < 1 || arma::any(x <= 0) || arma::any(x >= 1)) {
    Rcpp::NumericMatrix nanH(3,3);
    nanH.fill(R_NaN);
    return nanH;
  }
 
- int n = x.n_elem;  // sample size
-
- // Initialize Hessian matrix H (of ℓ(θ)) as 3x3
+ int n = x.n_elem;
  arma::mat H(3,3, arma::fill::zeros);
 
- // --- CONSTANT TERMS (do not depend on x) ---
- // L1: n ln(λ)  => d²/dλ² = -n/λ²
- H(2,2) += - n/(lambda*lambda);
- // L2: n ln(α)  => d²/dα² = -n/α²
- H(0,0) += - n/(alpha*alpha);
- // L3: n ln(β)  => d²/dβ² = -n/β²
- H(1,1) += - n/(beta*beta);
+ // Stability constants
+ const double eps = std::numeric_limits<double>::epsilon() * 100;
+ const double min_v = 1e-10;  // Minimum value for v = 1-x^α
+ const double min_w = 1e-10;  // Minimum value for w = 1-(1-x^α)^β
+ const double exp_threshold = -700.0;  // Threshold for log-domain calculations
 
- // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
- // Loop over each observation to accumulate contributions from:
- // L4: (α-1) Σ ln(x_i) --> contributes only to first derivatives
- // L5: (β-1) Σ ln(v), where v = 1 - x^α
- // L6: (λ-1) Σ ln(w), where w = 1 - v^β
+ // Constant terms (diagonal elements)
+ H(0,0) = -n / (alpha * alpha);  // -n/α²
+ H(1,1) = -n / (beta * beta);    // -n/β²
+ H(2,2) = -n / (lambda * lambda); // -n/λ²
+
+ // Special handling for lambda near 1 (critical case for stability)
+ bool lambda_near_one = std::abs(lambda - 1.0) < 1e-8;
+
  for (int i = 0; i < n; i++) {
-   double xi    = x(i);
-   double ln_xi = std::log(xi);
+   double xi = x(i);
+   double log_xi = std::log(xi);
 
-   // -- Compute A = x^α and its derivatives --
-   double A = std::pow(xi, alpha);                  // A = x^α
-   double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
-   double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+   // Calculate x^α (A) and derivatives with log-domain for large alpha
+   double A, dA_dalpha, d2A_dalpha2;
+   if (alpha > 100.0 || (alpha * log_xi < exp_threshold)) {
+     double log_A = alpha * log_xi;
+     A = std::exp(log_A);
+     dA_dalpha = A * log_xi;
+     d2A_dalpha2 = A * log_xi * log_xi;
+   } else {
+     A = std::pow(xi, alpha);
+     dA_dalpha = A * log_xi;
+     d2A_dalpha2 = A * log_xi * log_xi;
+   }
 
-   // -- v = 1 - A and its derivatives --
-   double v = 1.0 - A;                              // v = 1 - x^α
-   double ln_v = std::log(v);                       // ln(v)
-   double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
-   double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+   // Calculate v = 1 - x^α with precision for x^α near 1
+   double v;
+   if (A > 0.9995) {
+     v = -std::expm1(alpha * log_xi);  // More precise than 1.0 - A
+   } else {
+     v = 1.0 - A;
+   }
 
-   // --- L5: (β-1) ln(v) ---
-   // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
-   double d2L5_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
-   // Mixed derivative: d²L5/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
-   double d2L5_dalpha_dbeta = dv_dalpha / v;
+   // Ensure v is not too small
+   v = std::max(v, min_v);
+   double log_v = std::log(v);
 
-   // --- L6: (λ - 1) ln(w), where w = 1 - v^β ---
-   double v_beta = std::pow(v, beta);               // v^β
-   double w = 1.0 - v_beta;                         // w = 1 - v^β
+   double dv_dalpha = -dA_dalpha;
+   double d2v_dalpha2 = -d2A_dalpha2;
 
-   // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
-   double dw_dv = -beta * std::pow(v, beta - 1.0);
-   // Chain rule: dw/dα = dw/dv * dv/dα
+   // L5 derivatives: (β-1) log(v)
+   double d2L5_dalpha2 = 0.0;
+   double d2L5_dalpha_dbeta = 0.0;
+
+   if (beta != 1.0) {
+     double v_squared = std::max(v * v, 1e-200); // Prevent division by zero
+     d2L5_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / v_squared);
+     d2L5_dalpha_dbeta = dv_dalpha / v;
+   }
+
+   // Calculate v^β with log-domain for large beta
+   double v_beta, v_beta_m1, v_beta_m2;
+   if (beta > 100.0 || (beta * log_v < exp_threshold)) {
+     v_beta = std::exp(beta * log_v);
+     v_beta_m1 = std::exp((beta - 1.0) * log_v);
+     v_beta_m2 = std::exp((beta - 2.0) * log_v);
+   } else {
+     v_beta = std::pow(v, beta);
+     v_beta_m1 = std::pow(v, beta - 1.0);
+     v_beta_m2 = std::pow(v, beta - 2.0);
+   }
+
+   // Calculate w = 1 - v^β precisely for v^β near 1
+   double w;
+   if (v_beta > 0.9995) {
+     w = -std::expm1(beta * log_v);
+   } else {
+     w = 1.0 - v_beta;
+   }
+
+   w = std::max(w, min_w);
+   double w_squared = std::max(w * w, 1e-200); // Prevent division by zero
+
+   // First derivatives of w
+   double dw_dv = -beta * v_beta_m1;
    double dw_dalpha = dw_dv * dv_dalpha;
-   // Second derivative w.r.t. α for L6:
-   // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
-   // Computing d²w/dα²:
-   //   dw/dα = -β * v^(β-1)*dv_dalpha,
-   //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
-   double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
-                                   + std::pow(v, beta-1.0) * d2v_dalpha2);
-   double d2L6_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
-   // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
-   double dw_dbeta = -v_beta * ln_v;
-   // Second derivative w.r.t. β for L6:
-   // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
-   double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
-   double d2L6_dbeta2 = (lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
-   // Mixed derivative L6 (α,β): d²/(dα dβ) ln(w) =
-   //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
-   // Approximate d/dβ dw_dalpha:
-   double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
-   double d2L6_dalpha_dbeta = (lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+   double dw_dbeta = -v_beta * log_v;
 
-   // Mixed derivatives with λ
-   // (α,λ): d²/(dα dλ) [λ ln(w)] = d/dλ[(λ-1)(dw_dalpha/w)] = dw_dalpha/w
-   double d2L6_dalpha_dlambda = dw_dalpha / w;
+   // Second derivatives of w
+   double d2w_dalpha2 = -beta * ((beta - 1.0) * v_beta_m2 * (dv_dalpha * dv_dalpha) +
+                                 v_beta_m1 * d2v_dalpha2);
+   double d2w_dbeta2 = -v_beta * (log_v * log_v);
+   double d_dw_dalpha_dbeta = -v_beta_m1 * (1.0 + beta * log_v) * dv_dalpha;
 
-   // (β,λ): d²/(dβ dλ) [λ ln(w)] = d/dλ[(λ-1)(dw_dbeta/w)] = dw_dbeta/w
-   double d2L6_dbeta_dlambda = dw_dbeta / w;
+   // L6 derivatives: (λ-1) log(w)
+   double d2L6_dalpha2 = 0.0;
+   double d2L6_dbeta2 = 0.0;
+   double d2L6_dalpha_dbeta = 0.0;
+   double d2L6_dalpha_dlambda = 0.0;
+   double d2L6_dbeta_dlambda = 0.0;
 
-   // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
-   // Index: 0 = α, 1 = β, 2 = λ
+   // Critical lambda handling for stability
+   if (lambda_near_one) {
+     // For lambda ≈ 1, handle carefully to avoid cancellation errors
+     if (std::abs(lambda - 1.0) > 1e-15) {
+       double factor = lambda - 1.0;
+       d2L6_dalpha2 = factor * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / w_squared);
+       d2L6_dbeta2 = factor * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta)) / w_squared);
+       d2L6_dalpha_dbeta = factor * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta) / w_squared);
+     }
+     // When λ = 1 (machine precision), these terms become zero
+     d2L6_dalpha_dlambda = dw_dalpha / w;
+     d2L6_dbeta_dlambda = dw_dbeta / w;
+   } else {
+     // Standard case
+     d2L6_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / w_squared);
+     d2L6_dbeta2 = (lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta)) / w_squared);
+     d2L6_dalpha_dbeta = (lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta) / w_squared);
+     d2L6_dalpha_dlambda = dw_dalpha / w;
+     d2L6_dbeta_dlambda = dw_dbeta / w;
+   }
 
-   // H(α,α): sum of L2, L5, and L6 (constants already added)
+   // Handle large lambda values (> 1000)
+   if (lambda > 1000.0) {
+     double max_val = 1000.0;
+     d2L6_dalpha2 = std::min(std::max(d2L6_dalpha2, -max_val), max_val);
+     d2L6_dbeta2 = std::min(std::max(d2L6_dbeta2, -max_val), max_val);
+     d2L6_dalpha_dbeta = std::min(std::max(d2L6_dalpha_dbeta, -max_val), max_val);
+   }
+
+   // Accumulate contributions to Hessian
    H(0,0) += d2L5_dalpha2 + d2L6_dalpha2;
-
-   // H(α,β): mixed from L5 and L6
    H(0,1) += d2L5_dalpha_dbeta + d2L6_dalpha_dbeta;
    H(1,0) = H(0,1);
-
-   // H(β,β): contributions from L3 and L6
    H(1,1) += d2L6_dbeta2;
-
-   // H(α,λ): mixed derivative from L6
    H(0,2) += d2L6_dalpha_dlambda;
    H(2,0) = H(0,2);
-
-   // H(β,λ): mixed derivative from L6
    H(1,2) += d2L6_dbeta_dlambda;
    H(2,1) = H(1,2);
+ }
 
- } // end of loop
+ // Ensure perfect symmetry by averaging
+ for (int i = 0; i < 3; i++) {
+   for (int j = i+1; j < 3; j++) {
+     double avg = (H(i,j) + H(j,i)) / 2.0;
+     H(i,j) = H(j,i) = avg;
+   }
+ }
 
- // Returns the analytic Hessian matrix of the negative log-likelihood
  return Rcpp::wrap(-H);
 }
+
+// //' @title Negative Log-Likelihood for the Exponentiated Kumaraswamy (EKw) Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize
+// //'
+// //' @description
+// //' Computes the negative log-likelihood function for the Exponentiated
+// //' Kumaraswamy (EKw) distribution with parameters \code{alpha} (\eqn{\alpha}),
+// //' \code{beta} (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}), given a vector
+// //' of observations. This distribution is the special case of the Generalized
+// //' Kumaraswamy (GKw) distribution where \eqn{\gamma = 1} and \eqn{\delta = 0}.
+// //' This function is suitable for maximum likelihood estimation.
+// //'
+// //' @param par A numeric vector of length 3 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a single \code{double} value representing the negative
+// //'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+// //'   if any parameter values in \code{par} are invalid according to their
+// //'   constraints, or if any value in \code{data} is not in the interval (0, 1).
+// //'
+// //' @details
+// //' The Exponentiated Kumaraswamy (EKw) distribution is the GKw distribution
+// //' (\code{\link{dekw}}) with \eqn{\gamma=1} and \eqn{\delta=0}. Its probability
+// //' density function (PDF) is:
+// //' \deqn{
+// //' f(x | \theta) = \lambda \alpha \beta x^{\alpha-1} (1 - x^\alpha)^{\beta-1} \bigl[1 - (1 - x^\alpha)^\beta \bigr]^{\lambda - 1}
+// //' }
+// //' for \eqn{0 < x < 1} and \eqn{\theta = (\alpha, \beta, \lambda)}.
+// //' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+// //' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+// //' \deqn{
+// //' \ell(\theta | \mathbf{x}) = n[\ln(\lambda) + \ln(\alpha) + \ln(\beta)]
+// //' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i)]
+// //' }
+// //' where:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //' }
+// //' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+// //' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+// //' Numerical stability is maintained similarly to \code{\link{llgkw}}.
+// //'
+// //' @references
+// //' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+// //' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+// //'
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //'
+// //' @seealso
+// //' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+// //' \code{\link{dekw}}, \code{\link{pekw}}, \code{\link{qekw}}, \code{\link{rekw}},
+// //' \code{grekw} (gradient, if available),
+// //' \code{hsekw} (Hessian, if available),
+// //' \code{\link[stats]{optim}}
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rekw, grekw, hsekw functions for EKw distribution
+// //'
+// //' # Generate sample data from a known EKw distribution
+// //' set.seed(123)
+// //' true_par_ekw <- c(alpha = 2, beta = 3, lambda = 0.5)
+// //' # Use rekw if it exists, otherwise use rgkw with gamma=1, delta=0
+// //' if (exists("rekw")) {
+// //'   sample_data_ekw <- rekw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+// //'                           lambda = true_par_ekw[3])
+// //' } else {
+// //'   sample_data_ekw <- rgkw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+// //'                          gamma = 1, delta = 0, lambda = true_par_ekw[3])
+// //' }
+// //' hist(sample_data_ekw, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+// //'
+// //' # --- Maximum Likelihood Estimation using optim ---
+// //' # Initial parameter guess
+// //' start_par_ekw <- c(1.5, 2.5, 0.8)
+// //'
+// //' # Perform optimization (minimizing negative log-likelihood)
+// //' # Use method="L-BFGS-B" for box constraints if needed (all params > 0)
+// //' mle_result_ekw <- stats::optim(par = start_par_ekw,
+// //'                                fn = llekw, # Use the EKw neg-log-likelihood
+// //'                                method = "BFGS", # Or "L-BFGS-B" with lower=1e-6
+// //'                                hessian = TRUE,
+// //'                                data = sample_data_ekw)
+// //'
+// //' # Check convergence and results
+// //' if (mle_result_ekw$convergence == 0) {
+// //'   print("Optimization converged successfully.")
+// //'   mle_par_ekw <- mle_result_ekw$par
+// //'   print("Estimated EKw parameters:")
+// //'   print(mle_par_ekw)
+// //'   print("True EKw parameters:")
+// //'   print(true_par_ekw)
+// //' } else {
+// //'   warning("Optimization did not converge!")
+// //'   print(mle_result_ekw$message)
+// //' }
+// //'
+// //' # --- Compare numerical and analytical derivatives (if available) ---
+// //' # Requires 'numDeriv' package and analytical functions 'grekw', 'hsekw'
+// //' if (mle_result_ekw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) &&
+// //'     exists("grekw") && exists("hsekw")) {
+// //'
+// //'   cat("\nComparing Derivatives at EKw MLE estimates:\n")
+// //'
+// //'   # Numerical derivatives of llekw
+// //'   num_grad_ekw <- numDeriv::grad(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+// //'   num_hess_ekw <- numDeriv::hessian(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+// //'
+// //'   # Analytical derivatives (assuming they return derivatives of negative LL)
+// //'   ana_grad_ekw <- grekw(par = mle_par_ekw, data = sample_data_ekw)
+// //'   ana_hess_ekw <- hsekw(par = mle_par_ekw, data = sample_data_ekw)
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between gradients:\n")
+// //'   print(max(abs(num_grad_ekw - ana_grad_ekw)))
+// //'   cat("Max absolute difference between Hessians:\n")
+// //'   print(max(abs(num_hess_ekw - ana_hess_ekw)))
+// //'
+// //' } else {
+// //'    cat("\nSkipping derivative comparison for EKw.\n")
+// //'    cat("Requires convergence, 'numDeriv' package and functions 'grekw', 'hsekw'.\n")
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// double llekw(const Rcpp::NumericVector& par,
+//             const Rcpp::NumericVector& data) {
+//  if (par.size() < 3) {
+//    return R_PosInf; // no param
+//  }
+//  double a = par[0];
+//  double b = par[1];
+//  double l = par[2];
+//
+//  if (!check_ekw_pars(a, b, l)) {
+//    return R_PosInf; // invalid => +Inf
+//  }
+//
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if (x.n_elem < 1) {
+//    return R_PosInf;
+//  }
+//  // check data
+//  if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
+//    return R_PosInf;
+//  }
+//
+//  int n = x.n_elem;
+//  // constant part: n* [ log(l) + log(a) + log(b) ]
+//  double cst = n*( std::log(l) + std::log(a) + std::log(b) );
+//
+//  // sum( (a-1)* log(x_i ) )
+//  arma::vec lx = arma::log(x);
+//  double sum1 = (a-1.0)* arma::sum(lx);
+//
+//  // sum( (b-1)* log(1- x^a ) )
+//  arma::vec xalpha = arma::pow(x, a);
+//  arma::vec log_1_xalpha = arma::log(1.0 - xalpha);
+//  double sum2 = (b-1.0)* arma::sum(log_1_xalpha);
+//
+//  // sum( (l-1)* log(1- (1- x^a)^b ) )
+//  arma::vec vbeta = arma::pow((1.0 - xalpha), b);
+//  arma::vec one_minus_vbeta = 1.0 - vbeta;
+//  arma::vec log_1_mv = arma::log(one_minus_vbeta);
+//  double sum3 = (l-1.0)* arma::sum(log_1_mv);
+//
+//  double loglike = cst + sum1 + sum2 + sum3;
+//  // negative
+//  return -loglike;
+// }
+//
+// // -----------------------------------------------------------------------------
+// // 6) grekw: Gradient of Negative Log-Likelihood of EKw
+// // -----------------------------------------------------------------------------
+//
+// //' @title Gradient of the Negative Log-Likelihood for the EKw Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize gradient
+// //'
+// //' @description
+// //' Computes the gradient vector (vector of first partial derivatives) of the
+// //' negative log-likelihood function for the Exponentiated Kumaraswamy (EKw)
+// //' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+// //' (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}). This distribution is the
+// //' special case of the Generalized Kumaraswamy (GKw) distribution where
+// //' \eqn{\gamma = 1} and \eqn{\delta = 0}. The gradient is useful for optimization.
+// //'
+// //' @param par A numeric vector of length 3 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a numeric vector of length 3 containing the partial derivatives
+// //'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+// //'   respect to each parameter: \eqn{(-\partial \ell/\partial \alpha, -\partial \ell/\partial \beta, -\partial \ell/\partial \lambda)}.
+// //'   Returns a vector of \code{NaN} if any parameter values are invalid according
+// //'   to their constraints, or if any value in \code{data} is not in the
+// //'   interval (0, 1).
+// //'
+// //' @details
+// //' The components of the gradient vector of the negative log-likelihood
+// //' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the EKw (\eqn{\gamma=1, \delta=0})
+// //' model are:
+// //'
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \alpha} = -\frac{n}{\alpha} - \sum_{i=1}^{n}\ln(x_i)
+// //' + \sum_{i=1}^{n}\left[x_i^{\alpha} \ln(x_i) \left(\frac{\beta-1}{v_i} -
+// //' \frac{(\lambda-1) \beta v_i^{\beta-1}}{w_i}\right)\right]
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \beta} = -\frac{n}{\beta} - \sum_{i=1}^{n}\ln(v_i)
+// //' + \sum_{i=1}^{n}\left[\frac{(\lambda-1) v_i^{\beta} \ln(v_i)}{w_i}\right]
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \sum_{i=1}^{n}\ln(w_i)
+// //' }
+// //'
+// //' where:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //' }
+// //' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+// //' minimizing the negative log-likelihood. They correspond to the relevant components
+// //' of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\gamma=1, \delta=0}.
+// //'
+// //' @references
+// //' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+// //' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+// //'
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //' (Note: Specific gradient formulas might be derived or sourced from additional references).
+// //'
+// //' @seealso
+// //' \code{\link{grgkw}} (parent distribution gradient),
+// //' \code{\link{llekw}} (negative log-likelihood for EKw),
+// //' \code{hsekw} (Hessian for EKw, if available),
+// //' \code{\link{dekw}} (density for EKw),
+// //' \code{\link[stats]{optim}},
+// //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
+// //'
+// //' # Generate sample data
+// //' set.seed(123)
+// //' true_par_ekw <- c(alpha = 2, beta = 3, lambda = 0.5)
+// //' if (exists("rekw")) {
+// //'   sample_data_ekw <- rekw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+// //'                           lambda = true_par_ekw[3])
+// //' } else {
+// //'   sample_data_ekw <- rgkw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+// //'                           gamma = 1, delta = 0, lambda = true_par_ekw[3])
+// //' }
+// //' hist(sample_data_ekw, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+// //'
+// //' # --- Find MLE estimates ---
+// //' start_par_ekw <- c(1.5, 2.5, 0.8)
+// //' mle_result_ekw <- stats::optim(par = start_par_ekw,
+// //'                                fn = llekw,
+// //'                                gr = grekw, # Use analytical gradient for EKw
+// //'                                method = "BFGS",
+// //'                                hessian = TRUE,
+// //'                                data = sample_data_ekw)
+// //'
+// //' # --- Compare analytical gradient to numerical gradient ---
+// //' if (mle_result_ekw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE)) {
+// //'
+// //'   mle_par_ekw <- mle_result_ekw$par
+// //'   cat("\nComparing Gradients for EKw at MLE estimates:\n")
+// //'
+// //'   # Numerical gradient of llekw
+// //'   num_grad_ekw <- numDeriv::grad(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+// //'
+// //'   # Analytical gradient from grekw
+// //'   ana_grad_ekw <- grekw(par = mle_par_ekw, data = sample_data_ekw)
+// //'
+// //'   cat("Numerical Gradient (EKw):\n")
+// //'   print(num_grad_ekw)
+// //'   cat("Analytical Gradient (EKw):\n")
+// //'   print(ana_grad_ekw)
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between EKw gradients:\n")
+// //'   print(max(abs(num_grad_ekw - ana_grad_ekw)))
+// //'
+// //' } else {
+// //'   cat("\nSkipping EKw gradient comparison.\n")
+// //' }
+// //'
+// //' # Example with Hessian comparison (if hsekw exists)
+// //' if (mle_result_ekw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) && exists("hsekw")) {
+// //'
+// //'   num_hess_ekw <- numDeriv::hessian(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+// //'   ana_hess_ekw <- hsekw(par = mle_par_ekw, data = sample_data_ekw)
+// //'   cat("\nMax absolute difference between EKw Hessians:\n")
+// //'   print(max(abs(num_hess_ekw - ana_hess_ekw)))
+// //'
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericVector grekw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double alpha = par[0];   // Shape parameter α > 0
+//  double beta = par[1];    // Shape parameter β > 0
+//  double lambda = par[2];  // Shape parameter λ > 0
+//
+//  // Parameter validation
+//  if (alpha <= 0 || beta <= 0 || lambda <= 0) {
+//    Rcpp::NumericVector grad(3, R_NaN);
+//    return grad;
+//  }
+//
+//  // Data conversion and validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//
+//  if (arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericVector grad(3, R_NaN);
+//    return grad;
+//  }
+//
+//  int n = x.n_elem;  // Sample size
+//
+//  // Initialize gradient vector
+//  Rcpp::NumericVector grad(3, 0.0);
+//
+//  // Small constant to avoid numerical issues
+//  double eps = std::numeric_limits<double>::epsilon() * 100;
+//
+//  // Compute transformations and intermediate values
+//  arma::vec log_x = arma::log(x);                // log(x_i)
+//  arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
+//  arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
+//
+//  // v_i = 1 - x_i^α
+//  arma::vec v = 1.0 - x_alpha;
+//  v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
+//
+//  arma::vec log_v = arma::log(v);                // log(v_i)
+//  arma::vec v_beta_m1 = arma::pow(v, beta - 1.0); // v_i^(β-1)
+//  arma::vec v_beta = arma::pow(v, beta);          // v_i^β
+//  arma::vec v_beta_log_v = v_beta % log_v;        // v_i^β * log(v_i)
+//
+//  // w_i = 1 - v_i^β = 1 - (1-x_i^α)^β
+//  arma::vec w = 1.0 - v_beta;
+//  w = arma::clamp(w, eps, 1.0 - eps);            // Prevent numerical issues
+//
+//  arma::vec log_w = arma::log(w);                // log(w_i)
+//
+//  // Calculate partial derivatives for each parameter (for log-likelihood)
+//
+//  // ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - Σᵢ[xᵢ^α * log(xᵢ) * ((β-1)/vᵢ - (λ-1) * β * vᵢ^(β-1) / wᵢ)]
+//  double d_alpha = n / alpha + arma::sum(log_x);
+//
+//  // Calculate the complex term in the α gradient
+//  arma::vec alpha_term1 = (beta - 1.0) / v;                       // (β-1)/v_i
+//  arma::vec alpha_term2 = (lambda - 1.0) * beta * v_beta_m1 / w;  // (λ-1) * β * v_i^(β-1) / w_i
+//
+//  d_alpha -= arma::sum(x_alpha_log_x % (alpha_term1 - alpha_term2));
+//
+//  // ∂ℓ/∂β = n/β + Σᵢlog(vᵢ) - Σᵢ[vᵢ^β * log(vᵢ) * ((λ-1) / wᵢ)]
+//  double d_beta = n / beta + arma::sum(log_v);
+//
+//  // Calculate the term in the β gradient
+//  arma::vec beta_term = (lambda - 1.0) / w;       // (λ-1) / w_i
+//
+//  d_beta -= arma::sum(v_beta_log_v % beta_term);
+//
+//  // ∂ℓ/∂λ = n/λ + Σᵢlog(wᵢ)
+//  double d_lambda = n / lambda + arma::sum(log_w);
+//
+//  // Since we're optimizing negative log-likelihood, negate all derivatives
+//  grad[0] = -d_alpha;
+//  grad[1] = -d_beta;
+//  grad[2] = -d_lambda;
+//
+//  return grad;
+// }
+//
+//
+// //' @title Hessian Matrix of the Negative Log-Likelihood for the EKw Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize hessian
+// //'
+// //' @description
+// //' Computes the analytic 3x3 Hessian matrix (matrix of second partial derivatives)
+// //' of the negative log-likelihood function for the Exponentiated Kumaraswamy (EKw)
+// //' distribution with parameters \code{alpha} (\eqn{\alpha}), \code{beta}
+// //' (\eqn{\beta}), and \code{lambda} (\eqn{\lambda}). This distribution is the
+// //' special case of the Generalized Kumaraswamy (GKw) distribution where
+// //' \eqn{\gamma = 1} and \eqn{\delta = 0}. The Hessian is useful for estimating
+// //' standard errors and in optimization algorithms.
+// //'
+// //' @param par A numeric vector of length 3 containing the distribution parameters
+// //'   in the order: \code{alpha} (\eqn{\alpha > 0}), \code{beta} (\eqn{\beta > 0}),
+// //'   \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a 3x3 numeric matrix representing the Hessian matrix of the
+// //'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+// //'   where \eqn{\theta = (\alpha, \beta, \lambda)}.
+// //'   Returns a 3x3 matrix populated with \code{NaN} if any parameter values are
+// //'   invalid according to their constraints, or if any value in \code{data} is
+// //'   not in the interval (0, 1).
+// //'
+// //' @details
+// //' This function calculates the analytic second partial derivatives of the
+// //' negative log-likelihood function based on the EKw log-likelihood
+// //' (\eqn{\gamma=1, \delta=0} case of GKw, see \code{\link{llekw}}):
+// //' \deqn{
+// //' \ell(\theta | \mathbf{x}) = n[\ln(\lambda) + \ln(\alpha) + \ln(\beta)]
+// //' + \sum_{i=1}^{n} [(\alpha-1)\ln(x_i) + (\beta-1)\ln(v_i) + (\lambda-1)\ln(w_i)]
+// //' }
+// //' where \eqn{\theta = (\alpha, \beta, \lambda)} and intermediate terms are:
+// //' \itemize{
+// //'   \item \eqn{v_i = 1 - x_i^{\alpha}}
+// //'   \item \eqn{w_i = 1 - v_i^{\beta} = 1 - (1-x_i^{\alpha})^{\beta}}
+// //' }
+// //' The Hessian matrix returned contains the elements \eqn{- \frac{\partial^2 \ell(\theta | \mathbf{x})}{\partial \theta_i \partial \theta_j}}
+// //' for \eqn{\theta_i, \theta_j \in \{\alpha, \beta, \lambda\}}.
+// //'
+// //' Key properties of the returned matrix:
+// //' \itemize{
+// //'   \item Dimensions: 3x3.
+// //'   \item Symmetry: The matrix is symmetric.
+// //'   \item Ordering: Rows and columns correspond to the parameters in the order
+// //'     \eqn{\alpha, \beta, \lambda}.
+// //'   \item Content: Analytic second derivatives of the *negative* log-likelihood.
+// //' }
+// //' This corresponds to the relevant 3x3 submatrix of the 5x5 GKw Hessian (\code{\link{hsgkw}})
+// //' evaluated at \eqn{\gamma=1, \delta=0}. The exact analytical formulas are implemented directly.
+// //'
+// //' @references
+// //' Nadarajah, S., Cordeiro, G. M., & Ortega, E. M. (2012). The exponentiated
+// //' Kumaraswamy distribution. *Journal of the Franklin Institute*, *349*(3),
+// //'
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+// //'
+// //' @seealso
+// //' \code{\link{hsgkw}} (parent distribution Hessian),
+// //' \code{\link{llekw}} (negative log-likelihood for EKw),
+// //' \code{grekw} (gradient for EKw, if available),
+// //' \code{\link{dekw}} (density for EKw),
+// //' \code{\link[stats]{optim}},
+// //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
+// //'
+// //' # Generate sample data
+// //' set.seed(123)
+// //' true_par_ekw <- c(alpha = 2, beta = 3, lambda = 0.5)
+// //' if (exists("rekw")) {
+// //'   sample_data_ekw <- rekw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+// //'                           lambda = true_par_ekw[3])
+// //' } else {
+// //'   sample_data_ekw <- rgkw(100, alpha = true_par_ekw[1], beta = true_par_ekw[2],
+// //'                          gamma = 1, delta = 0, lambda = true_par_ekw[3])
+// //' }
+// //' hist(sample_data_ekw, breaks = 20, main = "EKw(2, 3, 0.5) Sample")
+// //'
+// //' # --- Find MLE estimates ---
+// //' start_par_ekw <- c(1.5, 2.5, 0.8)
+// //' mle_result_ekw <- stats::optim(par = start_par_ekw,
+// //'                                fn = llekw,
+// //'                                gr = if (exists("grekw")) grekw else NULL,
+// //'                                method = "BFGS",
+// //'                                hessian = TRUE, # Ask optim for numerical Hessian
+// //'                                data = sample_data_ekw)
+// //'
+// //' # --- Compare analytical Hessian to numerical Hessian ---
+// //' if (mle_result_ekw$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) &&
+// //'     exists("hsekw")) {
+// //'
+// //'   mle_par_ekw <- mle_result_ekw$par
+// //'   cat("\nComparing Hessians for EKw at MLE estimates:\n")
+// //'
+// //'   # Numerical Hessian of llekw
+// //'   num_hess_ekw <- numDeriv::hessian(func = llekw, x = mle_par_ekw, data = sample_data_ekw)
+// //'
+// //'   # Analytical Hessian from hsekw
+// //'   ana_hess_ekw <- hsekw(par = mle_par_ekw, data = sample_data_ekw)
+// //'
+// //'   cat("Numerical Hessian (EKw):\n")
+// //'   print(round(num_hess_ekw, 4))
+// //'   cat("Analytical Hessian (EKw):\n")
+// //'   print(round(ana_hess_ekw, 4))
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between EKw Hessians:\n")
+// //'   print(max(abs(num_hess_ekw - ana_hess_ekw)))
+// //'
+// //'   # Optional: Use analytical Hessian for Standard Errors
+// //'   # tryCatch({
+// //'   #   cov_matrix_ekw <- solve(ana_hess_ekw)
+// //'   #   std_errors_ekw <- sqrt(diag(cov_matrix_ekw))
+// //'   #   cat("Std. Errors from Analytical EKw Hessian:\n")
+// //'   #   print(std_errors_ekw)
+// //'   # }, error = function(e) {
+// //'   #   warning("Could not invert analytical EKw Hessian: ", e$message)
+// //'   # })
+// //'
+// //' } else {
+// //'   cat("\nSkipping EKw Hessian comparison.\n")
+// //'   cat("Requires convergence, 'numDeriv' package, and function 'hsekw'.\n")
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction - EKw has only 3 parameters
+//  double alpha  = par[0];   // θ[0] = α
+//  double beta   = par[1];   // θ[1] = β
+//  double lambda = par[2];   // θ[2] = λ
+//
+//  // Simple parameter validation (all > 0)
+//  if(alpha <= 0 || beta <= 0 || lambda <= 0) {
+//    Rcpp::NumericMatrix nanH(3,3);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  // Data conversion and basic validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if(arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericMatrix nanH(3,3);
+//    nanH.fill(R_NaN);
+//    return nanH;
+//  }
+//
+//  int n = x.n_elem;  // sample size
+//
+//  // Initialize Hessian matrix H (of ℓ(θ)) as 3x3
+//  arma::mat H(3,3, arma::fill::zeros);
+//
+//  // --- CONSTANT TERMS (do not depend on x) ---
+//  // L1: n ln(λ)  => d²/dλ² = -n/λ²
+//  H(2,2) += - n/(lambda*lambda);
+//  // L2: n ln(α)  => d²/dα² = -n/α²
+//  H(0,0) += - n/(alpha*alpha);
+//  // L3: n ln(β)  => d²/dβ² = -n/β²
+//  H(1,1) += - n/(beta*beta);
+//
+//  // --- TERMS THAT INVOLVE THE OBSERVATIONS ---
+//  // Loop over each observation to accumulate contributions from:
+//  // L4: (α-1) Σ ln(x_i) --> contributes only to first derivatives
+//  // L5: (β-1) Σ ln(v), where v = 1 - x^α
+//  // L6: (λ-1) Σ ln(w), where w = 1 - v^β
+//  for (int i = 0; i < n; i++) {
+//    double xi    = x(i);
+//    double ln_xi = std::log(xi);
+//
+//    // -- Compute A = x^α and its derivatives --
+//    double A = std::pow(xi, alpha);                  // A = x^α
+//    double dA_dalpha = A * ln_xi;                    // dA/dα = x^α ln(x)
+//    double d2A_dalpha2 = A * ln_xi * ln_xi;          // d²A/dα² = x^α (ln(x))²
+//
+//    // -- v = 1 - A and its derivatives --
+//    double v = 1.0 - A;                              // v = 1 - x^α
+//    double ln_v = std::log(v);                       // ln(v)
+//    double dv_dalpha = -dA_dalpha;                   // dv/dα = -dA/dα = -x^α ln(x)
+//    double d2v_dalpha2 = -d2A_dalpha2;               // d²v/dα² = -d²A/dα² = -x^α (ln(x))²
+//
+//    // --- L5: (β-1) ln(v) ---
+//    // Second derivative w.r.t. α: (β-1)*[(d²v/dα²*v - (dv/dα)²)/v²]
+//    double d2L5_dalpha2 = (beta - 1.0) * ((d2v_dalpha2 * v - dv_dalpha * dv_dalpha) / (v*v));
+//    // Mixed derivative: d²L5/(dα dβ) = d/dβ[(β-1)*(dv_dalpha/v)] = (dv_dalpha/v)
+//    double d2L5_dalpha_dbeta = dv_dalpha / v;
+//
+//    // --- L6: (λ - 1) ln(w), where w = 1 - v^β ---
+//    double v_beta = std::pow(v, beta);               // v^β
+//    double w = 1.0 - v_beta;                         // w = 1 - v^β
+//
+//    // Derivative of w w.r.t. v: dw/dv = -β * v^(β-1)
+//    double dw_dv = -beta * std::pow(v, beta - 1.0);
+//    // Chain rule: dw/dα = dw/dv * dv/dα
+//    double dw_dalpha = dw_dv * dv_dalpha;
+//    // Second derivative w.r.t. α for L6:
+//    // d²/dα² ln(w) = [d²w/dα² * w - (dw/dα)²] / w²
+//    // Computing d²w/dα²:
+//    //   dw/dα = -β * v^(β-1)*dv_dalpha,
+//    //   d²w/dα² = -β * [(β-1)*v^(β-2)*(dv_dalpha)² + v^(β-1)*d²v_dalpha²]
+//    double d2w_dalpha2 = -beta * ((beta - 1.0) * std::pow(v, beta-2.0) * (dv_dalpha * dv_dalpha)
+//                                    + std::pow(v, beta-1.0) * d2v_dalpha2);
+//    double d2L6_dalpha2 = (lambda - 1.0) * ((d2w_dalpha2 * w - (dw_dalpha * dw_dalpha)) / (w*w));
+//    // Derivative w.r.t. β: d/dβ ln(w). Note: d/dβ(v^β) = v^β ln(v) => d/dβ w = -v^β ln(v)
+//    double dw_dbeta = -v_beta * ln_v;
+//    // Second derivative w.r.t. β for L6:
+//    // d²/dβ² ln(w) = [d²w/dβ² * w - (dw/dβ)²]/w², where d²w/dβ² = -v^β (ln(v))²
+//    double d2w_dbeta2 = -v_beta * (ln_v * ln_v);
+//    double d2L6_dbeta2 = (lambda - 1.0) * ((d2w_dbeta2 * w - (dw_dbeta * dw_dbeta))/(w*w));
+//    // Mixed derivative L6 (α,β): d²/(dα dβ) ln(w) =
+//    //   = d/dβ[(dw_dalpha)/w] = (d/dβ dw_dalpha)/w - (dw_dalpha*dw_dbeta)/(w*w)
+//    // Approximate d/dβ dw_dalpha:
+//    double d_dw_dalpha_dbeta = -std::pow(v, beta-1.0) * (1.0 + beta * ln_v) * dv_dalpha;
+//    double d2L6_dalpha_dbeta = (lambda - 1.0) * ((d_dw_dalpha_dbeta / w) - (dw_dalpha * dw_dbeta)/(w*w));
+//
+//    // Mixed derivatives with λ
+//    // (α,λ): d²/(dα dλ) [λ ln(w)] = d/dλ[(λ-1)(dw_dalpha/w)] = dw_dalpha/w
+//    double d2L6_dalpha_dlambda = dw_dalpha / w;
+//
+//    // (β,λ): d²/(dβ dλ) [λ ln(w)] = d/dλ[(λ-1)(dw_dbeta/w)] = dw_dbeta/w
+//    double d2L6_dbeta_dlambda = dw_dbeta / w;
+//
+//    // --- ACCUMULATING CONTRIBUTIONS TO THE HESSIAN MATRIX ---
+//    // Index: 0 = α, 1 = β, 2 = λ
+//
+//    // H(α,α): sum of L2, L5, and L6 (constants already added)
+//    H(0,0) += d2L5_dalpha2 + d2L6_dalpha2;
+//
+//    // H(α,β): mixed from L5 and L6
+//    H(0,1) += d2L5_dalpha_dbeta + d2L6_dalpha_dbeta;
+//    H(1,0) = H(0,1);
+//
+//    // H(β,β): contributions from L3 and L6
+//    H(1,1) += d2L6_dbeta2;
+//
+//    // H(α,λ): mixed derivative from L6
+//    H(0,2) += d2L6_dalpha_dlambda;
+//    H(2,0) = H(0,2);
+//
+//    // H(β,λ): mixed derivative from L6
+//    H(1,2) += d2L6_dbeta_dlambda;
+//    H(2,1) = H(1,2);
+//
+//  } // end of loop
+//
+//  // Returns the analytic Hessian matrix of the negative log-likelihood
+//  return Rcpp::wrap(-H);
+// }
 
 
 
@@ -7655,13 +11258,13 @@ We'll also define a param-checker for (γ, δ, λ).
 // -----------------------------------------------------------------------------
 inline bool check_bp_pars(double gamma, double delta, double lambda, bool strict = false) {
 if (gamma <= 0.0 || delta < 0.0 || lambda <= 0.0) {
-  return false;
+return false;
 }
 if (strict) {
-  const double MINP=1e-8;
-  const double MAXP=1e8;
-  if (gamma<MINP || lambda<MINP) return false;
-  if (gamma>MAXP || delta>MAXP || lambda>MAXP) return false;
+const double MINP=1e-8;
+const double MAXP=1e8;
+if (gamma<MINP || lambda<MINP) return false;
+if (gamma>MAXP || delta>MAXP || lambda>MAXP) return false;
 }
 return true;
 }
@@ -7777,67 +11380,67 @@ return true;
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec dmc(
-   const arma::vec& x,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   const Rcpp::NumericVector& lambda,
-   bool log_prob = false
+Rcpp::NumericVector dmc(
+ const arma::vec& x,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool log_prob = false
 ) {
- arma::vec g_vec(gamma.begin(), gamma.size());
- arma::vec d_vec(delta.begin(), delta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec g_vec(gamma.begin(), gamma.size());
+arma::vec d_vec(delta.begin(), delta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- size_t N= std::max({ x.n_elem, g_vec.n_elem, d_vec.n_elem, l_vec.n_elem });
- arma::vec out(N);
+size_t N= std::max({ x.n_elem, g_vec.n_elem, d_vec.n_elem, l_vec.n_elem });
+arma::vec out(N);
 
- // Pre-fill
- out.fill(log_prob ? R_NegInf : 0.0);
+// Pre-fill
+out.fill(log_prob ? R_NegInf : 0.0);
 
- for (size_t i=0; i<N; i++){
-   double gg= g_vec[i % g_vec.n_elem];
-   double dd= d_vec[i % d_vec.n_elem];
-   double ll= l_vec[i % l_vec.n_elem];
-   double xx= x[i % x.n_elem];
+for (size_t i=0; i<N; i++){
+ double gg= g_vec[i % g_vec.n_elem];
+ double dd= d_vec[i % d_vec.n_elem];
+ double ll= l_vec[i % l_vec.n_elem];
+ double xx= x[i % x.n_elem];
 
-   if (!check_bp_pars(gg,dd,ll)) {
-     // invalid => pdf=0 or logpdf=-Inf
-     continue;
-   }
-   // domain
-   if (xx<=0.0 || xx>=1.0 || !R_finite(xx)) {
-     continue;
-   }
-
-   // log f(x)= log(λ) - log( B(γ, δ+1) )
-   //           + (γλ -1)* log(x)
-   //           + δ * log(1 - x^λ)
-   double logB = R::lbeta(gg, dd+1.0);
-   double logCst= std::log(ll) - logB;
-
-   // (γ λ -1)* log(x)
-   double exponent= gg*ll - 1.0;
-   double lx= std::log(xx);
-   double term1= exponent* lx;
-
-   // δ * log(1 - x^λ)
-   double x_pow_l= std::pow(xx, ll);
-   if (x_pow_l>=1.0) {
-     // => pdf=0
-     continue;
-   }
-   double log_1_minus_xpow= std::log(1.0 - x_pow_l);
-   double term2= dd * log_1_minus_xpow;
-
-   double log_pdf= logCst + term1 + term2;
-   if (log_prob) {
-     out(i)= log_pdf;
-   } else {
-     out(i)= std::exp(log_pdf);
-   }
+ if (!check_bp_pars(gg,dd,ll)) {
+   // invalid => pdf=0 or logpdf=-Inf
+   continue;
+ }
+ // domain
+ if (xx<=0.0 || xx>=1.0 || !R_finite(xx)) {
+   continue;
  }
 
- return out;
+ // log f(x)= log(λ) - log( B(γ, δ+1) )
+ //           + (γλ -1)* log(x)
+ //           + δ * log(1 - x^λ)
+ double logB = R::lbeta(gg, dd+1.0);
+ double logCst= std::log(ll) - logB;
+
+ // (γ λ -1)* log(x)
+ double exponent= gg*ll - 1.0;
+ double lx= std::log(xx);
+ double term1= exponent* lx;
+
+ // δ * log(1 - x^λ)
+ double x_pow_l= std::pow(xx, ll);
+ if (x_pow_l>=1.0) {
+   // => pdf=0
+   continue;
+ }
+ double log_1_minus_xpow= std::log(1.0 - x_pow_l);
+ double term2= dd * log_1_minus_xpow;
+
+ double log_pdf= logCst + term1 + term2;
+ if (log_prob) {
+   out(i)= log_pdf;
+ } else {
+   out(i)= std::exp(log_pdf);
+ }
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -7964,57 +11567,57 @@ arma::vec dmc(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec pmc(
-   const arma::vec& q,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   const Rcpp::NumericVector& lambda,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector pmc(
+ const arma::vec& q,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- arma::vec g_vec(gamma.begin(), gamma.size());
- arma::vec d_vec(delta.begin(), delta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec g_vec(gamma.begin(), gamma.size());
+arma::vec d_vec(delta.begin(), delta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- size_t N= std::max({ q.n_elem, g_vec.n_elem, d_vec.n_elem, l_vec.n_elem });
- arma::vec out(N);
+size_t N= std::max({ q.n_elem, g_vec.n_elem, d_vec.n_elem, l_vec.n_elem });
+arma::vec out(N);
 
- for (size_t i=0; i<N; i++){
-   double gg= g_vec[i % g_vec.n_elem];
-   double dd= d_vec[i % d_vec.n_elem];
-   double ll= l_vec[i % l_vec.n_elem];
-   double xx= q[i % q.n_elem];
+for (size_t i=0; i<N; i++){
+ double gg= g_vec[i % g_vec.n_elem];
+ double dd= d_vec[i % d_vec.n_elem];
+ double ll= l_vec[i % l_vec.n_elem];
+ double xx= q[i % q.n_elem];
 
-   if (!check_bp_pars(gg,dd,ll)) {
-     out(i)= NA_REAL;
-     continue;
-   }
-
-   // boundaries
-   if (!R_finite(xx) || xx<=0.0) {
-     double val0= (lower_tail ? 0.0 : 1.0);
-     out(i)= log_p ? std::log(val0) : val0;
-     continue;
-   }
-   if (xx>=1.0) {
-     double val1= (lower_tail ? 1.0 : 0.0);
-     out(i)= log_p ? std::log(val1) : val1;
-     continue;
-   }
-
-   double xpow= std::pow(xx, ll);
-   // pbeta(xpow, gg, dd+1, TRUE, FALSE)
-   double val= R::pbeta( xpow, gg, dd+1.0, true, false );
-   if (!lower_tail) {
-     val= 1.0 - val;
-   }
-   if (log_p) {
-     val= std::log(val);
-   }
-   out(i)= val;
+ if (!check_bp_pars(gg,dd,ll)) {
+   out(i)= NA_REAL;
+   continue;
  }
 
- return out;
+ // boundaries
+ if (!R_finite(xx) || xx<=0.0) {
+   double val0= (lower_tail ? 0.0 : 1.0);
+   out(i)= log_p ? std::log(val0) : val0;
+   continue;
+ }
+ if (xx>=1.0) {
+   double val1= (lower_tail ? 1.0 : 0.0);
+   out(i)= log_p ? std::log(val1) : val1;
+   continue;
+ }
+
+ double xpow= std::pow(xx, ll);
+ // pbeta(xpow, gg, dd+1, TRUE, FALSE)
+ double val= R::pbeta( xpow, gg, dd+1.0, true, false );
+ if (!lower_tail) {
+   val= 1.0 - val;
+ }
+ if (log_p) {
+   val= std::log(val);
+ }
+ out(i)= val;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -8148,71 +11751,71 @@ arma::vec pmc(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec qmc(
-   const arma::vec& p,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   const Rcpp::NumericVector& lambda,
-   bool lower_tail=true,
-   bool log_p=false
+Rcpp::NumericVector qmc(
+ const arma::vec& p,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda,
+ bool lower_tail=true,
+ bool log_p=false
 ) {
- arma::vec g_vec(gamma.begin(), gamma.size());
- arma::vec d_vec(delta.begin(), delta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
+arma::vec g_vec(gamma.begin(), gamma.size());
+arma::vec d_vec(delta.begin(), delta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
 
- size_t N= std::max({ p.n_elem, g_vec.n_elem, d_vec.n_elem, l_vec.n_elem });
- arma::vec out(N);
+size_t N= std::max({ p.n_elem, g_vec.n_elem, d_vec.n_elem, l_vec.n_elem });
+arma::vec out(N);
 
- for (size_t i=0; i<N; i++){
-   double gg= g_vec[i % g_vec.n_elem];
-   double dd= d_vec[i % d_vec.n_elem];
-   double ll= l_vec[i % l_vec.n_elem];
-   double pp= p[i % p.n_elem];
+for (size_t i=0; i<N; i++){
+ double gg= g_vec[i % g_vec.n_elem];
+ double dd= d_vec[i % d_vec.n_elem];
+ double ll= l_vec[i % l_vec.n_elem];
+ double pp= p[i % p.n_elem];
 
-   if (!check_bp_pars(gg,dd,ll)) {
+ if (!check_bp_pars(gg,dd,ll)) {
+   out(i)= NA_REAL;
+   continue;
+ }
+
+ // handle log_p
+ if (log_p) {
+   if (pp>0.0) {
+     // log(p)>0 => p>1 => invalid
      out(i)= NA_REAL;
      continue;
    }
-
-   // handle log_p
-   if (log_p) {
-     if (pp>0.0) {
-       // log(p)>0 => p>1 => invalid
-       out(i)= NA_REAL;
-       continue;
-     }
-     pp= std::exp(pp);
-   }
-   // handle tail
-   if (!lower_tail) {
-     pp= 1.0 - pp;
-   }
-
-   // boundary
-   if (pp<=0.0) {
-     out(i)= 0.0;
-     continue;
-   }
-   if (pp>=1.0) {
-     out(i)= 1.0;
-     continue;
-   }
-
-   // step1= R::qbeta(pp, gg, dd+1)
-   double y= R::qbeta(pp, gg, dd+1.0, true, false);
-   // step2= y^(1/λ)
-   double xval;
-   if (ll==1.0) {
-     xval= y;
-   } else {
-     xval= std::pow(y, 1.0/ll);
-   }
-   if (!R_finite(xval) || xval<0.0) xval=0.0;
-   if (xval>1.0) xval=1.0;
-   out(i)= xval;
+   pp= std::exp(pp);
+ }
+ // handle tail
+ if (!lower_tail) {
+   pp= 1.0 - pp;
  }
 
- return out;
+ // boundary
+ if (pp<=0.0) {
+   out(i)= 0.0;
+   continue;
+ }
+ if (pp>=1.0) {
+   out(i)= 1.0;
+   continue;
+ }
+
+ // step1= R::qbeta(pp, gg, dd+1)
+ double y= R::qbeta(pp, gg, dd+1.0, true, false);
+ // step2= y^(1/λ)
+ double xval;
+ if (ll==1.0) {
+   xval= y;
+ } else {
+   xval= std::pow(y, 1.0/ll);
+ }
+ if (!R_finite(xval) || xval<0.0) xval=0.0;
+ if (xval>1.0) xval=1.0;
+ out(i)= xval;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -8338,54 +11941,55 @@ arma::vec qmc(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec rmc(
-   int n,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   const Rcpp::NumericVector& lambda
+Rcpp::NumericVector rmc(
+ int n,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ const Rcpp::NumericVector& lambda
 ) {
- if (n<=0) {
-   Rcpp::stop("rmc: n must be positive");
+if (n<=0) {
+ Rcpp::stop("rmc: n must be positive");
+}
+
+arma::vec g_vec(gamma.begin(), gamma.size());
+arma::vec d_vec(delta.begin(), delta.size());
+arma::vec l_vec(lambda.begin(), lambda.size());
+
+size_t k= std::max({ g_vec.n_elem, d_vec.n_elem, l_vec.n_elem });
+arma::vec out(n);
+
+for(int i=0; i<n; i++){
+ size_t idx= i%k;
+ double gg= g_vec[idx % g_vec.n_elem];
+ double dd= d_vec[idx % d_vec.n_elem];
+ double ll= l_vec[idx % l_vec.n_elem];
+
+ if(!check_bp_pars(gg,dd,ll)) {
+   out(i)= NA_REAL;
+   Rcpp::warning("rmc: invalid parameters at index %d", i+1);
+   continue;
  }
 
- arma::vec g_vec(gamma.begin(), gamma.size());
- arma::vec d_vec(delta.begin(), delta.size());
- arma::vec l_vec(lambda.begin(), lambda.size());
-
- size_t k= std::max({ g_vec.n_elem, d_vec.n_elem, l_vec.n_elem });
- arma::vec out(n);
-
- for(int i=0; i<n; i++){
-   size_t idx= i%k;
-   double gg= g_vec[idx % g_vec.n_elem];
-   double dd= d_vec[idx % d_vec.n_elem];
-   double ll= l_vec[idx % l_vec.n_elem];
-
-   if(!check_bp_pars(gg,dd,ll)) {
-     out(i)= NA_REAL;
-     Rcpp::warning("rmc: invalid parameters at index %d", i+1);
-     continue;
-   }
-
-   double U= R::rbeta(gg, dd+1.0);
-   double xval;
-   if (ll==1.0) {
-     xval= U;
-   } else {
-     xval= std::pow(U, 1.0/ll);
-   }
-   if (!R_finite(xval) || xval<0.0) xval=0.0;
-   if (xval>1.0) xval=1.0;
-   out(i)= xval;
+ double U= R::rbeta(gg, dd+1.0);
+ double xval;
+ if (ll==1.0) {
+   xval= U;
+ } else {
+   xval= std::pow(U, 1.0/ll);
  }
+ if (!R_finite(xval) || xval<0.0) xval=0.0;
+ if (xval>1.0) xval=1.0;
+ out(i)= xval;
+}
 
- return out;
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
 // -----------------------------------------------------------------------------
 // 5) llmc: Negative Log-Likelihood for Beta Power
 // -----------------------------------------------------------------------------
+
 
 //' @title Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution
 //' @author Lopes, J. E.
@@ -8515,49 +12119,100 @@ arma::vec rmc(
 //'
 //' @export
 // [[Rcpp::export]]
-double llmc(const Rcpp::NumericVector& par,
-           const Rcpp::NumericVector& data) {
- if (par.size()<3) {
-   return R_PosInf;
- }
- double gg= par[0];
- double dd= par[1];
- double ll= par[2];
+double llmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+ // Parameter validation
+ if (par.size() < 3) return R_PosInf;
 
- if(!check_bp_pars(gg, dd, ll)) {
-   return R_PosInf;
- }
+ double gamma = par[0];
+ double delta = par[1];
+ double lambda = par[2];
+
+ if (!check_bp_pars(gamma, delta, lambda)) return R_PosInf;
 
  arma::vec x = Rcpp::as<arma::vec>(data);
- if (x.n_elem<1) {
-   return R_PosInf;
+ if (x.n_elem < 1) return R_PosInf;
+
+ // Data boundary check
+ if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) return R_PosInf;
+
+ int n = x.n_elem;
+ double loglike = 0.0;
+
+ // Stability constants
+ const double eps = 1e-10;
+ const double exp_threshold = -700.0;
+
+ // Compute log(Beta(gamma, delta+1)) stably
+ double log_B;
+ if (gamma > 100.0 || delta > 100.0) {
+   // For large parameters, use Stirling's approximation
+   log_B = lgamma(gamma) + lgamma(delta + 1.0) - lgamma(gamma + delta + 1.0);
+ } else {
+   log_B = R::lbeta(gamma, delta + 1.0);
  }
- if (arma::any(x<=0.0) || arma::any(x>=1.0)) {
-   return R_PosInf;
+
+ // Constant term: n*(log(lambda) - log(B(gamma, delta+1)))
+ double log_lambda = safe_log(lambda);
+ double const_term = n * (log_lambda - log_B);
+
+ // Calculate gamma*lambda - 1.0 with precision for values near 1.0
+ double gl_minus_1 = gamma * lambda - 1.0;
+
+ // Initialize accumulators for sum terms
+ double sum_term1 = 0.0;  // Sum of (gamma*lambda-1)*log(x)
+ double sum_term2 = 0.0;  // Sum of delta*log(1-x^lambda)
+
+ // Process each observation with careful numerical treatment
+ for (int i = 0; i < n; i++) {
+   double xi = x(i);
+
+   // Handle observations near boundaries
+   if (xi < eps) xi = eps;
+   if (xi > 1.0 - eps) xi = 1.0 - eps;
+
+   double log_xi = std::log(xi);
+
+   // Term 1: (gamma*lambda-1)*log(x)
+   // Special handling for large gamma*lambda
+   sum_term1 += gl_minus_1 * log_xi;
+
+   // Calculate x^lambda stably
+   double x_lambda;
+   if (lambda * std::abs(log_xi) > 1.0) {
+     // Use log domain for potential overflow/underflow
+     x_lambda = std::exp(lambda * log_xi);
+   } else {
+     x_lambda = std::pow(xi, lambda);
+   }
+
+   // Term 2: delta*log(1-x^lambda)
+   // Use log1p for x^lambda close to 1 for better precision
+   double log_1_minus_x_lambda;
+   if (x_lambda > 0.9995) {
+     // For x^lambda near 1, use complementary calculation
+     log_1_minus_x_lambda = log1p(-x_lambda);
+   } else {
+     log_1_minus_x_lambda = std::log(1.0 - x_lambda);
+   }
+
+   // Special handling for large delta values
+   if (delta > 1000.0 && log_1_minus_x_lambda < -0.01) {
+     // Scale to prevent overflow with large delta
+     double scaled_term = std::max(log_1_minus_x_lambda, -700.0 / delta);
+     sum_term2 += delta * scaled_term;
+   } else {
+     sum_term2 += delta * log_1_minus_x_lambda;
+   }
  }
 
- int n= x.n_elem;
+ loglike = const_term + sum_term1 + sum_term2;
 
- // constant: n*( log(λ) - log B(γ, δ+1 ) )
- double logB= R::lbeta(gg, dd+1.0);
- double cst= n*( std::log(ll) - logB );
+ // Check for invalid results
+ if (!std::isfinite(loglike)) return R_PosInf;
 
- // sum( (γλ -1)* log(x_i ) )
- // sum( δ * log(1 - x_i^λ ) )
- double gl= gg*ll -1.0;
-
- arma::vec lx= arma::log(x);
- double sum1= gl * arma::sum(lx);
-
- // sum( δ * log(1 - x^λ) )
- arma::vec x_pow_l = arma::pow(x, ll);
-
- arma::vec log1mxpw= arma::log(1.0 - x_pow_l);
- double sum2= dd * arma::sum(log1mxpw);
-
- double loglike= cst + sum1 + sum2;
- return -loglike;
+ return -loglike;  // Return negative log-likelihood
 }
+
 
 
 
@@ -8690,66 +12345,114 @@ double llmc(const Rcpp::NumericVector& par,
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector grmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double gamma = par[0];   // Shape parameter γ > 0
- double delta = par[1];   // Shape parameter δ > 0
- double lambda = par[2];  // Shape parameter λ > 0
-
  // Parameter validation
- if (gamma <= 0 || delta <= 0 || lambda <= 0) {
+ if (par.size() < 3) {
    Rcpp::NumericVector grad(3, R_NaN);
    return grad;
  }
 
- // Data conversion and validation
+ double gamma = par[0];
+ double delta = par[1];
+ double lambda = par[2];
+
+ if (gamma <= 0 || delta < 0 || lambda <= 0) {
+   Rcpp::NumericVector grad(3, R_NaN);
+   return grad;
+ }
+
  arma::vec x = Rcpp::as<arma::vec>(data);
-
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
+ if (x.n_elem < 1 || arma::any(x <= 0) || arma::any(x >= 1)) {
    Rcpp::NumericVector grad(3, R_NaN);
    return grad;
  }
 
- int n = x.n_elem;  // Sample size
-
- // Initialize gradient vector
+ int n = x.n_elem;
  Rcpp::NumericVector grad(3, 0.0);
 
- // Small constant to avoid numerical issues
- double eps = std::numeric_limits<double>::epsilon() * 100;
+ // Stability constants
+ const double eps = 1e-10;
 
- // Compute transformations and intermediate values
- arma::vec log_x = arma::log(x);                   // log(x_i)
- arma::vec x_lambda = arma::pow(x, lambda);        // x_i^λ
- arma::vec x_lambda_log_x = x_lambda % log_x;      // x_i^λ * log(x_i)
+ // Calculate digamma terms stably
+ double digamma_gamma_delta_plus_1, digamma_gamma, digamma_delta_plus_1;
 
- // v_i = 1 - x_i^λ
- arma::vec v = 1.0 - x_lambda;
- v = arma::clamp(v, eps, 1.0 - eps);               // Prevent numerical issues
+ // For large arguments, use asymptotic approximation of digamma
+ if (gamma + delta > 100.0) {
+   digamma_gamma_delta_plus_1 = std::log(gamma + delta + 1.0) - 1.0/(2.0*(gamma + delta + 1.0));
+ } else {
+   digamma_gamma_delta_plus_1 = R::digamma(gamma + delta + 1.0);
+ }
 
- arma::vec log_v = arma::log(v);                   // log(1 - x_i^λ)
+ if (gamma > 100.0) {
+   digamma_gamma = std::log(gamma) - 1.0/(2.0*gamma);
+ } else {
+   digamma_gamma = R::digamma(gamma);
+ }
 
- // Calculate partial derivatives for each parameter (for log-likelihood)
+ if (delta > 100.0) {
+   digamma_delta_plus_1 = std::log(delta + 1.0) - 1.0/(2.0*(delta + 1.0));
+ } else {
+   digamma_delta_plus_1 = R::digamma(delta + 1.0);
+ }
 
- // ∂ℓ/∂γ = -n[ψ(γ+δ+1) - ψ(γ)] - λΣᵢlog(xᵢ)
- double d_gamma = -n * (R::digamma(gamma + delta + 1) - R::digamma(gamma)) -
-   lambda * arma::sum(log_x);
+ // Initialize accumulators
+ double sum_log_x = 0.0;
+ double sum_log_v = 0.0;
+ double sum_term_lambda = 0.0;
 
- // ∂ℓ/∂δ = -n[ψ(γ+δ+1) - ψ(δ+1)] - Σᵢlog(1-xᵢ^λ)
- double d_delta = -n * (R::digamma(gamma + delta + 1) - R::digamma(delta + 1)) -
-   arma::sum(log_v);
+ for (int i = 0; i < n; i++) {
+   double xi = x(i);
 
- // ∂ℓ/∂λ = -n/λ - γΣᵢlog(xᵢ) + δΣᵢ[(xᵢ^λ*log(xᵢ))/(1-xᵢ^λ)]
- double d_lambda = -n / lambda - gamma * arma::sum(log_x) +
-   delta * arma::sum(x_lambda_log_x / v);
+   // Handle boundary values
+   if (xi < eps) xi = eps;
+   if (xi > 1.0 - eps) xi = 1.0 - eps;
 
- // Since we're optimizing negative log-likelihood, negate all derivatives
- grad[0] = -d_gamma;
- grad[1] = -d_delta;
- grad[2] = -d_lambda;
+   double log_xi = std::log(xi);
+   sum_log_x += log_xi;
 
- return Rcpp::wrap(grad);
+   // Calculate x^lambda stably
+   double x_lambda;
+   if (lambda > 100.0 || lambda * std::abs(log_xi) > 1.0) {
+     x_lambda = std::exp(lambda * log_xi);
+   } else {
+     x_lambda = std::pow(xi, lambda);
+   }
+
+   // Calculate 1-x^lambda with precision for x^lambda near 1
+   double v;
+   if (x_lambda > 0.9995) {
+     v = -std::expm1(lambda * log_xi);  // More precise than 1.0 - x_lambda
+   } else {
+     v = 1.0 - x_lambda;
+   }
+
+   // Ensure v is not too small
+   v = std::max(v, eps);
+   double log_v = std::log(v);
+   sum_log_v += log_v;
+
+   // Calculate term for lambda gradient: (x^lambda * log(x)) / (1-x^lambda)
+   double lambda_term = (x_lambda * log_xi) / v;
+
+   // Prevent extreme values that might lead to instability
+   if (std::abs(lambda_term) > 1e6) {
+     lambda_term = std::copysign(1e6, lambda_term);
+   }
+
+   sum_term_lambda += lambda_term;
+ }
+
+ // Compute gradient components
+ double d_gamma = -n * (digamma_gamma_delta_plus_1 - digamma_gamma) - lambda * sum_log_x;
+ double d_delta = -n * (digamma_gamma_delta_plus_1 - digamma_delta_plus_1) - sum_log_v;
+ double d_lambda = -n / lambda - gamma * sum_log_x + delta * sum_term_lambda;
+
+ // Alread negative gradient for negative log-likelihood
+ grad[0] = d_gamma;
+ grad[1] = d_delta;
+ grad[2] = d_lambda;
+
+ return grad;
 }
-
 
 
 
@@ -8899,75 +12602,148 @@ Rcpp::NumericVector grmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double gamma = par[0];   // Shape parameter γ > 0
- double delta = par[1];   // Shape parameter δ > 0
- double lambda = par[2];  // Shape parameter λ > 0
+ // Parameter extraction and validation
+ if (par.size() < 3) {
+   Rcpp::NumericMatrix hess(3, 3);
+   hess.fill(R_NaN);
+   return hess;
+ }
 
- // Initialize Hessian matrix
- Rcpp::NumericMatrix hess(3, 3);
+ double gamma = par[0];
+ double delta = par[1];
+ double lambda = par[2];
 
  // Parameter validation
- if (gamma <= 0 || delta <= 0 || lambda <= 0) {
+ if (gamma <= 0 || delta < 0 || lambda <= 0) {
+   Rcpp::NumericMatrix hess(3, 3);
    hess.fill(R_NaN);
    return hess;
  }
 
- // Data conversion and validation
  arma::vec x = Rcpp::as<arma::vec>(data);
-
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
+ if (x.n_elem < 1 || arma::any(x <= 0) || arma::any(x >= 1)) {
+   Rcpp::NumericMatrix hess(3, 3);
    hess.fill(R_NaN);
    return hess;
  }
 
- int n = x.n_elem;  // Sample size
+ int n = x.n_elem;
+ Rcpp::NumericMatrix hess(3, 3);
 
- // Small constant to avoid numerical issues
- double eps = std::numeric_limits<double>::epsilon() * 100;
+ // Stability constants
+ const double eps = 1e-10;
+ const double max_contrib = 1e6;  // Limit for individual contributions
 
- // Compute transformations and intermediate values
- arma::vec log_x = arma::log(x);                   // log(x_i)
- arma::vec log_x_squared = arma::square(log_x);    // [log(x_i)]²
- arma::vec x_lambda = arma::pow(x, lambda);        // x_i^λ
- arma::vec x_lambda_log_x = x_lambda % log_x;      // x_i^λ * log(x_i)
+ // Compute trigamma values stably
+ // For large z: trigamma(z) ≈ 1/z + 1/(2z²) + O(1/z⁴)
+ double trigamma_gamma, trigamma_delta_plus_1, trigamma_gamma_plus_delta_plus_1;
 
- // v_i = 1 - x_i^λ
- arma::vec v = 1.0 - x_lambda;
- v = arma::clamp(v, eps, 1.0 - eps);               // Prevent numerical issues
+ if (gamma > 100.0) {
+   // Asymptotic approximation: ψ'(z) ≈ 1/z + 1/(2z²)
+   trigamma_gamma = 1.0/gamma + 1.0/(2.0*gamma*gamma);
+ } else {
+   trigamma_gamma = R::trigamma(gamma);
+ }
 
- // Additional terms for second derivatives
- arma::vec term_ratio = x_lambda / v;              // x_i^λ / (1-x_i^λ)
- arma::vec term_combined = 1.0 + term_ratio;       // 1 + x_i^λ/(1-x_i^λ)
+ if (delta > 100.0) {
+   // Asymptotic approximation for ψ'(δ+1)
+   trigamma_delta_plus_1 = 1.0/(delta+1.0) + 1.0/(2.0*(delta+1.0)*(delta+1.0));
+ } else {
+   trigamma_delta_plus_1 = R::trigamma(delta + 1.0);
+ }
 
- // Compute trigamma values
- // trigamma(x) = d²(log(Gamma(x)))/dx² = d(digamma(x))/dx
- double trigamma_gamma = R::trigamma(gamma);
- double trigamma_delta_plus_1 = R::trigamma(delta + 1.0);
- double trigamma_gamma_plus_delta_plus_1 = R::trigamma(gamma + delta + 1.0);
+ if (gamma + delta > 100.0) {
+   // Asymptotic approximation for ψ'(γ+δ+1)
+   double z = gamma + delta + 1.0;
+   trigamma_gamma_plus_delta_plus_1 = 1.0/z + 1.0/(2.0*z*z);
+ } else {
+   trigamma_gamma_plus_delta_plus_1 = R::trigamma(gamma + delta + 1.0);
+ }
 
- // Calculate the Hessian components for negative log-likelihood
+ // Initialize accumulators for sums
+ double sum_log_x = 0.0;
+ double sum_x_lambda_log_x_div_v = 0.0;
+ double sum_lambda_term = 0.0;
 
- // H[0,0] = ∂²ℓ/∂γ² = -n[ψ'(γ+δ+1) - ψ'(γ)]
- double h_gamma_gamma = -n * (trigamma_gamma_plus_delta_plus_1 - trigamma_gamma);
+ // Calculate term-by-term to control numerical stability
+ for (int i = 0; i < n; i++) {
+   double xi = x(i);
 
- // H[0,1] = H[1,0] = ∂²ℓ/∂γ∂δ = -n*ψ'(γ+δ+1)
- double h_gamma_delta = -n * trigamma_gamma_plus_delta_plus_1;
+   // Handle boundary values
+   if (xi < eps) xi = eps;
+   if (xi > 1.0 - eps) xi = 1.0 - eps;
 
- // H[0,2] = H[2,0] = ∂²ℓ/∂γ∂λ = -Σᵢlog(xᵢ)
- double h_gamma_lambda = -arma::sum(log_x);
+   // Calculate log(x) stably
+   double log_xi = std::log(xi);
+   sum_log_x += log_xi;
 
- // H[1,1] = ∂²ℓ/∂δ² = -n[ψ'(γ+δ+1) - ψ'(δ+1)]
- double h_delta_delta = -n * (trigamma_gamma_plus_delta_plus_1 - trigamma_delta_plus_1);
+   // Calculate x^lambda stably using log domain for large lambda
+   double x_lambda;
+   if (lambda > 100.0 || lambda * std::abs(log_xi) > 1.0) {
+     double log_x_lambda = lambda * log_xi;
+     x_lambda = std::exp(log_x_lambda);
+   } else {
+     x_lambda = std::pow(xi, lambda);
+   }
 
- // H[1,2] = H[2,1] = ∂²ℓ/∂δ∂λ = Σᵢ[x_i^λ*log(x_i)/(1-x_i^λ)]
- double h_delta_lambda = arma::sum(x_lambda_log_x / v);
+   // Calculate v = 1-x^lambda with precision for x^lambda near 1
+   double v;
+   if (x_lambda > 0.9995) {
+     // Use complementary calculation: 1-exp(a) = -expm1(a)
+     v = -std::expm1(lambda * log_xi);
+   } else {
+     v = 1.0 - x_lambda;
+   }
 
- // H[2,2] = ∂²ℓ/∂λ² = n/λ² + δ*Σᵢ[x_i^λ*[log(x_i)]²/(1-x_i^λ)*(1 + x_i^λ/(1-x_i^λ))]
- double h_lambda_lambda = n / (lambda * lambda);
+   // Ensure v is not too small
+   v = std::max(v, eps);
 
- arma::vec lambda_term = delta * x_lambda % log_x_squared % term_combined / v;
- h_lambda_lambda += arma::sum(lambda_term);
+   // Term for H[1,2] = ∂²ℓ/∂δ∂λ = Σ[x^λ*log(x)/(1-x^λ)]
+   double term1 = (x_lambda * log_xi) / v;
+   // Prevent extreme values
+   term1 = std::min(std::max(term1, -max_contrib), max_contrib);
+   sum_x_lambda_log_x_div_v += term1;
+
+   // Calculate squared log with safe scaling
+   double log_xi_squared = log_xi * log_xi;
+
+   // Term for H[2,2] = ∂²ℓ/∂λ²
+   // = n/λ² + δ*Σ[x^λ*(log(x))²/(1-x^λ)*(1 + x^λ/(1-x^λ))]
+   // = n/λ² + δ*Σ[x^λ*(log(x))²/(1-x^λ)²]
+   double term_ratio = x_lambda / v;
+   double term_combined = 1.0 + term_ratio;  // = 1/(1-x^λ)
+
+   // Prevent overflow in combined term for x^λ near 1
+   if (term_combined > 1e6) {
+     term_combined = 1e6;
+   }
+
+   double lambda_term = delta * x_lambda * log_xi_squared * term_combined / v;
+
+   // Prevent extreme values
+   lambda_term = std::min(std::max(lambda_term, -max_contrib), max_contrib);
+   sum_lambda_term += lambda_term;
+ }
+
+ // Calculate Hessian components
+
+ // H[0,0] = -∂²ℓ/∂γ² = n[ψ'(γ+δ+1) - ψ'(γ)]
+ double h_gamma_gamma = n * (trigamma_gamma_plus_delta_plus_1 - trigamma_gamma);
+
+ // H[0,1] = H[1,0] = -∂²ℓ/∂γ∂δ = n*ψ'(γ+δ+1)
+ double h_gamma_delta = n * trigamma_gamma_plus_delta_plus_1;
+
+ // H[0,2] = H[2,0] = -∂²ℓ/∂γ∂λ = Σlog(x)
+ double h_gamma_lambda = sum_log_x;
+
+ // H[1,1] = -∂²ℓ/∂δ² = n[ψ'(γ+δ+1) - ψ'(δ+1)]
+ double h_delta_delta = n * (trigamma_gamma_plus_delta_plus_1 - trigamma_delta_plus_1);
+
+ // H[1,2] = H[2,1] = -∂²ℓ/∂δ∂λ = -Σ[x^λ*log(x)/(1-x^λ)]
+ double h_delta_lambda = -sum_x_lambda_log_x_div_v;
+
+ // H[2,2] = -∂²ℓ/∂λ² = -n/λ² - δ*Σ[x^λ*(log(x))²/(1-x^λ)²]
+ double h_lambda_lambda = -n / (lambda * lambda) - sum_lambda_term;
 
  // Fill the Hessian matrix (symmetric)
  hess(0, 0) = -h_gamma_gamma;
@@ -8977,8 +12753,603 @@ Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
  hess(1, 2) = hess(2, 1) = -h_delta_lambda;
  hess(2, 2) = -h_lambda_lambda;
 
- return Rcpp::wrap(hess);
+ return hess;
 }
+
+
+
+// //' @title Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize mcdonald
+// //'
+// //' @description
+// //' Computes the negative log-likelihood function for the McDonald (Mc)
+// //' distribution (also known as Beta Power) with parameters \code{gamma}
+// //' (\eqn{\gamma}), \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}),
+// //' given a vector of observations. This distribution is the special case of the
+// //' Generalized Kumaraswamy (GKw) distribution where \eqn{\alpha = 1} and
+// //' \eqn{\beta = 1}. This function is suitable for maximum likelihood estimation.
+// //'
+// //' @param par A numeric vector of length 3 containing the distribution parameters
+// //'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+// //'   \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a single \code{double} value representing the negative
+// //'   log-likelihood (\eqn{-\ell(\theta|\mathbf{x})}). Returns \code{Inf}
+// //'   if any parameter values in \code{par} are invalid according to their
+// //'   constraints, or if any value in \code{data} is not in the interval (0, 1).
+// //'
+// //' @details
+// //' The McDonald (Mc) distribution is the GKw distribution (\code{\link{dmc}})
+// //' with \eqn{\alpha=1} and \eqn{\beta=1}. Its probability density function (PDF) is:
+// //' \deqn{
+// //' f(x | \theta) = \frac{\lambda}{B(\gamma,\delta+1)} x^{\gamma \lambda - 1} (1 - x^\lambda)^\delta
+// //' }
+// //' for \eqn{0 < x < 1}, \eqn{\theta = (\gamma, \delta, \lambda)}, and \eqn{B(a,b)}
+// //' is the Beta function (\code{\link[base]{beta}}).
+// //' The log-likelihood function \eqn{\ell(\theta | \mathbf{x})} for a sample
+// //' \eqn{\mathbf{x} = (x_1, \dots, x_n)} is \eqn{\sum_{i=1}^n \ln f(x_i | \theta)}:
+// //' \deqn{
+// //' \ell(\theta | \mathbf{x}) = n[\ln(\lambda) - \ln B(\gamma, \delta+1)]
+// //' + \sum_{i=1}^{n} [(\gamma\lambda - 1)\ln(x_i) + \delta\ln(1 - x_i^\lambda)]
+// //' }
+// //' This function computes and returns the *negative* log-likelihood, \eqn{-\ell(\theta|\mathbf{x})},
+// //' suitable for minimization using optimization routines like \code{\link[stats]{optim}}.
+// //' Numerical stability is maintained, including using the log-gamma function
+// //' (\code{\link[base]{lgamma}}) for the Beta function term.
+// //'
+// //' @references
+// //' McDonald, J. B. (1984). Some generalized functions for the size distribution
+// //' of income. *Econometrica*, 52(3), 647-663.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //'
+// //' Kumaraswamy, P. (1980). A generalized probability density function for
+// //' double-bounded random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
+// //'
+// //'
+// //' @seealso
+// //' \code{\link{llgkw}} (parent distribution negative log-likelihood),
+// //' \code{\link{dmc}}, \code{\link{pmc}}, \code{\link{qmc}}, \code{\link{rmc}},
+// //' \code{grmc} (gradient, if available),
+// //' \code{hsmc} (Hessian, if available),
+// //' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rmc, grmc, hsmc functions for Mc distribution
+// //'
+// //' # Generate sample data from a known Mc distribution
+// //' set.seed(123)
+// //' true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+// //' # Use rmc for data generation
+// //' sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+// //'                       lambda = true_par_mc[3])
+// //' hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
+// //'
+// //' # --- Maximum Likelihood Estimation using optim ---
+// //' # Initial parameter guess
+// //' start_par_mc <- c(1.5, 2.5, 0.8)
+// //'
+// //' # Perform optimization (minimizing negative log-likelihood)
+// //' mle_result_mc <- stats::optim(par = start_par_mc,
+// //'                               fn = llmc, # Use the Mc neg-log-likelihood
+// //'                               method = "BFGS", # Or "L-BFGS-B" with lower=1e-6
+// //'                               hessian = TRUE,
+// //'                               data = sample_data_mc)
+// //'
+// //' # Check convergence and results
+// //' if (mle_result_mc$convergence == 0) {
+// //'   print("Optimization converged successfully.")
+// //'   mle_par_mc <- mle_result_mc$par
+// //'   print("Estimated Mc parameters:")
+// //'   print(mle_par_mc)
+// //'   print("True Mc parameters:")
+// //'   print(true_par_mc)
+// //' } else {
+// //'   warning("Optimization did not converge!")
+// //'   print(mle_result_mc$message)
+// //' }
+// //'
+// //' # --- Compare numerical and analytical derivatives (if available) ---
+// //' # Requires 'numDeriv' package and analytical functions 'grmc', 'hsmc'
+// //' if (mle_result_mc$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) &&
+// //'     exists("grmc") && exists("hsmc")) {
+// //'
+// //'   cat("\nComparing Derivatives at Mc MLE estimates:\n")
+// //'
+// //'   # Numerical derivatives of llmc
+// //'   num_grad_mc <- numDeriv::grad(func = llmc, x = mle_par_mc, data = sample_data_mc)
+// //'   num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+// //'
+// //'   # Analytical derivatives (assuming they return derivatives of negative LL)
+// //'   ana_grad_mc <- grmc(par = mle_par_mc, data = sample_data_mc)
+// //'   ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between gradients:\n")
+// //'   print(max(abs(num_grad_mc - ana_grad_mc)))
+// //'   cat("Max absolute difference between Hessians:\n")
+// //'   print(max(abs(num_hess_mc - ana_hess_mc)))
+// //'
+// //' } else {
+// //'    cat("\nSkipping derivative comparison for Mc.\n")
+// //'    cat("Requires convergence, 'numDeriv' package and functions 'grmc', 'hsmc'.\n")
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// double llmc(const Rcpp::NumericVector& par,
+//            const Rcpp::NumericVector& data) {
+//  if (par.size()<3) {
+//    return R_PosInf;
+//  }
+//  double gg= par[0];
+//  double dd= par[1];
+//  double ll= par[2];
+//
+//  if(!check_bp_pars(gg, dd, ll)) {
+//    return R_PosInf;
+//  }
+//
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//  if (x.n_elem<1) {
+//    return R_PosInf;
+//  }
+//  if (arma::any(x<=0.0) || arma::any(x>=1.0)) {
+//    return R_PosInf;
+//  }
+//
+//  int n= x.n_elem;
+//
+//  // constant: n*( log(λ) - log B(γ, δ+1 ) )
+//  double logB= R::lbeta(gg, dd+1.0);
+//  double cst= n*( std::log(ll) - logB );
+//
+//  // sum( (γλ -1)* log(x_i ) )
+//  // sum( δ * log(1 - x_i^λ ) )
+//  double gl= gg*ll -1.0;
+//
+//  arma::vec lx= arma::log(x);
+//  double sum1= gl * arma::sum(lx);
+//
+//  // sum( δ * log(1 - x^λ) )
+//  arma::vec x_pow_l = arma::pow(x, ll);
+//
+//  arma::vec log1mxpw= arma::log(1.0 - x_pow_l);
+//  double sum2= dd * arma::sum(log1mxpw);
+//
+//  double loglike= cst + sum1 + sum2;
+//  return -loglike;
+// }
+//
+//
+//
+// //' @title Gradient of the Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize gradient mcdonald
+// //'
+// //' @description
+// //' Computes the gradient vector (vector of first partial derivatives) of the
+// //' negative log-likelihood function for the McDonald (Mc) distribution (also
+// //' known as Beta Power) with parameters \code{gamma} (\eqn{\gamma}), \code{delta}
+// //' (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). This distribution is the
+// //' special case of the Generalized Kumaraswamy (GKw) distribution where
+// //' \eqn{\alpha = 1} and \eqn{\beta = 1}. The gradient is useful for optimization.
+// //'
+// //' @param par A numeric vector of length 3 containing the distribution parameters
+// //'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+// //'   \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a numeric vector of length 3 containing the partial derivatives
+// //'   of the negative log-likelihood function \eqn{-\ell(\theta | \mathbf{x})} with
+// //'   respect to each parameter:
+// //'   \eqn{(-\partial \ell/\partial \gamma, -\partial \ell/\partial \delta, -\partial \ell/\partial \lambda)}.
+// //'   Returns a vector of \code{NaN} if any parameter values are invalid according
+// //'   to their constraints, or if any value in \code{data} is not in the
+// //'   interval (0, 1).
+// //'
+// //' @details
+// //' The components of the gradient vector of the negative log-likelihood
+// //' (\eqn{-\nabla \ell(\theta | \mathbf{x})}) for the Mc (\eqn{\alpha=1, \beta=1})
+// //' model are:
+// //'
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \gamma} = n[\psi(\gamma+\delta+1) - \psi(\gamma)] -
+// //' \lambda\sum_{i=1}^{n}\ln(x_i)
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \delta} = n[\psi(\gamma+\delta+1) - \psi(\delta+1)] -
+// //' \sum_{i=1}^{n}\ln(1-x_i^{\lambda})
+// //' }
+// //' \deqn{
+// //' -\frac{\partial \ell}{\partial \lambda} = -\frac{n}{\lambda} - \gamma\sum_{i=1}^{n}\ln(x_i) +
+// //' \delta\sum_{i=1}^{n}\frac{x_i^{\lambda}\ln(x_i)}{1-x_i^{\lambda}}
+// //' }
+// //'
+// //' where \eqn{\psi(\cdot)} is the digamma function (\code{\link[base]{digamma}}).
+// //' These formulas represent the derivatives of \eqn{-\ell(\theta)}, consistent with
+// //' minimizing the negative log-likelihood. They correspond to the relevant components
+// //' of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\alpha=1, \beta=1}.
+// //'
+// //' @references
+// //' McDonald, J. B. (1984). Some generalized functions for the size distribution
+// //' of income. *Econometrica*, 52(3), 647-663.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //' (Note: Specific gradient formulas might be derived or sourced from additional references).
+// //'
+// //' @seealso
+// //' \code{\link{grgkw}} (parent distribution gradient),
+// //' \code{\link{llmc}} (negative log-likelihood for Mc),
+// //' \code{hsmc} (Hessian for Mc, if available),
+// //' \code{\link{dmc}} (density for Mc),
+// //' \code{\link[stats]{optim}},
+// //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison),
+// //' \code{\link[base]{digamma}}.
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
+// //'
+// //' # Generate sample data
+// //' set.seed(123)
+// //' true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+// //' sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+// //'                       lambda = true_par_mc[3])
+// //' hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
+// //'
+// //' # --- Find MLE estimates ---
+// //' start_par_mc <- c(1.5, 2.5, 0.8)
+// //' mle_result_mc <- stats::optim(par = start_par_mc,
+// //'                               fn = llmc,
+// //'                               gr = grmc, # Use analytical gradient for Mc
+// //'                               method = "BFGS",
+// //'                               hessian = TRUE,
+// //'                               data = sample_data_mc)
+// //'
+// //' # --- Compare analytical gradient to numerical gradient ---
+// //' if (mle_result_mc$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE)) {
+// //'
+// //'   mle_par_mc <- mle_result_mc$par
+// //'   cat("\nComparing Gradients for Mc at MLE estimates:\n")
+// //'
+// //'   # Numerical gradient of llmc
+// //'   num_grad_mc <- numDeriv::grad(func = llmc, x = mle_par_mc, data = sample_data_mc)
+// //'
+// //'   # Analytical gradient from grmc
+// //'   ana_grad_mc <- grmc(par = mle_par_mc, data = sample_data_mc)
+// //'
+// //'   cat("Numerical Gradient (Mc):\n")
+// //'   print(num_grad_mc)
+// //'   cat("Analytical Gradient (Mc):\n")
+// //'   print(ana_grad_mc)
+// //'
+// //'   # Check differences
+// //'   cat("Max absolute difference between Mc gradients:\n")
+// //'   print(max(abs(num_grad_mc - ana_grad_mc)))
+// //'
+// //' } else {
+// //'   cat("\nSkipping Mc gradient comparison.\n")
+// //' }
+// //'
+// //' # Example with Hessian comparison (if hsmc exists)
+// //' if (mle_result_mc$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) && exists("hsmc")) {
+// //'
+// //'   num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+// //'   ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+// //'   cat("\nMax absolute difference between Mc Hessians:\n")
+// //'   print(max(abs(num_hess_mc - ana_hess_mc)))
+// //'
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericVector grmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double gamma = par[0];   // Shape parameter γ > 0
+//  double delta = par[1];   // Shape parameter δ > 0
+//  double lambda = par[2];  // Shape parameter λ > 0
+//
+//  // Parameter validation
+//  if (gamma <= 0 || delta <= 0 || lambda <= 0) {
+//    Rcpp::NumericVector grad(3, R_NaN);
+//    return grad;
+//  }
+//
+//  // Data conversion and validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//
+//  if (arma::any(x <= 0) || arma::any(x >= 1)) {
+//    Rcpp::NumericVector grad(3, R_NaN);
+//    return grad;
+//  }
+//
+//  int n = x.n_elem;  // Sample size
+//
+//  // Initialize gradient vector
+//  Rcpp::NumericVector grad(3, 0.0);
+//
+//  // Small constant to avoid numerical issues
+//  double eps = std::numeric_limits<double>::epsilon() * 100;
+//
+//  // Compute transformations and intermediate values
+//  arma::vec log_x = arma::log(x);                   // log(x_i)
+//  arma::vec x_lambda = arma::pow(x, lambda);        // x_i^λ
+//  arma::vec x_lambda_log_x = x_lambda % log_x;      // x_i^λ * log(x_i)
+//
+//  // v_i = 1 - x_i^λ
+//  arma::vec v = 1.0 - x_lambda;
+//  v = arma::clamp(v, eps, 1.0 - eps);               // Prevent numerical issues
+//
+//  arma::vec log_v = arma::log(v);                   // log(1 - x_i^λ)
+//
+//  // Calculate partial derivatives for each parameter (for log-likelihood)
+//
+//  // ∂ℓ/∂γ = -n[ψ(γ+δ+1) - ψ(γ)] - λΣᵢlog(xᵢ)
+//  double d_gamma = -n * (R::digamma(gamma + delta + 1) - R::digamma(gamma)) -
+//    lambda * arma::sum(log_x);
+//
+//  // ∂ℓ/∂δ = -n[ψ(γ+δ+1) - ψ(δ+1)] - Σᵢlog(1-xᵢ^λ)
+//  double d_delta = -n * (R::digamma(gamma + delta + 1) - R::digamma(delta + 1)) -
+//    arma::sum(log_v);
+//
+//  // ∂ℓ/∂λ = -n/λ - γΣᵢlog(xᵢ) + δΣᵢ[(xᵢ^λ*log(xᵢ))/(1-xᵢ^λ)]
+//  double d_lambda = -n / lambda - gamma * arma::sum(log_x) +
+//    delta * arma::sum(x_lambda_log_x / v);
+//
+//  // Since we're optimizing negative log-likelihood, negate all derivatives
+//  grad[0] = -d_gamma;
+//  grad[1] = -d_delta;
+//  grad[2] = -d_lambda;
+//
+//  return Rcpp::wrap(grad);
+// }
+//
+//
+//
+//
+// //' @title Hessian Matrix of the Negative Log-Likelihood for the McDonald (Mc)/Beta Power Distribution
+// //' @author Lopes, J. E.
+// //' @keywords distribution likelihood optimize hessian mcdonald
+// //'
+// //' @description
+// //' Computes the analytic 3x3 Hessian matrix (matrix of second partial derivatives)
+// //' of the negative log-likelihood function for the McDonald (Mc) distribution
+// //' (also known as Beta Power) with parameters \code{gamma} (\eqn{\gamma}),
+// //' \code{delta} (\eqn{\delta}), and \code{lambda} (\eqn{\lambda}). This distribution
+// //' is the special case of the Generalized Kumaraswamy (GKw) distribution where
+// //' \eqn{\alpha = 1} and \eqn{\beta = 1}. The Hessian is useful for estimating
+// //' standard errors and in optimization algorithms.
+// //'
+// //' @param par A numeric vector of length 3 containing the distribution parameters
+// //'   in the order: \code{gamma} (\eqn{\gamma > 0}), \code{delta} (\eqn{\delta \ge 0}),
+// //'   \code{lambda} (\eqn{\lambda > 0}).
+// //' @param data A numeric vector of observations. All values must be strictly
+// //'   between 0 and 1 (exclusive).
+// //'
+// //' @return Returns a 3x3 numeric matrix representing the Hessian matrix of the
+// //'   negative log-likelihood function, \eqn{-\partial^2 \ell / (\partial \theta_i \partial \theta_j)},
+// //'   where \eqn{\theta = (\gamma, \delta, \lambda)}.
+// //'   Returns a 3x3 matrix populated with \code{NaN} if any parameter values are
+// //'   invalid according to their constraints, or if any value in \code{data} is
+// //'   not in the interval (0, 1).
+// //'
+// //' @details
+// //' This function calculates the analytic second partial derivatives of the
+// //' negative log-likelihood function (\eqn{-\ell(\theta|\mathbf{x})}).
+// //' The components are based on the second derivatives of the log-likelihood \eqn{\ell}
+// //' (derived from the PDF in \code{\link{dmc}}).
+// //'
+// //' **Note:** The formulas below represent the second derivatives of the positive
+// //' log-likelihood (\eqn{\ell}). The function returns the **negative** of these values.
+// //' Users should verify these formulas independently if using for critical applications.
+// //'
+// //' \deqn{
+// //' \frac{\partial^2 \ell}{\partial \gamma^2} = -n[\psi'(\gamma) - \psi'(\gamma+\delta+1)]
+// //' }
+// //' \deqn{
+// //' \frac{\partial^2 \ell}{\partial \gamma \partial \delta} = -n\psi'(\gamma+\delta+1)
+// //' }
+// //' \deqn{
+// //' \frac{\partial^2 \ell}{\partial \gamma \partial \lambda} = \sum_{i=1}^{n}\ln(x_i)
+// //' }
+// //' \deqn{
+// //' \frac{\partial^2 \ell}{\partial \delta^2} = -n[\psi'(\delta+1) - \psi'(\gamma+\delta+1)]
+// //' }
+// //' \deqn{
+// //' \frac{\partial^2 \ell}{\partial \delta \partial \lambda} = -\sum_{i=1}^{n}\frac{x_i^{\lambda}\ln(x_i)}{1-x_i^{\lambda}}
+// //' }
+// //' \deqn{
+// //' \frac{\partial^2 \ell}{\partial \lambda^2} = -\frac{n}{\lambda^2} -
+// //' \delta\sum_{i=1}^{n}\frac{x_i^{\lambda}[\ln(x_i)]^2}{(1-x_i^{\lambda})^2}
+// //' }
+// //'
+// //' where \eqn{\psi'(\cdot)} is the trigamma function (\code{\link[base]{trigamma}}).
+// //' (*Note: The formula for \eqn{\partial^2 \ell / \partial \lambda^2} provided in the source
+// //' comment was different and potentially related to the expected information matrix;
+// //' the formula shown here is derived from the gradient provided earlier. Verification
+// //' is recommended.*)
+// //'
+// //' The returned matrix is symmetric, with rows/columns corresponding to
+// //' \eqn{\gamma, \delta, \lambda}.
+// //'
+// //' @references
+// //' McDonald, J. B. (1984). Some generalized functions for the size distribution
+// //' of income. *Econometrica*, 52(3), 647-663.
+// //'
+// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
+// //' distributions. *Journal of Statistical Computation and Simulation*,
+// //'
+// //' (Note: Specific Hessian formulas might be derived or sourced from additional references).
+// //'
+// //' @seealso
+// //' \code{\link{hsgkw}} (parent distribution Hessian),
+// //' \code{\link{llmc}} (negative log-likelihood for Mc),
+// //' \code{\link{grmc}} (gradient for Mc, if available),
+// //' \code{\link{dmc}} (density for Mc),
+// //' \code{\link[stats]{optim}},
+// //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison),
+// //' \code{\link[base]{trigamma}}.
+// //'
+// //' @examples
+// //' \dontrun{
+// //' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
+// //'
+// //' # Generate sample data
+// //' set.seed(123)
+// //' true_par_mc <- c(gamma = 2, delta = 3, lambda = 0.5)
+// //' sample_data_mc <- rmc(100, gamma = true_par_mc[1], delta = true_par_mc[2],
+// //'                       lambda = true_par_mc[3])
+// //' hist(sample_data_mc, breaks = 20, main = "Mc(2, 3, 0.5) Sample")
+// //'
+// //' # --- Find MLE estimates ---
+// //' start_par_mc <- c(1.5, 2.5, 0.8)
+// //' mle_result_mc <- stats::optim(par = start_par_mc,
+// //'                               fn = llmc,
+// //'                               gr = if (exists("grmc")) grmc else NULL,
+// //'                               method = "BFGS",
+// //'                               hessian = TRUE, # Ask optim for numerical Hessian
+// //'                               data = sample_data_mc)
+// //'
+// //' # --- Compare analytical Hessian to numerical Hessian ---
+// //' if (mle_result_mc$convergence == 0 &&
+// //'     requireNamespace("numDeriv", quietly = TRUE) &&
+// //'     exists("hsmc")) {
+// //'
+// //'   mle_par_mc <- mle_result_mc$par
+// //'   cat("\nComparing Hessians for Mc at MLE estimates:\n")
+// //'
+// //'   # Numerical Hessian of llmc
+// //'   num_hess_mc <- numDeriv::hessian(func = llmc, x = mle_par_mc, data = sample_data_mc)
+// //'
+// //'   # Analytical Hessian from hsmc
+// //'   ana_hess_mc <- hsmc(par = mle_par_mc, data = sample_data_mc)
+// //'
+// //'   cat("Numerical Hessian (Mc):\n")
+// //'   print(round(num_hess_mc, 4))
+// //'   cat("Analytical Hessian (Mc):\n")
+// //'   print(round(ana_hess_mc, 4))
+// //'
+// //'   # Check differences (monitor sign consistency)
+// //'   cat("Max absolute difference between Mc Hessians:\n")
+// //'   print(max(abs(num_hess_mc - ana_hess_mc)))
+// //'
+// //'   # Optional: Use analytical Hessian for Standard Errors
+// //'   # tryCatch({
+// //'   #   cov_matrix_mc <- solve(ana_hess_mc) # ana_hess_mc is already Hessian of negative LL
+// //'   #   std_errors_mc <- sqrt(diag(cov_matrix_mc))
+// //'   #   cat("Std. Errors from Analytical Mc Hessian:\n")
+// //'   #   print(std_errors_mc)
+// //'   # }, error = function(e) {
+// //'   #   warning("Could not invert analytical Mc Hessian: ", e$message)
+// //'   # })
+// //'
+// //' } else {
+// //'   cat("\nSkipping Mc Hessian comparison.\n")
+// //'   cat("Requires convergence, 'numDeriv' package, and function 'hsmc'.\n")
+// //' }
+// //'
+// //' } # End of \dontrun block
+// //'
+// //' @export
+// // [[Rcpp::export]]
+// Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
+//  // Parameter extraction
+//  double gamma = par[0];   // Shape parameter γ > 0
+//  double delta = par[1];   // Shape parameter δ > 0
+//  double lambda = par[2];  // Shape parameter λ > 0
+//
+//  // Initialize Hessian matrix
+//  Rcpp::NumericMatrix hess(3, 3);
+//
+//  // Parameter validation
+//  if (gamma <= 0 || delta <= 0 || lambda <= 0) {
+//    hess.fill(R_NaN);
+//    return hess;
+//  }
+//
+//  // Data conversion and validation
+//  arma::vec x = Rcpp::as<arma::vec>(data);
+//
+//  if (arma::any(x <= 0) || arma::any(x >= 1)) {
+//    hess.fill(R_NaN);
+//    return hess;
+//  }
+//
+//  int n = x.n_elem;  // Sample size
+//
+//  // Small constant to avoid numerical issues
+//  double eps = std::numeric_limits<double>::epsilon() * 100;
+//
+//  // Compute transformations and intermediate values
+//  arma::vec log_x = arma::log(x);                   // log(x_i)
+//  arma::vec log_x_squared = arma::square(log_x);    // [log(x_i)]²
+//  arma::vec x_lambda = arma::pow(x, lambda);        // x_i^λ
+//  arma::vec x_lambda_log_x = x_lambda % log_x;      // x_i^λ * log(x_i)
+//
+//  // v_i = 1 - x_i^λ
+//  arma::vec v = 1.0 - x_lambda;
+//  v = arma::clamp(v, eps, 1.0 - eps);               // Prevent numerical issues
+//
+//  // Additional terms for second derivatives
+//  arma::vec term_ratio = x_lambda / v;              // x_i^λ / (1-x_i^λ)
+//  arma::vec term_combined = 1.0 + term_ratio;       // 1 + x_i^λ/(1-x_i^λ)
+//
+//  // Compute trigamma values
+//  // trigamma(x) = d²(log(Gamma(x)))/dx² = d(digamma(x))/dx
+//  double trigamma_gamma = R::trigamma(gamma);
+//  double trigamma_delta_plus_1 = R::trigamma(delta + 1.0);
+//  double trigamma_gamma_plus_delta_plus_1 = R::trigamma(gamma + delta + 1.0);
+//
+//  // Calculate the Hessian components for negative log-likelihood
+//
+//  // H[0,0] = ∂²ℓ/∂γ² = -n[ψ'(γ+δ+1) - ψ'(γ)]
+//  double h_gamma_gamma = -n * (trigamma_gamma_plus_delta_plus_1 - trigamma_gamma);
+//
+//  // H[0,1] = H[1,0] = ∂²ℓ/∂γ∂δ = -n*ψ'(γ+δ+1)
+//  double h_gamma_delta = -n * trigamma_gamma_plus_delta_plus_1;
+//
+//  // H[0,2] = H[2,0] = ∂²ℓ/∂γ∂λ = -Σᵢlog(xᵢ)
+//  double h_gamma_lambda = -arma::sum(log_x);
+//
+//  // H[1,1] = ∂²ℓ/∂δ² = -n[ψ'(γ+δ+1) - ψ'(δ+1)]
+//  double h_delta_delta = -n * (trigamma_gamma_plus_delta_plus_1 - trigamma_delta_plus_1);
+//
+//  // H[1,2] = H[2,1] = ∂²ℓ/∂δ∂λ = Σᵢ[x_i^λ*log(x_i)/(1-x_i^λ)]
+//  double h_delta_lambda = arma::sum(x_lambda_log_x / v);
+//
+//  // H[2,2] = ∂²ℓ/∂λ² = n/λ² + δ*Σᵢ[x_i^λ*[log(x_i)]²/(1-x_i^λ)*(1 + x_i^λ/(1-x_i^λ))]
+//  double h_lambda_lambda = n / (lambda * lambda);
+//
+//  arma::vec lambda_term = delta * x_lambda % log_x_squared % term_combined / v;
+//  h_lambda_lambda += arma::sum(lambda_term);
+//
+//  // Fill the Hessian matrix (symmetric)
+//  hess(0, 0) = -h_gamma_gamma;
+//  hess(0, 1) = hess(1, 0) = -h_gamma_delta;
+//  hess(0, 2) = hess(2, 0) = -h_gamma_lambda;
+//  hess(1, 1) = -h_delta_delta;
+//  hess(1, 2) = hess(2, 1) = -h_delta_lambda;
+//  hess(2, 2) = -h_lambda_lambda;
+//
+//  return Rcpp::wrap(hess);
+// }
 
 
 
@@ -9026,12 +13397,12 @@ log f(x_i)= log(alpha) + log(beta) + (alpha-1)*log(x_i) + (beta-1)*log(1 - x_i^a
 // -----------------------------------------------------------------------------
 inline bool check_kw_pars(double alpha, double beta, bool strict=false) {
 if (alpha <=0.0 || beta <=0.0) {
-  return false;
+return false;
 }
 if (strict) {
-  const double MINP=1e-6, MAXP=1e6;
-  if (alpha<MINP || beta<MINP) return false;
-  if (alpha>MAXP || beta>MAXP) return false;
+const double MINP=1e-6, MAXP=1e6;
+if (alpha<MINP || beta<MINP) return false;
+if (alpha>MAXP || beta>MAXP) return false;
 }
 return true;
 }
@@ -9138,56 +13509,56 @@ return true;
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec dkw(
-   const arma::vec& x,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   bool log_prob=false
+Rcpp::NumericVector dkw(
+ const arma::vec& x,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ bool log_prob=false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
 
- size_t N= std::max({ x.n_elem, a_vec.n_elem, b_vec.n_elem });
- arma::vec out(N);
+size_t N= std::max({ x.n_elem, a_vec.n_elem, b_vec.n_elem });
+arma::vec out(N);
 
- out.fill(log_prob ? R_NegInf : 0.0);
+out.fill(log_prob ? R_NegInf : 0.0);
 
- for (size_t i=0; i<N; i++){
-   double a= a_vec[i % a_vec.n_elem];
-   double b= b_vec[i % b_vec.n_elem];
-   double xx= x[i % x.n_elem];
+for (size_t i=0; i<N; i++){
+ double a= a_vec[i % a_vec.n_elem];
+ double b= b_vec[i % b_vec.n_elem];
+ double xx= x[i % x.n_elem];
 
-   if (!check_kw_pars(a,b)) {
-     // invalid => pdf=0 or logpdf=-Inf
-     continue;
-   }
-   if (xx<=0.0 || xx>=1.0 || !R_finite(xx)) {
-     // outside domain => 0 or -Inf
-     continue;
-   }
-
-   // log f(x)= log(a)+ log(b) + (a-1)* log(x) + (b-1)* log(1- x^a)
-   double la= std::log(a);
-   double lb= std::log(b);
-
-   double lx= std::log(xx);
-   double xalpha= a* lx; // log(x^a)
-   // log(1- x^a)= log1mexp(xalpha)
-   double log_1_xalpha= log1mexp(xalpha);
-   if (!R_finite(log_1_xalpha)) {
-     continue;
-   }
-
-   double log_pdf= la + lb + (a-1.0)* lx + (b-1.0)* log_1_xalpha;
-
-   if (log_prob) {
-     out(i)= log_pdf;
-   } else {
-     out(i)= std::exp(log_pdf);
-   }
+ if (!check_kw_pars(a,b)) {
+   // invalid => pdf=0 or logpdf=-Inf
+   continue;
+ }
+ if (xx<=0.0 || xx>=1.0 || !R_finite(xx)) {
+   // outside domain => 0 or -Inf
+   continue;
  }
 
- return out;
+ // log f(x)= log(a)+ log(b) + (a-1)* log(x) + (b-1)* log(1- x^a)
+ double la= std::log(a);
+ double lb= std::log(b);
+
+ double lx= std::log(xx);
+ double xalpha= a* lx; // log(x^a)
+ // log(1- x^a)= log1mexp(xalpha)
+ double log_1_xalpha= log1mexp(xalpha);
+ if (!R_finite(log_1_xalpha)) {
+   continue;
+ }
+
+ double log_pdf= la + lb + (a-1.0)* lx + (b-1.0)* log_1_xalpha;
+
+ if (log_prob) {
+   out(i)= log_pdf;
+ } else {
+   out(i)= std::exp(log_pdf);
+ }
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -9302,65 +13673,65 @@ arma::vec dkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec pkw(
-   const arma::vec& q,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   bool lower_tail=true,
-   bool log_p=false
+Rcpp::NumericVector pkw(
+ const arma::vec& q,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ bool lower_tail=true,
+ bool log_p=false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
 
- size_t N= std::max({ q.n_elem, a_vec.n_elem, b_vec.n_elem });
- arma::vec out(N);
+size_t N= std::max({ q.n_elem, a_vec.n_elem, b_vec.n_elem });
+arma::vec out(N);
 
- for (size_t i=0; i<N; i++){
-   double a= a_vec[i % a_vec.n_elem];
-   double b= b_vec[i % b_vec.n_elem];
-   double xx= q[i % q.n_elem];
+for (size_t i=0; i<N; i++){
+ double a= a_vec[i % a_vec.n_elem];
+ double b= b_vec[i % b_vec.n_elem];
+ double xx= q[i % q.n_elem];
 
-   if (!check_kw_pars(a,b)) {
-     out(i)= NA_REAL;
-     continue;
-   }
-
-   // boundary
-   if (!R_finite(xx) || xx<=0.0) {
-     double val0= (lower_tail ? 0.0 : 1.0);
-     out(i)= log_p ? std::log(val0) : val0;
-     continue;
-   }
-   if (xx>=1.0) {
-     double val1= (lower_tail ? 1.0 : 0.0);
-     out(i)= log_p ? std::log(val1) : val1;
-     continue;
-   }
-
-   double xalpha= std::pow(xx, a);
-   double tmp= 1.0 - std::pow( (1.0 - xalpha), b );
-   if (tmp<=0.0) {
-     double val0= (lower_tail ? 0.0 : 1.0);
-     out(i)= log_p ? std::log(val0) : val0;
-     continue;
-   }
-   if (tmp>=1.0) {
-     double val1= (lower_tail ? 1.0 : 0.0);
-     out(i)= log_p ? std::log(val1) : val1;
-     continue;
-   }
-
-   double val= tmp;
-   if (!lower_tail) {
-     val= 1.0- val;
-   }
-   if (log_p) {
-     val= std::log(val);
-   }
-   out(i)= val;
+ if (!check_kw_pars(a,b)) {
+   out(i)= NA_REAL;
+   continue;
  }
 
- return out;
+ // boundary
+ if (!R_finite(xx) || xx<=0.0) {
+   double val0= (lower_tail ? 0.0 : 1.0);
+   out(i)= log_p ? std::log(val0) : val0;
+   continue;
+ }
+ if (xx>=1.0) {
+   double val1= (lower_tail ? 1.0 : 0.0);
+   out(i)= log_p ? std::log(val1) : val1;
+   continue;
+ }
+
+ double xalpha= std::pow(xx, a);
+ double tmp= 1.0 - std::pow( (1.0 - xalpha), b );
+ if (tmp<=0.0) {
+   double val0= (lower_tail ? 0.0 : 1.0);
+   out(i)= log_p ? std::log(val0) : val0;
+   continue;
+ }
+ if (tmp>=1.0) {
+   double val1= (lower_tail ? 1.0 : 0.0);
+   out(i)= log_p ? std::log(val1) : val1;
+   continue;
+ }
+
+ double val= tmp;
+ if (!lower_tail) {
+   val= 1.0- val;
+ }
+ if (log_p) {
+   val= std::log(val);
+ }
+ out(i)= val;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 // -----------------------------------------------------------------------------
@@ -9478,71 +13849,71 @@ arma::vec pkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec qkw(
-   const arma::vec& p,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta,
-   bool lower_tail=true,
-   bool log_p=false
+Rcpp::NumericVector qkw(
+ const arma::vec& p,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta,
+ bool lower_tail=true,
+ bool log_p=false
 ) {
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
 
- size_t N= std::max({ p.n_elem, a_vec.n_elem, b_vec.n_elem });
- arma::vec out(N);
+size_t N= std::max({ p.n_elem, a_vec.n_elem, b_vec.n_elem });
+arma::vec out(N);
 
- for (size_t i=0; i<N; i++){
-   double a= a_vec[i % a_vec.n_elem];
-   double b= b_vec[i % b_vec.n_elem];
-   double pp= p[i % p.n_elem];
+for (size_t i=0; i<N; i++){
+ double a= a_vec[i % a_vec.n_elem];
+ double b= b_vec[i % b_vec.n_elem];
+ double pp= p[i % p.n_elem];
 
-   if (!check_kw_pars(a,b)) {
+ if (!check_kw_pars(a,b)) {
+   out(i)= NA_REAL;
+   continue;
+ }
+
+ // convert if log
+ if (log_p) {
+   if (pp>0.0) {
+     // invalid => p>1
      out(i)= NA_REAL;
      continue;
    }
-
-   // convert if log
-   if (log_p) {
-     if (pp>0.0) {
-       // invalid => p>1
-       out(i)= NA_REAL;
-       continue;
-     }
-     pp= std::exp(pp);
-   }
-   if (!lower_tail) {
-     pp= 1.0 - pp;
-   }
-
-   // boundary
-   if (pp<=0.0) {
-     out(i)= 0.0;
-     continue;
-   }
-   if (pp>=1.0) {
-     out(i)= 1.0;
-     continue;
-   }
-
-   // x= {1 - [1 - p]^(1/beta)}^(1/alpha)
-   double step1= 1.0 - pp;
-   if (step1<0.0) step1=0.0;
-   double step2= std::pow(step1, 1.0/b);
-   double step3= 1.0 - step2;
-   if (step3<0.0) step3=0.0;
-
-   double xval;
-   if (a==1.0) {
-     xval= step3;
-   } else {
-     xval= std::pow(step3, 1.0/a);
-     if (!R_finite(xval)|| xval<0.0) xval=0.0;
-     if (xval>1.0) xval=1.0;
-   }
-   out(i)= xval;
+   pp= std::exp(pp);
+ }
+ if (!lower_tail) {
+   pp= 1.0 - pp;
  }
 
- return out;
+ // boundary
+ if (pp<=0.0) {
+   out(i)= 0.0;
+   continue;
+ }
+ if (pp>=1.0) {
+   out(i)= 1.0;
+   continue;
+ }
+
+ // x= {1 - [1 - p]^(1/beta)}^(1/alpha)
+ double step1= 1.0 - pp;
+ if (step1<0.0) step1=0.0;
+ double step2= std::pow(step1, 1.0/b);
+ double step3= 1.0 - step2;
+ if (step3<0.0) step3=0.0;
+
+ double xval;
+ if (a==1.0) {
+   xval= step3;
+ } else {
+   xval= std::pow(step3, 1.0/a);
+   if (!R_finite(xval)|| xval<0.0) xval=0.0;
+   if (xval>1.0) xval=1.0;
+ }
+ out(i)= xval;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -9648,52 +14019,52 @@ arma::vec qkw(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec rkw(
-   int n,
-   const Rcpp::NumericVector& alpha,
-   const Rcpp::NumericVector& beta
+Rcpp::NumericVector rkw(
+ int n,
+ const Rcpp::NumericVector& alpha,
+ const Rcpp::NumericVector& beta
 ) {
- if (n<=0) {
-   Rcpp::stop("rkw: n must be positive");
+if (n<=0) {
+ Rcpp::stop("rkw: n must be positive");
+}
+
+arma::vec a_vec(alpha.begin(), alpha.size());
+arma::vec b_vec(beta.begin(), beta.size());
+
+size_t k= std::max({ a_vec.n_elem, b_vec.n_elem });
+arma::vec out(n);
+
+for (int i=0; i<n; i++){
+ size_t idx= i % k;
+ double a= a_vec[idx % a_vec.n_elem];
+ double b= b_vec[idx % b_vec.n_elem];
+
+ if (!check_kw_pars(a,b)) {
+   out(i)= NA_REAL;
+   Rcpp::warning("rkw: invalid parameters at index %d", i+1);
+   continue;
  }
 
- arma::vec a_vec(alpha.begin(), alpha.size());
- arma::vec b_vec(beta.begin(), beta.size());
+ double U= R::runif(0.0,1.0);
+ // X= {1 - [1 - U]^(1/beta)}^(1/alpha)
+ double step1= 1.0 - U;
+ if (step1<0.0) step1=0.0;
+ double step2= std::pow(step1, 1.0/b);
+ double step3= 1.0 - step2;
+ if (step3<0.0) step3=0.0;
 
- size_t k= std::max({ a_vec.n_elem, b_vec.n_elem });
- arma::vec out(n);
-
- for (int i=0; i<n; i++){
-   size_t idx= i % k;
-   double a= a_vec[idx % a_vec.n_elem];
-   double b= b_vec[idx % b_vec.n_elem];
-
-   if (!check_kw_pars(a,b)) {
-     out(i)= NA_REAL;
-     Rcpp::warning("rkw: invalid parameters at index %d", i+1);
-     continue;
-   }
-
-   double U= R::runif(0.0,1.0);
-   // X= {1 - [1 - U]^(1/beta)}^(1/alpha)
-   double step1= 1.0 - U;
-   if (step1<0.0) step1=0.0;
-   double step2= std::pow(step1, 1.0/b);
-   double step3= 1.0 - step2;
-   if (step3<0.0) step3=0.0;
-
-   double x;
-   if (a==1.0) {
-     x= step3;
-   } else {
-     x= std::pow(step3, 1.0/a);
-     if (!R_finite(x)|| x<0.0) x=0.0;
-     if (x>1.0) x=1.0;
-   }
-   out(i)= x;
+ double x;
+ if (a==1.0) {
+   x= step3;
+ } else {
+   x= std::pow(step3, 1.0/a);
+   if (!R_finite(x)|| x<0.0) x=0.0;
+   if (x>1.0) x=1.0;
  }
+ out(i)= x;
+}
 
- return out;
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 // -----------------------------------------------------------------------------
@@ -9823,41 +14194,41 @@ arma::vec rkw(
 //' @export
 // [[Rcpp::export]]
 double llkw(const Rcpp::NumericVector& par,
-           const Rcpp::NumericVector& data) {
- if (par.size()<2) {
-   return R_PosInf;
- }
- double a= par[0];
- double b= par[1];
+         const Rcpp::NumericVector& data) {
+if (par.size()<2) {
+ return R_PosInf;
+}
+double a= par[0];
+double b= par[1];
 
- if (!check_kw_pars(a,b)) {
-   return R_PosInf;
- }
+if (!check_kw_pars(a,b)) {
+ return R_PosInf;
+}
 
- arma::vec x= Rcpp::as<arma::vec>(data);
- if (x.n_elem<1) {
-   return R_PosInf;
- }
- if (arma::any(x<=0.0) || arma::any(x>=1.0)) {
-   return R_PosInf;
- }
+arma::vec x= Rcpp::as<arma::vec>(data);
+if (x.n_elem<1) {
+ return R_PosInf;
+}
+if (arma::any(x<=0.0) || arma::any(x>=1.0)) {
+ return R_PosInf;
+}
 
- int n= x.n_elem;
- // constant: n*( log(a)+ log(b) )
- double cst= n*( std::log(a) + std::log(b) );
+int n= x.n_elem;
+// constant: n*( log(a)+ log(b) )
+double cst= n*( std::log(a) + std::log(b) );
 
- // sum( (a-1)* log(x_i ) )
- arma::vec lx= arma::log(x);
- double sum1= (a-1.0)* arma::sum(lx);
+// sum( (a-1)* log(x_i ) )
+arma::vec lx= arma::log(x);
+double sum1= (a-1.0)* arma::sum(lx);
 
- // sum( (b-1)* log(1- x^a) )
- arma::vec xalpha= arma::pow(x,a);
- arma::vec log_1_xalpha= arma::log(1.0 - xalpha);
- double sum2= (b-1.0)* arma::sum(log_1_xalpha);
+// sum( (b-1)* log(1- x^a) )
+arma::vec xalpha= arma::pow(x,a);
+arma::vec log_1_xalpha= arma::log(1.0 - xalpha);
+double sum2= (b-1.0)* arma::sum(log_1_xalpha);
 
- double loglike= cst + sum1 + sum2;
- // negative
- return -loglike;
+double loglike= cst + sum1 + sum2;
+// negative
+return -loglike;
 }
 
 
@@ -9982,61 +14353,61 @@ double llkw(const Rcpp::NumericVector& par,
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector grkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha = par[0];   // Shape parameter α > 0
- double beta = par[1];    // Shape parameter β > 0
+// Parameter extraction
+double alpha = par[0];   // Shape parameter α > 0
+double beta = par[1];    // Shape parameter β > 0
 
- // Parameter validation
- if (alpha <= 0 || beta <= 0) {
-   Rcpp::NumericVector grad(2, R_NaN);
-   return grad;
- }
-
- // Data conversion and validation
- arma::vec x = Rcpp::as<arma::vec>(data);
-
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
-   Rcpp::NumericVector grad(2, R_NaN);
-   return grad;
- }
-
- int n = x.n_elem;  // Sample size
-
- // Initialize gradient vector
- Rcpp::NumericVector grad(2, 0.0);
-
- // Small constant to avoid numerical issues
- double eps = std::numeric_limits<double>::epsilon() * 100;
-
- // Compute transformations and intermediate values
- arma::vec log_x = arma::log(x);                // log(x_i)
- arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
- arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
-
- // v_i = 1 - x_i^α
- arma::vec v = 1.0 - x_alpha;
- v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
-
- arma::vec log_v = arma::log(v);                // log(1-x_i^α)
-
- // Calculate partial derivatives for each parameter (for log-likelihood)
-
- // ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - Σᵢ[(β-1)xᵢ^α*log(xᵢ)/(1-xᵢ^α)]
- double d_alpha = n / alpha + arma::sum(log_x);
-
- // Calculate the term for α gradient
- arma::vec alpha_term = (beta - 1.0) * x_alpha_log_x / v;
-
- d_alpha -= arma::sum(alpha_term);
-
- // ∂ℓ/∂β = n/β + Σᵢlog(1-xᵢ^α)
- double d_beta = n / beta + arma::sum(log_v);
-
- // Since we're optimizing negative log-likelihood, negate all derivatives
- grad[0] = -d_alpha;
- grad[1] = -d_beta;
-
+// Parameter validation
+if (alpha <= 0 || beta <= 0) {
+ Rcpp::NumericVector grad(2, R_NaN);
  return grad;
+}
+
+// Data conversion and validation
+arma::vec x = Rcpp::as<arma::vec>(data);
+
+if (arma::any(x <= 0) || arma::any(x >= 1)) {
+ Rcpp::NumericVector grad(2, R_NaN);
+ return grad;
+}
+
+int n = x.n_elem;  // Sample size
+
+// Initialize gradient vector
+Rcpp::NumericVector grad(2, 0.0);
+
+// Small constant to avoid numerical issues
+double eps = std::numeric_limits<double>::epsilon() * 100;
+
+// Compute transformations and intermediate values
+arma::vec log_x = arma::log(x);                // log(x_i)
+arma::vec x_alpha = arma::pow(x, alpha);       // x_i^α
+arma::vec x_alpha_log_x = x_alpha % log_x;     // x_i^α * log(x_i)
+
+// v_i = 1 - x_i^α
+arma::vec v = 1.0 - x_alpha;
+v = arma::clamp(v, eps, 1.0 - eps);            // Prevent numerical issues
+
+arma::vec log_v = arma::log(v);                // log(1-x_i^α)
+
+// Calculate partial derivatives for each parameter (for log-likelihood)
+
+// ∂ℓ/∂α = n/α + Σᵢlog(xᵢ) - Σᵢ[(β-1)xᵢ^α*log(xᵢ)/(1-xᵢ^α)]
+double d_alpha = n / alpha + arma::sum(log_x);
+
+// Calculate the term for α gradient
+arma::vec alpha_term = (beta - 1.0) * x_alpha_log_x / v;
+
+d_alpha -= arma::sum(alpha_term);
+
+// ∂ℓ/∂β = n/β + Σᵢlog(1-xᵢ^α)
+double d_beta = n / beta + arma::sum(log_v);
+
+// Since we're optimizing negative log-likelihood, negate all derivatives
+grad[0] = -d_alpha;
+grad[1] = -d_beta;
+
+return grad;
 }
 
 
@@ -10176,121 +14547,121 @@ Rcpp::NumericVector grkw(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix hskw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
- // Parameter extraction
- double alpha = par[0];   // Shape parameter α > 0
- double beta = par[1];    // Shape parameter β > 0
+// Parameter extraction
+double alpha = par[0];   // Shape parameter α > 0
+double beta = par[1];    // Shape parameter β > 0
 
- // Initialize Hessian matrix
- Rcpp::NumericMatrix hess(2, 2);
+// Initialize Hessian matrix
+Rcpp::NumericMatrix hess(2, 2);
 
- // Parameter validation
- if (alpha <= 0 || beta <= 0) {
-   hess.fill(R_NaN);
-   return hess;
- }
-
- // Data conversion and validation
- arma::vec x = Rcpp::as<arma::vec>(data);
-
- if (arma::any(x <= 0) || arma::any(x >= 1)) {
-   hess.fill(R_NaN);
-   return hess;
- }
-
- int n = x.n_elem;  // Sample size
-
- // Small constant to avoid numerical issues
- double eps = std::numeric_limits<double>::epsilon() * 100;
-
- // Compute transformations and intermediate values
- arma::vec log_x = arma::log(x);                  // log(x_i)
- arma::vec log_x_squared = arma::square(log_x);   // (log(x_i))²
- arma::vec x_alpha = arma::pow(x, alpha);         // x_i^α
- arma::vec x_alpha_log_x = x_alpha % log_x;       // x_i^α * log(x_i)
-
- // v_i = 1 - x_i^α
- arma::vec v = 1.0 - x_alpha;
- v = arma::clamp(v, eps, 1.0 - eps);              // Prevent numerical issues
-
- // Additional terms for second derivatives
- arma::vec term_ratio = x_alpha / v;              // x_i^α / (1-x_i^α)
- arma::vec term_combined = 1.0 + term_ratio;      // 1 + x_i^α/(1-x_i^α)
-
- // Calculate the Hessian components for negative log-likelihood
-
- // H[0,0] = ∂²ℓ/∂α² = -n/α² - Σᵢ[(β-1)x_i^α(log(x_i))²/(1-x_i^α)(1 + x_i^α/(1-x_i^α))]
- double h_alpha_alpha = -n / (alpha * alpha);
- arma::vec d2a_terms = (beta - 1.0) * x_alpha % log_x_squared % term_combined / v;
- h_alpha_alpha -= arma::sum(d2a_terms);
-
- // H[0,1] = H[1,0] = ∂²ℓ/∂α∂β = -Σᵢ[x_i^α*log(x_i)/(1-x_i^α)]
- double h_alpha_beta = -arma::sum(x_alpha_log_x / v);
-
- // H[1,1] = ∂²ℓ/∂β² = -n/β²
- double h_beta_beta = -n / (beta * beta);
-
- // Fill the Hessian matrix (symmetric)
- hess(0, 0) = -h_alpha_alpha;
- hess(0, 1) = hess(1, 0) = -h_alpha_beta;
- hess(1, 1) = -h_beta_beta;
-
+// Parameter validation
+if (alpha <= 0 || beta <= 0) {
+ hess.fill(R_NaN);
  return hess;
+}
+
+// Data conversion and validation
+arma::vec x = Rcpp::as<arma::vec>(data);
+
+if (arma::any(x <= 0) || arma::any(x >= 1)) {
+ hess.fill(R_NaN);
+ return hess;
+}
+
+int n = x.n_elem;  // Sample size
+
+// Small constant to avoid numerical issues
+double eps = std::numeric_limits<double>::epsilon() * 100;
+
+// Compute transformations and intermediate values
+arma::vec log_x = arma::log(x);                  // log(x_i)
+arma::vec log_x_squared = arma::square(log_x);   // (log(x_i))²
+arma::vec x_alpha = arma::pow(x, alpha);         // x_i^α
+arma::vec x_alpha_log_x = x_alpha % log_x;       // x_i^α * log(x_i)
+
+// v_i = 1 - x_i^α
+arma::vec v = 1.0 - x_alpha;
+v = arma::clamp(v, eps, 1.0 - eps);              // Prevent numerical issues
+
+// Additional terms for second derivatives
+arma::vec term_ratio = x_alpha / v;              // x_i^α / (1-x_i^α)
+arma::vec term_combined = 1.0 + term_ratio;      // 1 + x_i^α/(1-x_i^α)
+
+// Calculate the Hessian components for negative log-likelihood
+
+// H[0,0] = ∂²ℓ/∂α² = -n/α² - Σᵢ[(β-1)x_i^α(log(x_i))²/(1-x_i^α)(1 + x_i^α/(1-x_i^α))]
+double h_alpha_alpha = -n / (alpha * alpha);
+arma::vec d2a_terms = (beta - 1.0) * x_alpha % log_x_squared % term_combined / v;
+h_alpha_alpha -= arma::sum(d2a_terms);
+
+// H[0,1] = H[1,0] = ∂²ℓ/∂α∂β = -Σᵢ[x_i^α*log(x_i)/(1-x_i^α)]
+double h_alpha_beta = -arma::sum(x_alpha_log_x / v);
+
+// H[1,1] = ∂²ℓ/∂β² = -n/β²
+double h_beta_beta = -n / (beta * beta);
+
+// Fill the Hessian matrix (symmetric)
+hess(0, 0) = -h_alpha_alpha;
+hess(0, 1) = hess(1, 0) = -h_alpha_beta;
+hess(1, 1) = -h_beta_beta;
+
+return hess;
 }
 
 
 /*
- ----------------------------------------------------------------------------
- NOTE:
- We assume the same numeric stability functions from a core or gkwdist.cpp:
- - log1mexp(double)
- - safe_log(double)
- - safe_exp(double)
- - safe_pow(double,double)
- etc.
- They are not redefined here to avoid duplication.
- */
+----------------------------------------------------------------------------
+NOTE:
+We assume the same numeric stability functions from a core or gkwdist.cpp:
+- log1mexp(double)
+- safe_log(double)
+- safe_exp(double)
+- safe_pow(double,double)
+etc.
+They are not redefined here to avoid duplication.
+*/
 
 /*
- ----------------------------------------------------------------------------
- BETA DISTRIBUTION: Beta(γ, δ)
- ----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+BETA DISTRIBUTION: Beta(γ, δ)
+----------------------------------------------------------------------------
 
- We use parameters gamma (γ) and delta (δ), both > 0, consistent with GKw family.
- Domain: x in (0,1).
+We use parameters gamma (γ) and delta (δ), both > 0, consistent with GKw family.
+Domain: x in (0,1).
 
- * PDF:
- f(x;γ,δ) = x^(γ-1) * (1-x)^δ / B(γ,δ+1),  for 0<x<1.
+* PDF:
+f(x;γ,δ) = x^(γ-1) * (1-x)^δ / B(γ,δ+1),  for 0<x<1.
 
- * CDF:
- F(x;γ,δ) = pbeta(x, γ, δ+1).
+* CDF:
+F(x;γ,δ) = pbeta(x, γ, δ+1).
 
- * QUANTILE:
- Q(p;γ,δ) = qbeta(p, γ, δ+1).
+* QUANTILE:
+Q(p;γ,δ) = qbeta(p, γ, δ+1).
 
- * RNG:
- X = rbeta(γ, δ+1).
+* RNG:
+X = rbeta(γ, δ+1).
 
- * NEGATIVE LOG-LIKELIHOOD:
- For data x_i in (0,1),
- log f(x_i) = (γ-1)*log(x_i) + δ*log(1-x_i) - ln B(γ,δ+1).
- Summation => negative => used in MLE.
+* NEGATIVE LOG-LIKELIHOOD:
+For data x_i in (0,1),
+log f(x_i) = (γ-1)*log(x_i) + δ*log(1-x_i) - ln B(γ,δ+1).
+Summation => negative => used in MLE.
 
- */
+*/
 
 
 // -----------------------------------------------------------------------------
 // Parameter checker for Beta(gamma>0, delta>0)
 // -----------------------------------------------------------------------------
 inline bool check_beta_pars(double gamma, double delta, bool strict=false) {
-  if (gamma <= 0.0 || delta <= 0.0) {
-    return false;
-  }
-  if (strict) {
-    const double MINP = 1e-7, MAXP = 1e7;
-    if (gamma < MINP || delta < MINP) return false;
-    if (gamma > MAXP || delta > MAXP) return false;
-  }
-  return true;
+if (gamma <= 0.0 || delta <= 0.0) {
+  return false;
+}
+if (strict) {
+  const double MINP = 1e-7, MAXP = 1e7;
+  if (gamma < MINP || delta < MINP) return false;
+  if (gamma > MAXP || delta > MAXP) return false;
+}
+return true;
 }
 
 
@@ -10403,52 +14774,52 @@ inline bool check_beta_pars(double gamma, double delta, bool strict=false) {
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec dbeta_(
-   const arma::vec& x,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   bool log_prob = false
+Rcpp::NumericVector dbeta_(
+ const arma::vec& x,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ bool log_prob = false
 ) {
- arma::vec g_vec(gamma.begin(), gamma.size());
- arma::vec d_vec(delta.begin(), delta.size());
+arma::vec g_vec(gamma.begin(), gamma.size());
+arma::vec d_vec(delta.begin(), delta.size());
 
- size_t N = std::max({x.n_elem, g_vec.n_elem, d_vec.n_elem});
- arma::vec out(N);
- out.fill(log_prob ? R_NegInf : 0.0);
+size_t N = std::max({x.n_elem, g_vec.n_elem, d_vec.n_elem});
+arma::vec out(N);
+out.fill(log_prob ? R_NegInf : 0.0);
 
- for (size_t i = 0; i < N; i++) {
-   double g = g_vec[i % g_vec.n_elem];
-   double d = d_vec[i % d_vec.n_elem];
-   double xx = x[i % x.n_elem];
+for (size_t i = 0; i < N; i++) {
+ double g = g_vec[i % g_vec.n_elem];
+ double d = d_vec[i % d_vec.n_elem];
+ double xx = x[i % x.n_elem];
 
-   if (!check_beta_pars(g, d)) {
-     continue; // => 0 or -Inf
-   }
-   if (xx <= 0.0 || xx >= 1.0 || !R_finite(xx)) {
-     continue;
-   }
-
-   // logBeta = R::lbeta(g, d+1)
-   double lB = R::lbeta(g, d + 1.0);
-   // log pdf = (g-1)*log(x) + d*log(1-x) - lB
-   double lx = std::log(xx);
-   double one_minus_x = 1.0 - xx;
-   if (one_minus_x <= 0.0) {
-     // => out of domain, effectively => 0
-     continue;
-   }
-   double log_1_minus_x = std::log(one_minus_x);
-
-   double log_pdf = (g - 1.0) * lx + d * log_1_minus_x - lB;
-
-   if (log_prob) {
-     out(i) = log_pdf;
-   } else {
-     out(i) = std::exp(log_pdf);
-   }
+ if (!check_beta_pars(g, d)) {
+   continue; // => 0 or -Inf
+ }
+ if (xx <= 0.0 || xx >= 1.0 || !R_finite(xx)) {
+   continue;
  }
 
- return out;
+ // logBeta = R::lbeta(g, d+1)
+ double lB = R::lbeta(g, d + 1.0);
+ // log pdf = (g-1)*log(x) + d*log(1-x) - lB
+ double lx = std::log(xx);
+ double one_minus_x = 1.0 - xx;
+ if (one_minus_x <= 0.0) {
+   // => out of domain, effectively => 0
+   continue;
+ }
+ double log_1_minus_x = std::log(one_minus_x);
+
+ double log_pdf = (g - 1.0) * lx + d * log_1_minus_x - lB;
+
+ if (log_prob) {
+   out(i) = log_pdf;
+ } else {
+   out(i) = std::exp(log_pdf);
+ }
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -10567,50 +14938,50 @@ arma::vec dbeta_(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec pbeta_(
-   const arma::vec& q,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector pbeta_(
+ const arma::vec& q,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- arma::vec g_vec(gamma.begin(), gamma.size());
- arma::vec d_vec(delta.begin(), delta.size());
+arma::vec g_vec(gamma.begin(), gamma.size());
+arma::vec d_vec(delta.begin(), delta.size());
 
- size_t N = std::max({q.n_elem, g_vec.n_elem, d_vec.n_elem});
- arma::vec out(N);
+size_t N = std::max({q.n_elem, g_vec.n_elem, d_vec.n_elem});
+arma::vec out(N);
 
- for (size_t i = 0; i < N; i++) {
-   double g = g_vec[i % g_vec.n_elem];
-   double d = d_vec[i % d_vec.n_elem];
-   double qq = q[i % q.n_elem];
+for (size_t i = 0; i < N; i++) {
+ double g = g_vec[i % g_vec.n_elem];
+ double d = d_vec[i % d_vec.n_elem];
+ double qq = q[i % q.n_elem];
 
-   if (!check_beta_pars(g, d)) {
-     out(i) = NA_REAL;
-     continue;
-   }
-
-   // boundary
-   if (!R_finite(qq) || qq <= 0.0) {
-     double v0 = lower_tail ? 0.0 : 1.0;
-     out(i) = (log_p ? std::log(v0) : v0);
-     continue;
-   }
-   if (qq >= 1.0) {
-     double v1 = lower_tail ? 1.0 : 0.0;
-     out(i) = (log_p ? std::log(v1) : v1);
-     continue;
-   }
-
-   // call R's pbeta with adjusted parameters for GKw-style Beta
-   double val = R::pbeta(qq, g, d + 1.0, lower_tail, false); // not log
-   if (log_p) {
-     val = std::log(val);
-   }
-   out(i) = val;
+ if (!check_beta_pars(g, d)) {
+   out(i) = NA_REAL;
+   continue;
  }
 
- return out;
+ // boundary
+ if (!R_finite(qq) || qq <= 0.0) {
+   double v0 = lower_tail ? 0.0 : 1.0;
+   out(i) = (log_p ? std::log(v0) : v0);
+   continue;
+ }
+ if (qq >= 1.0) {
+   double v1 = lower_tail ? 1.0 : 0.0;
+   out(i) = (log_p ? std::log(v1) : v1);
+   continue;
+ }
+
+ // call R's pbeta with adjusted parameters for GKw-style Beta
+ double val = R::pbeta(qq, g, d + 1.0, lower_tail, false); // not log
+ if (log_p) {
+   val = std::log(val);
+ }
+ out(i) = val;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -10739,59 +15110,59 @@ arma::vec pbeta_(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec qbeta_(
-   const arma::vec& p,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta,
-   bool lower_tail = true,
-   bool log_p = false
+Rcpp::NumericVector qbeta_(
+ const arma::vec& p,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta,
+ bool lower_tail = true,
+ bool log_p = false
 ) {
- arma::vec g_vec(gamma.begin(), gamma.size());
- arma::vec d_vec(delta.begin(), delta.size());
+arma::vec g_vec(gamma.begin(), gamma.size());
+arma::vec d_vec(delta.begin(), delta.size());
 
- size_t N = std::max({p.n_elem, g_vec.n_elem, d_vec.n_elem});
- arma::vec out(N);
+size_t N = std::max({p.n_elem, g_vec.n_elem, d_vec.n_elem});
+arma::vec out(N);
 
- for (size_t i = 0; i < N; i++) {
-   double g = g_vec[i % g_vec.n_elem];
-   double d = d_vec[i % d_vec.n_elem];
-   double pp = p[i % p.n_elem];
+for (size_t i = 0; i < N; i++) {
+ double g = g_vec[i % g_vec.n_elem];
+ double d = d_vec[i % d_vec.n_elem];
+ double pp = p[i % p.n_elem];
 
-   if (!check_beta_pars(g, d)) {
+ if (!check_beta_pars(g, d)) {
+   out(i) = NA_REAL;
+   continue;
+ }
+
+ // handle log_p
+ if (log_p) {
+   if (pp > 0.0) {
+     // => p>1
      out(i) = NA_REAL;
      continue;
    }
-
-   // handle log_p
-   if (log_p) {
-     if (pp > 0.0) {
-       // => p>1
-       out(i) = NA_REAL;
-       continue;
-     }
-     pp = std::exp(pp);
-   }
-   // handle lower_tail
-   if (!lower_tail) {
-     pp = 1.0 - pp;
-   }
-
-   // boundaries
-   if (pp <= 0.0) {
-     out(i) = 0.0;
-     continue;
-   }
-   if (pp >= 1.0) {
-     out(i) = 1.0;
-     continue;
-   }
-
-   // Use adjusted parameters for GKw-style Beta
-   double val = R::qbeta(pp, g, d + 1.0, true, false); // returns not log
-   out(i) = val;
+   pp = std::exp(pp);
+ }
+ // handle lower_tail
+ if (!lower_tail) {
+   pp = 1.0 - pp;
  }
 
- return out;
+ // boundaries
+ if (pp <= 0.0) {
+   out(i) = 0.0;
+   continue;
+ }
+ if (pp >= 1.0) {
+   out(i) = 1.0;
+   continue;
+ }
+
+ // Use adjusted parameters for GKw-style Beta
+ double val = R::qbeta(pp, g, d + 1.0, true, false); // returns not log
+ out(i) = val;
+}
+
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -10904,37 +15275,37 @@ arma::vec qbeta_(
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec rbeta_(
-   int n,
-   const Rcpp::NumericVector& gamma,
-   const Rcpp::NumericVector& delta
+Rcpp::NumericVector rbeta_(
+ int n,
+ const Rcpp::NumericVector& gamma,
+ const Rcpp::NumericVector& delta
 ) {
- if (n <= 0) {
-   Rcpp::stop("rbeta_: n must be positive");
+if (n <= 0) {
+ Rcpp::stop("rbeta_: n must be positive");
+}
+
+arma::vec g_vec(gamma.begin(), gamma.size());
+arma::vec d_vec(delta.begin(), delta.size());
+
+size_t k = std::max({g_vec.n_elem, d_vec.n_elem});
+arma::vec out(n);
+
+for (int i = 0; i < n; i++) {
+ size_t idx = i % k;
+ double g = g_vec[idx % g_vec.n_elem];
+ double d = d_vec[idx % d_vec.n_elem];
+
+ if (!check_beta_pars(g, d)) {
+   out(i) = NA_REAL;
+   Rcpp::warning("rbeta_: invalid parameters at index %d", i+1);
+   continue;
  }
 
- arma::vec g_vec(gamma.begin(), gamma.size());
- arma::vec d_vec(delta.begin(), delta.size());
-
- size_t k = std::max({g_vec.n_elem, d_vec.n_elem});
- arma::vec out(n);
-
- for (int i = 0; i < n; i++) {
-   size_t idx = i % k;
-   double g = g_vec[idx % g_vec.n_elem];
-   double d = d_vec[idx % d_vec.n_elem];
-
-   if (!check_beta_pars(g, d)) {
-     out(i) = NA_REAL;
-     Rcpp::warning("rbeta_: invalid parameters at index %d", i+1);
-     continue;
-   }
-
-   // Use adjusted parameters for GKw-style Beta
-   double val = R::rbeta(g, d + 1.0);
-   out(i) = val;
- }
- return out;
+ // Use adjusted parameters for GKw-style Beta
+ double val = R::rbeta(g, d + 1.0);
+ out(i) = val;
+}
+return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 }
 
 
@@ -11073,43 +15444,43 @@ arma::vec rbeta_(
 //' @export
 // [[Rcpp::export]]
 double llbeta(const Rcpp::NumericVector& par,
-             const Rcpp::NumericVector& data) {
- if (par.size() < 2) {
-   return R_PosInf;
- }
- double gamma = par[0]; // gamma > 0
- double delta = par[1]; // delta > 0
+           const Rcpp::NumericVector& data) {
+if (par.size() < 2) {
+ return R_PosInf;
+}
+double gamma = par[0]; // gamma > 0
+double delta = par[1]; // delta > 0
 
- if (!check_beta_pars(gamma, delta)) {
-   return R_PosInf;
- }
+if (!check_beta_pars(gamma, delta)) {
+ return R_PosInf;
+}
 
- arma::vec x = Rcpp::as<arma::vec>(data);
- if (x.n_elem < 1) {
-   return R_PosInf;
- }
- // domain check
- if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
-   return R_PosInf;
- }
+arma::vec x = Rcpp::as<arma::vec>(data);
+if (x.n_elem < 1) {
+ return R_PosInf;
+}
+// domain check
+if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
+ return R_PosInf;
+}
 
- int n = x.n_elem;
- // Use correct parameterization for GKw-style Beta
- double logB = R::lbeta(gamma, delta + 1.0);
- // constant => -n*logB
- double cst = -double(n) * logB;
+int n = x.n_elem;
+// Use correct parameterization for GKw-style Beta
+double logB = R::lbeta(gamma, delta + 1.0);
+// constant => -n*logB
+double cst = -double(n) * logB;
 
- // sum((gamma-1)*log(x_i) + delta*log(1-x_i)), i=1..n
- arma::vec lx = arma::log(x);
- arma::vec l1mx = arma::log(1.0 - x);
+// sum((gamma-1)*log(x_i) + delta*log(1-x_i)), i=1..n
+arma::vec lx = arma::log(x);
+arma::vec l1mx = arma::log(1.0 - x);
 
- double sum1 = (gamma - 1.0) * arma::sum(lx);
- double sum2 = delta * arma::sum(l1mx);  // Corrected: no subtraction of 1.0
+double sum1 = (gamma - 1.0) * arma::sum(lx);
+double sum2 = delta * arma::sum(l1mx);  // Corrected: no subtraction of 1.0
 
- double loglike = cst + sum1 + sum2; // that's the log-likelihood
+double loglike = cst + sum1 + sum2; // that's the log-likelihood
 
- // We must return negative
- return -loglike;
+// We must return negative
+return -loglike;
 }
 
 
@@ -11240,48 +15611,48 @@ double llbeta(const Rcpp::NumericVector& par,
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector grbeta(const Rcpp::NumericVector& par,
-                          const Rcpp::NumericVector& data) {
- Rcpp::NumericVector grad(2, R_PosInf); // initialize with Inf
+                        const Rcpp::NumericVector& data) {
+Rcpp::NumericVector grad(2, R_PosInf); // initialize with Inf
 
- if (par.size() < 2) {
-   return grad;
- }
+if (par.size() < 2) {
+ return grad;
+}
 
- double gamma = par[0];
- double delta = par[1];
+double gamma = par[0];
+double delta = par[1];
 
- if (!check_beta_pars(gamma, delta)) {
-   return grad;
- }
+if (!check_beta_pars(gamma, delta)) {
+ return grad;
+}
 
- arma::vec x = Rcpp::as<arma::vec>(data);
- if (x.n_elem < 1) {
-   return grad;
- }
+arma::vec x = Rcpp::as<arma::vec>(data);
+if (x.n_elem < 1) {
+ return grad;
+}
 
- // domain check
- if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
-   return grad;
- }
+// domain check
+if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
+ return grad;
+}
 
- int n = x.n_elem;
+int n = x.n_elem;
 
- // Calculate digamma terms with correct parameterization for GKw-style Beta
- double dig_g = R::digamma(gamma);
- double dig_d = R::digamma(delta + 1.0);  // Corrected: digamma(δ+1)
- double dig_gd = R::digamma(gamma + delta + 1.0);  // Corrected: digamma(γ+δ+1)
+// Calculate digamma terms with correct parameterization for GKw-style Beta
+double dig_g = R::digamma(gamma);
+double dig_d = R::digamma(delta + 1.0);  // Corrected: digamma(δ+1)
+double dig_gd = R::digamma(gamma + delta + 1.0);  // Corrected: digamma(γ+δ+1)
 
- // Sum of log terms
- arma::vec lx = arma::log(x);
- arma::vec l1mx = arma::log(1.0 - x);
- double sum_lx = arma::sum(lx);
- double sum_l1mx = arma::sum(l1mx);
+// Sum of log terms
+arma::vec lx = arma::log(x);
+arma::vec l1mx = arma::log(1.0 - x);
+double sum_lx = arma::sum(lx);
+double sum_l1mx = arma::sum(l1mx);
 
- // Partial derivatives for negative log-likelihood
- grad[0] = n * (dig_g - dig_gd) - sum_lx; // wrt gamma
- grad[1] = n * (dig_d - dig_gd) - sum_l1mx; // wrt delta
+// Partial derivatives for negative log-likelihood
+grad[0] = n * (dig_g - dig_gd) - sum_lx; // wrt gamma
+grad[1] = n * (dig_d - dig_gd) - sum_l1mx; // wrt delta
 
- return grad; // Already negated for negative log-likelihood
+return grad; // Already negated for negative log-likelihood
 }
 
 
@@ -11418,49 +15789,49 @@ Rcpp::NumericVector grbeta(const Rcpp::NumericVector& par,
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix hsbeta(const Rcpp::NumericVector& par,
-                          const Rcpp::NumericVector& data) {
- Rcpp::NumericMatrix hess(2, 2);
- // Initialize with Inf
- for (int i = 0; i < 2; i++) {
-   for (int j = 0; j < 2; j++) {
-     hess(i, j) = R_PosInf;
-   }
+                        const Rcpp::NumericVector& data) {
+Rcpp::NumericMatrix hess(2, 2);
+// Initialize with Inf
+for (int i = 0; i < 2; i++) {
+ for (int j = 0; j < 2; j++) {
+   hess(i, j) = R_PosInf;
  }
+}
 
- if (par.size() < 2) {
-   return hess;
- }
+if (par.size() < 2) {
+ return hess;
+}
 
- double gamma = par[0];
- double delta = par[1];
+double gamma = par[0];
+double delta = par[1];
 
- if (!check_beta_pars(gamma, delta)) {
-   return hess;
- }
+if (!check_beta_pars(gamma, delta)) {
+ return hess;
+}
 
- arma::vec x = Rcpp::as<arma::vec>(data);
- if (x.n_elem < 1) {
-   return hess;
- }
+arma::vec x = Rcpp::as<arma::vec>(data);
+if (x.n_elem < 1) {
+ return hess;
+}
 
- // domain check
- if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
-   return hess;
- }
+// domain check
+if (arma::any(x <= 0.0) || arma::any(x >= 1.0)) {
+ return hess;
+}
 
- int n = x.n_elem;
+int n = x.n_elem;
 
- // Calculate trigamma terms with correct parameterization for GKw-style Beta
- double trig_g = R::trigamma(gamma);
- double trig_d = R::trigamma(delta + 1.0);  // Corrected: trigamma(δ+1)
- double trig_gd = R::trigamma(gamma + delta + 1.0);  // Corrected: trigamma(γ+δ+1)
+// Calculate trigamma terms with correct parameterization for GKw-style Beta
+double trig_g = R::trigamma(gamma);
+double trig_d = R::trigamma(delta + 1.0);  // Corrected: trigamma(δ+1)
+double trig_gd = R::trigamma(gamma + delta + 1.0);  // Corrected: trigamma(γ+δ+1)
 
- // Second derivatives for negative log-likelihood
- hess(0, 0) = n * (trig_g - trig_gd);  // d²/dγ²
- hess(1, 1) = n * (trig_d - trig_gd);  // d²/dδ²
- hess(0, 1) = hess(1, 0) = -n * trig_gd;  // d²/dγdδ
+// Second derivatives for negative log-likelihood
+hess(0, 0) = n * (trig_g - trig_gd);  // d²/dγ²
+hess(1, 1) = n * (trig_d - trig_gd);  // d²/dδ²
+hess(0, 1) = hess(1, 0) = -n * trig_gd;  // d²/dγdδ
 
- return hess; // Already for negative log-likelihood
+return hess; // Already for negative log-likelihood
 }
 
 
@@ -11482,122 +15853,122 @@ Rcpp::NumericMatrix hsbeta(const Rcpp::NumericVector& par,
 //' @return Positive definite approximation of H
 //' @noRd
 arma::mat makePositiveDefinite(arma::mat H, double min_eigenval = 1e-6) {
- // Special case for 1x1 matrices for efficiency
- if (H.n_rows == 1 && H.n_cols == 1) {
-   return arma::mat(1, 1, arma::fill::value(std::max(H(0,0), min_eigenval)));
+// Special case for 1x1 matrices for efficiency
+if (H.n_rows == 1 && H.n_cols == 1) {
+ return arma::mat(1, 1, arma::fill::value(std::max(H(0,0), min_eigenval)));
+}
+
+// Verify matrix dimensions
+if (H.n_rows != H.n_cols) {
+ Rcpp::warning("Non-square matrix provided to makePositiveDefinite. Returning diagonal matrix.");
+ arma::mat diag_matrix = arma::eye(H.n_rows, H.n_rows);
+ diag_matrix *= min_eigenval;
+ return diag_matrix;
+}
+
+// Ensure symmetry by averaging with transpose using a numerically stable approach
+double sym_tol = 1e-8;
+double max_asym = 0.0;
+
+// Check asymmetry level
+for (unsigned int i = 0; i < H.n_rows; i++) {
+ for (unsigned int j = i+1; j < H.n_cols; j++) {
+   max_asym = std::max(max_asym, std::abs(H(i,j) - H(j,i)));
  }
+}
 
- // Verify matrix dimensions
- if (H.n_rows != H.n_cols) {
-   Rcpp::warning("Non-square matrix provided to makePositiveDefinite. Returning diagonal matrix.");
-   arma::mat diag_matrix = arma::eye(H.n_rows, H.n_rows);
-   diag_matrix *= min_eigenval;
-   return diag_matrix;
- }
+// Warning if severe asymmetry is detected
+if (max_asym > 1e-3) {
+ Rcpp::warning("Significant asymmetry detected in Hessian matrix (max diff: %f)", max_asym);
+}
 
- // Ensure symmetry by averaging with transpose using a numerically stable approach
- double sym_tol = 1e-8;
- double max_asym = 0.0;
+// Force symmetry
+H = 0.5 * (H + H.t());
 
- // Check asymmetry level
- for (unsigned int i = 0; i < H.n_rows; i++) {
-   for (unsigned int j = i+1; j < H.n_cols; j++) {
-     max_asym = std::max(max_asym, std::abs(H(i,j) - H(j,i)));
-   }
- }
+// Attempt Cholesky decomposition first (faster for already positive definite matrices)
+arma::mat R;
+bool is_pd = arma::chol(R, H);
 
- // Warning if severe asymmetry is detected
- if (max_asym > 1e-3) {
-   Rcpp::warning("Significant asymmetry detected in Hessian matrix (max diff: %f)", max_asym);
- }
-
- // Force symmetry
- H = 0.5 * (H + H.t());
-
- // Attempt Cholesky decomposition first (faster for already positive definite matrices)
- arma::mat R;
- bool is_pd = arma::chol(R, H);
-
- if (is_pd) {
-   // Matrix is already positive definite, verify if eigenvalues meet minimum threshold
-   arma::vec eigval;
-   bool eig_success = arma::eig_sym(eigval, H);
-
-   if (eig_success && arma::min(eigval) >= min_eigenval) {
-     return H;  // Already meets all requirements
-   }
- }
-
- // Perform eigendecomposition with enhanced numerical stability
+if (is_pd) {
+ // Matrix is already positive definite, verify if eigenvalues meet minimum threshold
  arma::vec eigval;
- arma::mat eigvec;
- bool success = arma::eig_sym(eigval, eigvec, H);
+ bool eig_success = arma::eig_sym(eigval, H);
 
- if (!success) {
-   // Enhanced fallback if eigendecomposition fails
-   arma::mat H_diag = H;
-   double max_diag = 0.0;
+ if (eig_success && arma::min(eigval) >= min_eigenval) {
+   return H;  // Already meets all requirements
+ }
+}
 
-   // Find maximum diagonal element for scaling
-   for (unsigned int i = 0; i < H.n_rows; i++) {
-     max_diag = std::max(max_diag, std::abs(H(i,i)));
-   }
+// Perform eigendecomposition with enhanced numerical stability
+arma::vec eigval;
+arma::mat eigvec;
+bool success = arma::eig_sym(eigval, eigvec, H);
 
-   // Add scaled regularization
-   double reg_val = std::max(min_eigenval, 1e-4 * max_diag);
-   return H + reg_val * arma::eye(size(H));
+if (!success) {
+ // Enhanced fallback if eigendecomposition fails
+ arma::mat H_diag = H;
+ double max_diag = 0.0;
+
+ // Find maximum diagonal element for scaling
+ for (unsigned int i = 0; i < H.n_rows; i++) {
+   max_diag = std::max(max_diag, std::abs(H(i,i)));
  }
 
- // Find the smallest eigenvalue
- double min_eig = arma::min(eigval);
- double max_eig = arma::max(eigval);
+ // Add scaled regularization
+ double reg_val = std::max(min_eigenval, 1e-4 * max_diag);
+ return H + reg_val * arma::eye(size(H));
+}
 
- // Check condition number and apply stronger regularization if needed
- double condition_number = max_eig / std::max(std::abs(min_eig), 1e-12);
- bool needs_strong_reg = (condition_number > 1e10) || (min_eig < -1e3 * min_eigenval);
+// Find the smallest eigenvalue
+double min_eig = arma::min(eigval);
+double max_eig = arma::max(eigval);
 
- // If extreme conditioning or large negative eigenvalues, use modified approach
- if (needs_strong_reg) {
-   // Apply progressive regularization for better numerical stability
-   double shift = std::max(min_eigenval, -min_eig + min_eigenval * 10.0);
+// Check condition number and apply stronger regularization if needed
+double condition_number = max_eig / std::max(std::abs(min_eig), 1e-12);
+bool needs_strong_reg = (condition_number > 1e10) || (min_eig < -1e3 * min_eigenval);
 
-   // Adaptive scaling based on eigenvalue magnitude
-   double scale_factor = std::max(0.01, std::min(1.0, 1e6 / condition_number));
+// If extreme conditioning or large negative eigenvalues, use modified approach
+if (needs_strong_reg) {
+ // Apply progressive regularization for better numerical stability
+ double shift = std::max(min_eigenval, -min_eig + min_eigenval * 10.0);
 
-   for (unsigned int i = 0; i < eigval.n_elem; i++) {
-     if (eigval(i) < min_eigenval) {
-       // Progressive adjustment: stronger for more negative values
-       double neg_factor = (eigval(i) < 0) ? std::abs(eigval(i)) / (std::abs(min_eig) + 1e-10) : 0.0;
-       eigval(i) = min_eigenval * (1.0 + 10.0 * neg_factor * scale_factor);
-     }
-   }
- } else {
-   // Standard adjustment for mild cases
-   for (unsigned int i = 0; i < eigval.n_elem; i++) {
-     if (eigval(i) < min_eigenval) {
-       eigval(i) = min_eigenval;
-     }
+ // Adaptive scaling based on eigenvalue magnitude
+ double scale_factor = std::max(0.01, std::min(1.0, 1e6 / condition_number));
+
+ for (unsigned int i = 0; i < eigval.n_elem; i++) {
+   if (eigval(i) < min_eigenval) {
+     // Progressive adjustment: stronger for more negative values
+     double neg_factor = (eigval(i) < 0) ? std::abs(eigval(i)) / (std::abs(min_eig) + 1e-10) : 0.0;
+     eigval(i) = min_eigenval * (1.0 + 10.0 * neg_factor * scale_factor);
    }
  }
+} else {
+ // Standard adjustment for mild cases
+ for (unsigned int i = 0; i < eigval.n_elem; i++) {
+   if (eigval(i) < min_eigenval) {
+     eigval(i) = min_eigenval;
+   }
+ }
+}
 
- // Reconstruct matrix: H = Q * D * Q'
- arma::mat D = arma::diagmat(eigval);
- arma::mat H_pd = eigvec * D * eigvec.t();
+// Reconstruct matrix: H = Q * D * Q'
+arma::mat D = arma::diagmat(eigval);
+arma::mat H_pd = eigvec * D * eigvec.t();
 
- // Ensure perfect symmetry (counteract any accumulating numerical errors)
- H_pd = 0.5 * (H_pd + H_pd.t());
+// Ensure perfect symmetry (counteract any accumulating numerical errors)
+H_pd = 0.5 * (H_pd + H_pd.t());
 
- // Verify result is positive definite (in debug mode or with high tolerance)
+// Verify result is positive definite (in debug mode or with high tolerance)
 #ifdef DEBUG
- is_pd = arma::chol(R, H_pd);
- if (!is_pd) {
-   Rcpp::warning("Resulting matrix is still not positive definite");
-   // Add last-resort regularization
-   H_pd += 10.0 * min_eigenval * arma::eye(size(H_pd));
- }
+is_pd = arma::chol(R, H_pd);
+if (!is_pd) {
+ Rcpp::warning("Resulting matrix is still not positive definite");
+ // Add last-resort regularization
+ H_pd += 10.0 * min_eigenval * arma::eye(size(H_pd));
+}
 #endif
 
- return H_pd;
+return H_pd;
 }
 
 
@@ -11614,360 +15985,360 @@ arma::mat makePositiveDefinite(arma::mat H, double min_eigenval = 1e-6) {
 //' @return Numerical approximation of the Hessian matrix
 //' @noRd
 arma::mat numHessianAdaptive(
-   Rcpp::NumericVector params,
-   Rcpp::NumericVector data,
-   std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
-   std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
-   double min_step = 1e-8,
-   double base_step = 1e-5
+ Rcpp::NumericVector params,
+ Rcpp::NumericVector data,
+ std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
+ std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
+ double min_step = 1e-8,
+ double base_step = 1e-5
 ) {
- int n = params.size();
- arma::mat hessian(n, n, arma::fill::zeros);
+int n = params.size();
+arma::mat hessian(n, n, arma::fill::zeros);
 
- // Evaluate function at center point with safeguards
- double f0 = ll_func(params, data);
- if (!R_finite(f0)) {
-   Rcpp::warning("Function evaluation at center point is not finite");
-   f0 = 0.0;  // Neutral value to allow continued computation
- }
+// Evaluate function at center point with safeguards
+double f0 = ll_func(params, data);
+if (!R_finite(f0)) {
+ Rcpp::warning("Function evaluation at center point is not finite");
+ f0 = 0.0;  // Neutral value to allow continued computation
+}
 
- // Calculate gradient at current point for validation and method selection
- Rcpp::NumericVector g0;
- bool valid_gradient = true;
+// Calculate gradient at current point for validation and method selection
+Rcpp::NumericVector g0;
+bool valid_gradient = true;
 
- try {
-   g0 = gr_func(params, data);
+try {
+ g0 = gr_func(params, data);
 
-   // Check if gradient values are finite
-   for (int i = 0; i < n; i++) {
-     if (!R_finite(g0[i])) {
-       valid_gradient = false;
-       break;
-     }
-   }
- } catch (...) {
-   valid_gradient = false;
- }
-
- if (!valid_gradient) {
-   Rcpp::warning("Analytic gradient invalid or unavailable, using fully numerical approach");
-   // Create placeholder gradient for the algorithm to continue
-   g0 = Rcpp::NumericVector(n, 0.0);
- }
-
- // Compute scale factors for parameters to improve numerical behavior
- std::vector<double> param_scales(n);
- double param_norm = 0.0;
+ // Check if gradient values are finite
  for (int i = 0; i < n; i++) {
-   param_scales[i] = std::max(1.0, std::abs(params[i]));
-   param_norm += std::pow(params[i] / param_scales[i], 2);
+   if (!R_finite(g0[i])) {
+     valid_gradient = false;
+     break;
+   }
  }
- param_norm = std::sqrt(param_norm);
+} catch (...) {
+ valid_gradient = false;
+}
 
- // Compute adaptive step sizes based on parameter magnitudes with enhanced heuristics
- std::vector<double> step_sizes(n);
- for (int i = 0; i < n; i++) {
-   // Base step size proportional to parameter magnitude but bounded
-   step_sizes[i] = std::max(min_step, std::min(base_step, base_step * std::abs(params[i])));
+if (!valid_gradient) {
+ Rcpp::warning("Analytic gradient invalid or unavailable, using fully numerical approach");
+ // Create placeholder gradient for the algorithm to continue
+ g0 = Rcpp::NumericVector(n, 0.0);
+}
 
-   // Ensure step isn't too large relative to parameter value
-   if (params[i] != 0 && step_sizes[i] > 0.01 * std::abs(params[i])) {
-     step_sizes[i] = 0.01 * std::abs(params[i]);
-   }
+// Compute scale factors for parameters to improve numerical behavior
+std::vector<double> param_scales(n);
+double param_norm = 0.0;
+for (int i = 0; i < n; i++) {
+ param_scales[i] = std::max(1.0, std::abs(params[i]));
+ param_norm += std::pow(params[i] / param_scales[i], 2);
+}
+param_norm = std::sqrt(param_norm);
 
-   // Ensure step is well above floating point precision for the parameter magnitude
-   double eps_precision = std::abs(params[i]) * std::numeric_limits<double>::epsilon() * 100.0;
-   step_sizes[i] = std::max(step_sizes[i], eps_precision);
+// Compute adaptive step sizes based on parameter magnitudes with enhanced heuristics
+std::vector<double> step_sizes(n);
+for (int i = 0; i < n; i++) {
+ // Base step size proportional to parameter magnitude but bounded
+ step_sizes[i] = std::max(min_step, std::min(base_step, base_step * std::abs(params[i])));
 
-   // Final safety check
-   step_sizes[i] = std::max(min_step, step_sizes[i]);
+ // Ensure step isn't too large relative to parameter value
+ if (params[i] != 0 && step_sizes[i] > 0.01 * std::abs(params[i])) {
+   step_sizes[i] = 0.01 * std::abs(params[i]);
  }
 
- // Cache for function evaluations to avoid redundant computations
- std::map<std::vector<int>, double> evaluation_cache;
+ // Ensure step is well above floating point precision for the parameter magnitude
+ double eps_precision = std::abs(params[i]) * std::numeric_limits<double>::epsilon() * 100.0;
+ step_sizes[i] = std::max(step_sizes[i], eps_precision);
 
- // Helper to retrieve or compute function value with caching
- auto cached_eval = [&](const Rcpp::NumericVector& p) -> double {
-   // Create key for cache
-   std::vector<int> key;
-   for (int i = 0; i < n; i++) {
-     // Hash based on offset from original parameters
-     // Scale to avoid floating point comparison issues
-     key.push_back(static_cast<int>((p[i] - params[i]) * 1e10));
-   }
+ // Final safety check
+ step_sizes[i] = std::max(min_step, step_sizes[i]);
+}
 
-   auto it = evaluation_cache.find(key);
-   if (it != evaluation_cache.end()) {
-     return it->second;  // Return cached value
-   }
+// Cache for function evaluations to avoid redundant computations
+std::map<std::vector<int>, double> evaluation_cache;
 
-   // Compute and cache
-   double value = ll_func(p, data);
-
-   // Sanitize result - replace non-finite values with a penalty value
-   if (!R_finite(value)) {
-     double penalty = f0 + 1e6 * param_norm;  // Large penalty proportional to parameter size
-     value = penalty;
-   }
-
-   evaluation_cache[key] = value;
-   return value;
- };
-
- // Compute diagonal elements using central difference
+// Helper to retrieve or compute function value with caching
+auto cached_eval = [&](const Rcpp::NumericVector& p) -> double {
+ // Create key for cache
+ std::vector<int> key;
  for (int i = 0; i < n; i++) {
-   double eps = step_sizes[i];
-   double best_estimate = 0.0;
-   double lowest_error = R_PosInf;
-   double actual_eps_used = eps;
+   // Hash based on offset from original parameters
+   // Scale to avoid floating point comparison issues
+   key.push_back(static_cast<int>((p[i] - params[i]) * 1e10));
+ }
 
-   // Declare params_p and params_m in the outer scope so they're available for Richardson
-   Rcpp::NumericVector params_p;
-   Rcpp::NumericVector params_m;
-   double f_p, f_m;
+ auto it = evaluation_cache.find(key);
+ if (it != evaluation_cache.end()) {
+   return it->second;  // Return cached value
+ }
 
-   // Try multiple step sizes for better accuracy
-   for (int step_iter = 0; step_iter < 3; step_iter++) {
-     // Adjust step size for current iteration
-     double current_eps = eps;
-     if (step_iter == 1) current_eps *= 0.1;
-     if (step_iter == 2) current_eps *= 10.0;
+ // Compute and cache
+ double value = ll_func(p, data);
 
-     params_p = Rcpp::clone(params);
-     params_m = Rcpp::clone(params);
+ // Sanitize result - replace non-finite values with a penalty value
+ if (!R_finite(value)) {
+   double penalty = f0 + 1e6 * param_norm;  // Large penalty proportional to parameter size
+   value = penalty;
+ }
 
-     params_p[i] += current_eps;
-     params_m[i] -= current_eps;
+ evaluation_cache[key] = value;
+ return value;
+};
 
-     f_p = cached_eval(params_p);
-     f_m = cached_eval(params_m);
+// Compute diagonal elements using central difference
+for (int i = 0; i < n; i++) {
+ double eps = step_sizes[i];
+ double best_estimate = 0.0;
+ double lowest_error = R_PosInf;
+ double actual_eps_used = eps;
 
-     // Standard central difference formula for second derivative
-     double h2 = current_eps * current_eps;
-     double estimate = (f_p - 2.0*f0 + f_m) / h2;
+ // Declare params_p and params_m in the outer scope so they're available for Richardson
+ Rcpp::NumericVector params_p;
+ Rcpp::NumericVector params_m;
+ double f_p, f_m;
 
-     // Validate with gradient if available
-     if (valid_gradient) {
-       double grad_i = g0[i];
-       double diff_approx = (f_p - f_m) / (2.0 * current_eps);
+ // Try multiple step sizes for better accuracy
+ for (int step_iter = 0; step_iter < 3; step_iter++) {
+   // Adjust step size for current iteration
+   double current_eps = eps;
+   if (step_iter == 1) current_eps *= 0.1;
+   if (step_iter == 2) current_eps *= 10.0;
 
-       // Estimate error by comparing with analytical gradient
-       double error = std::abs(grad_i - diff_approx);
-       double relative_error = error / (std::abs(grad_i) + std::abs(diff_approx) + 1e-10);
+   params_p = Rcpp::clone(params);
+   params_m = Rcpp::clone(params);
 
-       // Keep the estimate with lowest error
-       if (relative_error < lowest_error) {
-         lowest_error = relative_error;
-         best_estimate = estimate;
-         actual_eps_used = current_eps;
+   params_p[i] += current_eps;
+   params_m[i] -= current_eps;
 
-         // Also update the points for Richardson when we store the best estimate
-         // This ensures params_p and params_m correspond to the epsilon that will be used
-         if (step_iter != 1) { // If not the middle step size, recalculate
-           params_p = Rcpp::clone(params);
-           params_m = Rcpp::clone(params);
-           params_p[i] += actual_eps_used;
-           params_m[i] -= actual_eps_used;
-           f_p = cached_eval(params_p);
-           f_m = cached_eval(params_m);
-         }
-       }
-     } else {
-       // Without valid gradient, use the most refined step size
-       if (step_iter == 1) {  // Middle iteration has smallest step size
-         best_estimate = estimate;
-         actual_eps_used = current_eps;
+   f_p = cached_eval(params_p);
+   f_m = cached_eval(params_m);
+
+   // Standard central difference formula for second derivative
+   double h2 = current_eps * current_eps;
+   double estimate = (f_p - 2.0*f0 + f_m) / h2;
+
+   // Validate with gradient if available
+   if (valid_gradient) {
+     double grad_i = g0[i];
+     double diff_approx = (f_p - f_m) / (2.0 * current_eps);
+
+     // Estimate error by comparing with analytical gradient
+     double error = std::abs(grad_i - diff_approx);
+     double relative_error = error / (std::abs(grad_i) + std::abs(diff_approx) + 1e-10);
+
+     // Keep the estimate with lowest error
+     if (relative_error < lowest_error) {
+       lowest_error = relative_error;
+       best_estimate = estimate;
+       actual_eps_used = current_eps;
+
+       // Also update the points for Richardson when we store the best estimate
+       // This ensures params_p and params_m correspond to the epsilon that will be used
+       if (step_iter != 1) { // If not the middle step size, recalculate
+         params_p = Rcpp::clone(params);
+         params_m = Rcpp::clone(params);
+         params_p[i] += actual_eps_used;
+         params_m[i] -= actual_eps_used;
+         f_p = cached_eval(params_p);
+         f_m = cached_eval(params_m);
        }
      }
+   } else {
+     // Without valid gradient, use the most refined step size
+     if (step_iter == 1) {  // Middle iteration has smallest step size
+       best_estimate = estimate;
+       actual_eps_used = current_eps;
+     }
    }
+ }
 
-   // Use Richardson extrapolation for higher accuracy if appropriate
-   if (valid_gradient && lowest_error < 0.05) {
-     // Additional points for Richardson extrapolation
-     Rcpp::NumericVector params_p2 = Rcpp::clone(params);
-     Rcpp::NumericVector params_m2 = Rcpp::clone(params);
+ // Use Richardson extrapolation for higher accuracy if appropriate
+ if (valid_gradient && lowest_error < 0.05) {
+   // Additional points for Richardson extrapolation
+   Rcpp::NumericVector params_p2 = Rcpp::clone(params);
+   Rcpp::NumericVector params_m2 = Rcpp::clone(params);
 
-     params_p2[i] += 2.0 * actual_eps_used;
-     params_m2[i] -= 2.0 * actual_eps_used;
+   params_p2[i] += 2.0 * actual_eps_used;
+   params_m2[i] -= 2.0 * actual_eps_used;
 
-     double f_p2 = cached_eval(params_p2);
-     double f_m2 = cached_eval(params_m2);
+   double f_p2 = cached_eval(params_p2);
+   double f_m2 = cached_eval(params_m2);
 
-     // Standard formula
-     double h2 = actual_eps_used * actual_eps_used;
-     double standard = (f_p - 2.0*f0 + f_m) / h2;
+   // Standard formula
+   double h2 = actual_eps_used * actual_eps_used;
+   double standard = (f_p - 2.0*f0 + f_m) / h2;
 
-     // Wider formula
-     double h2_wide = 4.0 * h2;  // (2h)²
-     double wider = (f_p2 - 2.0*f0 + f_m2) / h2_wide;
+   // Wider formula
+   double h2_wide = 4.0 * h2;  // (2h)²
+   double wider = (f_p2 - 2.0*f0 + f_m2) / h2_wide;
 
-     // Richardson extrapolation: eliminate leading error term
-     best_estimate = (4.0/3.0) * standard - (1.0/3.0) * wider;
-   }
+   // Richardson extrapolation: eliminate leading error term
+   best_estimate = (4.0/3.0) * standard - (1.0/3.0) * wider;
+ }
 
-   // Sanity check and fallback for the diagonal elements
-   if (!R_finite(best_estimate) || std::abs(best_estimate) > 1e6 / param_scales[i]) {
-     // Use a regularized estimate based on gradient if available
-     if (valid_gradient) {
-       Rcpp::NumericVector params_p = Rcpp::clone(params);
-       params_p[i] += actual_eps_used;
+ // Sanity check and fallback for the diagonal elements
+ if (!R_finite(best_estimate) || std::abs(best_estimate) > 1e6 / param_scales[i]) {
+   // Use a regularized estimate based on gradient if available
+   if (valid_gradient) {
+     Rcpp::NumericVector params_p = Rcpp::clone(params);
+     params_p[i] += actual_eps_used;
 
-       Rcpp::NumericVector grad_p = gr_func(params_p, data);
+     Rcpp::NumericVector grad_p = gr_func(params_p, data);
 
-       // Compute directional derivative differences
-       double dir_diff = 0.0;
-       bool valid_dir_diff = true;
+     // Compute directional derivative differences
+     double dir_diff = 0.0;
+     bool valid_dir_diff = true;
 
-       for (int k = 0; k < n; k++) {
-         if (!R_finite(grad_p[k])) {
-           valid_dir_diff = false;
-           break;
-         }
-         dir_diff += (grad_p[k] - g0[k]) / actual_eps_used;
+     for (int k = 0; k < n; k++) {
+       if (!R_finite(grad_p[k])) {
+         valid_dir_diff = false;
+         break;
        }
+       dir_diff += (grad_p[k] - g0[k]) / actual_eps_used;
+     }
 
-       if (valid_dir_diff) {
-         best_estimate = dir_diff;
-       } else {
-         // Last resort: use a small positive value
-         best_estimate = 1.0 / param_scales[i];
-       }
+     if (valid_dir_diff) {
+       best_estimate = dir_diff;
      } else {
-       // Without valid gradient, use a small positive value
+       // Last resort: use a small positive value
        best_estimate = 1.0 / param_scales[i];
      }
+   } else {
+     // Without valid gradient, use a small positive value
+     best_estimate = 1.0 / param_scales[i];
    }
-
-   // Assign to diagonal
-   hessian(i, i) = best_estimate;
  }
 
- // Compute off-diagonal elements using mixed partial derivative formula
+ // Assign to diagonal
+ hessian(i, i) = best_estimate;
+}
+
+// Compute off-diagonal elements using mixed partial derivative formula
+for (int i = 0; i < n; i++) {
+ for (int j = 0; j < i; j++) {
+   double eps_i = step_sizes[i];
+   double eps_j = step_sizes[j];
+
+   // Adjust step sizes if parameters have very different magnitudes
+   double mag_ratio = param_scales[i] / param_scales[j];
+   if (mag_ratio > 100.0 || mag_ratio < 0.01) {
+     double geom_mean = std::sqrt(eps_i * eps_j);
+     eps_i = std::min(eps_i, geom_mean);
+     eps_j = std::min(eps_j, geom_mean);
+   }
+
+   Rcpp::NumericVector params_pp = Rcpp::clone(params);
+   Rcpp::NumericVector params_pm = Rcpp::clone(params);
+   Rcpp::NumericVector params_mp = Rcpp::clone(params);
+   Rcpp::NumericVector params_mm = Rcpp::clone(params);
+
+   params_pp[i] += eps_i; params_pp[j] += eps_j;
+   params_pm[i] += eps_i; params_pm[j] -= eps_j;
+   params_mp[i] -= eps_i; params_mp[j] += eps_j;
+   params_mm[i] -= eps_i; params_mm[j] -= eps_j;
+
+   double f_pp = cached_eval(params_pp);
+   double f_pm = cached_eval(params_pm);
+   double f_mp = cached_eval(params_mp);
+   double f_mm = cached_eval(params_mm);
+
+   // Mixed partial formula
+   double mixed_estimate = (f_pp - f_pm - f_mp + f_mm) / (4.0 * eps_i * eps_j);
+
+   // Alternative calculation using gradient if available
+   bool use_alternative = false;
+   double alt_estimate = 0.0;
+
+   if (valid_gradient) {
+     try {
+       Rcpp::NumericVector grad_p = gr_func(params_pp, data);
+       Rcpp::NumericVector grad_m = gr_func(params_mm, data);
+
+       bool valid_grads = true;
+       for (int k = 0; k < n; k++) {
+         if (!R_finite(grad_p[k]) || !R_finite(grad_m[k])) {
+           valid_grads = false;
+           break;
+         }
+       }
+
+       if (valid_grads) {
+         // Alternative estimate using directional derivatives
+         double dir_diff_i = (grad_p[i] - grad_m[i]) / (2.0 * eps_i);
+         double dir_diff_j = (grad_p[j] - grad_m[j]) / (2.0 * eps_j);
+
+         alt_estimate = 0.5 * (dir_diff_i + dir_diff_j);
+         use_alternative = true;
+       }
+     } catch (...) {
+       // Failed to compute alternative
+     }
+   }
+
+   // Choose estimate with fallback strategy
+   double final_estimate = mixed_estimate;
+
+   if (!R_finite(mixed_estimate) || std::abs(mixed_estimate) > 1e6 / (param_scales[i] * param_scales[j])) {
+     if (use_alternative && R_finite(alt_estimate)) {
+       final_estimate = alt_estimate;
+     } else {
+       // As last resort, use geometric mean of diagonal elements with reduced magnitude
+       final_estimate = std::sqrt(std::abs(hessian(i,i) * hessian(j,j))) * 0.1;
+       // Preserve sign from original estimate if valid
+       if (R_finite(mixed_estimate) && mixed_estimate != 0.0) {
+         final_estimate *= std::copysign(1.0, mixed_estimate);
+       }
+     }
+   }
+
+   hessian(i, j) = final_estimate;
+   hessian(j, i) = final_estimate; // Ensure symmetry
+ }
+}
+
+// Final validation and corrections
+
+// Check for NaN or Inf values
+bool has_invalid = false;
+for (int i = 0; i < n && !has_invalid; i++) {
+ for (int j = 0; j < n; j++) {
+   if (!R_finite(hessian(i, j))) {
+     has_invalid = true;
+     break;
+   }
+ }
+}
+
+// Fix any remaining invalid values
+if (has_invalid) {
+ Rcpp::warning("Numerical Hessian contains invalid values; applying regularization");
+
+ // Use diagonal dominance to ensure positive definiteness
  for (int i = 0; i < n; i++) {
-   for (int j = 0; j < i; j++) {
-     double eps_i = step_sizes[i];
-     double eps_j = step_sizes[j];
-
-     // Adjust step sizes if parameters have very different magnitudes
-     double mag_ratio = param_scales[i] / param_scales[j];
-     if (mag_ratio > 100.0 || mag_ratio < 0.01) {
-       double geom_mean = std::sqrt(eps_i * eps_j);
-       eps_i = std::min(eps_i, geom_mean);
-       eps_j = std::min(eps_j, geom_mean);
-     }
-
-     Rcpp::NumericVector params_pp = Rcpp::clone(params);
-     Rcpp::NumericVector params_pm = Rcpp::clone(params);
-     Rcpp::NumericVector params_mp = Rcpp::clone(params);
-     Rcpp::NumericVector params_mm = Rcpp::clone(params);
-
-     params_pp[i] += eps_i; params_pp[j] += eps_j;
-     params_pm[i] += eps_i; params_pm[j] -= eps_j;
-     params_mp[i] -= eps_i; params_mp[j] += eps_j;
-     params_mm[i] -= eps_i; params_mm[j] -= eps_j;
-
-     double f_pp = cached_eval(params_pp);
-     double f_pm = cached_eval(params_pm);
-     double f_mp = cached_eval(params_mp);
-     double f_mm = cached_eval(params_mm);
-
-     // Mixed partial formula
-     double mixed_estimate = (f_pp - f_pm - f_mp + f_mm) / (4.0 * eps_i * eps_j);
-
-     // Alternative calculation using gradient if available
-     bool use_alternative = false;
-     double alt_estimate = 0.0;
-
-     if (valid_gradient) {
-       try {
-         Rcpp::NumericVector grad_p = gr_func(params_pp, data);
-         Rcpp::NumericVector grad_m = gr_func(params_mm, data);
-
-         bool valid_grads = true;
-         for (int k = 0; k < n; k++) {
-           if (!R_finite(grad_p[k]) || !R_finite(grad_m[k])) {
-             valid_grads = false;
-             break;
-           }
-         }
-
-         if (valid_grads) {
-           // Alternative estimate using directional derivatives
-           double dir_diff_i = (grad_p[i] - grad_m[i]) / (2.0 * eps_i);
-           double dir_diff_j = (grad_p[j] - grad_m[j]) / (2.0 * eps_j);
-
-           alt_estimate = 0.5 * (dir_diff_i + dir_diff_j);
-           use_alternative = true;
-         }
-       } catch (...) {
-         // Failed to compute alternative
-       }
-     }
-
-     // Choose estimate with fallback strategy
-     double final_estimate = mixed_estimate;
-
-     if (!R_finite(mixed_estimate) || std::abs(mixed_estimate) > 1e6 / (param_scales[i] * param_scales[j])) {
-       if (use_alternative && R_finite(alt_estimate)) {
-         final_estimate = alt_estimate;
-       } else {
-         // As last resort, use geometric mean of diagonal elements with reduced magnitude
-         final_estimate = std::sqrt(std::abs(hessian(i,i) * hessian(j,j))) * 0.1;
-         // Preserve sign from original estimate if valid
-         if (R_finite(mixed_estimate) && mixed_estimate != 0.0) {
-           final_estimate *= std::copysign(1.0, mixed_estimate);
-         }
-       }
-     }
-
-     hessian(i, j) = final_estimate;
-     hessian(j, i) = final_estimate; // Ensure symmetry
+   if (!R_finite(hessian(i, i)) || hessian(i, i) <= 0) {
+     hessian(i, i) = 1.0 / param_scales[i]; // Fallback positive value
    }
- }
 
- // Final validation and corrections
-
- // Check for NaN or Inf values
- bool has_invalid = false;
- for (int i = 0; i < n && !has_invalid; i++) {
+   double row_sum = 0.0;
    for (int j = 0; j < n; j++) {
-     if (!R_finite(hessian(i, j))) {
-       has_invalid = true;
-       break;
-     }
-   }
- }
-
- // Fix any remaining invalid values
- if (has_invalid) {
-   Rcpp::warning("Numerical Hessian contains invalid values; applying regularization");
-
-   // Use diagonal dominance to ensure positive definiteness
-   for (int i = 0; i < n; i++) {
-     if (!R_finite(hessian(i, i)) || hessian(i, i) <= 0) {
-       hessian(i, i) = 1.0 / param_scales[i]; // Fallback positive value
-     }
-
-     double row_sum = 0.0;
-     for (int j = 0; j < n; j++) {
-       if (i != j) {
-         if (!R_finite(hessian(i, j))) {
-           hessian(i, j) = 0.0; // Zero out invalid off-diagonals
-           hessian(j, i) = 0.0; // Maintain symmetry
-         }
-         row_sum += std::abs(hessian(i, j));
+     if (i != j) {
+       if (!R_finite(hessian(i, j))) {
+         hessian(i, j) = 0.0; // Zero out invalid off-diagonals
+         hessian(j, i) = 0.0; // Maintain symmetry
        }
-     }
-
-     // Ensure diagonal dominance for numerical stability
-     if (std::abs(hessian(i, i)) <= row_sum) {
-       hessian(i, i) = row_sum + 1e-3 / param_scales[i];
+       row_sum += std::abs(hessian(i, j));
      }
    }
- }
 
- // Return the final, robust Hessian approximation
- return hessian;
+   // Ensure diagonal dominance for numerical stability
+   if (std::abs(hessian(i, i)) <= row_sum) {
+     hessian(i, i) = row_sum + 1e-3 / param_scales[i];
+   }
+ }
+}
+
+// Return the final, robust Hessian approximation
+return hessian;
 }
 
 
@@ -11980,113 +16351,113 @@ arma::mat numHessianAdaptive(
 //' @return Vector of scaling factors
 //' @noRd
 Rcpp::NumericVector computeScalingFactors(Rcpp::NumericVector params) {
- int n = params.size();
- Rcpp::NumericVector scaling_factors(n, 1.0);
+int n = params.size();
+Rcpp::NumericVector scaling_factors(n, 1.0);
 
- // Handle empty parameter vector
- if (n == 0) return scaling_factors;
+// Handle empty parameter vector
+if (n == 0) return scaling_factors;
 
- // Calculate parameter statistics for adaptive scaling
- double param_max = 0.0;
- double param_min = R_PosInf;
- double geom_mean = 0.0;
- int non_zero_count = 0;
+// Calculate parameter statistics for adaptive scaling
+double param_max = 0.0;
+double param_min = R_PosInf;
+double geom_mean = 0.0;
+int non_zero_count = 0;
+
+for (int i = 0; i < n; i++) {
+ double abs_param = std::abs(params[i]);
+
+ // Skip zeros for statistics
+ if (abs_param > 0) {
+   param_max = std::max(param_max, abs_param);
+   param_min = std::min(param_min, abs_param);
+   geom_mean += std::log(abs_param);
+   non_zero_count++;
+ }
+}
+
+// Set adaptive thresholds
+double upper_threshold = 100.0;  // Default upper threshold
+double lower_threshold = 0.01;   // Default lower threshold
+
+// Use adaptive thresholds if we have enough non-zero parameters
+if (non_zero_count > 1) {
+ geom_mean = std::exp(geom_mean / non_zero_count);
+
+ // Calculate magnitude range
+ double magnitude_range = param_max / std::max(param_min, std::numeric_limits<double>::min());
+
+ // If parameters span many orders of magnitude, use more aggressive scaling
+ if (magnitude_range > 1e6) {
+   // For extreme ranges, use statistics-based thresholds
+   upper_threshold = std::min(100.0, std::max(10.0, 10.0 * geom_mean));
+   lower_threshold = std::max(0.01, std::min(0.1, 0.1 * geom_mean));
+ }
+ else if (magnitude_range > 1e4) {
+   // For wide ranges, adjust thresholds based on geometric mean
+   upper_threshold = std::min(100.0, std::max(10.0, 5.0 * geom_mean));
+   lower_threshold = std::max(0.01, std::min(0.1, 0.2 * geom_mean));
+ }
+}
+
+// Apply scaling factors with adaptive thresholds
+for (int i = 0; i < n; i++) {
+ double abs_param = std::abs(params[i]);
+
+ // Apply scaling for very large parameters
+ if (abs_param > upper_threshold) {
+   // Nonlinear scaling for extreme values to prevent excessive scaling
+   if (abs_param > 1e4 * upper_threshold) {
+     // Use square root scaling for extremely large values
+     scaling_factors[i] = upper_threshold / std::sqrt(abs_param * upper_threshold);
+   } else {
+     // Standard scaling
+     scaling_factors[i] = upper_threshold / abs_param;
+   }
+ }
+ // Apply scaling for very small non-zero parameters
+ else if (abs_param < lower_threshold && abs_param > 0) {
+   // Nonlinear scaling for extreme values to prevent excessive scaling
+   if (abs_param < lower_threshold * 1e-4) {
+     // Use square root scaling for extremely small values
+     scaling_factors[i] = std::sqrt(lower_threshold / abs_param);
+   } else {
+     // Standard scaling
+     scaling_factors[i] = lower_threshold / abs_param;
+   }
+ }
+
+ // Handle zero parameters specially - leave scaling at 1.0
+ // as multiplying by any factor won't change zero
+}
+
+// Detect if parameters have extreme differences that might cause issues
+if (n > 1) {
+ double max_scaling = 1.0;
+ double min_scaling = 1.0;
 
  for (int i = 0; i < n; i++) {
-   double abs_param = std::abs(params[i]);
-
-   // Skip zeros for statistics
-   if (abs_param > 0) {
-     param_max = std::max(param_max, abs_param);
-     param_min = std::min(param_min, abs_param);
-     geom_mean += std::log(abs_param);
-     non_zero_count++;
+   if (scaling_factors[i] != 1.0) {
+     max_scaling = std::max(max_scaling, scaling_factors[i]);
+     min_scaling = std::min(min_scaling, scaling_factors[i]);
    }
  }
 
- // Set adaptive thresholds
- double upper_threshold = 100.0;  // Default upper threshold
- double lower_threshold = 0.01;   // Default lower threshold
-
- // Use adaptive thresholds if we have enough non-zero parameters
- if (non_zero_count > 1) {
-   geom_mean = std::exp(geom_mean / non_zero_count);
-
-   // Calculate magnitude range
-   double magnitude_range = param_max / std::max(param_min, std::numeric_limits<double>::min());
-
-   // If parameters span many orders of magnitude, use more aggressive scaling
-   if (magnitude_range > 1e6) {
-     // For extreme ranges, use statistics-based thresholds
-     upper_threshold = std::min(100.0, std::max(10.0, 10.0 * geom_mean));
-     lower_threshold = std::max(0.01, std::min(0.1, 0.1 * geom_mean));
-   }
-   else if (magnitude_range > 1e4) {
-     // For wide ranges, adjust thresholds based on geometric mean
-     upper_threshold = std::min(100.0, std::max(10.0, 5.0 * geom_mean));
-     lower_threshold = std::max(0.01, std::min(0.1, 0.2 * geom_mean));
-   }
- }
-
- // Apply scaling factors with adaptive thresholds
- for (int i = 0; i < n; i++) {
-   double abs_param = std::abs(params[i]);
-
-   // Apply scaling for very large parameters
-   if (abs_param > upper_threshold) {
-     // Nonlinear scaling for extreme values to prevent excessive scaling
-     if (abs_param > 1e4 * upper_threshold) {
-       // Use square root scaling for extremely large values
-       scaling_factors[i] = upper_threshold / std::sqrt(abs_param * upper_threshold);
-     } else {
-       // Standard scaling
-       scaling_factors[i] = upper_threshold / abs_param;
-     }
-   }
-   // Apply scaling for very small non-zero parameters
-   else if (abs_param < lower_threshold && abs_param > 0) {
-     // Nonlinear scaling for extreme values to prevent excessive scaling
-     if (abs_param < lower_threshold * 1e-4) {
-       // Use square root scaling for extremely small values
-       scaling_factors[i] = std::sqrt(lower_threshold / abs_param);
-     } else {
-       // Standard scaling
-       scaling_factors[i] = lower_threshold / abs_param;
-     }
-   }
-
-   // Handle zero parameters specially - leave scaling at 1.0
-   // as multiplying by any factor won't change zero
- }
-
- // Detect if parameters have extreme differences that might cause issues
- if (n > 1) {
-   double max_scaling = 1.0;
-   double min_scaling = 1.0;
-
+ // If scaling factors themselves vary too much, moderate them
+ if (max_scaling / min_scaling > 1e6) {
    for (int i = 0; i < n; i++) {
-     if (scaling_factors[i] != 1.0) {
-       max_scaling = std::max(max_scaling, scaling_factors[i]);
-       min_scaling = std::min(min_scaling, scaling_factors[i]);
+     if (scaling_factors[i] > 1.0) {
+       // Reduce very large upscaling factors using a logarithmic damping
+       scaling_factors[i] = std::pow(scaling_factors[i], 0.75);
      }
-   }
-
-   // If scaling factors themselves vary too much, moderate them
-   if (max_scaling / min_scaling > 1e6) {
-     for (int i = 0; i < n; i++) {
-       if (scaling_factors[i] > 1.0) {
-         // Reduce very large upscaling factors using a logarithmic damping
-         scaling_factors[i] = std::pow(scaling_factors[i], 0.75);
-       }
-       else if (scaling_factors[i] < 1.0 && scaling_factors[i] > 0) {
-         // Reduce very small downscaling factors using a logarithmic damping
-         scaling_factors[i] = std::pow(scaling_factors[i], 0.75);
-       }
+     else if (scaling_factors[i] < 1.0 && scaling_factors[i] > 0) {
+       // Reduce very small downscaling factors using a logarithmic damping
+       scaling_factors[i] = std::pow(scaling_factors[i], 0.75);
      }
    }
  }
+}
 
- return scaling_factors;
+return scaling_factors;
 }
 
 
@@ -12108,355 +16479,355 @@ Rcpp::NumericVector computeScalingFactors(Rcpp::NumericVector params) {
 //' @return Step size satisfying Wolfe conditions
 //' @noRd
 double lineSearchWolfe(
-   Rcpp::NumericVector params,
-   Rcpp::NumericVector search_dir,
-   Rcpp::NumericVector data,
-   std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
-   std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
-   double alpha_init = 1.0,
-   double c1 = 1e-4,
-   double c2 = 0.9,
-   int max_iter = 20
+ Rcpp::NumericVector params,
+ Rcpp::NumericVector search_dir,
+ Rcpp::NumericVector data,
+ std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
+ std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
+ double alpha_init = 1.0,
+ double c1 = 1e-4,
+ double c2 = 0.9,
+ int max_iter = 20
 ) {
- const int n_params = params.size();
+const int n_params = params.size();
 
- // Safety bounds for step size
- const double alpha_min = 1e-10;
- const double alpha_max = 1e3;
+// Safety bounds for step size
+const double alpha_min = 1e-10;
+const double alpha_max = 1e3;
 
- // Safeguard alpha_init to be reasonable
- alpha_init = std::min(std::max(alpha_init, alpha_min), alpha_max);
+// Safeguard alpha_init to be reasonable
+alpha_init = std::min(std::max(alpha_init, alpha_min), alpha_max);
 
- // Evaluate function and gradient at starting point with error handling
- double f0;
- Rcpp::NumericVector g0;
+// Evaluate function and gradient at starting point with error handling
+double f0;
+Rcpp::NumericVector g0;
 
- try {
-   f0 = ll_func(params, data);
-   if (!R_finite(f0)) {
-     Rcpp::warning("Initial function value is not finite");
+try {
+ f0 = ll_func(params, data);
+ if (!R_finite(f0)) {
+   Rcpp::warning("Initial function value is not finite");
+   return alpha_min;
+ }
+
+ g0 = gr_func(params, data);
+ for (int i = 0; i < n_params; i++) {
+   if (!R_finite(g0[i])) {
+     Rcpp::warning("Initial gradient contains non-finite values");
      return alpha_min;
    }
+ }
+} catch (...) {
+ Rcpp::warning("Exception during initial function/gradient evaluation");
+ return alpha_min;
+}
 
-   g0 = gr_func(params, data);
-   for (int i = 0; i < n_params; i++) {
-     if (!R_finite(g0[i])) {
-       Rcpp::warning("Initial gradient contains non-finite values");
-       return alpha_min;
+// Calculate directional derivative and search direction norm
+double dir_deriv = 0.0;
+double search_dir_norm = 0.0;
+
+for (int i = 0; i < n_params; i++) {
+ dir_deriv += g0[i] * search_dir[i];
+ search_dir_norm += search_dir[i] * search_dir[i];
+}
+search_dir_norm = std::sqrt(search_dir_norm);
+
+// Adjust c1 and c2 based on problem characteristics (if needed)
+if (std::abs(dir_deriv) / search_dir_norm < 1e-4) {
+ // For very flat regions, relax the conditions slightly
+ c1 = std::min(c1, 1e-6);
+ c2 = std::max(c2, 0.95);
+}
+
+// Ensure search direction is a descent direction
+if (dir_deriv >= 0) {
+ // Not a descent direction, return small step
+ return alpha_min;
+}
+
+// Scale initial step size based on search direction norm for better initial guess
+if (search_dir_norm > 100.0) {
+ alpha_init = std::min(alpha_init, 10.0/search_dir_norm);
+} else if (search_dir_norm < 0.01) {
+ alpha_init = std::min(alpha_max, std::max(alpha_init, 0.1/search_dir_norm));
+}
+
+// Initialize the bracketing phase
+double alpha = alpha_init;
+double alpha_prev = 0.0;
+double f_prev = f0;
+
+// Cache to avoid redundant function evaluations
+struct CacheEntry {
+ double alpha;
+ double f_val;
+ Rcpp::NumericVector gradient;
+ bool has_gradient;
+
+ CacheEntry(double a, double f, Rcpp::NumericVector g, bool has_g) :
+   alpha(a), f_val(f), gradient(g), has_gradient(has_g) {}
+};
+
+std::vector<CacheEntry> evaluations;
+evaluations.reserve(max_iter + 1);
+
+// Helper function to compute new parameters
+auto compute_new_params = [&](double step_size) -> Rcpp::NumericVector {
+ Rcpp::NumericVector new_params = Rcpp::clone(params);
+ for (int i = 0; i < n_params; i++) {
+   new_params[i] += step_size * search_dir[i];
+ }
+ return new_params;
+};
+
+// Helper to find cached evaluation
+auto find_cached = [&](double a) -> std::vector<CacheEntry>::iterator {
+ const double cache_tol = 1e-14;
+ for (auto it = evaluations.begin(); it != evaluations.end(); ++it) {
+   if (std::abs(it->alpha - a) < cache_tol) {
+     return it;
+   }
+ }
+ return evaluations.end();
+};
+
+// Helper to evaluate function and optionally gradient at a point
+auto evaluate = [&](double a, bool need_gradient) -> CacheEntry {
+ // Check cache first
+ auto cached = find_cached(a);
+ if (cached != evaluations.end()) {
+   if (need_gradient && !cached->has_gradient) {
+     // Need to compute gradient for cached point
+     try {
+       Rcpp::NumericVector new_params = compute_new_params(a);
+       cached->gradient = gr_func(new_params, data);
+       cached->has_gradient = true;
+     } catch (...) {
+       // Keep existing entry if gradient fails
+     }
+   }
+   return *cached;
+ }
+
+ // New evaluation needed
+ Rcpp::NumericVector new_params = compute_new_params(a);
+ double f_val;
+ Rcpp::NumericVector g_val;
+ bool has_g = false;
+
+ try {
+   f_val = ll_func(new_params, data);
+   if (!R_finite(f_val)) {
+     f_val = R_PosInf; // Mark as invalid
+   }
+
+   if (need_gradient) {
+     g_val = gr_func(new_params, data);
+     has_g = true;
+
+     // Check gradient validity
+     for (int i = 0; i < n_params; i++) {
+       if (!R_finite(g_val[i])) {
+         has_g = false;
+         break;
+       }
      }
    }
  } catch (...) {
-   Rcpp::warning("Exception during initial function/gradient evaluation");
-   return alpha_min;
+   f_val = R_PosInf;
+   has_g = false;
  }
 
- // Calculate directional derivative and search direction norm
- double dir_deriv = 0.0;
- double search_dir_norm = 0.0;
+ CacheEntry entry(a, f_val, g_val, has_g);
+ evaluations.push_back(entry);
+ return entry;
+};
 
- for (int i = 0; i < n_params; i++) {
-   dir_deriv += g0[i] * search_dir[i];
-   search_dir_norm += search_dir[i] * search_dir[i];
- }
- search_dir_norm = std::sqrt(search_dir_norm);
+// Line search iterations
+for (int iter = 0; iter < max_iter; iter++) {
+ // Evaluate function at new point
+ CacheEntry eval = evaluate(alpha, false);
+ double f_new = eval.f_val;
 
- // Adjust c1 and c2 based on problem characteristics (if needed)
- if (std::abs(dir_deriv) / search_dir_norm < 1e-4) {
-   // For very flat regions, relax the conditions slightly
-   c1 = std::min(c1, 1e-6);
-   c2 = std::max(c2, 0.95);
- }
-
- // Ensure search direction is a descent direction
- if (dir_deriv >= 0) {
-   // Not a descent direction, return small step
-   return alpha_min;
+ // Check for invalid function values
+ if (!R_finite(f_new) || f_new == R_PosInf) {
+   // Rapidly reduce step size for invalid regions
+   alpha = 0.1 * alpha;
+   if (alpha < alpha_min) {
+     return alpha_min;
+   }
+   continue;
  }
 
- // Scale initial step size based on search direction norm for better initial guess
- if (search_dir_norm > 100.0) {
-   alpha_init = std::min(alpha_init, 10.0/search_dir_norm);
- } else if (search_dir_norm < 0.01) {
-   alpha_init = std::min(alpha_max, std::max(alpha_init, 0.1/search_dir_norm));
- }
+ // Check Armijo condition (sufficient decrease)
+ bool armijo_condition = f_new <= f0 + c1 * alpha * dir_deriv;
 
- // Initialize the bracketing phase
- double alpha = alpha_init;
- double alpha_prev = 0.0;
- double f_prev = f0;
+ if (!armijo_condition) {
+   // Backtracking with safeguarded polynomial interpolation
+   if (iter == 0) {
+     // First iteration, use safeguarded quadratic interpolation
+     double denominator = 2.0 * (f_new - f0 - dir_deriv * alpha);
 
- // Cache to avoid redundant function evaluations
- struct CacheEntry {
-   double alpha;
-   double f_val;
-   Rcpp::NumericVector gradient;
-   bool has_gradient;
-
-   CacheEntry(double a, double f, Rcpp::NumericVector g, bool has_g) :
-     alpha(a), f_val(f), gradient(g), has_gradient(has_g) {}
- };
-
- std::vector<CacheEntry> evaluations;
- evaluations.reserve(max_iter + 1);
-
- // Helper function to compute new parameters
- auto compute_new_params = [&](double step_size) -> Rcpp::NumericVector {
-   Rcpp::NumericVector new_params = Rcpp::clone(params);
-   for (int i = 0; i < n_params; i++) {
-     new_params[i] += step_size * search_dir[i];
-   }
-   return new_params;
- };
-
- // Helper to find cached evaluation
- auto find_cached = [&](double a) -> std::vector<CacheEntry>::iterator {
-   const double cache_tol = 1e-14;
-   for (auto it = evaluations.begin(); it != evaluations.end(); ++it) {
-     if (std::abs(it->alpha - a) < cache_tol) {
-       return it;
-     }
-   }
-   return evaluations.end();
- };
-
- // Helper to evaluate function and optionally gradient at a point
- auto evaluate = [&](double a, bool need_gradient) -> CacheEntry {
-   // Check cache first
-   auto cached = find_cached(a);
-   if (cached != evaluations.end()) {
-     if (need_gradient && !cached->has_gradient) {
-       // Need to compute gradient for cached point
-       try {
-         Rcpp::NumericVector new_params = compute_new_params(a);
-         cached->gradient = gr_func(new_params, data);
-         cached->has_gradient = true;
-       } catch (...) {
-         // Keep existing entry if gradient fails
-       }
-     }
-     return *cached;
-   }
-
-   // New evaluation needed
-   Rcpp::NumericVector new_params = compute_new_params(a);
-   double f_val;
-   Rcpp::NumericVector g_val;
-   bool has_g = false;
-
-   try {
-     f_val = ll_func(new_params, data);
-     if (!R_finite(f_val)) {
-       f_val = R_PosInf; // Mark as invalid
-     }
-
-     if (need_gradient) {
-       g_val = gr_func(new_params, data);
-       has_g = true;
-
-       // Check gradient validity
-       for (int i = 0; i < n_params; i++) {
-         if (!R_finite(g_val[i])) {
-           has_g = false;
-           break;
-         }
-       }
-     }
-   } catch (...) {
-     f_val = R_PosInf;
-     has_g = false;
-   }
-
-   CacheEntry entry(a, f_val, g_val, has_g);
-   evaluations.push_back(entry);
-   return entry;
- };
-
- // Line search iterations
- for (int iter = 0; iter < max_iter; iter++) {
-   // Evaluate function at new point
-   CacheEntry eval = evaluate(alpha, false);
-   double f_new = eval.f_val;
-
-   // Check for invalid function values
-   if (!R_finite(f_new) || f_new == R_PosInf) {
-     // Rapidly reduce step size for invalid regions
-     alpha = 0.1 * alpha;
-     if (alpha < alpha_min) {
-       return alpha_min;
-     }
-     continue;
-   }
-
-   // Check Armijo condition (sufficient decrease)
-   bool armijo_condition = f_new <= f0 + c1 * alpha * dir_deriv;
-
-   if (!armijo_condition) {
-     // Backtracking with safeguarded polynomial interpolation
-     if (iter == 0) {
-       // First iteration, use safeguarded quadratic interpolation
-       double denominator = 2.0 * (f_new - f0 - dir_deriv * alpha);
-
-       if (std::abs(denominator) < 1e-10) {
-         // Avoid division by very small number
-         alpha = 0.5 * alpha;
-       } else {
-         // Quadratic interpolation
-         double alpha_quad = -dir_deriv * alpha * alpha / denominator;
-
-         // Safeguard the interpolated value
-         if (alpha_quad < 0.1 * alpha || alpha_quad > 0.9 * alpha || !R_finite(alpha_quad)) {
-           alpha = 0.5 * alpha;  // Fallback
-         } else {
-           alpha = alpha_quad;
-         }
-       }
-     } else {
-       // Subsequent iterations, use safeguarded cubic interpolation
-       double d1 = dir_deriv + (f_new - f0) / alpha;
-       double d2 = (f_prev - f0) / alpha_prev + dir_deriv;
-
-       // Check for nearly identical slopes
-       if (std::abs(d1 - d2) < 1e-10 || std::abs(alpha - alpha_prev) < 1e-10) {
-         alpha = 0.5 * alpha;  // Simple backtracking
-       } else {
-         double a = (d1 - d2) / (alpha - alpha_prev);
-         double b = d1 - a * alpha;
-
-         // Compute minimum of cubic polynomial with safeguards
-         double alpha_cubic;
-
-         if (std::abs(a) < 1e-10) {
-           // Nearly quadratic case
-           if (std::abs(b) < 1e-10) {
-             alpha_cubic = 0.5 * alpha;  // Fallback
-           } else {
-             alpha_cubic = -dir_deriv / (2.0 * b);
-           }
-         } else {
-           double disc = b * b - 3.0 * a * dir_deriv;
-
-           if (disc < 0 || !R_finite(disc)) {
-             // Discriminant invalid, use simple backtracking
-             alpha_cubic = 0.5 * alpha;
-           } else {
-             alpha_cubic = (-b + std::sqrt(disc)) / (3.0 * a);
-
-             // Check if we got the wrong root
-             if (alpha_cubic <= 0 || alpha_cubic > alpha) {
-               alpha_cubic = (-b - std::sqrt(disc)) / (3.0 * a);
-             }
-           }
-         }
-
-         // Safeguard the interpolated value
-         if (alpha_cubic <= 0.1 * alpha || alpha_cubic >= 0.9 * alpha || !R_finite(alpha_cubic)) {
-           alpha = 0.5 * alpha;  // Fallback
-         } else {
-           alpha = alpha_cubic;
-         }
-       }
-     }
-
-     // Additional safeguards for new alpha
-     if (alpha < alpha_min) {
-       return alpha_min;  // Step too small, terminate
-     }
-
-     // Safety check to avoid too small steps
-     if (alpha < 0.1 * alpha_prev) {
-       alpha = 0.1 * alpha_prev;
-     }
-
-     // Save current values for next iteration
-     alpha_prev = alpha;
-     f_prev = f_new;
-     continue;
-   }
-
-   // Armijo condition is satisfied, now check curvature condition
-   CacheEntry eval_with_grad = evaluate(alpha, true);
-
-   // Check if we could compute a valid gradient
-   if (!eval_with_grad.has_gradient) {
-     // No valid gradient, accept the point anyway if it decreased the function
-     if (f_new < f0) {
-       return alpha;
-     } else {
-       // Try smaller step
+     if (std::abs(denominator) < 1e-10) {
+       // Avoid division by very small number
        alpha = 0.5 * alpha;
-       continue;
-     }
-   }
-
-   // Compute new directional derivative
-   double dir_deriv_new = 0.0;
-   for (int i = 0; i < n_params; i++) {
-     dir_deriv_new += eval_with_grad.gradient[i] * search_dir[i];
-   }
-
-   // Check Wolfe curvature condition
-   bool wolfe_condition = std::abs(dir_deriv_new) <= c2 * std::abs(dir_deriv);
-
-   if (wolfe_condition) {
-     return alpha;  // Both conditions satisfied
-   }
-
-   // Curvature condition not satisfied, adjust interval
-   if (dir_deriv_new * dir_deriv > 0) {
-     // Derivative not changing sign, increase alpha
-     alpha_prev = alpha;
-
-     // More intelligent expansion strategy
-     if (f_new < f_prev) {
-       // Function still decreasing, be more aggressive
-       alpha = std::min(alpha_max, 2.0 * alpha);
      } else {
-       // Function increasing, be more conservative
-       alpha = std::min(alpha_max, 1.5 * alpha);
-     }
+       // Quadratic interpolation
+       double alpha_quad = -dir_deriv * alpha * alpha / denominator;
 
-     f_prev = f_new;
+       // Safeguard the interpolated value
+       if (alpha_quad < 0.1 * alpha || alpha_quad > 0.9 * alpha || !R_finite(alpha_quad)) {
+         alpha = 0.5 * alpha;  // Fallback
+       } else {
+         alpha = alpha_quad;
+       }
+     }
    } else {
-     // Derivative changed sign, we bracketed a minimum
-     // Use bisection with more weight to the current point
-     double alpha_temp = alpha;
-     double weight = 0.6;  // Bias toward current point if it's better
+     // Subsequent iterations, use safeguarded cubic interpolation
+     double d1 = dir_deriv + (f_new - f0) / alpha;
+     double d2 = (f_prev - f0) / alpha_prev + dir_deriv;
 
-     if (f_new < f_prev) {
-       weight = 0.7;  // Even more bias if current point is much better
+     // Check for nearly identical slopes
+     if (std::abs(d1 - d2) < 1e-10 || std::abs(alpha - alpha_prev) < 1e-10) {
+       alpha = 0.5 * alpha;  // Simple backtracking
+     } else {
+       double a = (d1 - d2) / (alpha - alpha_prev);
+       double b = d1 - a * alpha;
+
+       // Compute minimum of cubic polynomial with safeguards
+       double alpha_cubic;
+
+       if (std::abs(a) < 1e-10) {
+         // Nearly quadratic case
+         if (std::abs(b) < 1e-10) {
+           alpha_cubic = 0.5 * alpha;  // Fallback
+         } else {
+           alpha_cubic = -dir_deriv / (2.0 * b);
+         }
+       } else {
+         double disc = b * b - 3.0 * a * dir_deriv;
+
+         if (disc < 0 || !R_finite(disc)) {
+           // Discriminant invalid, use simple backtracking
+           alpha_cubic = 0.5 * alpha;
+         } else {
+           alpha_cubic = (-b + std::sqrt(disc)) / (3.0 * a);
+
+           // Check if we got the wrong root
+           if (alpha_cubic <= 0 || alpha_cubic > alpha) {
+             alpha_cubic = (-b - std::sqrt(disc)) / (3.0 * a);
+           }
+         }
+       }
+
+       // Safeguard the interpolated value
+       if (alpha_cubic <= 0.1 * alpha || alpha_cubic >= 0.9 * alpha || !R_finite(alpha_cubic)) {
+         alpha = 0.5 * alpha;  // Fallback
+       } else {
+         alpha = alpha_cubic;
+       }
      }
-
-     alpha = (1.0 - weight) * alpha_prev + weight * alpha;
-     alpha_prev = alpha_temp;
-     f_prev = f_new;
    }
 
-   // Check for convergence based on step size
-   if (std::abs(alpha - alpha_prev) < alpha_min) {
-     return alpha;  // Steps are becoming too small
+   // Additional safeguards for new alpha
+   if (alpha < alpha_min) {
+     return alpha_min;  // Step too small, terminate
+   }
+
+   // Safety check to avoid too small steps
+   if (alpha < 0.1 * alpha_prev) {
+     alpha = 0.1 * alpha_prev;
+   }
+
+   // Save current values for next iteration
+   alpha_prev = alpha;
+   f_prev = f_new;
+   continue;
+ }
+
+ // Armijo condition is satisfied, now check curvature condition
+ CacheEntry eval_with_grad = evaluate(alpha, true);
+
+ // Check if we could compute a valid gradient
+ if (!eval_with_grad.has_gradient) {
+   // No valid gradient, accept the point anyway if it decreased the function
+   if (f_new < f0) {
+     return alpha;
+   } else {
+     // Try smaller step
+     alpha = 0.5 * alpha;
+     continue;
    }
  }
 
- // Check final point quality after max iterations
- CacheEntry last_eval = evaluate(alpha, false);
-
- // If we didn't satisfy Wolfe conditions but found a good improvement, accept it
- if (last_eval.f_val < f0) {
-   return alpha;
+ // Compute new directional derivative
+ double dir_deriv_new = 0.0;
+ for (int i = 0; i < n_params; i++) {
+   dir_deriv_new += eval_with_grad.gradient[i] * search_dir[i];
  }
 
- // Otherwise, find best alpha from our evaluations
- double best_alpha = alpha_min;
- double best_value = f0;
+ // Check Wolfe curvature condition
+ bool wolfe_condition = std::abs(dir_deriv_new) <= c2 * std::abs(dir_deriv);
 
- for (const auto& eval : evaluations) {
-   if (R_finite(eval.f_val) && eval.f_val < best_value) {
-     best_value = eval.f_val;
-     best_alpha = eval.alpha;
+ if (wolfe_condition) {
+   return alpha;  // Both conditions satisfied
+ }
+
+ // Curvature condition not satisfied, adjust interval
+ if (dir_deriv_new * dir_deriv > 0) {
+   // Derivative not changing sign, increase alpha
+   alpha_prev = alpha;
+
+   // More intelligent expansion strategy
+   if (f_new < f_prev) {
+     // Function still decreasing, be more aggressive
+     alpha = std::min(alpha_max, 2.0 * alpha);
+   } else {
+     // Function increasing, be more conservative
+     alpha = std::min(alpha_max, 1.5 * alpha);
    }
+
+   f_prev = f_new;
+ } else {
+   // Derivative changed sign, we bracketed a minimum
+   // Use bisection with more weight to the current point
+   double alpha_temp = alpha;
+   double weight = 0.6;  // Bias toward current point if it's better
+
+   if (f_new < f_prev) {
+     weight = 0.7;  // Even more bias if current point is much better
+   }
+
+   alpha = (1.0 - weight) * alpha_prev + weight * alpha;
+   alpha_prev = alpha_temp;
+   f_prev = f_new;
  }
 
- return best_alpha;
+ // Check for convergence based on step size
+ if (std::abs(alpha - alpha_prev) < alpha_min) {
+   return alpha;  // Steps are becoming too small
+ }
+}
+
+// Check final point quality after max iterations
+CacheEntry last_eval = evaluate(alpha, false);
+
+// If we didn't satisfy Wolfe conditions but found a good improvement, accept it
+if (last_eval.f_val < f0) {
+ return alpha;
+}
+
+// Otherwise, find best alpha from our evaluations
+double best_alpha = alpha_min;
+double best_value = f0;
+
+for (const auto& eval : evaluations) {
+ if (R_finite(eval.f_val) && eval.f_val < best_value) {
+   best_value = eval.f_val;
+   best_alpha = eval.alpha;
+ }
+}
+
+return best_alpha;
 }
 
 
@@ -12467,7 +16838,7 @@ double lineSearchWolfe(
 //' @return Symmetrized matrix
 //' @noRd
 inline arma::mat forceSymmetry(const arma::mat& M) {
- return 0.5 * (M + M.t());
+return 0.5 * (M + M.t());
 }
 
 //' @title Enhanced Trust Region Update Using Levenberg-Marquardt
@@ -12488,443 +16859,443 @@ inline arma::mat forceSymmetry(const arma::mat& M) {
 //' @return List containing new parameters and trust region information
 //' @noRd
 Rcpp::List trustRegionUpdate(
-   Rcpp::NumericVector params,
-   Rcpp::NumericVector data,
-   std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
-   std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
-   std::function<Rcpp::NumericMatrix(Rcpp::NumericVector, Rcpp::NumericVector)> hs_func,
-   double trust_radius = 1.0,
-   double eta = 0.1,
-   bool enforce_bounds = true,
-   double min_param_val = 1e-5,
-   double max_param_val = 1e5
+ Rcpp::NumericVector params,
+ Rcpp::NumericVector data,
+ std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func,
+ std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func,
+ std::function<Rcpp::NumericMatrix(Rcpp::NumericVector, Rcpp::NumericVector)> hs_func,
+ double trust_radius = 1.0,
+ double eta = 0.1,
+ bool enforce_bounds = true,
+ double min_param_val = 1e-5,
+ double max_param_val = 1e5
 ) {
- int n = params.size();
+int n = params.size();
 
- // Ensure trust radius is within reasonable bounds
- // This prevents numerical issues with extremely small or large step sizes
- trust_radius = std::max(1e-8, std::min(trust_radius, 100.0));
+// Ensure trust radius is within reasonable bounds
+// This prevents numerical issues with extremely small or large step sizes
+trust_radius = std::max(1e-8, std::min(trust_radius, 100.0));
 
- // Create result container with default values for error cases
- // This ensures we always return a valid result even if computation fails
- Rcpp::List result;
- result["new_params"] = Rcpp::clone(params);  // Default: no change
- result["accept"] = false;
- result["trust_radius"] = trust_radius * 0.5;  // Default: reduce trust region
- result["actual_reduction"] = 0.0;
- result["ratio"] = 0.0;
+// Create result container with default values for error cases
+// This ensures we always return a valid result even if computation fails
+Rcpp::List result;
+result["new_params"] = Rcpp::clone(params);  // Default: no change
+result["accept"] = false;
+result["trust_radius"] = trust_radius * 0.5;  // Default: reduce trust region
+result["actual_reduction"] = 0.0;
+result["ratio"] = 0.0;
 
- // Evaluate function and gradient at current point
- double f0;
- Rcpp::NumericVector g0;
- bool valid_evaluation = true;
+// Evaluate function and gradient at current point
+double f0;
+Rcpp::NumericVector g0;
+bool valid_evaluation = true;
 
- try {
-   f0 = ll_func(params, data);
-   g0 = gr_func(params, data);
+try {
+ f0 = ll_func(params, data);
+ g0 = gr_func(params, data);
 
-   // Check for non-finite values
-   if (!R_finite(f0)) {
-     Rcpp::warning("Non-finite function value at current point");
+ // Check for non-finite values
+ if (!R_finite(f0)) {
+   Rcpp::warning("Non-finite function value at current point");
+   return result;
+ }
+
+ for (int i = 0; i < n; i++) {
+   if (!R_finite(g0[i])) {
+     Rcpp::warning("Non-finite gradient value(s) at current point");
      return result;
    }
-
-   for (int i = 0; i < n; i++) {
-     if (!R_finite(g0[i])) {
-       Rcpp::warning("Non-finite gradient value(s) at current point");
-       return result;
-     }
-   }
- } catch (...) {
-   Rcpp::warning("Exception during function/gradient evaluation");
-   return result;
  }
+} catch (...) {
+ Rcpp::warning("Exception during function/gradient evaluation");
+ return result;
+}
 
- // Convert gradient to Armadillo vector
- arma::vec g_arma(n);
- double grad_norm = 0.0;
+// Convert gradient to Armadillo vector
+arma::vec g_arma(n);
+double grad_norm = 0.0;
 
+for (int i = 0; i < n; i++) {
+ g_arma(i) = g0[i];
+ grad_norm += g0[i] * g0[i];
+}
+grad_norm = std::sqrt(grad_norm);
+
+// Skip update if gradient is effectively zero (we're at a stationary point)
+if (grad_norm < 1e-10) {
+ result["accept"] = true;  // Accept current point (it's already optimal)
+ return result;
+}
+
+// Compute parameter scale factors for better conditioning
+// This helps handle parameters with very different magnitudes
+arma::vec param_scales(n);
+for (int i = 0; i < n; i++) {
+ param_scales(i) = std::max(1.0, std::abs(params[i]));
+}
+
+// Retrieve and validate Hessian
+Rcpp::NumericMatrix rcpp_hessian;
+arma::mat H(n, n);
+bool use_hessian = true;
+
+try {
+ rcpp_hessian = hs_func(params, data);
+
+ // Check for non-finite values
  for (int i = 0; i < n; i++) {
-   g_arma(i) = g0[i];
-   grad_norm += g0[i] * g0[i];
- }
- grad_norm = std::sqrt(grad_norm);
-
- // Skip update if gradient is effectively zero (we're at a stationary point)
- if (grad_norm < 1e-10) {
-   result["accept"] = true;  // Accept current point (it's already optimal)
-   return result;
- }
-
- // Compute parameter scale factors for better conditioning
- // This helps handle parameters with very different magnitudes
- arma::vec param_scales(n);
- for (int i = 0; i < n; i++) {
-   param_scales(i) = std::max(1.0, std::abs(params[i]));
- }
-
- // Retrieve and validate Hessian
- Rcpp::NumericMatrix rcpp_hessian;
- arma::mat H(n, n);
- bool use_hessian = true;
-
- try {
-   rcpp_hessian = hs_func(params, data);
-
-   // Check for non-finite values
-   for (int i = 0; i < n; i++) {
-     for (int j = 0; j < n; j++) {
-       if (!R_finite(rcpp_hessian(i, j))) {
-         use_hessian = false;
-         break;
-       }
-     }
-     if (!use_hessian) break;
-   }
-
-   if (use_hessian) {
-     H = Rcpp::as<arma::mat>(rcpp_hessian);
-
-     // Check for unreasonable values in Hessian
-     double max_abs_hess = 0.0;
-     for (int i = 0; i < n; i++) {
-       for (int j = 0; j < n; j++) {
-         max_abs_hess = std::max(max_abs_hess, std::abs(H(i, j)));
-       }
-     }
-
-     // Reject extreme values which may cause numerical instability
-     if (max_abs_hess > 1e7) {
-       use_hessian = false;
-     }
-   }
- } catch (...) {
-   use_hessian = false;
- }
-
- // Fallback if Hessian is invalid or computation failed
- if (!use_hessian) {
-   // Use scaled identity matrix if Hessian is invalid
-   H = arma::diagmat(arma::vec(n, arma::fill::ones));
-
-   // Scale diagonal elements by gradient magnitudes for better conditioning
-   for (int i = 0; i < n; i++) {
-     double scale = std::max(1.0, std::sqrt(std::abs(g_arma(i))));
-     H(i, i) = scale;
-   }
- }
-
- // Ensure H is symmetric before making it positive definite
- H = forceSymmetry(H);
-
- // Ensure H is positive definite with scaled regularization
- try {
-   H = makePositiveDefinite(H, 1e-5);
- } catch (...) {
-   // If regularization fails, use a robust diagonal approximation
-   for (int i = 0; i < n; i++) {
-     for (int j = 0; j < n; j++) {
-       if (i != j) H(i, j) = 0.0;
-       else H(i, i) = std::max(1.0, std::abs(H(i, i)));
-     }
-   }
- }
-
- // Precondition the system for better numerical stability
- // This helps solve the linear system more accurately
- arma::vec scaled_g = g_arma;
- arma::mat scaled_H = H;
-
- for (int i = 0; i < n; i++) {
-   double scale = param_scales(i);
-   scaled_g(i) /= scale;
-
    for (int j = 0; j < n; j++) {
-     scaled_H(i, j) = H(i, j) * scale / param_scales(j);
-   }
- }
-
- // Ensure scaled_H is perfectly symmetric for eigendecomposition
- scaled_H = forceSymmetry(scaled_H);
-
- // Solve the trust region subproblem using Levenberg-Marquardt
- arma::vec scaled_p;
- double lambda = 0.0;
- bool solve_success = false;
-
- // Initial lambda based on Hessian eigenvalues and gradient norm
- arma::vec eigval;
- bool eig_success = arma::eig_sym(eigval, scaled_H);
-
- if (eig_success) {
-   double min_eig = arma::min(eigval);
-   double max_eig = arma::max(eigval);
-
-   // Set initial lambda based on eigenvalue range and gradient
-   if (min_eig <= 1e-5) {
-     // Matrix is near-singular or indefinite
-     lambda = std::max(1e-5, -min_eig + 1e-4);
-   } else {
-     // Use smaller regularization if matrix is already positive definite
-     lambda = std::min(min_eig, 1e-3 * max_eig);
-   }
-
-   // Adjust lambda based on gradient norm
-   lambda = std::max(lambda, 1e-6 * grad_norm);
- } else {
-   // Fallback if eigenvalue computation fails
-   lambda = 0.1 * grad_norm;
- }
-
- // Advanced binary search strategy with adaptive bounds
- double lambda_low = 0.0;
- double lambda_high = 1e8;
- double target_step_ratio = 0.8; // Target ratio of step norm to trust radius
-
- // Maximum number of binary search iterations
- const int max_search_iter = 30;
-
- // Store best solution found so far
- arma::vec best_p;
- double best_lambda = -1.0;
- double best_ratio = 0.0; // Ratio of step norm to trust radius
-
- for (int iter = 0; iter < max_search_iter; iter++) {
-   // Solve the linear system with current lambda
-   try {
-     solve_success = arma::solve(scaled_p, scaled_H + lambda * arma::eye<arma::mat>(n, n), -scaled_g);
-   } catch (...) {
-     solve_success = false;
-   }
-
-   // Check if solve was successful and step is valid
-   if (solve_success) {
-     double step_norm = arma::norm(scaled_p);
-     double step_ratio = step_norm / trust_radius;
-
-     // Keep track of best solution so far
-     if (best_lambda < 0 || std::abs(step_ratio - target_step_ratio) < std::abs(best_ratio - target_step_ratio)) {
-       best_p = scaled_p;
-       best_lambda = lambda;
-       best_ratio = step_ratio;
-     }
-
-     // If we're close enough to the target ratio, stop early
-     if (std::abs(step_ratio - target_step_ratio) < 0.05 || std::abs(lambda_high - lambda_low) < 1e-6 * (1.0 + lambda)) {
+     if (!R_finite(rcpp_hessian(i, j))) {
+       use_hessian = false;
        break;
      }
+   }
+   if (!use_hessian) break;
+ }
 
-     // Binary search update
-     if (step_norm > trust_radius) {
-       // Step too large, increase lambda
-       lambda_low = lambda;
+ if (use_hessian) {
+   H = Rcpp::as<arma::mat>(rcpp_hessian);
 
-       // Adaptive update based on how far we are from target
-       double factor = step_ratio / target_step_ratio;
-       lambda = std::min(lambda_high, std::max(lambda * factor, lambda + (lambda_high - lambda_low) * 0.25));
-     } else {
-       // Step within trust region, decrease lambda if it's too small
-       lambda_high = lambda;
-
-       // Adaptive update based on how far we are from target
-       if (step_ratio < 0.1 * target_step_ratio) {
-         // Step much too small, be more aggressive
-         lambda = std::max(lambda_low, lambda * 0.1);
-       } else {
-         // Step somewhat small, make moderate adjustment
-         double factor = step_ratio / target_step_ratio;
-         lambda = std::max(lambda_low, lambda * factor);
-       }
+   // Check for unreasonable values in Hessian
+   double max_abs_hess = 0.0;
+   for (int i = 0; i < n; i++) {
+     for (int j = 0; j < n; j++) {
+       max_abs_hess = std::max(max_abs_hess, std::abs(H(i, j)));
      }
-   } else {
-     // Solver failed, increase lambda substantially
-     lambda_low = lambda;
-     lambda = std::min(lambda_high, lambda * 10.0);
-
-     // If lambda is getting very large, adjust the upper bound
-     if (lambda > 1e6) lambda_high = std::min(lambda_high, lambda * 2.0);
    }
 
-   // Handle convergence edge cases
-   if (lambda_high < 1e-10) {
-     lambda_high = 1e-2;
-     lambda = 1e-3;
+   // Reject extreme values which may cause numerical instability
+   if (max_abs_hess > 1e7) {
+     use_hessian = false;
+   }
+ }
+} catch (...) {
+ use_hessian = false;
+}
+
+// Fallback if Hessian is invalid or computation failed
+if (!use_hessian) {
+ // Use scaled identity matrix if Hessian is invalid
+ H = arma::diagmat(arma::vec(n, arma::fill::ones));
+
+ // Scale diagonal elements by gradient magnitudes for better conditioning
+ for (int i = 0; i < n; i++) {
+   double scale = std::max(1.0, std::sqrt(std::abs(g_arma(i))));
+   H(i, i) = scale;
+ }
+}
+
+// Ensure H is symmetric before making it positive definite
+H = forceSymmetry(H);
+
+// Ensure H is positive definite with scaled regularization
+try {
+ H = makePositiveDefinite(H, 1e-5);
+} catch (...) {
+ // If regularization fails, use a robust diagonal approximation
+ for (int i = 0; i < n; i++) {
+   for (int j = 0; j < n; j++) {
+     if (i != j) H(i, j) = 0.0;
+     else H(i, i) = std::max(1.0, std::abs(H(i, i)));
+   }
+ }
+}
+
+// Precondition the system for better numerical stability
+// This helps solve the linear system more accurately
+arma::vec scaled_g = g_arma;
+arma::mat scaled_H = H;
+
+for (int i = 0; i < n; i++) {
+ double scale = param_scales(i);
+ scaled_g(i) /= scale;
+
+ for (int j = 0; j < n; j++) {
+   scaled_H(i, j) = H(i, j) * scale / param_scales(j);
+ }
+}
+
+// Ensure scaled_H is perfectly symmetric for eigendecomposition
+scaled_H = forceSymmetry(scaled_H);
+
+// Solve the trust region subproblem using Levenberg-Marquardt
+arma::vec scaled_p;
+double lambda = 0.0;
+bool solve_success = false;
+
+// Initial lambda based on Hessian eigenvalues and gradient norm
+arma::vec eigval;
+bool eig_success = arma::eig_sym(eigval, scaled_H);
+
+if (eig_success) {
+ double min_eig = arma::min(eigval);
+ double max_eig = arma::max(eigval);
+
+ // Set initial lambda based on eigenvalue range and gradient
+ if (min_eig <= 1e-5) {
+   // Matrix is near-singular or indefinite
+   lambda = std::max(1e-5, -min_eig + 1e-4);
+ } else {
+   // Use smaller regularization if matrix is already positive definite
+   lambda = std::min(min_eig, 1e-3 * max_eig);
+ }
+
+ // Adjust lambda based on gradient norm
+ lambda = std::max(lambda, 1e-6 * grad_norm);
+} else {
+ // Fallback if eigenvalue computation fails
+ lambda = 0.1 * grad_norm;
+}
+
+// Advanced binary search strategy with adaptive bounds
+double lambda_low = 0.0;
+double lambda_high = 1e8;
+double target_step_ratio = 0.8; // Target ratio of step norm to trust radius
+
+// Maximum number of binary search iterations
+const int max_search_iter = 30;
+
+// Store best solution found so far
+arma::vec best_p;
+double best_lambda = -1.0;
+double best_ratio = 0.0; // Ratio of step norm to trust radius
+
+for (int iter = 0; iter < max_search_iter; iter++) {
+ // Solve the linear system with current lambda
+ try {
+   solve_success = arma::solve(scaled_p, scaled_H + lambda * arma::eye<arma::mat>(n, n), -scaled_g);
+ } catch (...) {
+   solve_success = false;
+ }
+
+ // Check if solve was successful and step is valid
+ if (solve_success) {
+   double step_norm = arma::norm(scaled_p);
+   double step_ratio = step_norm / trust_radius;
+
+   // Keep track of best solution so far
+   if (best_lambda < 0 || std::abs(step_ratio - target_step_ratio) < std::abs(best_ratio - target_step_ratio)) {
+     best_p = scaled_p;
+     best_lambda = lambda;
+     best_ratio = step_ratio;
    }
 
-   if (lambda < 1e-12) {
-     lambda = 1e-6;
-   }
-
-   // Check if bounds are too close
-   if (lambda_high / lambda_low < 1.01) {
+   // If we're close enough to the target ratio, stop early
+   if (std::abs(step_ratio - target_step_ratio) < 0.05 || std::abs(lambda_high - lambda_low) < 1e-6 * (1.0 + lambda)) {
      break;
    }
- }
 
- // If we found at least one valid solution, use the best one
- if (best_lambda >= 0) {
-   scaled_p = best_p;
-   solve_success = true;
+   // Binary search update
+   if (step_norm > trust_radius) {
+     // Step too large, increase lambda
+     lambda_low = lambda;
+
+     // Adaptive update based on how far we are from target
+     double factor = step_ratio / target_step_ratio;
+     lambda = std::min(lambda_high, std::max(lambda * factor, lambda + (lambda_high - lambda_low) * 0.25));
+   } else {
+     // Step within trust region, decrease lambda if it's too small
+     lambda_high = lambda;
+
+     // Adaptive update based on how far we are from target
+     if (step_ratio < 0.1 * target_step_ratio) {
+       // Step much too small, be more aggressive
+       lambda = std::max(lambda_low, lambda * 0.1);
+     } else {
+       // Step somewhat small, make moderate adjustment
+       double factor = step_ratio / target_step_ratio;
+       lambda = std::max(lambda_low, lambda * factor);
+     }
+   }
  } else {
-   // Fallback to steepest descent if no valid solution found
-   scaled_p = -scaled_g * (trust_radius / arma::norm(scaled_g));
-   solve_success = true;
+   // Solver failed, increase lambda substantially
+   lambda_low = lambda;
+   lambda = std::min(lambda_high, lambda * 10.0);
+
+   // If lambda is getting very large, adjust the upper bound
+   if (lambda > 1e6) lambda_high = std::min(lambda_high, lambda * 2.0);
  }
 
- // Unscale the step
- arma::vec p(n);
+ // Handle convergence edge cases
+ if (lambda_high < 1e-10) {
+   lambda_high = 1e-2;
+   lambda = 1e-3;
+ }
+
+ if (lambda < 1e-12) {
+   lambda = 1e-6;
+ }
+
+ // Check if bounds are too close
+ if (lambda_high / lambda_low < 1.01) {
+   break;
+ }
+}
+
+// If we found at least one valid solution, use the best one
+if (best_lambda >= 0) {
+ scaled_p = best_p;
+ solve_success = true;
+} else {
+ // Fallback to steepest descent if no valid solution found
+ scaled_p = -scaled_g * (trust_radius / arma::norm(scaled_g));
+ solve_success = true;
+}
+
+// Unscale the step
+arma::vec p(n);
+for (int i = 0; i < n; i++) {
+ p(i) = scaled_p(i) * param_scales(i);
+}
+
+// Convert step to NumericVector
+Rcpp::NumericVector step = Rcpp::wrap(p);
+
+// Apply step to get new parameters
+Rcpp::NumericVector new_params = Rcpp::clone(params);
+for (int i = 0; i < n; i++) {
+ new_params[i] += step[i];
+}
+
+// Apply bounds with intelligent handling for different parameter types
+if (enforce_bounds) {
  for (int i = 0; i < n; i++) {
-   p(i) = scaled_p(i) * param_scales(i);
+   // Detect if this is a delta-type parameter (non-negative but can be zero)
+   bool is_delta = (i == 3); // Default assumption for delta parameter
+
+   // More intelligent check based on parameter name or position if available
+   // (This could be enhanced with parameter type information if available)
+
+   if (is_delta) {
+     // For delta parameters (non-negative)
+     new_params[i] = std::max(0.0, new_params[i]);
+   } else {
+     // For strictly positive parameters
+     new_params[i] = std::max(min_param_val, new_params[i]);
+   }
+
+   // Upper bound for all parameters
+   new_params[i] = std::min(max_param_val, new_params[i]);
  }
+}
 
- // Convert step to NumericVector
- Rcpp::NumericVector step = Rcpp::wrap(p);
+// Evaluate function at new point with error handling
+double f_new;
+bool valid_new_point = true;
 
- // Apply step to get new parameters
- Rcpp::NumericVector new_params = Rcpp::clone(params);
+try {
+ f_new = ll_func(new_params, data);
+ if (!R_finite(f_new)) {
+   valid_new_point = false;
+ }
+} catch (...) {
+ valid_new_point = false;
+}
+
+// Fallback for invalid new point
+if (!valid_new_point) {
+ // Try a smaller step (half the size)
  for (int i = 0; i < n; i++) {
-   new_params[i] += step[i];
+   new_params[i] = params[i] + 0.5 * step[i];
  }
 
- // Apply bounds with intelligent handling for different parameter types
+ // Re-apply bounds
  if (enforce_bounds) {
    for (int i = 0; i < n; i++) {
-     // Detect if this is a delta-type parameter (non-negative but can be zero)
-     bool is_delta = (i == 3); // Default assumption for delta parameter
-
-     // More intelligent check based on parameter name or position if available
-     // (This could be enhanced with parameter type information if available)
-
+     bool is_delta = (i == 3);
      if (is_delta) {
-       // For delta parameters (non-negative)
        new_params[i] = std::max(0.0, new_params[i]);
      } else {
-       // For strictly positive parameters
        new_params[i] = std::max(min_param_val, new_params[i]);
      }
-
-     // Upper bound for all parameters
      new_params[i] = std::min(max_param_val, new_params[i]);
    }
  }
 
- // Evaluate function at new point with error handling
- double f_new;
- bool valid_new_point = true;
-
+ // Try evaluating at reduced step
  try {
    f_new = ll_func(new_params, data);
-   if (!R_finite(f_new)) {
-     valid_new_point = false;
-   }
+   valid_new_point = R_finite(f_new);
  } catch (...) {
    valid_new_point = false;
  }
 
- // Fallback for invalid new point
+ // If still invalid, reject the step
  if (!valid_new_point) {
-   // Try a smaller step (half the size)
-   for (int i = 0; i < n; i++) {
-     new_params[i] = params[i] + 0.5 * step[i];
-   }
-
-   // Re-apply bounds
-   if (enforce_bounds) {
-     for (int i = 0; i < n; i++) {
-       bool is_delta = (i == 3);
-       if (is_delta) {
-         new_params[i] = std::max(0.0, new_params[i]);
-       } else {
-         new_params[i] = std::max(min_param_val, new_params[i]);
-       }
-       new_params[i] = std::min(max_param_val, new_params[i]);
-     }
-   }
-
-   // Try evaluating at reduced step
-   try {
-     f_new = ll_func(new_params, data);
-     valid_new_point = R_finite(f_new);
-   } catch (...) {
-     valid_new_point = false;
-   }
-
-   // If still invalid, reject the step
-   if (!valid_new_point) {
-     result["new_params"] = params;
-     result["trust_radius"] = 0.1 * trust_radius;  // Reduce trust region more aggressively
-     return result;
-   }
+   result["new_params"] = params;
+   result["trust_radius"] = 0.1 * trust_radius;  // Reduce trust region more aggressively
+   return result;
  }
+}
 
- // Compute actual reduction and predicted reduction
- double actual_reduction = f0 - f_new;
+// Compute actual reduction and predicted reduction
+double actual_reduction = f0 - f_new;
 
- // More numerically stable quadratic model prediction
- double pred_reduction = 0.0;
+// More numerically stable quadratic model prediction
+double pred_reduction = 0.0;
 
- // Direct calculation of pred_reduction = -g^T p - 0.5 * p^T H p
- pred_reduction = -arma::dot(g_arma, p);
+// Direct calculation of pred_reduction = -g^T p - 0.5 * p^T H p
+pred_reduction = -arma::dot(g_arma, p);
 
- // Avoid potential catastrophic cancellation in the Hessian term
- arma::vec Hp = H * p;
- pred_reduction -= 0.5 * arma::dot(p, Hp);
+// Avoid potential catastrophic cancellation in the Hessian term
+arma::vec Hp = H * p;
+pred_reduction -= 0.5 * arma::dot(p, Hp);
 
- // Compute ratio with safeguards
- double rho = 0.0;
+// Compute ratio with safeguards
+double rho = 0.0;
 
- if (pred_reduction > 1e-10) {
-   rho = actual_reduction / pred_reduction;
- } else if (actual_reduction > 1e-10) {
-   // Positive reduction but prediction was tiny - count as success
-   rho = 2.0;  // Arbitrary value > 1
- } else if (std::abs(actual_reduction) < 1e-10 && std::abs(pred_reduction) < 1e-10) {
-   // Both reductions effectively zero - neutral
-   rho = 1.0;
+if (pred_reduction > 1e-10) {
+ rho = actual_reduction / pred_reduction;
+} else if (actual_reduction > 1e-10) {
+ // Positive reduction but prediction was tiny - count as success
+ rho = 2.0;  // Arbitrary value > 1
+} else if (std::abs(actual_reduction) < 1e-10 && std::abs(pred_reduction) < 1e-10) {
+ // Both reductions effectively zero - neutral
+ rho = 1.0;
+}
+
+// Adaptive trust radius update based on ratio quality
+if (rho < 0.25) {
+ // Poor agreement, reduce radius more aggressively for very bad ratios
+ if (rho < 0.0) {
+   trust_radius = std::max(1e-8, 0.25 * trust_radius);
+ } else {
+   trust_radius = std::max(1e-8, 0.5 * trust_radius);
  }
-
- // Adaptive trust radius update based on ratio quality
- if (rho < 0.25) {
-   // Poor agreement, reduce radius more aggressively for very bad ratios
-   if (rho < 0.0) {
-     trust_radius = std::max(1e-8, 0.25 * trust_radius);
-   } else {
-     trust_radius = std::max(1e-8, 0.5 * trust_radius);
-   }
- } else if (rho > 0.75 && arma::norm(p) >= 0.8 * trust_radius) {
-   // Good agreement and step near boundary, increase radius
-   // More conservative growth for already large trust regions
-   if (trust_radius > 10.0) {
-     trust_radius = std::min(1.5 * trust_radius, 100.0);
-   } else {
-     trust_radius = std::min(2.0 * trust_radius, 10.0);
-   }
- } else if (0.25 <= rho && rho <= 0.75) {
-   // Modest agreement, keep radius but consider slight increase if step is large
-   if (arma::norm(p) >= 0.9 * trust_radius) {
-     trust_radius = std::min(1.1 * trust_radius, 10.0);
-   }
+} else if (rho > 0.75 && arma::norm(p) >= 0.8 * trust_radius) {
+ // Good agreement and step near boundary, increase radius
+ // More conservative growth for already large trust regions
+ if (trust_radius > 10.0) {
+   trust_radius = std::min(1.5 * trust_radius, 100.0);
+ } else {
+   trust_radius = std::min(2.0 * trust_radius, 10.0);
  }
-
- // Acceptance decision with more nuanced criteria
- bool accept = false;
-
- if (rho > eta) {
-   // Standard acceptance criteria
-   accept = true;
- } else if (rho > 0 && actual_reduction > 0 && arma::norm(p) < 0.1 * trust_radius) {
-   // Accept small steps with any positive reduction
-   accept = true;
+} else if (0.25 <= rho && rho <= 0.75) {
+ // Modest agreement, keep radius but consider slight increase if step is large
+ if (arma::norm(p) >= 0.9 * trust_radius) {
+   trust_radius = std::min(1.1 * trust_radius, 10.0);
  }
+}
 
- // Final results
- result["new_params"] = new_params;
- result["accept"] = accept;
- result["trust_radius"] = trust_radius;
- result["actual_reduction"] = actual_reduction;
- result["ratio"] = rho;
+// Acceptance decision with more nuanced criteria
+bool accept = false;
 
- return result;
+if (rho > eta) {
+ // Standard acceptance criteria
+ accept = true;
+} else if (rho > 0 && actual_reduction > 0 && arma::norm(p) < 0.1 * trust_radius) {
+ // Accept small steps with any positive reduction
+ accept = true;
+}
+
+// Final results
+result["new_params"] = new_params;
+result["accept"] = accept;
+result["trust_radius"] = trust_radius;
+result["actual_reduction"] = actual_reduction;
+result["ratio"] = rho;
+
+return result;
 }
 
 
@@ -12939,251 +17310,251 @@ Rcpp::List trustRegionUpdate(
 //' @return Vector of initial parameter estimates
 //' @noRd
 Rcpp::NumericVector smartInitGkw(
-   Rcpp::NumericVector data,
-   std::string family = "gkw",
-   bool robust = true
+ Rcpp::NumericVector data,
+ std::string family = "gkw",
+ bool robust = true
 ) {
- // Convert family to lowercase
- std::string family_lower = family;
- std::transform(family_lower.begin(), family_lower.end(),
-                family_lower.begin(), ::tolower);
+// Convert family to lowercase
+std::string family_lower = family;
+std::transform(family_lower.begin(), family_lower.end(),
+              family_lower.begin(), ::tolower);
 
- int n_data = data.size();
+int n_data = data.size();
 
- // Calculate summary statistics with optional robustness
- double data_mean = 0.0;
- double data_var = 0.0;
- double data_min = 1.0;
- double data_max = 0.0;
+// Calculate summary statistics with optional robustness
+double data_mean = 0.0;
+double data_var = 0.0;
+double data_min = 1.0;
+double data_max = 0.0;
 
- // First pass: mean, min, max
- for (int i = 0; i < n_data; i++) {
-   data_mean += data[i];
-   data_min = std::min(data_min, data[i]);
-   data_max = std::max(data_max, data[i]);
+// First pass: mean, min, max
+for (int i = 0; i < n_data; i++) {
+ data_mean += data[i];
+ data_min = std::min(data_min, data[i]);
+ data_max = std::max(data_max, data[i]);
+}
+data_mean /= n_data;
+
+// Second pass: variance, skewness, kurtosis
+double m2 = 0.0;  // 2nd central moment
+double m3 = 0.0;  // 3rd central moment
+double m4 = 0.0;  // 4th central moment
+
+for (int i = 0; i < n_data; i++) {
+ double dev = data[i] - data_mean;
+ double dev2 = dev * dev;
+ m2 += dev2;
+ m3 += dev2 * dev;
+ m4 += dev2 * dev2;
+}
+
+m2 /= n_data;
+m3 /= n_data;
+m4 /= n_data;
+
+data_var = m2;
+double data_skew = m3 / std::pow(m2, 1.5);
+double data_kurt = m4 / (m2 * m2) - 3.0;  // Excess kurtosis
+
+// Use robust statistics if requested
+if (robust && n_data > 10) {
+ // Sort data for quantile-based statistics (trimmed mean, etc.)
+ std::vector<double> sorted_data(data.begin(), data.end());
+ std::sort(sorted_data.begin(), sorted_data.end());
+
+ int trim_level = static_cast<int>(0.1 * n_data);  // 10% trimming
+
+ // Calculate trimmed mean
+ double trimmed_mean = 0.0;
+ for (int i = trim_level; i < n_data - trim_level; i++) {
+   trimmed_mean += sorted_data[i];
  }
- data_mean /= n_data;
+ trimmed_mean /= (n_data - 2 * trim_level);
 
- // Second pass: variance, skewness, kurtosis
- double m2 = 0.0;  // 2nd central moment
- double m3 = 0.0;  // 3rd central moment
- double m4 = 0.0;  // 4th central moment
-
- for (int i = 0; i < n_data; i++) {
-   double dev = data[i] - data_mean;
-   double dev2 = dev * dev;
-   m2 += dev2;
-   m3 += dev2 * dev;
-   m4 += dev2 * dev2;
- }
-
- m2 /= n_data;
- m3 /= n_data;
- m4 /= n_data;
-
- data_var = m2;
- double data_skew = m3 / std::pow(m2, 1.5);
- double data_kurt = m4 / (m2 * m2) - 3.0;  // Excess kurtosis
-
- // Use robust statistics if requested
- if (robust && n_data > 10) {
-   // Sort data for quantile-based statistics (trimmed mean, etc.)
-   std::vector<double> sorted_data(data.begin(), data.end());
-   std::sort(sorted_data.begin(), sorted_data.end());
-
-   int trim_level = static_cast<int>(0.1 * n_data);  // 10% trimming
-
-   // Calculate trimmed mean
-   double trimmed_mean = 0.0;
-   for (int i = trim_level; i < n_data - trim_level; i++) {
-     trimmed_mean += sorted_data[i];
-   }
-   trimmed_mean /= (n_data - 2 * trim_level);
-
-   // Calculate median
-   double median;
-   if (n_data % 2 == 0) {
-     median = (sorted_data[n_data/2 - 1] + sorted_data[n_data/2]) / 2.0;
-   } else {
-     median = sorted_data[n_data/2];
-   }
-
-   // Calculate interquartile range for robust variance
-   int q1_idx = n_data / 4;
-   int q3_idx = 3 * n_data / 4;
-   double q1 = sorted_data[q1_idx];
-   double q3 = sorted_data[q3_idx];
-   double iqr = q3 - q1;
-
-   // Estimate robust variance using IQR (assumes approximately normal distribution)
-   double robust_var = std::pow(iqr / 1.349, 2);
-
-   // Use robust statistics if they seem more reliable
-   if (robust_var > 0 && robust_var < data_var * 3) {
-     data_var = robust_var;
-   }
-
-   // Use median instead of mean if distribution is highly skewed
-   if (std::abs(data_skew) > 1.0) {
-     data_mean = median;
-   }
- }
-
- // Compute beta parameters using method of moments
- // Based on E(X) and Var(X) for beta distribution
- double alpha_beta = 0.0;
- double beta_beta = 0.0;
-
- if (data_var < data_mean * (1 - data_mean)) {
-   // Valid moment estimates exist
-   alpha_beta = data_mean * (1 - data_mean) / data_var - 1;
-   alpha_beta = std::max(0.5, alpha_beta);
-
-   beta_beta = alpha_beta * (1 - data_mean) / data_mean;
-   beta_beta = std::max(0.5, beta_beta);
+ // Calculate median
+ double median;
+ if (n_data % 2 == 0) {
+   median = (sorted_data[n_data/2 - 1] + sorted_data[n_data/2]) / 2.0;
  } else {
-   // Use alternative based on range and mean (approximate method)
-   alpha_beta = 1.0 + 4.0 * (data_mean - data_min) / (data_max - data_min);
-   beta_beta = 1.0 + 4.0 * (data_max - data_mean) / (data_max - data_min);
+   median = sorted_data[n_data/2];
  }
 
- // Compute Kumaraswamy parameters using theoretical relationship
- // The relationship is approximate: shape1 ≈ √α and shape2 ≈ √β for similar shapes
- double shape1_kw = std::sqrt(alpha_beta);
- double shape2_kw = std::sqrt(beta_beta);
+ // Calculate interquartile range for robust variance
+ int q1_idx = n_data / 4;
+ int q3_idx = 3 * n_data / 4;
+ double q1 = sorted_data[q1_idx];
+ double q3 = sorted_data[q3_idx];
+ double iqr = q3 - q1;
 
- // Refine parameters based on distribution shape characteristics
- double adjustment_factor = 0.0;
+ // Estimate robust variance using IQR (assumes approximately normal distribution)
+ double robust_var = std::pow(iqr / 1.349, 2);
 
- // Use skewness to refine shape adjustment (following theoretical moment relationships)
- if (std::abs(data_skew) > 0.1) {
-   // Skewness adjustment - Using the known relationship between
-   // skewness and shape parameters
-   adjustment_factor = std::min(0.3, std::abs(data_skew) * 0.1);
+ // Use robust statistics if they seem more reliable
+ if (robust_var > 0 && robust_var < data_var * 3) {
+   data_var = robust_var;
+ }
 
-   if (data_skew > 0) {
-     // Right-skewed (positive skew): Lower shape1, higher shape2
-     shape1_kw = std::max(0.5, shape1_kw * (1.0 - adjustment_factor));
-     shape2_kw = std::min(20.0, shape2_kw * (1.0 + adjustment_factor));
-   } else {
-     // Left-skewed (negative skew): Higher shape1, lower shape2
-     shape1_kw = std::min(20.0, shape1_kw * (1.0 + adjustment_factor));
-     shape2_kw = std::max(0.5, shape2_kw * (1.0 - adjustment_factor));
+ // Use median instead of mean if distribution is highly skewed
+ if (std::abs(data_skew) > 1.0) {
+   data_mean = median;
+ }
+}
+
+// Compute beta parameters using method of moments
+// Based on E(X) and Var(X) for beta distribution
+double alpha_beta = 0.0;
+double beta_beta = 0.0;
+
+if (data_var < data_mean * (1 - data_mean)) {
+ // Valid moment estimates exist
+ alpha_beta = data_mean * (1 - data_mean) / data_var - 1;
+ alpha_beta = std::max(0.5, alpha_beta);
+
+ beta_beta = alpha_beta * (1 - data_mean) / data_mean;
+ beta_beta = std::max(0.5, beta_beta);
+} else {
+ // Use alternative based on range and mean (approximate method)
+ alpha_beta = 1.0 + 4.0 * (data_mean - data_min) / (data_max - data_min);
+ beta_beta = 1.0 + 4.0 * (data_max - data_mean) / (data_max - data_min);
+}
+
+// Compute Kumaraswamy parameters using theoretical relationship
+// The relationship is approximate: shape1 ≈ √α and shape2 ≈ √β for similar shapes
+double shape1_kw = std::sqrt(alpha_beta);
+double shape2_kw = std::sqrt(beta_beta);
+
+// Refine parameters based on distribution shape characteristics
+double adjustment_factor = 0.0;
+
+// Use skewness to refine shape adjustment (following theoretical moment relationships)
+if (std::abs(data_skew) > 0.1) {
+ // Skewness adjustment - Using the known relationship between
+ // skewness and shape parameters
+ adjustment_factor = std::min(0.3, std::abs(data_skew) * 0.1);
+
+ if (data_skew > 0) {
+   // Right-skewed (positive skew): Lower shape1, higher shape2
+   shape1_kw = std::max(0.5, shape1_kw * (1.0 - adjustment_factor));
+   shape2_kw = std::min(20.0, shape2_kw * (1.0 + adjustment_factor));
+ } else {
+   // Left-skewed (negative skew): Higher shape1, lower shape2
+   shape1_kw = std::min(20.0, shape1_kw * (1.0 + adjustment_factor));
+   shape2_kw = std::max(0.5, shape2_kw * (1.0 - adjustment_factor));
+ }
+}
+
+// Use kurtosis for additional refinement
+if (std::abs(data_kurt) > 0.5) {
+ // Kurtosis adjustment
+ adjustment_factor = std::min(0.2, std::abs(data_kurt) * 0.05);
+
+ if (data_kurt > 0) {
+   // Leptokurtic (heavy tails): Reduce both shapes to allow heavier tails
+   shape1_kw = std::max(0.5, shape1_kw * (1.0 - adjustment_factor));
+   shape2_kw = std::max(0.5, shape2_kw * (1.0 - adjustment_factor));
+ } else {
+   // Platykurtic (light tails): Increase both shapes for lighter tails
+   shape1_kw = std::min(20.0, shape1_kw * (1.0 + adjustment_factor));
+   shape2_kw = std::min(20.0, shape2_kw * (1.0 + adjustment_factor));
+ }
+}
+
+// Adjust based on data concentration using the range
+double range_factor = (data_max - data_min) / 0.9;
+
+if (range_factor < 0.5) {
+ // Highly concentrated data - Increase shape parameters
+ double concentration_factor = 1.0 + 2.0 * (0.5 - range_factor);
+ shape1_kw = std::min(25.0, shape1_kw * concentration_factor);
+ shape2_kw = std::min(25.0, shape2_kw * concentration_factor);
+} else if (range_factor > 0.95) {
+ // Very dispersed data - Decrease shape parameters
+ double dispersion_factor = 0.7 + 0.3 * std::min(1.0, range_factor - 0.95);
+ shape1_kw = std::max(0.3, shape1_kw * dispersion_factor);
+ shape2_kw = std::max(0.3, shape2_kw * dispersion_factor);
+}
+
+// Initialize additional parameters for the GKw family
+double gamma_param = 1.0;
+double delta_param = 0.2;  // Small but positive
+double lambda_param = 1.0;
+
+// For more complex distributions, initialize additional parameters
+// based on theoretical insights from Carrasco et al. (2010)
+if (family_lower == "gkw" || family_lower == "kkw" ||
+   family_lower == "ekw" || family_lower == "mc") {
+
+ // Lambda affects tails and moments significantly
+ // Use data range and kurtosis to inform lambda estimate
+ if (range_factor > 0.9 || std::abs(data_kurt) > 1.0) {
+   // Wide range or high kurtosis suggests potential for lambda > 1
+   lambda_param = 1.0 + std::min(15.0, range_factor * 10.0 * std::abs(data_kurt));
+ }
+
+ // For kkw and gkw, delta can be adjusted based on tail behavior
+ if (family_lower == "gkw" || family_lower == "kkw" || family_lower == "bkw") {
+   // Delta controls tail behavior
+   // Higher values for more flexible tails, especially with extreme values
+   if (data_kurt > 0.5) {
+     delta_param = std::min(2.0, 0.2 + data_kurt * 0.2);
    }
  }
 
- // Use kurtosis for additional refinement
- if (std::abs(data_kurt) > 0.5) {
-   // Kurtosis adjustment
-   adjustment_factor = std::min(0.2, std::abs(data_kurt) * 0.05);
-
-   if (data_kurt > 0) {
-     // Leptokurtic (heavy tails): Reduce both shapes to allow heavier tails
-     shape1_kw = std::max(0.5, shape1_kw * (1.0 - adjustment_factor));
-     shape2_kw = std::max(0.5, shape2_kw * (1.0 - adjustment_factor));
-   } else {
-     // Platykurtic (light tails): Increase both shapes for lighter tails
-     shape1_kw = std::min(20.0, shape1_kw * (1.0 + adjustment_factor));
-     shape2_kw = std::min(20.0, shape2_kw * (1.0 + adjustment_factor));
+ // For gkw and bkw, gamma can be adjusted based on mode location
+ if (family_lower == "gkw" || family_lower == "bkw") {
+   // Gamma affects the mode location and skewness
+   // Adjust based on skewness and mean/median relationship
+   if (data_skew < -0.5) {
+     gamma_param = std::max(0.5, 1.0 - std::abs(data_skew) * 0.2);
+   } else if (data_skew > 0.5) {
+     gamma_param = std::min(2.0, 1.0 + data_skew * 0.2);
    }
  }
+}
 
- // Adjust based on data concentration using the range
- double range_factor = (data_max - data_min) / 0.9;
+// Create parameter vector based on family
+Rcpp::NumericVector result;
 
- if (range_factor < 0.5) {
-   // Highly concentrated data - Increase shape parameters
-   double concentration_factor = 1.0 + 2.0 * (0.5 - range_factor);
-   shape1_kw = std::min(25.0, shape1_kw * concentration_factor);
-   shape2_kw = std::min(25.0, shape2_kw * concentration_factor);
- } else if (range_factor > 0.95) {
-   // Very dispersed data - Decrease shape parameters
-   double dispersion_factor = 0.7 + 0.3 * std::min(1.0, range_factor - 0.95);
-   shape1_kw = std::max(0.3, shape1_kw * dispersion_factor);
-   shape2_kw = std::max(0.3, shape2_kw * dispersion_factor);
- }
+if (family_lower == "gkw") {
+ result = Rcpp::NumericVector(5);
+ result[0] = shape1_kw;        // alpha
+ result[1] = shape2_kw;        // beta
+ result[2] = gamma_param;      // gamma
+ result[3] = delta_param;      // delta
+ result[4] = lambda_param;     // lambda
+} else if (family_lower == "bkw") {
+ result = Rcpp::NumericVector(4);
+ result[0] = shape1_kw;        // alpha
+ result[1] = shape2_kw;        // beta
+ result[2] = gamma_param;      // gamma
+ result[3] = delta_param;      // delta
+} else if (family_lower == "kkw") {
+ result = Rcpp::NumericVector(4);
+ result[0] = shape1_kw;        // alpha
+ result[1] = shape2_kw;        // beta
+ result[2] = delta_param;      // delta
+ result[3] = lambda_param;     // lambda
+} else if (family_lower == "ekw") {
+ result = Rcpp::NumericVector(3);
+ result[0] = shape1_kw;        // alpha
+ result[1] = shape2_kw;        // beta
+ result[2] = lambda_param;     // lambda
+} else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+ result = Rcpp::NumericVector(3);
+ result[0] = alpha_beta;       // gamma
+ result[1] = std::max(0.0, beta_beta - 1.0);  // delta
+ result[2] = lambda_param;     // lambda
+} else if (family_lower == "kw") {
+ result = Rcpp::NumericVector(2);
+ result[0] = shape1_kw;        // alpha
+ result[1] = shape2_kw;        // beta
+} else if (family_lower == "beta") {
+ result = Rcpp::NumericVector(2);
+ result[0] = alpha_beta;       // gamma
+ result[1] = std::max(0.0, beta_beta - 1.0);  // delta
+}
 
- // Initialize additional parameters for the GKw family
- double gamma_param = 1.0;
- double delta_param = 0.2;  // Small but positive
- double lambda_param = 1.0;
-
- // For more complex distributions, initialize additional parameters
- // based on theoretical insights from Carrasco et al. (2010)
- if (family_lower == "gkw" || family_lower == "kkw" ||
-     family_lower == "ekw" || family_lower == "mc") {
-
-   // Lambda affects tails and moments significantly
-   // Use data range and kurtosis to inform lambda estimate
-   if (range_factor > 0.9 || std::abs(data_kurt) > 1.0) {
-     // Wide range or high kurtosis suggests potential for lambda > 1
-     lambda_param = 1.0 + std::min(15.0, range_factor * 10.0 * std::abs(data_kurt));
-   }
-
-   // For kkw and gkw, delta can be adjusted based on tail behavior
-   if (family_lower == "gkw" || family_lower == "kkw" || family_lower == "bkw") {
-     // Delta controls tail behavior
-     // Higher values for more flexible tails, especially with extreme values
-     if (data_kurt > 0.5) {
-       delta_param = std::min(2.0, 0.2 + data_kurt * 0.2);
-     }
-   }
-
-   // For gkw and bkw, gamma can be adjusted based on mode location
-   if (family_lower == "gkw" || family_lower == "bkw") {
-     // Gamma affects the mode location and skewness
-     // Adjust based on skewness and mean/median relationship
-     if (data_skew < -0.5) {
-       gamma_param = std::max(0.5, 1.0 - std::abs(data_skew) * 0.2);
-     } else if (data_skew > 0.5) {
-       gamma_param = std::min(2.0, 1.0 + data_skew * 0.2);
-     }
-   }
- }
-
- // Create parameter vector based on family
- Rcpp::NumericVector result;
-
- if (family_lower == "gkw") {
-   result = Rcpp::NumericVector(5);
-   result[0] = shape1_kw;        // alpha
-   result[1] = shape2_kw;        // beta
-   result[2] = gamma_param;      // gamma
-   result[3] = delta_param;      // delta
-   result[4] = lambda_param;     // lambda
- } else if (family_lower == "bkw") {
-   result = Rcpp::NumericVector(4);
-   result[0] = shape1_kw;        // alpha
-   result[1] = shape2_kw;        // beta
-   result[2] = gamma_param;      // gamma
-   result[3] = delta_param;      // delta
- } else if (family_lower == "kkw") {
-   result = Rcpp::NumericVector(4);
-   result[0] = shape1_kw;        // alpha
-   result[1] = shape2_kw;        // beta
-   result[2] = delta_param;      // delta
-   result[3] = lambda_param;     // lambda
- } else if (family_lower == "ekw") {
-   result = Rcpp::NumericVector(3);
-   result[0] = shape1_kw;        // alpha
-   result[1] = shape2_kw;        // beta
-   result[2] = lambda_param;     // lambda
- } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-   result = Rcpp::NumericVector(3);
-   result[0] = alpha_beta;       // gamma
-   result[1] = std::max(0.0, beta_beta - 1.0);  // delta
-   result[2] = lambda_param;     // lambda
- } else if (family_lower == "kw") {
-   result = Rcpp::NumericVector(2);
-   result[0] = shape1_kw;        // alpha
-   result[1] = shape2_kw;        // beta
- } else if (family_lower == "beta") {
-   result = Rcpp::NumericVector(2);
-   result[0] = alpha_beta;       // gamma
-   result[1] = std::max(0.0, beta_beta - 1.0);  // delta
- }
-
- return result;
+return result;
 }
 
 
@@ -13602,2358 +17973,1189 @@ extern Rcpp::NumericMatrix hsbeta(const Rcpp::NumericVector& par, const Rcpp::Nu
 //' @export
 // [[Rcpp::export]]
 Rcpp::List nrgkw(
-   Rcpp::Nullable<Rcpp::NumericVector> start = R_NilValue,
-   Rcpp::NumericVector data = Rcpp::NumericVector::create(),
-   std::string family = "gkw",
-   double tol = 1e-6,
-   int max_iter = 100,
-   bool verbose = false,
-   std::string optimization_method = "trust-region",
-   bool enforce_bounds = true,
-   double min_param_val = 1e-5,
-   double max_param_val = 1e5,
-   bool adaptive_scaling = true,
-   bool use_stochastic_perturbation = true,
-   bool get_num_hess = false,
-   int multi_start_attempts = 3,
-   bool eigenvalue_hessian_reg = true,
-   int max_backtrack = 20,
-   double initial_trust_radius = 1.0
+ Rcpp::Nullable<Rcpp::NumericVector> start = R_NilValue,
+ Rcpp::NumericVector data = Rcpp::NumericVector::create(),
+ std::string family = "gkw",
+ double tol = 1e-6,
+ int max_iter = 100,
+ bool verbose = false,
+ std::string optimization_method = "trust-region",
+ bool enforce_bounds = true,
+ double min_param_val = 1e-5,
+ double max_param_val = 1e5,
+ bool adaptive_scaling = true,
+ bool use_stochastic_perturbation = true,
+ bool get_num_hess = false,
+ int multi_start_attempts = 3,
+ bool eigenvalue_hessian_reg = true,
+ int max_backtrack = 20,
+ double initial_trust_radius = 1.0
 ) {
- // Final result will be a list with different components
- Rcpp::List result;
+// Final result will be a list with different components
+Rcpp::List result;
 
- // Convert optimization method to lowercase
- std::transform(optimization_method.begin(), optimization_method.end(),
-                optimization_method.begin(), ::tolower);
+// Convert optimization method to lowercase
+std::transform(optimization_method.begin(), optimization_method.end(),
+              optimization_method.begin(), ::tolower);
 
- // Validate optimization method
- if (optimization_method != "trust-region" &&
-     optimization_method != "newton-raphson" &&
-     optimization_method != "hybrid") {
-   Rcpp::stop("Invalid optimization_method. Use 'trust-region', 'newton-raphson', or 'hybrid'.");
+// Validate optimization method
+if (optimization_method != "trust-region" &&
+   optimization_method != "newton-raphson" &&
+   optimization_method != "hybrid") {
+ Rcpp::stop("Invalid optimization_method. Use 'trust-region', 'newton-raphson', or 'hybrid'.");
+}
+
+// Convert family to lowercase for case-insensitive comparison
+std::string family_lower = family;
+std::transform(family_lower.begin(), family_lower.end(), family_lower.begin(), ::tolower);
+
+// Determine number of parameters based on family
+int n_params = 0;
+Rcpp::CharacterVector param_names;
+
+if (family_lower == "gkw") {
+ n_params = 5;
+ param_names = Rcpp::CharacterVector::create("alpha", "beta", "gamma", "delta", "lambda");
+} else if (family_lower == "bkw") {
+ n_params = 4;
+ param_names = Rcpp::CharacterVector::create("alpha", "beta", "gamma", "delta");
+} else if (family_lower == "kkw") {
+ n_params = 4;
+ param_names = Rcpp::CharacterVector::create("alpha", "beta", "delta", "lambda");
+} else if (family_lower == "ekw") {
+ n_params = 3;
+ param_names = Rcpp::CharacterVector::create("alpha", "beta", "lambda");
+} else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+ n_params = 3;
+ param_names = Rcpp::CharacterVector::create("gamma", "delta", "lambda");
+} else if (family_lower == "kw") {
+ n_params = 2;
+ param_names = Rcpp::CharacterVector::create("alpha", "beta");
+} else if (family_lower == "beta") {
+ n_params = 2;
+ param_names = Rcpp::CharacterVector::create("gamma", "delta");
+} else {
+ Rcpp::stop("Unknown family: '" + family + "'. Available options are 'gkw', 'bkw', 'kkw', 'ekw', 'mc', 'kw', 'beta'.");
+}
+
+// Check for valid data
+int n_data = data.size();
+if (n_data < n_params) {
+ Rcpp::stop("At least " + std::to_string(n_params) + " data points are needed to estimate " +
+   std::to_string(n_params) + " parameters");
+}
+
+// Check if all data are in the interval (0,1)
+for (int i = 0; i < n_data; i++) {
+ if (data[i] <= 0.0 || data[i] >= 1.0 || !R_finite(data[i])) {
+   Rcpp::stop("All data must be in the interval (0,1)");
  }
+}
 
- // Convert family to lowercase for case-insensitive comparison
- std::string family_lower = family;
- std::transform(family_lower.begin(), family_lower.end(), family_lower.begin(), ::tolower);
+// Handle automatic initialization or user-provided start values
+Rcpp::NumericVector user_start;
 
- // Determine number of parameters based on family
- int n_params = 0;
- Rcpp::CharacterVector param_names;
+if (start.isNull()) {
+ user_start = smartInitGkw(data, family);
+
+ if (verbose) {
+   Rcpp::Rcout << "Auto-initialized parameters: ";
+   for (int i = 0; i < user_start.size(); i++) {
+     Rcpp::Rcout << user_start[i] << " ";
+   }
+   Rcpp::Rcout << std::endl;
+ }
+} else {
+ user_start = Rcpp::as<Rcpp::NumericVector>(start);
+
+ // Validate initial parameters size
+ if (user_start.size() != n_params) {
+   Rcpp::stop("Invalid number of parameters for '" + family + "'. Expected " +
+     std::to_string(n_params) + ", got " + std::to_string(user_start.size()));
+ }
+}
+
+// Convert family-specific parameters to standard GKw format
+Rcpp::NumericVector params(5); // Always use 5 parameters internally (GKw format)
+
+// Set default values based on fixed parameters in specific families
+params[0] = 1.0; // α = 1 default
+params[1] = 1.0; // β = 1 default
+params[2] = 1.0; // γ = 1 default
+params[3] = 0.0; // δ = 0 default
+params[4] = 1.0; // λ = 1 default
+
+// Fill with provided parameters based on family
+if (family_lower == "gkw") {
+ for (int j = 0; j < 5; j++) {
+   params[j] = user_start[j];
+ }
+} else if (family_lower == "bkw") {
+ // α, β, γ, δ with λ = 1
+ for (int j = 0; j < 4; j++) {
+   params[j] = user_start[j];
+ }
+ params[4] = 1.0; // λ fixed at 1
+} else if (family_lower == "kkw") {
+ // α, β, δ, λ with γ = 1
+ params[0] = user_start[0]; // α
+ params[1] = user_start[1]; // β
+ params[2] = 1.0;           // γ fixed at 1
+ params[3] = user_start[2]; // δ
+ params[4] = user_start[3]; // λ
+} else if (family_lower == "ekw") {
+ // α, β, λ with γ = 1, δ = 0
+ params[0] = user_start[0]; // α
+ params[1] = user_start[1]; // β
+ params[2] = 1.0;           // γ fixed at 1
+ params[3] = 0.0;           // δ fixed at 0
+ params[4] = user_start[2]; // λ
+} else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+ // γ, δ, λ with α = 1, β = 1
+ params[0] = 1.0;           // α fixed at 1
+ params[1] = 1.0;           // β fixed at 1
+ params[2] = user_start[0]; // γ
+ params[3] = user_start[1]; // δ
+ params[4] = user_start[2]; // λ
+} else if (family_lower == "kw") {
+ // α, β with γ = 1, δ = 0, λ = 1
+ params[0] = user_start[0]; // α
+ params[1] = user_start[1]; // β
+ params[2] = 1.0;           // γ fixed at 1
+ params[3] = 0.0;           // δ fixed at 0
+ params[4] = 1.0;           // λ fixed at 1
+} else if (family_lower == "beta") {
+ // γ, δ with α = 1, β = 1, λ = 1
+ params[0] = 1.0;           // α fixed at 1
+ params[1] = 1.0;           // β fixed at 1
+ params[2] = user_start[0]; // γ
+ params[3] = user_start[1]; // δ
+ params[4] = 1.0;           // λ fixed at 1
+}
+
+// Apply constraints to initial parameters if needed
+if (enforce_bounds) {
+ for (int j = 0; j < 5; j++) {
+   if (j == 3) { // delta
+     params[j] = std::max(0.0, params[j]);
+   } else { // other parameters must be > 0
+     params[j] = std::max(min_param_val, params[j]);
+   }
+   params[j] = std::min(max_param_val, params[j]);
+ }
+}
+
+// Define function pointers based on family
+std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func;
+std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func;
+std::function<Rcpp::NumericMatrix(Rcpp::NumericVector, Rcpp::NumericVector)> hs_func;
+
+// Assign appropriate functions based on family - usando expressões lambda
+if (family_lower == "gkw") {
+ ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llgkw(p, d); };
+ gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grgkw(p, d); };
+ hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsgkw(p, d); };
+} else if (family_lower == "bkw") {
+ ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llbkw(p, d); };
+ gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grbkw(p, d); };
+ hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsbkw(p, d); };
+} else if (family_lower == "kkw") {
+ ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llkkw(p, d); };
+ gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grkkw(p, d); };
+ hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hskkw(p, d); };
+} else if (family_lower == "ekw") {
+ ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llekw(p, d); };
+ gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grekw(p, d); };
+ hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsekw(p, d); };
+} else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
+ ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llmc(p, d); };
+ gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grmc(p, d); };
+ hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsmc(p, d); };
+} else if (family_lower == "kw") {
+ ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llkw(p, d); };
+ gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grkw(p, d); };
+ hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hskw(p, d); };
+} else if (family_lower == "beta") {
+ ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llbeta(p, d); };
+ gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grbeta(p, d); };
+ hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsbeta(p, d); };
+}
+
+// Function to extract relevant parameters for specific family
+auto extractParams = [&](const Rcpp::NumericVector& full_params) -> Rcpp::NumericVector {
+ Rcpp::NumericVector result;
 
  if (family_lower == "gkw") {
-   n_params = 5;
-   param_names = Rcpp::CharacterVector::create("alpha", "beta", "gamma", "delta", "lambda");
+   result = Rcpp::NumericVector(5);
+   for (int j = 0; j < 5; j++) result[j] = full_params[j];
  } else if (family_lower == "bkw") {
-   n_params = 4;
-   param_names = Rcpp::CharacterVector::create("alpha", "beta", "gamma", "delta");
+   result = Rcpp::NumericVector(4);
+   for (int j = 0; j < 4; j++) result[j] = full_params[j];
  } else if (family_lower == "kkw") {
-   n_params = 4;
-   param_names = Rcpp::CharacterVector::create("alpha", "beta", "delta", "lambda");
+   result = Rcpp::NumericVector(4);
+   result[0] = full_params[0]; // α
+   result[1] = full_params[1]; // β
+   result[2] = full_params[3]; // δ
+   result[3] = full_params[4]; // λ
  } else if (family_lower == "ekw") {
-   n_params = 3;
-   param_names = Rcpp::CharacterVector::create("alpha", "beta", "lambda");
+   result = Rcpp::NumericVector(3);
+   result[0] = full_params[0]; // α
+   result[1] = full_params[1]; // β
+   result[2] = full_params[4]; // λ
  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-   n_params = 3;
-   param_names = Rcpp::CharacterVector::create("gamma", "delta", "lambda");
+   result = Rcpp::NumericVector(3);
+   result[0] = full_params[2]; // γ
+   result[1] = full_params[3]; // δ
+   result[2] = full_params[4]; // λ
  } else if (family_lower == "kw") {
-   n_params = 2;
-   param_names = Rcpp::CharacterVector::create("alpha", "beta");
+   result = Rcpp::NumericVector(2);
+   result[0] = full_params[0]; // α
+   result[1] = full_params[1]; // β
  } else if (family_lower == "beta") {
-   n_params = 2;
-   param_names = Rcpp::CharacterVector::create("gamma", "delta");
- } else {
-   Rcpp::stop("Unknown family: '" + family + "'. Available options are 'gkw', 'bkw', 'kkw', 'ekw', 'mc', 'kw', 'beta'.");
- }
-
- // Check for valid data
- int n_data = data.size();
- if (n_data < n_params) {
-   Rcpp::stop("At least " + std::to_string(n_params) + " data points are needed to estimate " +
-     std::to_string(n_params) + " parameters");
- }
-
- // Check if all data are in the interval (0,1)
- for (int i = 0; i < n_data; i++) {
-   if (data[i] <= 0.0 || data[i] >= 1.0 || !R_finite(data[i])) {
-     Rcpp::stop("All data must be in the interval (0,1)");
-   }
- }
-
- // Handle automatic initialization or user-provided start values
- Rcpp::NumericVector user_start;
-
- if (start.isNull()) {
-   user_start = smartInitGkw(data, family);
-
-   if (verbose) {
-     Rcpp::Rcout << "Auto-initialized parameters: ";
-     for (int i = 0; i < user_start.size(); i++) {
-       Rcpp::Rcout << user_start[i] << " ";
-     }
-     Rcpp::Rcout << std::endl;
-   }
- } else {
-   user_start = Rcpp::as<Rcpp::NumericVector>(start);
-
-   // Validate initial parameters size
-   if (user_start.size() != n_params) {
-     Rcpp::stop("Invalid number of parameters for '" + family + "'. Expected " +
-       std::to_string(n_params) + ", got " + std::to_string(user_start.size()));
-   }
- }
-
- // Convert family-specific parameters to standard GKw format
- Rcpp::NumericVector params(5); // Always use 5 parameters internally (GKw format)
-
- // Set default values based on fixed parameters in specific families
- params[0] = 1.0; // α = 1 default
- params[1] = 1.0; // β = 1 default
- params[2] = 1.0; // γ = 1 default
- params[3] = 0.0; // δ = 0 default
- params[4] = 1.0; // λ = 1 default
-
- // Fill with provided parameters based on family
- if (family_lower == "gkw") {
-   for (int j = 0; j < 5; j++) {
-     params[j] = user_start[j];
-   }
- } else if (family_lower == "bkw") {
-   // α, β, γ, δ with λ = 1
-   for (int j = 0; j < 4; j++) {
-     params[j] = user_start[j];
-   }
-   params[4] = 1.0; // λ fixed at 1
- } else if (family_lower == "kkw") {
-   // α, β, δ, λ with γ = 1
-   params[0] = user_start[0]; // α
-   params[1] = user_start[1]; // β
-   params[2] = 1.0;           // γ fixed at 1
-   params[3] = user_start[2]; // δ
-   params[4] = user_start[3]; // λ
- } else if (family_lower == "ekw") {
-   // α, β, λ with γ = 1, δ = 0
-   params[0] = user_start[0]; // α
-   params[1] = user_start[1]; // β
-   params[2] = 1.0;           // γ fixed at 1
-   params[3] = 0.0;           // δ fixed at 0
-   params[4] = user_start[2]; // λ
- } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-   // γ, δ, λ with α = 1, β = 1
-   params[0] = 1.0;           // α fixed at 1
-   params[1] = 1.0;           // β fixed at 1
-   params[2] = user_start[0]; // γ
-   params[3] = user_start[1]; // δ
-   params[4] = user_start[2]; // λ
- } else if (family_lower == "kw") {
-   // α, β with γ = 1, δ = 0, λ = 1
-   params[0] = user_start[0]; // α
-   params[1] = user_start[1]; // β
-   params[2] = 1.0;           // γ fixed at 1
-   params[3] = 0.0;           // δ fixed at 0
-   params[4] = 1.0;           // λ fixed at 1
- } else if (family_lower == "beta") {
-   // γ, δ with α = 1, β = 1, λ = 1
-   params[0] = 1.0;           // α fixed at 1
-   params[1] = 1.0;           // β fixed at 1
-   params[2] = user_start[0]; // γ
-   params[3] = user_start[1]; // δ
-   params[4] = 1.0;           // λ fixed at 1
- }
-
- // Apply constraints to initial parameters if needed
- if (enforce_bounds) {
-   for (int j = 0; j < 5; j++) {
-     if (j == 3) { // delta
-       params[j] = std::max(0.0, params[j]);
-     } else { // other parameters must be > 0
-       params[j] = std::max(min_param_val, params[j]);
-     }
-     params[j] = std::min(max_param_val, params[j]);
-   }
- }
-
- // Define function pointers based on family
- std::function<double(Rcpp::NumericVector, Rcpp::NumericVector)> ll_func;
- std::function<Rcpp::NumericVector(Rcpp::NumericVector, Rcpp::NumericVector)> gr_func;
- std::function<Rcpp::NumericMatrix(Rcpp::NumericVector, Rcpp::NumericVector)> hs_func;
-
- // Assign appropriate functions based on family - usando expressões lambda
- if (family_lower == "gkw") {
-   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llgkw(p, d); };
-   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grgkw(p, d); };
-   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsgkw(p, d); };
- } else if (family_lower == "bkw") {
-   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llbkw(p, d); };
-   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grbkw(p, d); };
-   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsbkw(p, d); };
- } else if (family_lower == "kkw") {
-   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llkkw(p, d); };
-   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grkkw(p, d); };
-   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hskkw(p, d); };
- } else if (family_lower == "ekw") {
-   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llekw(p, d); };
-   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grekw(p, d); };
-   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsekw(p, d); };
- } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llmc(p, d); };
-   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grmc(p, d); };
-   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsmc(p, d); };
- } else if (family_lower == "kw") {
-   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llkw(p, d); };
-   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grkw(p, d); };
-   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hskw(p, d); };
- } else if (family_lower == "beta") {
-   ll_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return llbeta(p, d); };
-   gr_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return grbeta(p, d); };
-   hs_func = [](Rcpp::NumericVector p, Rcpp::NumericVector d) { return hsbeta(p, d); };
- }
-
- // Function to extract relevant parameters for specific family
- auto extractParams = [&](const Rcpp::NumericVector& full_params) -> Rcpp::NumericVector {
-   Rcpp::NumericVector result;
-
-   if (family_lower == "gkw") {
-     result = Rcpp::NumericVector(5);
-     for (int j = 0; j < 5; j++) result[j] = full_params[j];
-   } else if (family_lower == "bkw") {
-     result = Rcpp::NumericVector(4);
-     for (int j = 0; j < 4; j++) result[j] = full_params[j];
-   } else if (family_lower == "kkw") {
-     result = Rcpp::NumericVector(4);
-     result[0] = full_params[0]; // α
-     result[1] = full_params[1]; // β
-     result[2] = full_params[3]; // δ
-     result[3] = full_params[4]; // λ
-   } else if (family_lower == "ekw") {
-     result = Rcpp::NumericVector(3);
-     result[0] = full_params[0]; // α
-     result[1] = full_params[1]; // β
-     result[2] = full_params[4]; // λ
-   } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-     result = Rcpp::NumericVector(3);
-     result[0] = full_params[2]; // γ
-     result[1] = full_params[3]; // δ
-     result[2] = full_params[4]; // λ
-   } else if (family_lower == "kw") {
-     result = Rcpp::NumericVector(2);
-     result[0] = full_params[0]; // α
-     result[1] = full_params[1]; // β
-   } else if (family_lower == "beta") {
-     result = Rcpp::NumericVector(2);
-     result[0] = full_params[2]; // γ
-     result[1] = full_params[3]; // δ
-   }
-
-   return result;
- };
-
- // Get family-specific parameters
- Rcpp::NumericVector family_params = extractParams(params);
-
- // Compute parameter scaling factors if enabled
- Rcpp::NumericVector scaling_factors(family_params.size(), 1.0);
- if (adaptive_scaling) {
-   scaling_factors = computeScalingFactors(family_params);
-
-   if (verbose) {
-     Rcpp::Rcout << "Parameter scaling factors: ";
-     for (int i = 0; i < scaling_factors.size(); i++) {
-       Rcpp::Rcout << scaling_factors[i] << " ";
-     }
-     Rcpp::Rcout << std::endl;
-   }
-
-   // Apply scaling to initial parameters
-   Rcpp::NumericVector scaled_params = Rcpp::clone(family_params);
-   for (int i = 0; i < family_params.size(); i++) {
-     scaled_params[i] *= scaling_factors[i];
-   }
-   family_params = scaled_params;
-
-   // Update full parameter vector with scaled values
-   params = Rcpp::clone(params);
-   Rcpp::NumericVector full_scaling(5, 1.0);
-
-   if (family_lower == "gkw") {
-     for (int j = 0; j < 5; j++) full_scaling[j] = scaling_factors[j];
-   } else if (family_lower == "bkw") {
-     for (int j = 0; j < 4; j++) full_scaling[j] = scaling_factors[j];
-   } else if (family_lower == "kkw") {
-     full_scaling[0] = scaling_factors[0]; // α
-     full_scaling[1] = scaling_factors[1]; // β
-     full_scaling[3] = scaling_factors[2]; // δ
-     full_scaling[4] = scaling_factors[3]; // λ
-   } else if (family_lower == "ekw") {
-     full_scaling[0] = scaling_factors[0]; // α
-     full_scaling[1] = scaling_factors[1]; // β
-     full_scaling[4] = scaling_factors[2]; // λ
-   } else if (family_lower == "mc") {
-     full_scaling[2] = scaling_factors[0]; // γ
-     full_scaling[3] = scaling_factors[1]; // δ
-     full_scaling[4] = scaling_factors[2]; // λ
-   } else if (family_lower == "kw") {
-     full_scaling[0] = scaling_factors[0]; // α
-     full_scaling[1] = scaling_factors[1]; // β
-   } else if (family_lower == "beta") {
-     full_scaling[2] = scaling_factors[0]; // γ
-     full_scaling[3] = scaling_factors[1]; // δ
-   }
-
-   for (int i = 0; i < 5; i++) {
-     params[i] *= full_scaling[i];
-   }
- }
-
- // Create scaled versions of likelihood and gradient functions
- auto scaled_ll_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> double {
-   if (adaptive_scaling) {
-     Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
-
-     // Unscale parameters before evaluation
-     for (int i = 0; i < params.size(); i++) {
-       unscaled_params[i] /= scaling_factors[i];
-     }
-
-     return ll_func(unscaled_params, data);
-   } else {
-     return ll_func(params, data);
-   }
- };
-
- auto scaled_gr_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> Rcpp::NumericVector {
-   if (adaptive_scaling) {
-     Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
-
-     // Unscale parameters
-     for (int i = 0; i < params.size(); i++) {
-       unscaled_params[i] /= scaling_factors[i];
-     }
-
-     // Get gradient at unscaled point
-     Rcpp::NumericVector grad = gr_func(unscaled_params, data);
-
-     // Adjust gradient for scaling
-     for (int i = 0; i < grad.size(); i++) {
-       grad[i] /= scaling_factors[i];
-     }
-
-     return grad;
-   } else {
-     return gr_func(params, data);
-   }
- };
-
- auto scaled_hs_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> Rcpp::NumericMatrix {
-   if (adaptive_scaling) {
-     Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
-
-     // Unscale parameters
-     for (int i = 0; i < params.size(); i++) {
-       unscaled_params[i] /= scaling_factors[i];
-     }
-
-     // Get Hessian at unscaled point
-     Rcpp::NumericMatrix hess = hs_func(unscaled_params, data);
-
-     // Adjust Hessian for scaling
-     for (int i = 0; i < hess.nrow(); i++) {
-       for (int j = 0; j < hess.ncol(); j++) {
-         hess(i, j) /= (scaling_factors[i] * scaling_factors[j]);
-       }
-     }
-
-     return hess;
-   } else {
-     return hs_func(params, data);
-   }
- };
-
- // Calculate initial log-likelihood
- double initial_loglik = scaled_ll_func(family_params, data);
- if (!R_finite(initial_loglik) || initial_loglik == R_PosInf) {
-   Rcpp::stop("Initial log-likelihood is infinite or NaN. Check the initial parameters.");
- }
-
- // Parameter and log-likelihood history for diagnostics
- Rcpp::NumericMatrix param_history(max_iter + 1, n_params);
- Rcpp::NumericVector loglik_history(max_iter + 1);
-
- // Initialize history with initial values
- for (int j = 0; j < n_params; j++) {
-   param_history(0, j) = family_params[j];
- }
- loglik_history[0] = initial_loglik;
-
- // Variables for convergence control
- bool converged = false;
- int iter = 0;
- double prev_loglik = initial_loglik;
-
- // Best result tracking
- double best_loglik = initial_loglik;
- Rcpp::NumericVector best_params = Rcpp::clone(family_params);
-
- // Trust region radius
- double trust_radius = initial_trust_radius;
-
- // Tracking variables for algorithm adaptation
- int consecutive_tr_failures = 0;
- const int max_consecutive_failures = 3;
-
- int stagnation_counter = 0;
- const int stagnation_limit = 5;
- double prev_grad_norm = 0.0;
-
- // Main optimization loop
- while (!converged && iter < max_iter) {
-   iter++;
-
-   // Calculate current log-likelihood and gradient
-   double current_loglik = scaled_ll_func(family_params, data);
-   Rcpp::NumericVector gradient = scaled_gr_func(family_params, data);
-
-   // Check gradient validity
-   bool valid_gradient = true;
-   for (int j = 0; j < n_params; j++) {
-     if (!R_finite(gradient[j])) {
-       valid_gradient = false;
-       break;
-     }
-   }
-
-   if (!valid_gradient) {
-     if (verbose) {
-       Rcpp::Rcout << "Warning: Invalid gradient in iteration " << iter << std::endl;
-     }
-
-     // Use numerical gradient as fallback
-     for (int j = 0; j < n_params; j++) {
-       double eps = std::max(1e-6, 1e-6 * std::abs(family_params[j]));
-
-       Rcpp::NumericVector params_p = Rcpp::clone(family_params);
-       Rcpp::NumericVector params_m = Rcpp::clone(family_params);
-
-       params_p[j] += eps;
-       params_m[j] -= eps;
-
-       double f_p = scaled_ll_func(params_p, data);
-       double f_m = scaled_ll_func(params_m, data);
-
-       if (R_finite(f_p) && R_finite(f_m)) {
-         gradient[j] = (f_p - f_m) / (2 * eps);
-       } else {
-         // If numerical gradient also fails, use small step
-         gradient[j] = 0.001 * ((j % 2 == 0) ? 1.0 : -1.0); // Alternating signs
-       }
-     }
-   }
-
-   // Calculate gradient norm for convergence check
-   double grad_norm = 0.0;
-   for (int j = 0; j < n_params; j++) {
-     grad_norm += gradient[j] * gradient[j];
-   }
-   grad_norm = std::sqrt(grad_norm);
-
-   // Check for stagnation
-   if (std::abs(grad_norm - prev_grad_norm) < 0.01 * grad_norm) {
-     stagnation_counter++;
-   } else {
-     stagnation_counter = 0;
-   }
-   prev_grad_norm = grad_norm;
-
-   // Gradient convergence check
-   if (grad_norm < tol) {
-     converged = true;
-     if (verbose) {
-       Rcpp::Rcout << "Convergence detected: gradient norm (" << grad_norm
-                   << ") < tolerance (" << tol << ")" << std::endl;
-     }
-     break;
-   }
-
-   // Determine optimization method for this iteration
-   std::string current_method = optimization_method;
-
-   // For hybrid method, adapt based on progress
-   if (current_method == "hybrid") {
-     if (iter > max_iter / 2 || grad_norm < 0.1) {
-       current_method = "newton-raphson"; // Switch to Newton-Raphson near convergence
-     } else {
-       current_method = "trust-region";   // Use trust-region initially
-     }
-
-     if (verbose && iter > 1) {
-       Rcpp::Rcout << "Hybrid method using: " << current_method << std::endl;
-     }
-   }
-
-   // Switch methods if trust region is failing consistently
-   if (consecutive_tr_failures >= max_consecutive_failures && current_method == "trust-region") {
-     current_method = "newton-raphson";
-     if (verbose) {
-       Rcpp::Rcout << "Temporarily switching to Newton-Raphson after consecutive failures." << std::endl;
-     }
-   }
-
-   // Apply stochastic perturbation if stagnating
-   if (use_stochastic_perturbation && stagnation_counter >= stagnation_limit) {
-     if (verbose) {
-       Rcpp::Rcout << "Applying stochastic perturbation after " << stagnation_counter
-                   << " iterations of stagnation." << std::endl;
-     }
-
-     // Create perturbed parameters
-     Rcpp::NumericVector new_params = Rcpp::clone(family_params);
-
-     GetRNGstate(); // Initialize R's RNG
-     for (int j = 0; j < n_params; j++) {
-       // Perturbation proportional to parameter and opposite to gradient
-       double range = 0.1 * std::abs(family_params[j]);
-       double direction = -1.0 * ((gradient[j] > 0) ? 1 : -1);
-       double noise = R::runif(-0.5, 0.5);
-
-       // Combined perturbation
-       double perturb = direction * range * (0.5 + 0.5 * noise);
-       new_params[j] += perturb;
-     }
-     PutRNGstate();
-
-     // Apply bounds
-     if (enforce_bounds) {
-       for (int j = 0; j < n_params; j++) {
-         bool is_delta = (family_lower == "gkw" && j == 3) ||
-           (family_lower == "bkw" && j == 3) ||
-           (family_lower == "kkw" && j == 2) ||
-           (family_lower == "mc" && j == 1) ||
-           (family_lower == "beta" && j == 1);
-
-         if (is_delta) {
-           new_params[j] = std::max(0.0, new_params[j]);
-         } else {
-           new_params[j] = std::max(min_param_val, new_params[j]);
-         }
-         new_params[j] = std::min(max_param_val, new_params[j]);
-       }
-     }
-
-     // Evaluate at perturbed point
-     double new_loglik = scaled_ll_func(new_params, data);
-
-     // Accept if better
-     if (R_finite(new_loglik) && new_loglik < current_loglik) {
-       family_params = new_params;
-       current_loglik = new_loglik;
-       stagnation_counter = 0;
-
-       if (verbose) {
-         Rcpp::Rcout << "Stochastic perturbation successful, new loglik: " << -new_loglik << std::endl;
-       }
-
-       // Update history
-       for (int j = 0; j < n_params; j++) {
-         param_history(iter, j) = family_params[j];
-       }
-       loglik_history[iter] = new_loglik;
-
-       // Update best result if improved
-       if (new_loglik < best_loglik) {
-         best_loglik = new_loglik;
-         best_params = Rcpp::clone(family_params);
-       }
-
-       // Skip to next iteration
-       continue;
-     } else if (verbose) {
-       Rcpp::Rcout << "Stochastic perturbation unsuccessful, continuing with standard update." << std::endl;
-     }
-   }
-
-   // Parameter update using selected method
-   Rcpp::NumericVector new_params;
-   double new_loglik;
-   bool update_success = false;
-
-   if (current_method == "trust-region") {
-     // Trust region update
-     Rcpp::NumericMatrix rcpp_hessian = scaled_hs_func(family_params, data);
-
-     // Check Hessian validity
-     bool valid_hessian = true;
-     for (int i = 0; i < n_params && valid_hessian; i++) {
-       for (int j = 0; j < n_params; j++) {
-         if (!R_finite(rcpp_hessian(i, j))) {
-           valid_hessian = false;
-           break;
-         }
-       }
-     }
-
-     if (!valid_hessian) {
-       if (verbose) {
-         Rcpp::Rcout << "Warning: Invalid Hessian, using numerical approximation." << std::endl;
-       }
-
-       // Use numerical Hessian
-       arma::mat num_hessian = numHessianAdaptive(family_params, data,
-                                                  scaled_ll_func, scaled_gr_func);
-       rcpp_hessian = Rcpp::wrap(num_hessian);
-     }
-
-     // Apply Hessian regularization if enabled
-     if (eigenvalue_hessian_reg) {
-       arma::mat H = Rcpp::as<arma::mat>(rcpp_hessian);
-       arma::mat H_pd = makePositiveDefinite(H);
-       rcpp_hessian = Rcpp::wrap(H_pd);
-
-       if (verbose) {
-         Rcpp::Rcout << "Applied eigenvalue-based Hessian regularization." << std::endl;
-       }
-     }
-
-     // Trust region update
-     Rcpp::List tr_result = trustRegionUpdate(
-       family_params, data, scaled_ll_func, scaled_gr_func,
-       [&](Rcpp::NumericVector p, Rcpp::NumericVector d) { return rcpp_hessian; },
-       trust_radius, 0.1, enforce_bounds, min_param_val, max_param_val
-     );
-
-     new_params = Rcpp::as<Rcpp::NumericVector>(tr_result["new_params"]);
-     trust_radius = Rcpp::as<double>(tr_result["trust_radius"]);
-     bool accept = Rcpp::as<bool>(tr_result["accept"]);
-     double ratio = Rcpp::as<double>(tr_result["ratio"]);
-
-     new_loglik = scaled_ll_func(new_params, data);
-
-     if (verbose) {
-       Rcpp::Rcout << "Trust region step: radius = " << trust_radius
-                   << ", ratio = " << ratio
-                   << ", accept = " << (accept ? "true" : "false") << std::endl;
-     }
-
-     if (accept) {
-       update_success = true;
-       consecutive_tr_failures = 0;
-     } else {
-       consecutive_tr_failures++;
-
-       // Fallback to steepest descent
-       if (verbose) {
-         Rcpp::Rcout << "Trust region step rejected, trying steepest descent." << std::endl;
-       }
-
-       new_params = Rcpp::clone(family_params);
-       double gd_step = 0.1 * trust_radius / std::max(1.0, grad_norm);
-
-       for (int j = 0; j < n_params; j++) {
-         new_params[j] -= gd_step * gradient[j];
-       }
-
-       // Apply bounds
-       if (enforce_bounds) {
-         for (int j = 0; j < n_params; j++) {
-           bool is_delta = (family_lower == "gkw" && j == 3) ||
-             (family_lower == "bkw" && j == 3) ||
-             (family_lower == "kkw" && j == 2) ||
-             (family_lower == "mc" && j == 1) ||
-             (family_lower == "beta" && j == 1);
-
-           if (is_delta) {
-             new_params[j] = std::max(0.0, new_params[j]);
-           } else {
-             new_params[j] = std::max(min_param_val, new_params[j]);
-           }
-           new_params[j] = std::min(max_param_val, new_params[j]);
-         }
-       }
-
-       new_loglik = scaled_ll_func(new_params, data);
-
-       if (R_finite(new_loglik) && new_loglik < current_loglik) {
-         update_success = true;
-         if (verbose) {
-           Rcpp::Rcout << "Gradient descent successful." << std::endl;
-         }
-       }
-     }
-   } else { // Newton-Raphson update
-     Rcpp::NumericMatrix rcpp_hessian = scaled_hs_func(family_params, data);
-
-     // Check Hessian validity
-     bool valid_hessian = true;
-     for (int i = 0; i < n_params && valid_hessian; i++) {
-       for (int j = 0; j < n_params; j++) {
-         if (!R_finite(rcpp_hessian(i, j))) {
-           valid_hessian = false;
-           break;
-         }
-       }
-     }
-
-     if (!valid_hessian) {
-       if (verbose) {
-         Rcpp::Rcout << "Warning: Invalid Hessian, using numerical approximation." << std::endl;
-       }
-
-       // Use numerical Hessian
-       arma::mat num_hessian = numHessianAdaptive(family_params, data,
-                                                  scaled_ll_func, scaled_gr_func);
-       rcpp_hessian = Rcpp::wrap(num_hessian);
-     }
-
-     // Convert to arma for numerical operations
-     arma::mat hessian = Rcpp::as<arma::mat>(rcpp_hessian);
-     arma::vec grad_vec = Rcpp::as<arma::vec>(gradient);
-
-     if (eigenvalue_hessian_reg) {
-       // Enhanced regularization
-       hessian = makePositiveDefinite(hessian);
-     } else {
-       // Simple diagonal addition
-       hessian.diag() += 1e-6 * (1.0 + arma::max(arma::abs(hessian.diag())));
-     }
-
-     // Compute Newton direction
-     arma::vec direction;
-     bool solve_success = arma::solve(direction, hessian, -grad_vec);
-
-     if (!solve_success) {
-       if (verbose) {
-         Rcpp::Rcout << "Warning: Failed to solve for Newton direction, using gradient." << std::endl;
-       }
-
-       // Use negative gradient if Newton direction cannot be computed
-       direction = -grad_vec;
-
-       // Scale the direction to control step size
-       double scale_factor = 1.0 / std::max(1.0, arma::norm(direction));
-       direction *= scale_factor;
-     }
-
-     // Use line search for step size
-     Rcpp::NumericVector search_direction = Rcpp::wrap(direction);
-     double alpha = lineSearchWolfe(
-       family_params, search_direction, data,
-       scaled_ll_func, scaled_gr_func, 1.0, 1e-4, 0.9, max_backtrack
-     );
-
-     if (verbose) {
-       Rcpp::Rcout << "Line search: alpha = " << alpha << std::endl;
-     }
-
-     // Update parameters
-     new_params = Rcpp::clone(family_params);
-     for (int j = 0; j < n_params; j++) {
-       new_params[j] += alpha * search_direction[j];
-     }
-
-     // Apply bounds if needed
-     if (enforce_bounds) {
-       for (int j = 0; j < n_params; j++) {
-         bool is_delta = (family_lower == "gkw" && j == 3) ||
-           (family_lower == "bkw" && j == 3) ||
-           (family_lower == "kkw" && j == 2) ||
-           (family_lower == "mc" && j == 1) ||
-           (family_lower == "beta" && j == 1);
-
-         if (is_delta) {
-           new_params[j] = std::max(0.0, new_params[j]);
-         } else {
-           new_params[j] = std::max(min_param_val, new_params[j]);
-         }
-         new_params[j] = std::min(max_param_val, new_params[j]);
-       }
-     }
-
-     // Evaluate at new point
-     new_loglik = scaled_ll_func(new_params, data);
-
-     if (R_finite(new_loglik) && new_loglik <= current_loglik + 1e-4) {
-       update_success = true;
-     }
-   }
-
-   // If update failed, try random perturbation as last resort
-   if (!update_success) {
-     if (verbose) {
-       Rcpp::Rcout << "Update failed, applying random perturbation." << std::endl;
-     }
-
-     new_params = Rcpp::clone(family_params);
-     GetRNGstate();
-     for (int j = 0; j < n_params; j++) {
-       // Small random perturbation
-       double range = R::runif(0.01, 0.05) * std::abs(family_params[j]);
-       double perturb = R::runif(-range, range);
-       new_params[j] += perturb;
-     }
-     PutRNGstate();
-
-     // Apply bounds
-     if (enforce_bounds) {
-       for (int j = 0; j < n_params; j++) {
-         bool is_delta = (family_lower == "gkw" && j == 3) ||
-           (family_lower == "bkw" && j == 3) ||
-           (family_lower == "kkw" && j == 2) ||
-           (family_lower == "mc" && j == 1) ||
-           (family_lower == "beta" && j == 1);
-
-         if (is_delta) {
-           new_params[j] = std::max(0.0, new_params[j]);
-         } else {
-           new_params[j] = std::max(min_param_val, new_params[j]);
-         }
-         new_params[j] = std::min(max_param_val, new_params[j]);
-       }
-     }
-
-     new_loglik = scaled_ll_func(new_params, data);
-
-     if (R_finite(new_loglik) && new_loglik < current_loglik + 1e-2) {
-       update_success = true;
-       if (verbose) {
-         Rcpp::Rcout << "Random perturbation successful." << std::endl;
-       }
-     } else {
-       // If even random perturbation fails, use best parameters so far
-       new_params = best_params;
-       new_loglik = best_loglik;
-
-       if (verbose) {
-         Rcpp::Rcout << "All recovery attempts failed, using best parameters so far." << std::endl;
-       }
-     }
-   }
-
-   // Update parameters and history
-   for (int j = 0; j < n_params; j++) {
-     family_params[j] = new_params[j];
-     param_history(iter, j) = family_params[j];
-   }
-   loglik_history[iter] = new_loglik;
-
-   // Update best result if improved
-   if (new_loglik < best_loglik) {
-     best_loglik = new_loglik;
-     for (int j = 0; j < n_params; j++) {
-       best_params[j] = family_params[j];
-     }
-   }
-
-   // Check parameter change convergence
-   double param_change = 0.0;
-   double param_rel_change = 0.0;
-   for (int j = 0; j < n_params; j++) {
-     double delta = family_params[j] - param_history(iter-1, j);
-     param_change += std::pow(delta, 2);
-     if (std::abs(family_params[j]) > 1e-10) {
-       param_rel_change += std::pow(delta / family_params[j], 2);
-     } else {
-       param_rel_change += std::pow(delta, 2);
-     }
-   }
-   param_change = std::sqrt(param_change);
-   param_rel_change = std::sqrt(param_rel_change / n_params);
-
-   // Check log-likelihood change convergence
-   double loglik_change = std::abs(prev_loglik - new_loglik);
-   double loglik_rel_change = loglik_change / (std::abs(prev_loglik) + 1e-10);
-   prev_loglik = new_loglik;
-
-   if (verbose) {
-     Rcpp::Rcout << "Iteration " << iter
-                 << ", Log-likelihood: " << -new_loglik
-                 << ", Change: " << loglik_change
-                 << ", Rel. Change: " << loglik_rel_change
-                 << ", Gradient Norm: " << grad_norm
-                 << std::endl;
-
-     Rcpp::Rcout << "Parameters: ";
-     for (int j = 0; j < n_params; j++) {
-       Rcpp::Rcout << family_params[j] << " ";
-     }
-     Rcpp::Rcout << std::endl;
-   }
-
-   // Check convergence criteria
-   if (param_change < tol || param_rel_change < tol ||
-       loglik_change < tol || loglik_rel_change < tol) {
-     converged = true;
-     if (verbose) {
-       Rcpp::Rcout << "Convergence detected:" << std::endl;
-       if (param_change < tol) Rcpp::Rcout << "- Absolute parameter change < tolerance" << std::endl;
-       if (param_rel_change < tol) Rcpp::Rcout << "- Relative parameter change < tolerance" << std::endl;
-       if (loglik_change < tol) Rcpp::Rcout << "- Absolute log-likelihood change < tolerance" << std::endl;
-       if (loglik_rel_change < tol) Rcpp::Rcout << "- Relative log-likelihood change < tolerance" << std::endl;
-     }
-   }
- }
-
- // If not converged, use the best parameters found
- if (!converged) {
-   family_params = best_params;
-   if (verbose) {
-     Rcpp::Rcout << "Did not fully converge, using the best parameters found." << std::endl;
-   }
- }
-
- // Unscale parameters if scaling was used
- if (adaptive_scaling) {
-   // Unscale final parameters
-   for (int j = 0; j < n_params; j++) {
-     family_params[j] /= scaling_factors[j];
-   }
-
-   // Unscale parameter history
-   for (int i = 0; i <= iter; i++) {
-     for (int j = 0; j < n_params; j++) {
-       param_history(i, j) /= scaling_factors[j];
-     }
-   }
-
-   if (verbose) {
-     Rcpp::Rcout << "Final unscaled parameters: ";
-     for (int j = 0; j < n_params; j++) {
-       Rcpp::Rcout << family_params[j] << " ";
-     }
-     Rcpp::Rcout << std::endl;
-   }
- }
-
- // Prepare final result
- Rcpp::NumericMatrix final_param_history(iter + 1, n_params);
- Rcpp::NumericVector final_loglik_history(iter + 1);
-
- for (int i = 0; i <= iter; i++) {
-   for (int j = 0; j < n_params; j++) {
-     final_param_history(i, j) = param_history(i, j);
-   }
-   final_loglik_history[i] = loglik_history[i];
- }
-
- // Final computations with best parameters
- double final_loglik = ll_func(family_params, data);
- Rcpp::NumericVector final_gradient = gr_func(family_params, data);
- Rcpp::NumericMatrix final_hessian = hs_func(family_params, data);
-
- // Check final Hessian validity
- bool valid_final_hessian = true;
- for (int i = 0; i < n_params && valid_final_hessian; i++) {
-   for (int j = 0; j < n_params; j++) {
-     if (!R_finite(final_hessian(i, j))) {
-       valid_final_hessian = false;
-       break;
-     }
-   }
- }
-
- // Use numerical approximation if analytical Hessian is invalid
- if (!valid_final_hessian) {
-   if (verbose) {
-     Rcpp::Rcout << "Final analytical Hessian invalid, using numerical approximation." << std::endl;
-   }
-
-   arma::mat num_hessian = numHessianAdaptive(family_params, data, ll_func, gr_func);
-   final_hessian = Rcpp::wrap(num_hessian);
- }
-
- // Calculate numerical Hessian if requested
- Rcpp::NumericMatrix numeric_hessian;
- if (get_num_hess) {
-   arma::mat num_hessian = numHessianAdaptive(family_params, data, ll_func, gr_func);
-   numeric_hessian = Rcpp::wrap(num_hessian);
-   result["numeric_hessian"] = numeric_hessian;
- }
-
- // Calculate standard errors using eigenvalue-regularized Hessian
- Rcpp::NumericVector std_errors(n_params, NA_REAL);
- bool valid_se = true;
-
- // Calculate condition number of the Hessian
- double condition_number = NA_REAL;
- arma::mat arma_hessian = Rcpp::as<arma::mat>(final_hessian);
- arma::vec eigval;
- bool eig_success = arma::eig_sym(eigval, arma_hessian);
-
- if (eig_success) {
-   double max_eigval = arma::max(eigval);
-   double min_eigval = arma::min(eigval);
-
-   if (min_eigval > 0) {
-     condition_number = max_eigval / min_eigval;
-   } else {
-     condition_number = R_PosInf;
-   }
- }
-
- // Use robust approach to calculate standard errors
- try {
-   // Make Hessian positive definite
-   arma::mat hessian_pd = makePositiveDefinite(arma_hessian);
-
-   // Compute covariance matrix
-   arma::mat cov_matrix;
-   bool inv_success = false;
-
-   // Try various inversion methods
-   try {
-     cov_matrix = arma::inv_sympd(hessian_pd);
-     inv_success = true;
-   } catch (...) {
-     try {
-       cov_matrix = arma::inv(hessian_pd);
-       inv_success = true;
-     } catch (...) {
-       try {
-         cov_matrix = arma::pinv(hessian_pd);
-         inv_success = true;
-       } catch (...) {
-         inv_success = false;
-       }
-     }
-   }
-
-   // Extract standard errors if inversion succeeded
-   if (inv_success) {
-     arma::vec diag_cov = cov_matrix.diag();
-
-     for (int j = 0; j < n_params; j++) {
-       if (diag_cov(j) > 0) {
-         std_errors[j] = std::sqrt(diag_cov(j));
-       } else {
-         std_errors[j] = NA_REAL;
-       }
-     }
-   } else {
-     valid_se = false;
-   }
- } catch (...) {
-   valid_se = false;
- }
-
- if (!valid_se && verbose) {
-   Rcpp::Rcout << "Could not calculate standard errors. The Hessian may not be positive definite." << std::endl;
- }
-
- // Calculate information criteria
- double aic = 2 * n_params + 2 * final_loglik;
- double bic = n_params * std::log(n_data) + 2 * final_loglik;
- double aicc = aic;
- if (n_data > n_params + 1) {
-   aicc += 2 * n_params * (n_params + 1) / (n_data - n_params - 1);
- }
-
- // Fill the result
- result["parameters"] = family_params;
- result["loglik"] = -final_loglik;
- result["iterations"] = iter;
- result["converged"] = converged;
- result["param_history"] = final_param_history;
- result["loglik_history"] = -final_loglik_history;
- result["gradient"] = final_gradient;
- result["hessian"] = final_hessian;
- result["std_errors"] = std_errors;
- result["aic"] = aic;
- result["bic"] = bic;
- result["aicc"] = aicc;
- result["n"] = n_data;
- result["family"] = family;
- result["optimization_method"] = optimization_method;
-
- if (adaptive_scaling) {
-   result["scaling_factors"] = scaling_factors;
- }
-
- if (eig_success) {
-   result["condition_number"] = condition_number;
- }
-
- if (!converged && !result.containsElementNamed("status")) {
-   result["status"] = "max_iterations_reached";
- } else if (converged) {
-   result["status"] = "success";
- }
-
- // Calculate statistical significance metrics
- Rcpp::NumericVector z_values(n_params, NA_REAL);
- Rcpp::NumericVector p_values(n_params, NA_REAL);
-
- if (valid_se) {
-   for (int j = 0; j < n_params; j++) {
-     if (std_errors[j] != NA_REAL && std_errors[j] > 0) {
-       z_values[j] = family_params[j] / std_errors[j];
-       p_values[j] = 2.0 * R::pnorm(-std::abs(z_values[j]), 0.0, 1.0, 1, 0);
-     }
-   }
-   result["z_values"] = z_values;
-   result["p_values"] = p_values;
- }
-
- // Set parameter names
- colnames(final_param_history) = param_names;
- result["param_names"] = param_names;
-
- // Multi-start optimization if needed
- if (!converged && multi_start_attempts > 0) {
-   if (verbose) {
-     Rcpp::Rcout << "Initial optimization did not converge. Trying with different starting values..." << std::endl;
-   }
-
-   bool multi_start_success = false;
-   Rcpp::List best_result = Rcpp::clone(result);
-   double best_multi_loglik = -Rcpp::as<double>(result["loglik"]);
-
-   for (int attempt = 0; attempt < multi_start_attempts; attempt++) {
-     if (verbose) {
-       Rcpp::Rcout << "Multi-start attempt " << (attempt + 1) << " of " << multi_start_attempts << std::endl;
-     }
-
-     // Generate new starting values
-     Rcpp::NumericVector new_start = smartInitGkw(data, family);
-
-     // Perturb the starting values
-     GetRNGstate();
-     for (int j = 0; j < new_start.size(); j++) {
-       // Perturb by up to ±30%
-       double perturb_factor = R::runif(0.7, 1.3);
-       new_start[j] *= perturb_factor;
-
-       // Ensure valid values
-       if (j == new_start.size() - 1 && (family_lower == "bkw" || family_lower == "beta")) {
-         // For delta parameter
-         new_start[j] = std::max(0.0, new_start[j]);
-       } else {
-         new_start[j] = std::max(min_param_val, new_start[j]);
-       }
-       new_start[j] = std::min(max_param_val, new_start[j]);
-     }
-     PutRNGstate();
-
-     if (verbose) {
-       Rcpp::Rcout << "New starting values: ";
-       for (int j = 0; j < new_start.size(); j++) {
-         Rcpp::Rcout << new_start[j] << " ";
-       }
-       Rcpp::Rcout << std::endl;
-     }
-
-     // Try optimization with new starting values
-     try {
-       Rcpp::List new_result = nrgkw(
-         new_start, data, family, tol, max_iter / 2,
-         verbose, optimization_method, enforce_bounds,
-         min_param_val, max_param_val, adaptive_scaling,
-         use_stochastic_perturbation, false, 0, // No further multi-start
-         eigenvalue_hessian_reg, max_backtrack, initial_trust_radius
-       );
-
-       bool new_converged = Rcpp::as<bool>(new_result["converged"]);
-       double new_multi_loglik = -Rcpp::as<double>(new_result["loglik"]);
-
-       if (verbose) {
-         Rcpp::Rcout << "Multi-start result: converged = " << (new_converged ? "true" : "false")
-                     << ", loglik = " << -new_multi_loglik << std::endl;
-       }
-
-       // Keep the best result
-       if (new_converged || (!multi_start_success && new_multi_loglik < best_multi_loglik)) {
-         best_result = new_result;
-         best_multi_loglik = new_multi_loglik;
-         multi_start_success = new_converged;
-
-         if (verbose) {
-           Rcpp::Rcout << "Found better solution with multi-start!" << std::endl;
-         }
-
-         // Stop early if converged
-         if (multi_start_success) {
-           break;
-         }
-       }
-     } catch (...) {
-       if (verbose) {
-         Rcpp::Rcout << "Multi-start attempt failed with an exception." << std::endl;
-       }
-     }
-   }
-
-   // Return the best result from multi-start attempts
-   if (multi_start_success || best_multi_loglik < -Rcpp::as<double>(result["loglik"])) {
-     return best_result;
-   }
+   result = Rcpp::NumericVector(2);
+   result[0] = full_params[2]; // γ
+   result[1] = full_params[3]; // δ
  }
 
  return result;
+};
+
+// Get family-specific parameters
+Rcpp::NumericVector family_params = extractParams(params);
+
+// Compute parameter scaling factors if enabled
+Rcpp::NumericVector scaling_factors(family_params.size(), 1.0);
+if (adaptive_scaling) {
+ scaling_factors = computeScalingFactors(family_params);
+
+ if (verbose) {
+   Rcpp::Rcout << "Parameter scaling factors: ";
+   for (int i = 0; i < scaling_factors.size(); i++) {
+     Rcpp::Rcout << scaling_factors[i] << " ";
+   }
+   Rcpp::Rcout << std::endl;
+ }
+
+ // Apply scaling to initial parameters
+ Rcpp::NumericVector scaled_params = Rcpp::clone(family_params);
+ for (int i = 0; i < family_params.size(); i++) {
+   scaled_params[i] *= scaling_factors[i];
+ }
+ family_params = scaled_params;
+
+ // Update full parameter vector with scaled values
+ params = Rcpp::clone(params);
+ Rcpp::NumericVector full_scaling(5, 1.0);
+
+ if (family_lower == "gkw") {
+   for (int j = 0; j < 5; j++) full_scaling[j] = scaling_factors[j];
+ } else if (family_lower == "bkw") {
+   for (int j = 0; j < 4; j++) full_scaling[j] = scaling_factors[j];
+ } else if (family_lower == "kkw") {
+   full_scaling[0] = scaling_factors[0]; // α
+   full_scaling[1] = scaling_factors[1]; // β
+   full_scaling[3] = scaling_factors[2]; // δ
+   full_scaling[4] = scaling_factors[3]; // λ
+ } else if (family_lower == "ekw") {
+   full_scaling[0] = scaling_factors[0]; // α
+   full_scaling[1] = scaling_factors[1]; // β
+   full_scaling[4] = scaling_factors[2]; // λ
+ } else if (family_lower == "mc") {
+   full_scaling[2] = scaling_factors[0]; // γ
+   full_scaling[3] = scaling_factors[1]; // δ
+   full_scaling[4] = scaling_factors[2]; // λ
+ } else if (family_lower == "kw") {
+   full_scaling[0] = scaling_factors[0]; // α
+   full_scaling[1] = scaling_factors[1]; // β
+ } else if (family_lower == "beta") {
+   full_scaling[2] = scaling_factors[0]; // γ
+   full_scaling[3] = scaling_factors[1]; // δ
+ }
+
+ for (int i = 0; i < 5; i++) {
+   params[i] *= full_scaling[i];
+ }
 }
 
+// Create scaled versions of likelihood and gradient functions
+auto scaled_ll_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> double {
+ if (adaptive_scaling) {
+   Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
 
+   // Unscale parameters before evaluation
+   for (int i = 0; i < params.size(); i++) {
+     unscaled_params[i] /= scaling_factors[i];
+   }
 
+   return ll_func(unscaled_params, data);
+ } else {
+   return ll_func(params, data);
+ }
+};
 
+auto scaled_gr_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> Rcpp::NumericVector {
+ if (adaptive_scaling) {
+   Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
 
+   // Unscale parameters
+   for (int i = 0; i < params.size(); i++) {
+     unscaled_params[i] /= scaling_factors[i];
+   }
 
+   // Get gradient at unscaled point
+   Rcpp::NumericVector grad = gr_func(unscaled_params, data);
 
+   // Adjust gradient for scaling
+   for (int i = 0; i < grad.size(); i++) {
+     grad[i] /= scaling_factors[i];
+   }
 
+   return grad;
+ } else {
+   return gr_func(params, data);
+ }
+};
 
+auto scaled_hs_func = [&](Rcpp::NumericVector params, Rcpp::NumericVector data) -> Rcpp::NumericMatrix {
+ if (adaptive_scaling) {
+   Rcpp::NumericVector unscaled_params = Rcpp::clone(params);
 
+   // Unscale parameters
+   for (int i = 0; i < params.size(); i++) {
+     unscaled_params[i] /= scaling_factors[i];
+   }
 
+   // Get Hessian at unscaled point
+   Rcpp::NumericMatrix hess = hs_func(unscaled_params, data);
 
+   // Adjust Hessian for scaling
+   for (int i = 0; i < hess.nrow(); i++) {
+     for (int j = 0; j < hess.ncol(); j++) {
+       hess(i, j) /= (scaling_factors[i] * scaling_factors[j]);
+     }
+   }
 
-// // Função para calcular a Hessiana numericamente usando Armadillo
-// arma::mat numHess(
-//   NumericVector params,
-//   NumericVector data,
-//   double eps = 1e-6
-// ) {
-// int n = params.size();
-// arma::mat hessian(n, n, arma::fill::zeros);
-//
-// // Valor da função no ponto atual
-// double f0 = llgkw(params, data);
-//
-// // Para cada par de variáveis
-// for (int i = 0; i < n; i++) {
-//   for (int j = 0; j <= i; j++) {
-//     // Cálculo da derivada segunda usando diferenças finitas
-//     if (i == j) {
-//       // Derivada segunda em relação à mesma variável
-//       NumericVector params_p = clone(params);
-//       NumericVector params_m = clone(params);
-//
-//       params_p[i] += eps;
-//       params_m[i] -= eps;
-//
-//       double f_p = llgkw(params_p, data);
-//       double f_m = llgkw(params_m, data);
-//
-//       hessian(i, j) = (f_p - 2*f0 + f_m) / (eps * eps);
-//     } else {
-//       // Derivada cruzada
-//       NumericVector params_pp = clone(params);
-//       NumericVector params_pm = clone(params);
-//       NumericVector params_mp = clone(params);
-//       NumericVector params_mm = clone(params);
-//
-//       params_pp[i] += eps;
-//       params_pp[j] += eps;
-//
-//       params_pm[i] += eps;
-//       params_pm[j] -= eps;
-//
-//       params_mp[i] -= eps;
-//       params_mp[j] += eps;
-//
-//       params_mm[i] -= eps;
-//       params_mm[j] -= eps;
-//
-//       double f_pp = llgkw(params_pp, data);
-//       double f_pm = llgkw(params_pm, data);
-//       double f_mp = llgkw(params_mp, data);
-//       double f_mm = llgkw(params_mm, data);
-//
-//       hessian(i, j) = hessian(j, i) = (f_pp - f_pm - f_mp + f_mm) / (4 * eps * eps);
-//     }
-//   }
-// }
-//
-// return hessian;
-// }
-//
+   return hess;
+ } else {
+   return hs_func(params, data);
+ }
+};
 
+// Calculate initial log-likelihood
+double initial_loglik = scaled_ll_func(family_params, data);
+if (!R_finite(initial_loglik) || initial_loglik == R_PosInf) {
+ Rcpp::stop("Initial log-likelihood is infinite or NaN. Check the initial parameters.");
+}
 
-// //' @title Newton-Raphson Optimization for GKw Family Distributions (nrgkw)
-// //' @author Lopes, J. E.
-// //' @keywords distribution optimization likelihood mle newton-raphson kumaraswamy mcdonald beta
-// //'
-// //' @description
-// //' Performs maximum likelihood estimation (MLE) for the parameters of any
-// //' distribution in the Generalized Kumaraswamy (GKw) family using a robust
-// //' implementation of the Newton-Raphson algorithm (`nrgkw`). This function
-// //' supports all 7 nested submodels, optimizing the corresponding negative
-// //' log-likelihood function using analytical gradients and Hessians.
-// //'
-// //' @details
-// //' The Generalized Kumaraswamy family includes the following distributions,
-// //' all defined on the interval (0, 1):
-// //' \itemize{
-// //'   \item{\bold{GKw} (Generalized Kumaraswamy): 5 parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda})}
-// //'   \item{\bold{BKw} (Beta-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \gamma, \delta}), GKw with \eqn{\lambda = 1}}
-// //'   \item{\bold{KwKw} (Kumaraswamy-Kumaraswamy): 4 parameters (\eqn{\alpha, \beta, \delta, \lambda}), GKw with \eqn{\gamma = 1}}
-// //'   \item{\bold{EKw} (Exponentiated Kumaraswamy): 3 parameters (\eqn{\alpha, \beta, \lambda}), GKw with \eqn{\gamma = 1, \delta = 0}}
-// //'   \item{\bold{Mc} (McDonald/Beta Power): 3 parameters (\eqn{\gamma, \delta, \lambda}), GKw with \eqn{\alpha = 1, \beta = 1}}
-// //'   \item{\bold{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha, \beta}), GKw with \eqn{\gamma = 1, \delta = 0, \lambda = 1}}
-// //'   \item{\bold{Beta}: 2 parameters (\eqn{\gamma, \delta}), GKw with \eqn{\alpha = 1, \beta = 1, \lambda = 1}. Corresponds to standard Beta(\eqn{\gamma, \delta+1}).}
-// //' }
-// //'
-// //' The `nrgkw` function implements a Newton-Raphson optimization procedure to
-// //' find the maximum likelihood estimates. It incorporates multiple fallback strategies
-// //' to handle numerical challenges when updating parameters using the Hessian matrix:
-// //' \enumerate{
-// //'  \item Cholesky decomposition (fastest, requires positive-definite Hessian)
-// //'  \item Standard matrix solver (e.g., LU decomposition)
-// //'  \item Regularized Hessian (adding small values to the diagonal)
-// //'  \item Moore-Penrose Pseudo-inverse (for singular or ill-conditioned Hessians)
-// //'  \item Gradient descent (if Hessian steps fail repeatedly or `use_hessian=FALSE`)
-// //' }
-// //'
-// //' The function also implements a backtracking line search algorithm to ensure
-// //' monotonic improvement (decrease) in the negative log-likelihood at each step.
-// //' If backtracking fails consistently, random parameter perturbation may be
-// //' employed as a recovery strategy. Parameter bounds (\code{min_param_val},
-// //' \code{max_param_val}, and \eqn{\delta \ge 0}) can be enforced if
-// //' \code{enforce_bounds = TRUE}.
-// //'
-// //' @param start A numeric vector containing initial values for the parameters.
-// //'   The length and order must correspond to the selected `family`
-// //'   (e.g., `c(alpha, beta, gamma, delta, lambda)` for "gkw"; `c(alpha, beta)` for "kw";
-// //'   `c(gamma, delta)` for "beta").
-// //' @param data A numeric vector containing the observed data. All values must
-// //'   be strictly between 0 and 1.
-// //' @param family A character string specifying the distribution family. One of
-// //'   \code{"gkw"}, \code{"bkw"}, \code{"kkw"}, \code{"ekw"}, \code{"mc"},
-// //'   \code{"kw"}, or \code{"beta"}. Default: \code{"gkw"}.
-// //' @param tol Convergence tolerance. The algorithm stops when the Euclidean norm
-// //'   of the gradient is below this value, or if relative changes in parameters
-// //'   or the negative log-likelihood are below this threshold across consecutive
-// //'   iterations. Default: \code{1e-6}.
-// //' @param max_iter Maximum number of iterations allowed. Default: \code{100}.
-// //' @param verbose Logical; if \code{TRUE}, prints detailed progress information
-// //'   during optimization, including iteration number, negative log-likelihood,
-// //'   gradient norm, and step adjustment details. Default: \code{FALSE}.
-// //' @param use_hessian Logical; if \code{TRUE}, uses the analytical Hessian matrix
-// //'   for parameter updates (Newton-Raphson variants). If \code{FALSE}, uses
-// //'   gradient descent. Default: \code{TRUE}.
-// //' @param step_size Initial step size (\eqn{\eta}) for parameter updates
-// //'   (\eqn{\theta_{new} = \theta_{old} - \eta H^{-1} \nabla \ell} or
-// //'   \eqn{\theta_{new} = \theta_{old} - \eta \nabla \ell}). Backtracking line search
-// //'   adjusts this step size dynamically. Default: \code{1.0}.
-// //' @param enforce_bounds Logical; if \code{TRUE}, parameter values are constrained
-// //'   to stay within \code{min_param_val}, \code{max_param_val} (and \eqn{\delta \ge 0})
-// //'   during optimization. Default: \code{TRUE}.
-// //' @param min_param_val Minimum allowed value for parameters constrained to be
-// //'   strictly positive (\eqn{\alpha, \beta, \gamma, \lambda}). Default: \code{1e-5}.
-// //' @param max_param_val Maximum allowed value for all parameters. Default: \code{1e5}.
-// //' @param get_num_hess Logical; if \code{TRUE}, computes and returns a numerical
-// //'   approximation of the Hessian matrix at the solution using central differences,
-// //'   in addition to the analytical Hessian. Useful for verification. Default: \code{FALSE}.
-// //'
-// //' @return A list object of class \code{gkw_fit} containing the following components:
-// //' \item{parameters}{A named numeric vector with the estimated parameters.}
-// //' \item{loglik}{The maximized value of the log-likelihood function (not the negative log-likelihood).}
-// //' \item{iterations}{Number of iterations performed.}
-// //' \item{converged}{Logical flag indicating whether the algorithm converged successfully based on the tolerance criteria.}
-// //' \item{param_history}{A matrix where rows represent iterations and columns represent parameter values (if requested implicitly or explicitly - may depend on implementation).}
-// //' \item{loglik_history}{A vector of negative log-likelihood values at each iteration (if requested).}
-// //' \item{gradient}{The gradient vector of the negative log-likelihood at the final parameter estimates.}
-// //' \item{hessian}{The analytical Hessian matrix of the negative log-likelihood at the final parameter estimates.}
-// //' \item{std_errors}{A named numeric vector of approximate standard errors for the estimated parameters, calculated from the inverse of the final Hessian matrix.}
-// //' \item{aic}{Akaike Information Criterion: \eqn{AIC = 2k - 2 \ell(\hat{\theta})}, where \eqn{k} is the number of parameters.}
-// //' \item{bic}{Bayesian Information Criterion: \eqn{BIC = k \ln(n) - 2 \ell(\hat{\theta})}, where \eqn{k} is the number of parameters and \eqn{n} is the sample size.}
-// //' \item{n}{The sample size (number of observations in `data` after removing any NA values).}
-// //' \item{status}{A character string indicating the termination status (e.g., "Converged", "Max iterations reached").}
-// //' \item{z_values}{A named numeric vector of Z-statistics (\eqn{\hat{\theta}_j / SE(\hat{\theta}_j)}) for testing parameter significance.}
-// //' \item{p_values}{A named numeric vector of two-sided p-values corresponding to the Z-statistics, calculated using the standard Normal distribution.}
-// //' \item{param_names}{A character vector of the names of the parameters estimated for the specified family.}
-// //' \item{family}{The character string specifying the distribution family used.}
-// //' \item{numeric_hessian}{(Optional) The numerically approximated Hessian matrix at the solution, if \code{get_num_hess = TRUE}.}
-// //'
-// //' @section Warning:
-// //' Maximum likelihood estimation for these flexible distributions can be challenging.
-// //' Convergence is sensitive to initial values and the shape of the likelihood surface.
-// //' It is recommended to:
-// //' \itemize{
-// //'   \item{Try different starting values (`start`) if convergence fails or seems suboptimal.}
-// //'   \item{Check the `converged` flag and the `status` message.}
-// //'   \item{Examine the final `gradient` norm; it should be close to zero for a successful convergence.}
-// //'   \item{Inspect the `param_history` and `loglik_history` (if available) to understand the optimization path.}
-// //'   \item{Use the `verbose = TRUE` option for detailed diagnostics during troubleshooting.}
-// //'   \item{Be cautious interpreting results if standard errors are very large or `NaN`, which might indicate issues like likelihood flatness or parameter estimates near boundaries.}
-// //' }
-// //'
-// //' @references
-// //' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
-// //' random processes. *Journal of Hydrology*, *46*(1-2), 79-88.
-// //'
-// //' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
-// //' *Journal of Statistical Computation and Simulation*, *81*(7), 883-898.
-// //'
-// //' Fletcher, R. (1987). *Practical Methods of Optimization* (2nd ed.). John Wiley & Sons.
-// //'
-// //' Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer.
-// //'
-// //' @seealso
-// //' Underlying functions used: \code{\link{llgkw}}, \code{\link{grgkw}}, \code{\link{hsgkw}},
-// //' \code{\link{llkw}}, \code{\link{grkw}}, \code{\link{hskw}},
-// //' \code{\link{llbkw}}, \code{grbkw}, \code{hsbkw},
-// //' \code{llkkw}, \code{grkkw}, \code{hskkw},
-// //' \code{\link{llekw}}, \code{grekw}, \code{hsekw},
-// //' \code{\link{llmc}}, \code{\link{grmc}}, \code{\link{hsmc}},
-// //' \code{\link{llbeta}}, \code{\link{grbeta}}, \code{\link{hsbeta}}.
-// //' General optimization: \code{\link[stats]{optim}}, \code{\link[stats]{nlm}}.
-// //'
-// //' @examples
-// //' \dontrun{
-// //' # Generate sample data from a Beta(2,5) distribution for testing
-// //' set.seed(123)
-// //' sample_data <- stats::rbeta(200, shape1 = 2, shape2 = 5)
-// //'
-// //' # --- Fit different models using nrgkw ---
-// //'
-// //' # Fit with full GKw model (5 parameters: alpha, beta, gamma, delta, lambda)
-// //' start_gkw <- c(alpha=1.1, beta=1.1, gamma=1.8, delta=3.8, lambda=1.1)
-// //' gkw_result <- nrgkw(start = start_gkw, data = sample_data, family = "gkw", verbose = FALSE)
-// //' print("GKw Fit:")
-// //' print(gkw_result$parameters)
-// //'
-// //' # Fit with simpler Kumaraswamy model (2 parameters: alpha, beta)
-// //' start_kw <- c(alpha=1.5, beta=4.5)
-// //' kw_result <- nrgkw(start = start_kw, data = sample_data, family = "kw")
-// //' print("Kw Fit:")
-// //' print(kw_result$parameters)
-// //'
-// //' # Fit with Beta model (2 parameters: gamma, delta, corresponding to Beta(gamma, delta+1))
-// //' start_beta <- c(gamma=1.8, delta=3.8) # Start near expected values
-// //' beta_result <- nrgkw(start = start_beta, data = sample_data, family = "beta")
-// //' print("Beta Fit (gamma, delta parameters):")
-// //' print(beta_result$parameters)
-// //' cat(sprintf("Corresponding to Beta(%.3f, %.3f)\n",
-// //'     beta_result$parameters[1], beta_result$parameters[2] + 1))
-// //'
-// //' # Fit with McDonald model (3 parameters: gamma, delta, lambda)
-// //' start_mc <- c(gamma=1.8, delta=3.8, lambda=1.1)
-// //' mc_result <- nrgkw(start = start_mc, data = sample_data, family = "mc")
-// //' print("Mc Fit:")
-// //' print(mc_result$parameters) # Expect lambda estimate near 1
-// //'
-// //' # --- Compare AIC/BIC values ---
-// //' fit_comparison <- data.frame(
-// //'   family = c("gkw", "kw", "beta", "mc"),
-// //'   AIC = c(gkw_result$aic, kw_result$aic, beta_result$aic, mc_result$aic),
-// //'   BIC = c(gkw_result$bic, kw_result$bic, beta_result$bic, mc_result$bic)
-// //' )
-// //' print("Model Comparison:")
-// //' print(fit_comparison[order(fit_comparison$AIC), ]) # Lower is better
-// //'
-// //' # --- Example with verbosity and numerical Hessian check ---
-// //' beta_result_detail <- nrgkw(start = start_beta, data = sample_data, family = "beta",
-// //'                             verbose = TRUE, get_num_hess = TRUE)
-// //' print(beta_result_detail$status)
-// //' # Compare analytical and numerical Hessians (if hsbeta exists and converged)
-// //' if(beta_result_detail$converged && !is.null(beta_result_detail$numeric_hessian)) {
-// //'    print("Analytical Hessian:")
-// //'    print(beta_result_detail$hessian)
-// //'    print("Numerical Hessian:")
-// //'    print(beta_result_detail$numeric_hessian)
-// //'    print("Max Abs Diff:")
-// //'    print(max(abs(beta_result_detail$hessian - beta_result_detail$numeric_hessian)))
-// //' }
-// //'
-// //' } # End of \dontrun block
-// //'
-// //' @export
-// // [[Rcpp::export]]
-// List nrgkw(
-//    NumericVector start,
-//    NumericVector data,
-//    std::string family = "gkw",
-//    double tol = 1e-6,
-//    int max_iter = 100,
-//    bool verbose = false,
-//    bool use_hessian = true,
-//    double step_size = 1.0,
-//    bool enforce_bounds = true,
-//    double min_param_val = 1e-5,
-//    double max_param_val = 1e5,
-//    bool get_num_hess = false
-// ) {
-//  // Final result will be a list with different components
-//  List result;
-//
-//  // Convert family to lowercase for case-insensitive comparison
-//  std::string family_lower = family;
-//  std::transform(family_lower.begin(), family_lower.end(), family_lower.begin(), ::tolower);
-//
-//  // Determine number of parameters based on family
-//  int n_params = 0;
-//  CharacterVector param_names;
-//
-//  if (family_lower == "gkw") {
-//    n_params = 5;
-//    param_names = CharacterVector::create("alpha", "beta", "gamma", "delta", "lambda");
-//  } else if (family_lower == "bkw") {
-//    n_params = 4;
-//    param_names = CharacterVector::create("alpha", "beta", "gamma", "delta");
-//  } else if (family_lower == "kkw") {
-//    n_params = 4;
-//    param_names = CharacterVector::create("alpha", "beta", "delta", "lambda");
-//  } else if (family_lower == "ekw") {
-//    n_params = 3;
-//    param_names = CharacterVector::create("alpha", "beta", "lambda");
-//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-//    n_params = 3;
-//    param_names = CharacterVector::create("gamma", "delta", "lambda");
-//  } else if (family_lower == "kw") {
-//    n_params = 2;
-//    param_names = CharacterVector::create("alpha", "beta");
-//  } else if (family_lower == "beta") {
-//    n_params = 2;
-//    param_names = CharacterVector::create("gamma", "delta");
-//  } else {
-//    stop("Unknown family: '" + family + "'. Available options are 'gkw', 'bkw', 'kkw', 'ekw', 'mc', 'kw', 'beta'.");
-//  }
-//
-//  // Validate initial parameters size
-//  if (start.size() != n_params) {
-//    stop("Invalid number of parameters for '" + family + "'. Expected " +
-//      std::to_string(n_params) + ", got " + std::to_string(start.size()));
-//  }
-//
-//  // Check for valid data
-//  int n_data = data.size();
-//  if (n_data < n_params) {
-//    stop("At least " + std::to_string(n_params) + " data points are needed to estimate " +
-//      std::to_string(n_params) + " parameters");
-//  }
-//
-//  // Check if all data are in the interval (0,1)
-//  for (int i = 0; i < n_data; i++) {
-//    if (data[i] <= 0.0 || data[i] >= 1.0 || !R_finite(data[i])) {
-//      stop("All data must be in the interval (0,1)");
-//    }
-//  }
-//
-//  // Copy initial parameters and convert to standard GKw parameters where needed
-//  NumericVector params(5); // Always use 5 parameters internally (GKw format)
-//
-//  // Set default values based on fixed parameters in specific families
-//  params[0] = 1.0; // α = 1 default
-//  params[1] = 1.0; // β = 1 default
-//  params[2] = 1.0; // γ = 1 default
-//  params[3] = 0.0; // δ = 0 default
-//  params[4] = 1.0; // λ = 1 default
-//
-//  // Fill with provided parameters based on family
-//  if (family_lower == "gkw") {
-//    for (int j = 0; j < 5; j++) {
-//      params[j] = start[j];
-//    }
-//  } else if (family_lower == "bkw") {
-//    // α, β, γ, δ with λ = 1
-//    for (int j = 0; j < 4; j++) {
-//      params[j] = start[j];
-//    }
-//    params[4] = 1.0; // λ fixed at 1
-//  } else if (family_lower == "kkw") {
-//    // α, β, δ, λ with γ = 1
-//    params[0] = start[0]; // α
-//    params[1] = start[1]; // β
-//    params[2] = 1.0;             // γ fixed at 1
-//    params[3] = start[2]; // δ
-//    params[4] = start[3]; // λ
-//  } else if (family_lower == "ekw") {
-//    // α, β, λ with γ = 1, δ = 0
-//    params[0] = start[0]; // α
-//    params[1] = start[1]; // β
-//    params[2] = 1.0;             // γ fixed at 1
-//    params[3] = 0.0;             // δ fixed at 0
-//    params[4] = start[2]; // λ
-//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-//    // γ, δ, λ with α = 1, β = 1
-//    params[0] = 1.0;             // α fixed at 1
-//    params[1] = 1.0;             // β fixed at 1
-//    params[2] = start[0]; // γ
-//    params[3] = start[1]; // δ
-//    params[4] = start[2]; // λ
-//  } else if (family_lower == "kw") {
-//    // α, β with γ = 1, δ = 0, λ = 1
-//    params[0] = start[0]; // α
-//    params[1] = start[1]; // β
-//    params[2] = 1.0;             // γ fixed at 1
-//    params[3] = 0.0;             // δ fixed at 0
-//    params[4] = 1.0;             // λ fixed at 1
-//  } else if (family_lower == "beta") {
-//    // γ, δ with α = 1, β = 1, λ = 1
-//    params[0] = 1.0;             // α fixed at 1
-//    params[1] = 1.0;             // β fixed at 1
-//    params[2] = start[0]; // γ
-//    params[3] = start[1]; // δ
-//    params[4] = 1.0;             // λ fixed at 1
-//  }
-//
-//  // Apply constraints to initial parameters if needed
-//  if (enforce_bounds) {
-//    for (int j = 0; j < 5; j++) {
-//      if (j == 3) { // delta
-//        params[j] = std::max(0.0, params[j]);
-//      } else { // other parameters must be > 0
-//        params[j] = std::max(min_param_val, params[j]);
-//      }
-//      params[j] = std::min(max_param_val, params[j]);
-//    }
-//  }
-//
-//  // Define function pointers based on family
-//  std::function<double(NumericVector, NumericVector)> ll_func;
-//  std::function<NumericVector(NumericVector, NumericVector)> gr_func;
-//  std::function<NumericMatrix(NumericVector, NumericVector)> hs_func;
-//
-//  // Assign appropriate functions based on family
-//  if (family_lower == "gkw") {
-//    ll_func = llgkw;
-//    gr_func = grgkw;
-//    hs_func = hsgkw;
-//  } else if (family_lower == "bkw") {
-//    ll_func = llbkw;
-//    gr_func = grbkw;
-//    hs_func = hsbkw;
-//  } else if (family_lower == "kkw") {
-//    ll_func = llkkw;
-//    gr_func = grkkw;
-//    hs_func = hskkw;
-//  } else if (family_lower == "ekw") {
-//    ll_func = llekw;
-//    gr_func = grekw;
-//    hs_func = hsekw;
-//  } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-//    ll_func = llmc;
-//    gr_func = grmc;
-//    hs_func = hsmc;
-//  } else if (family_lower == "kw") {
-//    ll_func = llkw;
-//    gr_func = grkw;
-//    hs_func = hskw;
-//  } else if (family_lower == "beta") {
-//    ll_func = llbeta;
-//    gr_func = grbeta;
-//    hs_func = hsbeta;
-//  }
-//
-//  // Function to extract relevant parameters for specific family
-//  auto extract_params = [&](const NumericVector& full_params) -> NumericVector {
-//    NumericVector result;
-//
-//    if (family_lower == "gkw") {
-//      result = NumericVector(5);
-//      for (int j = 0; j < 5; j++) result[j] = full_params[j];
-//    } else if (family_lower == "bkw") {
-//      result = NumericVector(4);
-//      for (int j = 0; j < 4; j++) result[j] = full_params[j];
-//    } else if (family_lower == "kkw") {
-//      result = NumericVector(4);
-//      result[0] = full_params[0]; // α
-//      result[1] = full_params[1]; // β
-//      result[2] = full_params[3]; // δ
-//      result[3] = full_params[4]; // λ
-//    } else if (family_lower == "ekw") {
-//      result = NumericVector(3);
-//      result[0] = full_params[0]; // α
-//      result[1] = full_params[1]; // β
-//      result[2] = full_params[4]; // λ
-//    } else if (family_lower == "mc" || family_lower == "mcdonald" || family_lower == "bp") {
-//      result = NumericVector(3);
-//      result[0] = full_params[2]; // γ
-//      result[1] = full_params[3]; // δ
-//      result[2] = full_params[4]; // λ
-//    } else if (family_lower == "kw") {
-//      result = NumericVector(2);
-//      result[0] = full_params[0]; // α
-//      result[1] = full_params[1]; // β
-//    } else if (family_lower == "beta") {
-//      result = NumericVector(2);
-//      result[0] = full_params[2]; // γ
-//      result[1] = full_params[3]; // δ
-//    }
-//
-//    return result;
-//  };
-//
-//  // Create a custom numHess function to handle specific families
-//  auto numHess_family = [&](NumericVector params_family, NumericVector data_family, double eps = 1e-6) {
-//    int n_params_family = params_family.size();
-//    arma::mat hessian(n_params_family, n_params_family, arma::fill::zeros);
-//
-//    // Value of the function at the current point
-//    double f0 = ll_func(params_family, data_family);
-//
-//    // For each pair of variables
-//    for (int i = 0; i < n_params_family; i++) {
-//      for (int j = 0; j <= i; j++) {
-//        // Calculate second derivative using finite differences
-//        if (i == j) {
-//          // Second derivative with respect to the same variable
-//          NumericVector params_p = clone(params_family);
-//          NumericVector params_m = clone(params_family);
-//
-//          params_p[i] += eps;
-//          params_m[i] -= eps;
-//
-//          double f_p = ll_func(params_p, data_family);
-//          double f_m = ll_func(params_m, data_family);
-//
-//          hessian(i, j) = (f_p - 2*f0 + f_m) / (eps * eps);
-//        } else {
-//          // Mixed derivative
-//          NumericVector params_pp = clone(params_family);
-//          NumericVector params_pm = clone(params_family);
-//          NumericVector params_mp = clone(params_family);
-//          NumericVector params_mm = clone(params_family);
-//
-//          params_pp[i] += eps;
-//          params_pp[j] += eps;
-//
-//          params_pm[i] += eps;
-//          params_pm[j] -= eps;
-//
-//          params_mp[i] -= eps;
-//          params_mp[j] += eps;
-//
-//          params_mm[i] -= eps;
-//          params_mm[j] -= eps;
-//
-//          double f_pp = ll_func(params_pp, data_family);
-//          double f_pm = ll_func(params_pm, data_family);
-//          double f_mp = ll_func(params_mp, data_family);
-//          double f_mm = ll_func(params_mm, data_family);
-//
-//          hessian(i, j) = hessian(j, i) = (f_pp - f_pm - f_mp + f_mm) / (4 * eps * eps);
-//        }
-//      }
-//    }
-//
-//    return hessian;
-//  };
-//
-//  // Get family-specific parameters
-//  NumericVector family_params = extract_params(params);
-//
-//  // Calculate initial log-likelihood
-//  double initial_loglik = ll_func(family_params, data);
-//  if (!R_finite(initial_loglik) || initial_loglik == R_PosInf) {
-//    stop("Initial log-likelihood is infinite or NaN. Check the initial parameters.");
-//  }
-//
-//  // Parameter and log-likelihood history for diagnostics
-//  NumericMatrix param_history(max_iter + 1, n_params);
-//  NumericVector loglik_history(max_iter + 1);
-//
-//  // Initialize history with initial values
-//  for (int j = 0; j < n_params; j++) {
-//    param_history(0, j) = family_params[j];
-//  }
-//  loglik_history[0] = initial_loglik;
-//
-//  // Variables for convergence control
-//  bool converged = false;
-//  int iter = 0;
-//  double prev_loglik = initial_loglik;
-//
-//  // Prepare to store the best result obtained
-//  double best_loglik = initial_loglik;
-//  NumericVector best_params = clone(family_params);
-//
-//  // Main Newton-Raphson loop
-//  while (!converged && iter < max_iter) {
-//    iter++;
-//
-//    // Calculate log-likelihood, gradient and hessian
-//    double current_loglik = ll_func(family_params, data);
-//    NumericVector gradient = gr_func(family_params, data);
-//
-//    // Check if gradient has valid values
-//    bool valid_gradient = true;
-//    for (int j = 0; j < n_params; j++) {
-//      if (!R_finite(gradient[j])) {
-//        valid_gradient = false;
-//        break;
-//      }
-//    }
-//
-//    if (!valid_gradient) {
-//      if (verbose) {
-//        Rcout << "Warning: Invalid gradient in iteration " << iter << std::endl;
-//      }
-//      result["converged"] = false;
-//      result["status"] = "gradient_failure";
-//      // Use the best parameters found so far
-//      family_params = best_params;
-//      break;
-//    }
-//
-//    // Calculate gradient norm for stopping criterion
-//    double grad_norm = 0.0;
-//    for (int j = 0; j < n_params; j++) {
-//      grad_norm += gradient[j] * gradient[j];
-//    }
-//    grad_norm = std::sqrt(grad_norm);
-//
-//    if (grad_norm < tol) {
-//      converged = true;
-//      if (verbose) {
-//        Rcout << "Convergence detected: gradient norm (" << grad_norm
-//              << ") < tolerance (" << tol << ")" << std::endl;
-//      }
-//      break;
-//    }
-//
-//    // Update direction
-//    NumericVector update(n_params);
-//
-//    if (use_hessian) {
-//      // Calculate the Hessian
-//      NumericMatrix rcpp_hessian = hs_func(family_params, data);
-//
-//      // Check if Hessian has valid values
-//      bool valid_hessian = true;
-//      for (int i = 0; i < n_params; i++) {
-//        for (int j = 0; j < n_params; j++) {
-//          if (!R_finite(rcpp_hessian(i, j))) {
-//            valid_hessian = false;
-//            break;
-//          }
-//        }
-//        if (!valid_hessian) break;
-//      }
-//
-//      if (!valid_hessian) {
-//        if (verbose) {
-//          Rcout << "Warning: Invalid Hessian in iteration " << iter
-//                << ", using only the gradient." << std::endl;
-//        }
-//        // Fallback to steepest descent if Hessian is invalid
-//        for (int j = 0; j < n_params; j++) {
-//          // Normalize gradient for step control
-//          update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
-//        }
-//      } else {
-//        // Convert to arma::mat for more robust matrix operations
-//        arma::mat hessian = as<arma::mat>(rcpp_hessian);
-//        arma::vec grad_vec = as<arma::vec>(gradient);
-//        arma::vec neg_grad = -grad_vec;
-//        arma::vec update_vec;
-//
-//        bool solve_success = false;
-//
-//        // Try 1: Cholesky for symmetric positive definite matrices (fastest)
-//        try {
-//          update_vec = arma::solve(hessian, neg_grad, arma::solve_opts::likely_sympd);
-//          solve_success = true;
-//
-//          if (verbose) {
-//            Rcout << "Cholesky decomposition successful for parameter update." << std::endl;
-//          }
-//        } catch (...) {
-//          if (verbose) {
-//            Rcout << "Warning: Cholesky decomposition failed, trying standard solver..." << std::endl;
-//          }
-//
-//          // Try 2: Standard Armadillo solver
-//          try {
-//            update_vec = arma::solve(hessian, neg_grad);
-//            solve_success = true;
-//
-//            if (verbose) {
-//              Rcout << "Standard solver successful for parameter update." << std::endl;
-//            }
-//          } catch (...) {
-//            if (verbose) {
-//              Rcout << "Warning: Standard solver failed, trying with regularization..." << std::endl;
-//            }
-//
-//            // Try 3: Regularize the Hessian matrix
-//            arma::mat reg_hessian = hessian;
-//            double reg_factor = 1e-6;
-//
-//            // Find reasonable magnitude for regularization
-//            double diag_max = arma::max(arma::abs(reg_hessian.diag()));
-//            reg_factor = std::max(reg_factor, 1e-6 * diag_max);
-//
-//            // Add small value to diagonal
-//            reg_hessian.diag() += reg_factor;
-//
-//            try {
-//              update_vec = arma::solve(reg_hessian, neg_grad);
-//              solve_success = true;
-//
-//              if (verbose) {
-//                Rcout << "Regularized solver successful with factor: " << reg_factor << std::endl;
-//              }
-//            } catch (...) {
-//              // Try 4: Stronger regularization
-//              reg_hessian = hessian;
-//              reg_factor = 1e-4 * (1.0 + diag_max);
-//              reg_hessian.diag() += reg_factor;
-//
-//              try {
-//                update_vec = arma::solve(reg_hessian, neg_grad);
-//                solve_success = true;
-//
-//                if (verbose) {
-//                  Rcout << "Stronger regularization successful with factor: " << reg_factor << std::endl;
-//                }
-//              } catch (...) {
-//                // Try 5: Pseudo-inverse (very robust method)
-//                try {
-//                  arma::mat hess_pinv = arma::pinv(hessian);
-//                  update_vec = hess_pinv * neg_grad;
-//                  solve_success = true;
-//
-//                  if (verbose) {
-//                    Rcout << "Pseudo-inverse solution successful for parameter update." << std::endl;
-//                  }
-//                } catch (...) {
-//                  if (verbose) {
-//                    Rcout << "Warning: All matrix inversion methods failed in iteration " << iter
-//                          << ", using only the gradient." << std::endl;
-//                  }
-//
-//                  // If all attempts fail, use gradient descent
-//                  for (int j = 0; j < n_params; j++) {
-//                    update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
-//                  }
-//
-//                  solve_success = false;
-//                }
-//              }
-//            }
-//          }
-//        }
-//
-//        if (solve_success) {
-//          // Convert solution from arma::vec to NumericVector
-//          update = wrap(update_vec);
-//
-//          // Limit step size to avoid too large steps
-//          double max_update = 0.0;
-//          for (int j = 0; j < n_params; j++) {
-//            max_update = std::max(max_update, std::abs(update[j]));
-//          }
-//
-//          // If step is too large, reduce proportionally
-//          const double max_step = 2.0;
-//          if (max_update > max_step) {
-//            double scale_factor = max_step / max_update;
-//            for (int j = 0; j < n_params; j++) {
-//              update[j] *= scale_factor;
-//            }
-//          }
-//
-//          // Apply step_size
-//          for (int j = 0; j < n_params; j++) {
-//            update[j] *= step_size;
-//          }
-//        }
-//      }
-//    } else {
-//      // Use only gradient (gradient descent method)
-//      for (int j = 0; j < n_params; j++) {
-//        update[j] = -step_size * gradient[j] / std::max(1.0, std::abs(gradient[j]));
-//      }
-//    }
-//
-//    // Update parameters: theta_new = theta_old + update
-//    NumericVector new_params(n_params);
-//    for (int j = 0; j < n_params; j++) {
-//      new_params[j] = family_params[j] + update[j];
-//    }
-//
-//    // Enforce bounds if requested
-//    if (enforce_bounds) {
-//      for (int j = 0; j < n_params; j++) {
-//        bool is_delta = (family_lower == "gkw" && j == 3) ||
-//          (family_lower == "bkw" && j == 3) ||
-//          (family_lower == "kkw" && j == 2) ||
-//          (family_lower == "mc" && j == 1) ||
-//          (family_lower == "beta" && j == 1);
-//
-//        // Note: for delta, we allow values down to 0
-//        if (is_delta) {
-//          new_params[j] = std::max(0.0, new_params[j]);
-//        } else {
-//          new_params[j] = std::max(min_param_val, new_params[j]);
-//        }
-//        new_params[j] = std::min(max_param_val, new_params[j]);
-//      }
-//    }
-//
-//    // Calculate new objective function value
-//    double new_loglik = ll_func(new_params, data);
-//
-//    // Line search / Backtracking if new value is not better
-//    bool backtracking_success = true;
-//    double bt_step = 1.0;
-//    const double bt_factor = 0.5; // reduce step by half each backtracking
-//    const int max_bt = 10;        // maximum backtracking iterations
-//
-//    if (!R_finite(new_loglik) || new_loglik >= current_loglik) {
-//      backtracking_success = false;
-//
-//      if (verbose) {
-//        Rcout << "Starting backtracking at iteration " << iter
-//              << ", current value: " << current_loglik
-//              << ", new value: " << new_loglik << std::endl;
-//      }
-//
-//      for (int bt = 0; bt < max_bt; bt++) {
-//        bt_step *= bt_factor;
-//
-//        // Recalculate new parameters with reduced step
-//        for (int j = 0; j < n_params; j++) {
-//          new_params[j] = family_params[j] + bt_step * update[j];
-//        }
-//
-//        // Enforce bounds again
-//        if (enforce_bounds) {
-//          for (int j = 0; j < n_params; j++) {
-//            bool is_delta = (family_lower == "gkw" && j == 3) ||
-//              (family_lower == "bkw" && j == 3) ||
-//              (family_lower == "kkw" && j == 2) ||
-//              (family_lower == "mc" && j == 1) ||
-//              (family_lower == "beta" && j == 1);
-//
-//            if (is_delta) {
-//              new_params[j] = std::max(0.0, new_params[j]);
-//            } else {
-//              new_params[j] = std::max(min_param_val, new_params[j]);
-//            }
-//            new_params[j] = std::min(max_param_val, new_params[j]);
-//          }
-//        }
-//
-//        // Test new value
-//        new_loglik = ll_func(new_params, data);
-//
-//        if (R_finite(new_loglik) && new_loglik < current_loglik) {
-//          backtracking_success = true;
-//          if (verbose) {
-//            Rcout << "Backtracking successful after " << (bt + 1)
-//                  << " attempts, new value: " << new_loglik << std::endl;
-//          }
-//          break;
-//        }
-//      }
-//    }
-//
-//    // If we still cannot improve, evaluate the situation
-//    if (!backtracking_success) {
-//      if (verbose) {
-//        Rcout << "Warning: Backtracking failed at iteration " << iter << std::endl;
-//      }
-//
-//      // If gradient is small enough, consider converged
-//      if (grad_norm < tol * 10) {  // Relaxed tolerance for this case
-//        converged = true;
-//        if (verbose) {
-//          Rcout << "Convergence detected with small gradient after backtracking failure." << std::endl;
-//        }
-//      } else {
-//        // If backtracking fails and we're close to max iterations,
-//        // check if we're in a reasonable region
-//        if (iter > max_iter * 0.8 && current_loglik < best_loglik * 1.1) {
-//          converged = true;
-//          if (verbose) {
-//            Rcout << "Forced convergence after backtracking failure near maximum iterations." << std::endl;
-//          }
-//        } else {
-//          // Try a small random perturbation
-//          NumericVector perturb(n_params);
-//          for (int j = 0; j < n_params; j++) {
-//            // Perturbation of up to 5% of current value
-//            double range = 0.05 * std::abs(family_params[j]);
-//            perturb[j] = R::runif(-range, range);
-//            new_params[j] = family_params[j] + perturb[j];
-//          }
-//
-//          // Apply constraints
-//          if (enforce_bounds) {
-//            for (int j = 0; j < n_params; j++) {
-//              bool is_delta = (family_lower == "gkw" && j == 3) ||
-//                (family_lower == "bkw" && j == 3) ||
-//                (family_lower == "kkw" && j == 2) ||
-//                (family_lower == "mc" && j == 1) ||
-//                (family_lower == "beta" && j == 1);
-//
-//              if (is_delta) {
-//                new_params[j] = std::max(0.0, new_params[j]);
-//              } else {
-//                new_params[j] = std::max(min_param_val, new_params[j]);
-//              }
-//              new_params[j] = std::min(max_param_val, new_params[j]);
-//            }
-//          }
-//
-//          new_loglik = ll_func(new_params, data);
-//
-//          if (R_finite(new_loglik) && new_loglik < current_loglik) {
-//            backtracking_success = true;
-//            if (verbose) {
-//              Rcout << "Recovery by random perturbation, new value: " << new_loglik << std::endl;
-//            }
-//          } else {
-//            // If even perturbation doesn't work, use the best result so far
-//            new_params = best_params;
-//            new_loglik = best_loglik;
-//            if (verbose) {
-//              Rcout << "Returning to the previous best result: " << -best_loglik << std::endl;
-//            }
-//          }
-//        }
-//      }
-//    }
-//
-//    // Update parameters and history
-//    for (int j = 0; j < n_params; j++) {
-//      family_params[j] = new_params[j];
-//      param_history(iter, j) = family_params[j];
-//    }
-//    loglik_history[iter] = new_loglik;
-//
-//    // Update the best result if this is better
-//    if (new_loglik < best_loglik) {
-//      best_loglik = new_loglik;
-//      for (int j = 0; j < n_params; j++) {
-//        best_params[j] = family_params[j];
-//      }
-//    }
-//
-//    // Check convergence by parameter change
-//    double param_change = 0.0;
-//    double param_rel_change = 0.0;
-//    for (int j = 0; j < n_params; j++) {
-//      param_change += std::pow(update[j], 2);
-//      if (std::abs(family_params[j]) > 1e-10) {
-//        param_rel_change += std::pow(update[j] / family_params[j], 2);
-//      } else {
-//        param_rel_change += std::pow(update[j], 2);
-//      }
-//    }
-//    param_change = std::sqrt(param_change);
-//    param_rel_change = std::sqrt(param_rel_change / n_params);
-//
-//    // Check convergence by log-likelihood change
-//    double loglik_change = std::abs(prev_loglik - new_loglik);
-//    double loglik_rel_change = loglik_change / (std::abs(prev_loglik) + 1e-10);
-//    prev_loglik = new_loglik;
-//
-//    if (verbose) {
-//      Rcout << "Iteration " << iter
-//            << ", Log-likelihood: " << -new_loglik
-//            << ", Change: " << loglik_change
-//            << ", Rel. Change: " << loglik_rel_change
-//            << ", Gradient Norm: " << grad_norm
-//            << std::endl;
-//
-//      Rcout << "Parameters:";
-//      for (int j = 0; j < n_params; j++) {
-//        Rcout << " " << family_params[j];
-//      }
-//      Rcout << std::endl;
-//    }
-//
-//    // Convergence criteria
-//    if (param_change < tol || param_rel_change < tol ||
-//        loglik_change < tol || loglik_rel_change < tol) {
-//      converged = true;
-//      if (verbose) {
-//        Rcout << "Convergence detected:" << std::endl;
-//        if (param_change < tol) Rcout << "- Absolute parameter change < tolerance" << std::endl;
-//        if (param_rel_change < tol) Rcout << "- Relative parameter change < tolerance" << std::endl;
-//        if (loglik_change < tol) Rcout << "- Absolute log-likelihood change < tolerance" << std::endl;
-//        if (loglik_rel_change < tol) Rcout << "- Relative log-likelihood change < tolerance" << std::endl;
-//      }
-//    }
-//  }
-//
-//  // If not converged, use the best parameters found
-//  if (!converged) {
-//    family_params = best_params;
-//    if (verbose) {
-//      Rcout << "Did not fully converge, using the best parameters found." << std::endl;
-//    }
-//  }
-//
-//  // Prepare final result
-//  NumericMatrix final_param_history(iter + 1, n_params);
-//  NumericVector final_loglik_history(iter + 1);
-//
-//  for (int i = 0; i <= iter; i++) {
-//    for (int j = 0; j < n_params; j++) {
-//      final_param_history(i, j) = param_history(i, j);
-//    }
-//    final_loglik_history[i] = loglik_history[i];
-//  }
-//
-//  // Calculate final gradient and hessian
-//  NumericVector final_gradient = gr_func(family_params, data);
-//  NumericMatrix rcpp_hessian = hs_func(family_params, data);
-//
-//  // Calculate numerical Hessian if requested
-//  NumericMatrix rcpp_numeric_hessian;
-//  if (get_num_hess) {
-//    arma::mat arma_numeric_hessian = numHess_family(family_params, data);
-//    rcpp_numeric_hessian = wrap(arma_numeric_hessian);
-//    result["numeric_hessian"] = rcpp_numeric_hessian;
-//  }
-//
-//  // Calculate standard errors using Armadillo for robust matrix inversion
-//  NumericVector std_errors(n_params, NA_REAL);
-//  bool valid_se = true;
-//
-//  // Convert Rcpp Hessian to Armadillo matrix
-//  arma::mat hessian = as<arma::mat>(rcpp_hessian);
-//  arma::mat cov_matrix;
-//
-//  // Layered approach to calculate covariance matrix (inverse of Hessian)
-//  try {
-//    // Step 1: Try to use Cholesky decomposition (fastest, requires positive definite)
-//    try {
-//      cov_matrix = arma::inv_sympd(hessian);
-//
-//      if (verbose) {
-//        Rcout << "Standard error calculation: Cholesky decomposition successful." << std::endl;
-//      }
-//    } catch (...) {
-//      // Step 2: Try standard inversion
-//      try {
-//        cov_matrix = arma::inv(hessian);
-//
-//        if (verbose) {
-//          Rcout << "Standard error calculation: Standard inverse successful." << std::endl;
-//        }
-//      } catch (...) {
-//        // Step 3: Apply regularization
-//        arma::mat reg_hessian = hessian;
-//        double reg_factor = 1e-6;
-//
-//        // Find reasonable magnitude for regularization
-//        double diag_max = arma::max(arma::abs(reg_hessian.diag()));
-//        reg_factor = std::max(reg_factor, 1e-6 * diag_max);
-//
-//        // Add small value to diagonal
-//        reg_hessian.diag() += reg_factor;
-//
-//        try {
-//          cov_matrix = arma::inv(reg_hessian);
-//
-//          if (verbose) {
-//            Rcout << "Standard error calculation: Regularized inverse successful." << std::endl;
-//          }
-//        } catch (...) {
-//          // Step 4: Stronger regularization
-//          reg_hessian = hessian;
-//          reg_factor = 1e-4 * (1.0 + diag_max);
-//          reg_hessian.diag() += reg_factor;
-//
-//          try {
-//            cov_matrix = arma::inv(reg_hessian);
-//
-//            if (verbose) {
-//              Rcout << "Standard error calculation: Stronger regularized inverse successful." << std::endl;
-//            }
-//          } catch (...) {
-//            // Step 5: Use pseudo-inverse (more robust)
-//            try {
-//              cov_matrix = arma::pinv(hessian);
-//
-//              if (verbose) {
-//                Rcout << "Standard error calculation: Pseudo-inverse successful." << std::endl;
-//              }
-//            } catch (...) {
-//              // Step 6: Try numerical Hessian if available
-//              if (get_num_hess) {
-//                arma::mat num_hessian = as<arma::mat>(rcpp_numeric_hessian);
-//
-//                try {
-//                  cov_matrix = arma::pinv(num_hessian);
-//
-//                  if (verbose) {
-//                    Rcout << "Standard error calculation: Numerical Hessian pseudo-inverse successful." << std::endl;
-//                  }
-//                } catch (...) {
-//                  valid_se = false;
-//                }
-//              } else {
-//                valid_se = false;
-//              }
-//            }
-//          }
-//        }
-//      }
-//    }
-//
-//    // Calculate standard errors if covariance matrix is available
-//    if (valid_se) {
-//      // Extract diagonal elements and calculate square root
-//      arma::vec diag_cov = cov_matrix.diag();
-//
-//      for (int j = 0; j < n_params; j++) {
-//        if (diag_cov(j) > 0) {
-//          std_errors[j] = std::sqrt(diag_cov(j));
-//        } else {
-//          if (verbose) {
-//            Rcout << "Warning: Non-positive variance detected for parameter " << j
-//                  << ". Standard error set to NA." << std::endl;
-//          }
-//          std_errors[j] = NA_REAL;
-//        }
-//      }
-//    }
-//  } catch (...) {
-//    valid_se = false;
-//  }
-//
-//  if (!valid_se && verbose) {
-//    Rcout << "Warning: Could not calculate standard errors. The Hessian matrix may not be positive definite." << std::endl;
-//  }
-//
-//  // Calculate AIC: AIC = 2k - 2ln(L) = 2k + 2*(-ln(L))
-//  double final_loglik = ll_func(family_params, data);
-//  double aic = 2 * n_params + 2 * final_loglik;
-//
-//  // Calculate BIC: BIC = k ln(n) - 2ln(L) = k ln(n) + 2*(-ln(L))
-//  double bic = n_params * std::log(n_data) + 2 * final_loglik;
-//
-//  // Fill the result
-//  result["parameters"] = family_params;
-//  result["loglik"] = -final_loglik;  // Negative because ll functions return -logL
-//  result["iterations"] = iter;
-//  result["converged"] = converged;
-//  result["param_history"] = final_param_history;
-//  result["loglik_history"] = -final_loglik_history;  // Negative for consistency
-//  result["gradient"] = final_gradient;
-//  result["hessian"] = rcpp_hessian;
-//  result["std_errors"] = std_errors;
-//  result["aic"] = aic;
-//  result["bic"] = bic;
-//  result["n"] = n_data;
-//  result["family"] = family;
-//
-//  if (!converged && !result.containsElementNamed("status")) {
-//    result["status"] = "max_iterations_reached";
-//  } else if (converged) {
-//    result["status"] = "success";
-//  }
-//
-//  // Calculate statistical significance (p-values) using normal approximation
-//  NumericVector z_values(n_params, NA_REAL);
-//  NumericVector p_values(n_params, NA_REAL);
-//
-//  if (valid_se) {
-//    for (int j = 0; j < n_params; j++) {
-//      if (std_errors[j] != NA_REAL && std_errors[j] > 0) {
-//        z_values[j] = family_params[j] / std_errors[j];
-//        // Two-tailed approximation
-//        p_values[j] = 2.0 * R::pnorm(-std::abs(z_values[j]), 0.0, 1.0, 1, 0);
-//      }
-//    }
-//    result["z_values"] = z_values;
-//    result["p_values"] = p_values;
-//  }
-//
-//  // Set parameter names for easier interpretation
-//  colnames(final_param_history) = param_names;
-//  result["param_names"] = param_names;
-//
-//  return result;
-// }
+// Parameter and log-likelihood history for diagnostics
+Rcpp::NumericMatrix param_history(max_iter + 1, n_params);
+Rcpp::NumericVector loglik_history(max_iter + 1);
+
+// Initialize history with initial values
+for (int j = 0; j < n_params; j++) {
+ param_history(0, j) = family_params[j];
+}
+loglik_history[0] = initial_loglik;
+
+// Variables for convergence control
+bool converged = false;
+int iter = 0;
+double prev_loglik = initial_loglik;
+
+// Best result tracking
+double best_loglik = initial_loglik;
+Rcpp::NumericVector best_params = Rcpp::clone(family_params);
+
+// Trust region radius
+double trust_radius = initial_trust_radius;
+
+// Tracking variables for algorithm adaptation
+int consecutive_tr_failures = 0;
+const int max_consecutive_failures = 3;
+
+int stagnation_counter = 0;
+const int stagnation_limit = 5;
+double prev_grad_norm = 0.0;
+
+// Main optimization loop
+while (!converged && iter < max_iter) {
+ iter++;
+
+ // Calculate current log-likelihood and gradient
+ double current_loglik = scaled_ll_func(family_params, data);
+ Rcpp::NumericVector gradient = scaled_gr_func(family_params, data);
+
+ // Check gradient validity
+ bool valid_gradient = true;
+ for (int j = 0; j < n_params; j++) {
+   if (!R_finite(gradient[j])) {
+     valid_gradient = false;
+     break;
+   }
+ }
+
+ if (!valid_gradient) {
+   if (verbose) {
+     Rcpp::Rcout << "Warning: Invalid gradient in iteration " << iter << std::endl;
+   }
+
+   // Use numerical gradient as fallback
+   for (int j = 0; j < n_params; j++) {
+     double eps = std::max(1e-6, 1e-6 * std::abs(family_params[j]));
+
+     Rcpp::NumericVector params_p = Rcpp::clone(family_params);
+     Rcpp::NumericVector params_m = Rcpp::clone(family_params);
+
+     params_p[j] += eps;
+     params_m[j] -= eps;
+
+     double f_p = scaled_ll_func(params_p, data);
+     double f_m = scaled_ll_func(params_m, data);
+
+     if (R_finite(f_p) && R_finite(f_m)) {
+       gradient[j] = (f_p - f_m) / (2 * eps);
+     } else {
+       // If numerical gradient also fails, use small step
+       gradient[j] = 0.001 * ((j % 2 == 0) ? 1.0 : -1.0); // Alternating signs
+     }
+   }
+ }
+
+ // Calculate gradient norm for convergence check
+ double grad_norm = 0.0;
+ for (int j = 0; j < n_params; j++) {
+   grad_norm += gradient[j] * gradient[j];
+ }
+ grad_norm = std::sqrt(grad_norm);
+
+ // Check for stagnation
+ if (std::abs(grad_norm - prev_grad_norm) < 0.01 * grad_norm) {
+   stagnation_counter++;
+ } else {
+   stagnation_counter = 0;
+ }
+ prev_grad_norm = grad_norm;
+
+ // Gradient convergence check
+ if (grad_norm < tol) {
+   converged = true;
+   if (verbose) {
+     Rcpp::Rcout << "Convergence detected: gradient norm (" << grad_norm
+                 << ") < tolerance (" << tol << ")" << std::endl;
+   }
+   break;
+ }
+
+ // Determine optimization method for this iteration
+ std::string current_method = optimization_method;
+
+ // For hybrid method, adapt based on progress
+ if (current_method == "hybrid") {
+   if (iter > max_iter / 2 || grad_norm < 0.1) {
+     current_method = "newton-raphson"; // Switch to Newton-Raphson near convergence
+   } else {
+     current_method = "trust-region";   // Use trust-region initially
+   }
+
+   if (verbose && iter > 1) {
+     Rcpp::Rcout << "Hybrid method using: " << current_method << std::endl;
+   }
+ }
+
+ // Switch methods if trust region is failing consistently
+ if (consecutive_tr_failures >= max_consecutive_failures && current_method == "trust-region") {
+   current_method = "newton-raphson";
+   if (verbose) {
+     Rcpp::Rcout << "Temporarily switching to Newton-Raphson after consecutive failures." << std::endl;
+   }
+ }
+
+ // Apply stochastic perturbation if stagnating
+ if (use_stochastic_perturbation && stagnation_counter >= stagnation_limit) {
+   if (verbose) {
+     Rcpp::Rcout << "Applying stochastic perturbation after " << stagnation_counter
+                 << " iterations of stagnation." << std::endl;
+   }
+
+   // Create perturbed parameters
+   Rcpp::NumericVector new_params = Rcpp::clone(family_params);
+
+   GetRNGstate(); // Initialize R's RNG
+   for (int j = 0; j < n_params; j++) {
+     // Perturbation proportional to parameter and opposite to gradient
+     double range = 0.1 * std::abs(family_params[j]);
+     double direction = -1.0 * ((gradient[j] > 0) ? 1 : -1);
+     double noise = R::runif(-0.5, 0.5);
+
+     // Combined perturbation
+     double perturb = direction * range * (0.5 + 0.5 * noise);
+     new_params[j] += perturb;
+   }
+   PutRNGstate();
+
+   // Apply bounds
+   if (enforce_bounds) {
+     for (int j = 0; j < n_params; j++) {
+       bool is_delta = (family_lower == "gkw" && j == 3) ||
+         (family_lower == "bkw" && j == 3) ||
+         (family_lower == "kkw" && j == 2) ||
+         (family_lower == "mc" && j == 1) ||
+         (family_lower == "beta" && j == 1);
+
+       if (is_delta) {
+         new_params[j] = std::max(0.0, new_params[j]);
+       } else {
+         new_params[j] = std::max(min_param_val, new_params[j]);
+       }
+       new_params[j] = std::min(max_param_val, new_params[j]);
+     }
+   }
+
+   // Evaluate at perturbed point
+   double new_loglik = scaled_ll_func(new_params, data);
+
+   // Accept if better
+   if (R_finite(new_loglik) && new_loglik < current_loglik) {
+     family_params = new_params;
+     current_loglik = new_loglik;
+     stagnation_counter = 0;
+
+     if (verbose) {
+       Rcpp::Rcout << "Stochastic perturbation successful, new loglik: " << -new_loglik << std::endl;
+     }
+
+     // Update history
+     for (int j = 0; j < n_params; j++) {
+       param_history(iter, j) = family_params[j];
+     }
+     loglik_history[iter] = new_loglik;
+
+     // Update best result if improved
+     if (new_loglik < best_loglik) {
+       best_loglik = new_loglik;
+       best_params = Rcpp::clone(family_params);
+     }
+
+     // Skip to next iteration
+     continue;
+   } else if (verbose) {
+     Rcpp::Rcout << "Stochastic perturbation unsuccessful, continuing with standard update." << std::endl;
+   }
+ }
+
+ // Parameter update using selected method
+ Rcpp::NumericVector new_params;
+ double new_loglik;
+ bool update_success = false;
+
+ if (current_method == "trust-region") {
+   // Trust region update
+   Rcpp::NumericMatrix rcpp_hessian = scaled_hs_func(family_params, data);
+
+   // Check Hessian validity
+   bool valid_hessian = true;
+   for (int i = 0; i < n_params && valid_hessian; i++) {
+     for (int j = 0; j < n_params; j++) {
+       if (!R_finite(rcpp_hessian(i, j))) {
+         valid_hessian = false;
+         break;
+       }
+     }
+   }
+
+   if (!valid_hessian) {
+     if (verbose) {
+       Rcpp::Rcout << "Warning: Invalid Hessian, using numerical approximation." << std::endl;
+     }
+
+     // Use numerical Hessian
+     arma::mat num_hessian = numHessianAdaptive(family_params, data,
+                                                scaled_ll_func, scaled_gr_func);
+     rcpp_hessian = Rcpp::wrap(num_hessian);
+   }
+
+   // Apply Hessian regularization if enabled
+   if (eigenvalue_hessian_reg) {
+     arma::mat H = Rcpp::as<arma::mat>(rcpp_hessian);
+     arma::mat H_pd = makePositiveDefinite(H);
+     rcpp_hessian = Rcpp::wrap(H_pd);
+
+     if (verbose) {
+       Rcpp::Rcout << "Applied eigenvalue-based Hessian regularization." << std::endl;
+     }
+   }
+
+   // Trust region update
+   Rcpp::List tr_result = trustRegionUpdate(
+     family_params, data, scaled_ll_func, scaled_gr_func,
+     [&](Rcpp::NumericVector p, Rcpp::NumericVector d) { return rcpp_hessian; },
+     trust_radius, 0.1, enforce_bounds, min_param_val, max_param_val
+   );
+
+   new_params = Rcpp::as<Rcpp::NumericVector>(tr_result["new_params"]);
+   trust_radius = Rcpp::as<double>(tr_result["trust_radius"]);
+   bool accept = Rcpp::as<bool>(tr_result["accept"]);
+   double ratio = Rcpp::as<double>(tr_result["ratio"]);
+
+   new_loglik = scaled_ll_func(new_params, data);
+
+   if (verbose) {
+     Rcpp::Rcout << "Trust region step: radius = " << trust_radius
+                 << ", ratio = " << ratio
+                 << ", accept = " << (accept ? "true" : "false") << std::endl;
+   }
+
+   if (accept) {
+     update_success = true;
+     consecutive_tr_failures = 0;
+   } else {
+     consecutive_tr_failures++;
+
+     // Fallback to steepest descent
+     if (verbose) {
+       Rcpp::Rcout << "Trust region step rejected, trying steepest descent." << std::endl;
+     }
+
+     new_params = Rcpp::clone(family_params);
+     double gd_step = 0.1 * trust_radius / std::max(1.0, grad_norm);
+
+     for (int j = 0; j < n_params; j++) {
+       new_params[j] -= gd_step * gradient[j];
+     }
+
+     // Apply bounds
+     if (enforce_bounds) {
+       for (int j = 0; j < n_params; j++) {
+         bool is_delta = (family_lower == "gkw" && j == 3) ||
+           (family_lower == "bkw" && j == 3) ||
+           (family_lower == "kkw" && j == 2) ||
+           (family_lower == "mc" && j == 1) ||
+           (family_lower == "beta" && j == 1);
+
+         if (is_delta) {
+           new_params[j] = std::max(0.0, new_params[j]);
+         } else {
+           new_params[j] = std::max(min_param_val, new_params[j]);
+         }
+         new_params[j] = std::min(max_param_val, new_params[j]);
+       }
+     }
+
+     new_loglik = scaled_ll_func(new_params, data);
+
+     if (R_finite(new_loglik) && new_loglik < current_loglik) {
+       update_success = true;
+       if (verbose) {
+         Rcpp::Rcout << "Gradient descent successful." << std::endl;
+       }
+     }
+   }
+ } else { // Newton-Raphson update
+   Rcpp::NumericMatrix rcpp_hessian = scaled_hs_func(family_params, data);
+
+   // Check Hessian validity
+   bool valid_hessian = true;
+   for (int i = 0; i < n_params && valid_hessian; i++) {
+     for (int j = 0; j < n_params; j++) {
+       if (!R_finite(rcpp_hessian(i, j))) {
+         valid_hessian = false;
+         break;
+       }
+     }
+   }
+
+   if (!valid_hessian) {
+     if (verbose) {
+       Rcpp::Rcout << "Warning: Invalid Hessian, using numerical approximation." << std::endl;
+     }
+
+     // Use numerical Hessian
+     arma::mat num_hessian = numHessianAdaptive(family_params, data,
+                                                scaled_ll_func, scaled_gr_func);
+     rcpp_hessian = Rcpp::wrap(num_hessian);
+   }
+
+   // Convert to arma for numerical operations
+   arma::mat hessian = Rcpp::as<arma::mat>(rcpp_hessian);
+   arma::vec grad_vec = Rcpp::as<arma::vec>(gradient);
+
+   if (eigenvalue_hessian_reg) {
+     // Enhanced regularization
+     hessian = makePositiveDefinite(hessian);
+   } else {
+     // Simple diagonal addition
+     hessian.diag() += 1e-6 * (1.0 + arma::max(arma::abs(hessian.diag())));
+   }
+
+   // Compute Newton direction
+   arma::vec direction;
+   bool solve_success = arma::solve(direction, hessian, -grad_vec);
+
+   if (!solve_success) {
+     if (verbose) {
+       Rcpp::Rcout << "Warning: Failed to solve for Newton direction, using gradient." << std::endl;
+     }
+
+     // Use negative gradient if Newton direction cannot be computed
+     direction = -grad_vec;
+
+     // Scale the direction to control step size
+     double scale_factor = 1.0 / std::max(1.0, arma::norm(direction));
+     direction *= scale_factor;
+   }
+
+   // Use line search for step size
+   Rcpp::NumericVector search_direction = Rcpp::wrap(direction);
+   double alpha = lineSearchWolfe(
+     family_params, search_direction, data,
+     scaled_ll_func, scaled_gr_func, 1.0, 1e-4, 0.9, max_backtrack
+   );
+
+   if (verbose) {
+     Rcpp::Rcout << "Line search: alpha = " << alpha << std::endl;
+   }
+
+   // Update parameters
+   new_params = Rcpp::clone(family_params);
+   for (int j = 0; j < n_params; j++) {
+     new_params[j] += alpha * search_direction[j];
+   }
+
+   // Apply bounds if needed
+   if (enforce_bounds) {
+     for (int j = 0; j < n_params; j++) {
+       bool is_delta = (family_lower == "gkw" && j == 3) ||
+         (family_lower == "bkw" && j == 3) ||
+         (family_lower == "kkw" && j == 2) ||
+         (family_lower == "mc" && j == 1) ||
+         (family_lower == "beta" && j == 1);
+
+       if (is_delta) {
+         new_params[j] = std::max(0.0, new_params[j]);
+       } else {
+         new_params[j] = std::max(min_param_val, new_params[j]);
+       }
+       new_params[j] = std::min(max_param_val, new_params[j]);
+     }
+   }
+
+   // Evaluate at new point
+   new_loglik = scaled_ll_func(new_params, data);
+
+   if (R_finite(new_loglik) && new_loglik <= current_loglik + 1e-4) {
+     update_success = true;
+   }
+ }
+
+ // If update failed, try random perturbation as last resort
+ if (!update_success) {
+   if (verbose) {
+     Rcpp::Rcout << "Update failed, applying random perturbation." << std::endl;
+   }
+
+   new_params = Rcpp::clone(family_params);
+   GetRNGstate();
+   for (int j = 0; j < n_params; j++) {
+     // Small random perturbation
+     double range = R::runif(0.01, 0.05) * std::abs(family_params[j]);
+     double perturb = R::runif(-range, range);
+     new_params[j] += perturb;
+   }
+   PutRNGstate();
+
+   // Apply bounds
+   if (enforce_bounds) {
+     for (int j = 0; j < n_params; j++) {
+       bool is_delta = (family_lower == "gkw" && j == 3) ||
+         (family_lower == "bkw" && j == 3) ||
+         (family_lower == "kkw" && j == 2) ||
+         (family_lower == "mc" && j == 1) ||
+         (family_lower == "beta" && j == 1);
+
+       if (is_delta) {
+         new_params[j] = std::max(0.0, new_params[j]);
+       } else {
+         new_params[j] = std::max(min_param_val, new_params[j]);
+       }
+       new_params[j] = std::min(max_param_val, new_params[j]);
+     }
+   }
+
+   new_loglik = scaled_ll_func(new_params, data);
+
+   if (R_finite(new_loglik) && new_loglik < current_loglik + 1e-2) {
+     update_success = true;
+     if (verbose) {
+       Rcpp::Rcout << "Random perturbation successful." << std::endl;
+     }
+   } else {
+     // If even random perturbation fails, use best parameters so far
+     new_params = best_params;
+     new_loglik = best_loglik;
+
+     if (verbose) {
+       Rcpp::Rcout << "All recovery attempts failed, using best parameters so far." << std::endl;
+     }
+   }
+ }
+
+ // Update parameters and history
+ for (int j = 0; j < n_params; j++) {
+   family_params[j] = new_params[j];
+   param_history(iter, j) = family_params[j];
+ }
+ loglik_history[iter] = new_loglik;
+
+ // Update best result if improved
+ if (new_loglik < best_loglik) {
+   best_loglik = new_loglik;
+   for (int j = 0; j < n_params; j++) {
+     best_params[j] = family_params[j];
+   }
+ }
+
+ // Check parameter change convergence
+ double param_change = 0.0;
+ double param_rel_change = 0.0;
+ for (int j = 0; j < n_params; j++) {
+   double delta = family_params[j] - param_history(iter-1, j);
+   param_change += std::pow(delta, 2);
+   if (std::abs(family_params[j]) > 1e-10) {
+     param_rel_change += std::pow(delta / family_params[j], 2);
+   } else {
+     param_rel_change += std::pow(delta, 2);
+   }
+ }
+ param_change = std::sqrt(param_change);
+ param_rel_change = std::sqrt(param_rel_change / n_params);
+
+ // Check log-likelihood change convergence
+ double loglik_change = std::abs(prev_loglik - new_loglik);
+ double loglik_rel_change = loglik_change / (std::abs(prev_loglik) + 1e-10);
+ prev_loglik = new_loglik;
+
+ if (verbose) {
+   Rcpp::Rcout << "Iteration " << iter
+               << ", Log-likelihood: " << -new_loglik
+               << ", Change: " << loglik_change
+               << ", Rel. Change: " << loglik_rel_change
+               << ", Gradient Norm: " << grad_norm
+               << std::endl;
+
+   Rcpp::Rcout << "Parameters: ";
+   for (int j = 0; j < n_params; j++) {
+     Rcpp::Rcout << family_params[j] << " ";
+   }
+   Rcpp::Rcout << std::endl;
+ }
+
+ // Check convergence criteria
+ if (param_change < tol || param_rel_change < tol ||
+     loglik_change < tol || loglik_rel_change < tol) {
+   converged = true;
+   if (verbose) {
+     Rcpp::Rcout << "Convergence detected:" << std::endl;
+     if (param_change < tol) Rcpp::Rcout << "- Absolute parameter change < tolerance" << std::endl;
+     if (param_rel_change < tol) Rcpp::Rcout << "- Relative parameter change < tolerance" << std::endl;
+     if (loglik_change < tol) Rcpp::Rcout << "- Absolute log-likelihood change < tolerance" << std::endl;
+     if (loglik_rel_change < tol) Rcpp::Rcout << "- Relative log-likelihood change < tolerance" << std::endl;
+   }
+ }
+}
+
+// If not converged, use the best parameters found
+if (!converged) {
+ family_params = best_params;
+ if (verbose) {
+   Rcpp::Rcout << "Did not fully converge, using the best parameters found." << std::endl;
+ }
+}
+
+// Unscale parameters if scaling was used
+if (adaptive_scaling) {
+ // Unscale final parameters
+ for (int j = 0; j < n_params; j++) {
+   family_params[j] /= scaling_factors[j];
+ }
+
+ // Unscale parameter history
+ for (int i = 0; i <= iter; i++) {
+   for (int j = 0; j < n_params; j++) {
+     param_history(i, j) /= scaling_factors[j];
+   }
+ }
+
+ if (verbose) {
+   Rcpp::Rcout << "Final unscaled parameters: ";
+   for (int j = 0; j < n_params; j++) {
+     Rcpp::Rcout << family_params[j] << " ";
+   }
+   Rcpp::Rcout << std::endl;
+ }
+}
+
+// Prepare final result
+Rcpp::NumericMatrix final_param_history(iter + 1, n_params);
+Rcpp::NumericVector final_loglik_history(iter + 1);
+
+for (int i = 0; i <= iter; i++) {
+ for (int j = 0; j < n_params; j++) {
+   final_param_history(i, j) = param_history(i, j);
+ }
+ final_loglik_history[i] = loglik_history[i];
+}
+
+// Final computations with best parameters
+double final_loglik = ll_func(family_params, data);
+Rcpp::NumericVector final_gradient = gr_func(family_params, data);
+Rcpp::NumericMatrix final_hessian = hs_func(family_params, data);
+
+// Check final Hessian validity
+bool valid_final_hessian = true;
+for (int i = 0; i < n_params && valid_final_hessian; i++) {
+ for (int j = 0; j < n_params; j++) {
+   if (!R_finite(final_hessian(i, j))) {
+     valid_final_hessian = false;
+     break;
+   }
+ }
+}
+
+// Use numerical approximation if analytical Hessian is invalid
+if (!valid_final_hessian) {
+ if (verbose) {
+   Rcpp::Rcout << "Final analytical Hessian invalid, using numerical approximation." << std::endl;
+ }
+
+ arma::mat num_hessian = numHessianAdaptive(family_params, data, ll_func, gr_func);
+ final_hessian = Rcpp::wrap(num_hessian);
+}
+
+// Calculate numerical Hessian if requested
+Rcpp::NumericMatrix numeric_hessian;
+if (get_num_hess) {
+ arma::mat num_hessian = numHessianAdaptive(family_params, data, ll_func, gr_func);
+ numeric_hessian = Rcpp::wrap(num_hessian);
+ result["numeric_hessian"] = numeric_hessian;
+}
+
+// Calculate standard errors using eigenvalue-regularized Hessian
+Rcpp::NumericVector std_errors(n_params, NA_REAL);
+bool valid_se = true;
+
+// Calculate condition number of the Hessian
+double condition_number = NA_REAL;
+arma::mat arma_hessian = Rcpp::as<arma::mat>(final_hessian);
+arma::vec eigval;
+bool eig_success = arma::eig_sym(eigval, arma_hessian);
+
+if (eig_success) {
+ double max_eigval = arma::max(eigval);
+ double min_eigval = arma::min(eigval);
+
+ if (min_eigval > 0) {
+   condition_number = max_eigval / min_eigval;
+ } else {
+   condition_number = R_PosInf;
+ }
+}
+
+// Use robust approach to calculate standard errors
+try {
+ // Make Hessian positive definite
+ arma::mat hessian_pd = makePositiveDefinite(arma_hessian);
+
+ // Compute covariance matrix
+ arma::mat cov_matrix;
+ bool inv_success = false;
+
+ // Try various inversion methods
+ try {
+   cov_matrix = arma::inv_sympd(hessian_pd);
+   inv_success = true;
+ } catch (...) {
+   try {
+     cov_matrix = arma::inv(hessian_pd);
+     inv_success = true;
+   } catch (...) {
+     try {
+       cov_matrix = arma::pinv(hessian_pd);
+       inv_success = true;
+     } catch (...) {
+       inv_success = false;
+     }
+   }
+ }
+
+ // Extract standard errors if inversion succeeded
+ if (inv_success) {
+   arma::vec diag_cov = cov_matrix.diag();
+
+   for (int j = 0; j < n_params; j++) {
+     if (diag_cov(j) > 0) {
+       std_errors[j] = std::sqrt(diag_cov(j));
+     } else {
+       std_errors[j] = NA_REAL;
+     }
+   }
+ } else {
+   valid_se = false;
+ }
+} catch (...) {
+ valid_se = false;
+}
+
+if (!valid_se && verbose) {
+ Rcpp::Rcout << "Could not calculate standard errors. The Hessian may not be positive definite." << std::endl;
+}
+
+// Calculate information criteria
+double aic = 2 * n_params + 2 * final_loglik;
+double bic = n_params * std::log(n_data) + 2 * final_loglik;
+double aicc = aic;
+if (n_data > n_params + 1) {
+ aicc += 2 * n_params * (n_params + 1) / (n_data - n_params - 1);
+}
+
+// Fill the result
+result["parameters"] = family_params;
+result["loglik"] = -final_loglik;
+result["iterations"] = iter;
+result["converged"] = converged;
+result["param_history"] = final_param_history;
+result["loglik_history"] = -final_loglik_history;
+result["gradient"] = final_gradient;
+result["hessian"] = final_hessian;
+result["std_errors"] = std_errors;
+result["aic"] = aic;
+result["bic"] = bic;
+result["aicc"] = aicc;
+result["n"] = n_data;
+result["family"] = family;
+result["optimization_method"] = optimization_method;
+
+if (adaptive_scaling) {
+ result["scaling_factors"] = scaling_factors;
+}
+
+if (eig_success) {
+ result["condition_number"] = condition_number;
+}
+
+if (!converged && !result.containsElementNamed("status")) {
+ result["status"] = "max_iterations_reached";
+} else if (converged) {
+ result["status"] = "success";
+}
+
+// Calculate statistical significance metrics
+Rcpp::NumericVector z_values(n_params, NA_REAL);
+Rcpp::NumericVector p_values(n_params, NA_REAL);
+
+if (valid_se) {
+ for (int j = 0; j < n_params; j++) {
+   if (std_errors[j] != NA_REAL && std_errors[j] > 0) {
+     z_values[j] = family_params[j] / std_errors[j];
+     p_values[j] = 2.0 * R::pnorm(-std::abs(z_values[j]), 0.0, 1.0, 1, 0);
+   }
+ }
+ result["z_values"] = z_values;
+ result["p_values"] = p_values;
+}
+
+// Set parameter names
+colnames(final_param_history) = param_names;
+result["param_names"] = param_names;
+
+// Multi-start optimization if needed
+if (!converged && multi_start_attempts > 0) {
+ if (verbose) {
+   Rcpp::Rcout << "Initial optimization did not converge. Trying with different starting values..." << std::endl;
+ }
+
+ bool multi_start_success = false;
+ Rcpp::List best_result = Rcpp::clone(result);
+ double best_multi_loglik = -Rcpp::as<double>(result["loglik"]);
+
+ for (int attempt = 0; attempt < multi_start_attempts; attempt++) {
+   if (verbose) {
+     Rcpp::Rcout << "Multi-start attempt " << (attempt + 1) << " of " << multi_start_attempts << std::endl;
+   }
+
+   // Generate new starting values
+   Rcpp::NumericVector new_start = smartInitGkw(data, family);
+
+   // Perturb the starting values
+   GetRNGstate();
+   for (int j = 0; j < new_start.size(); j++) {
+     // Perturb by up to ±30%
+     double perturb_factor = R::runif(0.7, 1.3);
+     new_start[j] *= perturb_factor;
+
+     // Ensure valid values
+     if (j == new_start.size() - 1 && (family_lower == "bkw" || family_lower == "beta")) {
+       // For delta parameter
+       new_start[j] = std::max(0.0, new_start[j]);
+     } else {
+       new_start[j] = std::max(min_param_val, new_start[j]);
+     }
+     new_start[j] = std::min(max_param_val, new_start[j]);
+   }
+   PutRNGstate();
+
+   if (verbose) {
+     Rcpp::Rcout << "New starting values: ";
+     for (int j = 0; j < new_start.size(); j++) {
+       Rcpp::Rcout << new_start[j] << " ";
+     }
+     Rcpp::Rcout << std::endl;
+   }
+
+   // Try optimization with new starting values
+   try {
+     Rcpp::List new_result = nrgkw(
+       new_start, data, family, tol, max_iter / 2,
+       verbose, optimization_method, enforce_bounds,
+       min_param_val, max_param_val, adaptive_scaling,
+       use_stochastic_perturbation, false, 0, // No further multi-start
+       eigenvalue_hessian_reg, max_backtrack, initial_trust_radius
+     );
+
+     bool new_converged = Rcpp::as<bool>(new_result["converged"]);
+     double new_multi_loglik = -Rcpp::as<double>(new_result["loglik"]);
+
+     if (verbose) {
+       Rcpp::Rcout << "Multi-start result: converged = " << (new_converged ? "true" : "false")
+                   << ", loglik = " << -new_multi_loglik << std::endl;
+     }
+
+     // Keep the best result
+     if (new_converged || (!multi_start_success && new_multi_loglik < best_multi_loglik)) {
+       best_result = new_result;
+       best_multi_loglik = new_multi_loglik;
+       multi_start_success = new_converged;
+
+       if (verbose) {
+         Rcpp::Rcout << "Found better solution with multi-start!" << std::endl;
+       }
+
+       // Stop early if converged
+       if (multi_start_success) {
+         break;
+       }
+     }
+   } catch (...) {
+     if (verbose) {
+       Rcpp::Rcout << "Multi-start attempt failed with an exception." << std::endl;
+     }
+   }
+ }
+
+ // Return the best result from multi-start attempts
+ if (multi_start_success || best_multi_loglik < -Rcpp::as<double>(result["loglik"])) {
+   return best_result;
+ }
+}
+
+return result;
+}

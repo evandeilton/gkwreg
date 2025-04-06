@@ -4,15 +4,7 @@
 \alias{dgkw}
 \title{Density of the Generalized Kumaraswamy Distribution}
 \usage{
-dgkw(
-  x,
-  alpha = as.numeric(c(1)),
-  beta = as.numeric(c(1)),
-  gamma = as.numeric(c(1)),
-  delta = as.numeric(c(0)),
-  lambda = as.numeric(c(1)),
-  log_prob = FALSE
-)
+dgkw(x, alpha, beta, gamma, delta, lambda, log_prob = FALSE)
 }
 \arguments{
 \item{x}{Vector of quantiles (values between 0 and 1).}

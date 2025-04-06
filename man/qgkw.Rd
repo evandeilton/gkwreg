@@ -4,16 +4,7 @@
 \alias{qgkw}
 \title{Generalized Kumaraswamy Distribution Quantile Function}
 \usage{
-qgkw(
-  p,
-  alpha = as.numeric(c(1)),
-  beta = as.numeric(c(1)),
-  gamma = as.numeric(c(1)),
-  delta = as.numeric(c(0)),
-  lambda = as.numeric(c(1)),
-  lower_tail = TRUE,
-  log_p = FALSE
-)
+qgkw(p, alpha, beta, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE)
 }
 \arguments{
 \item{p}{Vector of probabilities (values between 0 and 1).}

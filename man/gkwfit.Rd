@@ -2,14 +2,13 @@
 % Please edit documentation in R/gkwfit.R
 \name{gkwfit}
 \alias{gkwfit}
-\title{Fit Generalized Kumaraswamy Distribution via Maximum Likelihood Estimation}
+\title{Fit Generalized Kumaraswamy Distribution via Maximum Likelihood Estimation using TMB}
 \usage{
 gkwfit(
   data,
   family = "gkw",
   start = NULL,
   fixed = NULL,
-  fit = "tmb",
   method = "nlminb",
   use_moments = FALSE,
   hessian = TRUE,
@@ -19,7 +18,7 @@ gkwfit(
   conf.level = 0.95,
   optimizer.control = list(),
   submodels = FALSE,
-  silent = TRUE,
+  silent = FALSE,
   ...
 )
 }
@@ -35,27 +34,17 @@ If \code{NULL}, reasonable starting values will be determined, potentially using
 
 \item{fixed}{Optional list of parameters to be held fixed at specific values during estimation (e.g., \code{list(lambda = 1)}).}
 
-\item{fit}{Estimation method/backend to be used:
-\itemize{
-\item \code{"tmb"}: (Recommended) Uses Template Model Builder for robust fitting via automatic differentiation. Can use \code{nlminb} or \code{optim} as the internal optimizer (see \code{method} argument). Requires the TMB package.
-\item \code{"nr"}: Uses a custom C++ Newton-Raphson/Trust-Region implementation (\code{gkwreg::nrgkw}). Often fast but potentially less stable than TMB for complex cases.
-\item \code{"nlminb"}: Uses R's \code{\link[stats]{nlminb}} function for optimization with box constraints. Requires analytic gradients for best performance.
-\item \code{"optim"}: Uses R's \code{\link[stats]{optim}} function with the "L-BFGS-B" method for optimization with box constraints. Requires analytic gradients.
-}
-Default is \code{"nr"}.}
-
-\item{method}{Character string specifying the internal optimizer when \code{fit = "tmb"}.
-Choices are \code{"nlminb"} (default) or \code{"optim"} (which uses "BFGS" internally within TMB's optim call). This argument is ignored if \code{fit} is not \code{"tmb"}.}
+\item{method}{Optimization method to use. One of: \code{"nlminb"} (default), \code{"Nelder-Mead"}, \code{"BFGS"},
+\code{"CG"}, \code{"L-BFGS-B"} or \code{"SANN"}. If \code{"nlminb"} is selected, R's \code{\link[stats]{nlminb}} function is used;
+otherwise, R's \code{\link[stats]{optim}} function is used with the specified method.}
 
 \item{use_moments}{Logical; if \code{TRUE} and \code{start = NULL}, attempts to use method of moments estimates
 (via \code{gkwgetstartvalues}) as initial values. Default: \code{FALSE}.}
 
 \item{hessian}{Logical; if \code{TRUE}, attempts to compute the Hessian matrix at the MLE to estimate
-standard errors and the variance-covariance matrix. For \code{fit = "tmb"}, uses TMB's \code{sdreport}.
-For \code{fit = "nr"}, uses the Hessian from the C++ optimizer. For \code{fit = "nlminb"} or \code{fit = "optim"},
-uses numerical differentiation via \code{numDeriv::hessian} (requires the \code{numDeriv} package). Default: \code{TRUE}.}
+standard errors and the variance-covariance matrix using TMB's \code{sdreport}. Default: \code{TRUE}.}
 
-\item{profile}{Logical; if \code{TRUE} and \code{fit = "tmb"}, computes likelihood profiles for parameters using TMB's profiling capabilities. Default: \code{FALSE}. (Currently only implemented for TMB).}
+\item{profile}{Logical; if \code{TRUE}, computes likelihood profiles for parameters using TMB's profiling capabilities. Default: \code{FALSE}.}
 
 \item{npoints}{Integer; number of points to use in profile likelihood calculations (minimum 5). Only relevant if \code{profile = TRUE}. Default: 20.}
 
@@ -64,9 +53,9 @@ uses numerical differentiation via \code{numDeriv::hessian} (requires the \code{
 \item{conf.level}{Numeric, the confidence level for confidence intervals calculated from standard errors (requires \code{hessian = TRUE}). Default: 0.95.}
 
 \item{optimizer.control}{List of control parameters passed to the chosen optimizer.
-The valid parameters depend on the \code{fit} (and potentially \code{method}) chosen. See Details for defaults and links to specific optimizer documentation (\code{?TMB::MakeADFun}, \code{?gkwreg::nrgkw}, \code{?stats::nlminb}, \code{?stats::optim}).}
+The valid parameters depend on the \code{method} chosen. See Details.}
 
-\item{submodels}{Logical; if \code{TRUE}, fits relevant nested submodels for comparison via likelihood ratio tests. Default: \code{FALSE}. (Implementation might depend on helper functions).}
+\item{submodels}{Logical; if \code{TRUE}, fits relevant nested submodels for comparison via likelihood ratio tests. Default: \code{FALSE}.}
 
 \item{silent}{Logical; if \code{TRUE}, suppresses messages during fitting. Default: \code{FALSE}.}
 
@@ -77,8 +66,7 @@ An object of class \code{"gkwfit"} (inheriting from \code{"list"}) containing th
 \item{coefficients}{Named vector of estimated parameters (on their natural scale).}
 \item{std.errors}{Named vector of estimated standard errors (if \code{hessian = TRUE}).}
 \item{coef_summary}{Data frame summarizing estimates, SEs, z-values, and p-values.}
-\item{vcov}{Variance-covariance matrix of the estimates (if \code{hessian = TRUE}). For \code{nlminb}/\code{optim}, relates to free parameters only.}
-\item{hessian}{(If computed) The Hessian matrix evaluated at the MLE. For \code{nlminb}/\code{optim}, relates to the negative log-likelihood of free parameters.}
+\item{vcov}{Variance-covariance matrix of the estimates (if \code{hessian = TRUE}).}
 \item{loglik}{Log-likelihood value at the maximum.}
 \item{AIC}{Akaike Information Criterion.}
 \item{BIC}{Bayesian Information Criterion.}
@@ -86,30 +74,27 @@ An object of class \code{"gkwfit"} (inheriting from \code{"list"}) containing th
 \item{data}{The input data vector used for fitting.}
 \item{nobs}{Number of observations used.}
 \item{df}{Number of estimated parameters.}
-\item{convergence}{Logical indicating successful convergence (typically TRUE if optimizer code is 0).}
+\item{convergence}{Logical indicating successful convergence.}
 \item{message}{Convergence message from the optimizer.}
 \item{family}{The specified distribution family.}
-\item{method}{The core fitting method used (\code{"tmb"}, \code{"nr"}, \code{"nlminb"}, \code{"optim"}).}
-\item{optimizer_method}{The specific optimizer algorithm used (e.g., \code{"nlminb"}, \code{"L-BFGS-B"}, \code{"trust-region"}).}
+\item{method}{The specific optimization method used.}
 \item{conf.int}{Data frame with confidence intervals (if \code{hessian = TRUE}).}
 \item{conf.level}{The confidence level used.}
 \item{optimizer}{The raw output object from the optimizer function.}
+\item{obj}{The TMB object used for fitting (if available).}
 \item{fixed}{The list of fixed parameters used.}
-\item{iterations}{(If available) Number of iterations or function calls used by the optimizer.}
-\item{condition_number}{(If available/calculated) Condition number of the Hessian, indicating potential multicollinearity or identifiability issues.}
-\item{plots}{A list or \code{patchwork} object containing ggplot objects for diagnostics (if \code{plot = TRUE}).}
-\item{profile}{A list containing likelihood profile results (if \code{profile = TRUE} and \code{fit = "tmb"}).}
+\item{profile}{A list containing likelihood profile results (if \code{profile = TRUE}).}
 \item{submodels}{A list of fitted submodels (if \code{submodels = TRUE}).}
 \item{lrt}{A list of likelihood ratio test results comparing nested models (if \code{submodels = TRUE}).}
 \item{gof}{Goodness-of-fit statistics (e.g., AD, CvM, KS).}
 \item{diagnostics}{Diagnostic information related to GOF tests.}
+\item{plots}{A list or \code{patchwork} object containing ggplot objects for diagnostics (if \code{plot = TRUE}).}
 \item{call}{The matched function call.}
 }
 \description{
 Fits any distribution from the Generalized Kumaraswamy (GKw) family to data using maximum
-likelihood estimation. The function supports several optimization backends, including
-TMB (Template Model Builder), a custom Newton-Raphson implementation, and R's built-in
-optimizers (\code{nlminb} and \code{optim} with L-BFGS-B).
+likelihood estimation through Template Model Builder (TMB). The function supports several
+optimization methods including R's nlminb and various optim algorithms.
 }
 \details{
 The \code{gkwfit} function provides a unified interface for fitting the seven distributions in the Generalized Kumaraswamy family:
@@ -122,23 +107,24 @@ The \code{gkwfit} function provides a unified interface for fitting the seven di
 \item \strong{Kw} (Kumaraswamy): 2 parameters (\eqn{\alpha, \beta}), \eqn{\gamma = 1, \delta = 0, \lambda = 1} fixed - All positive.
 \item \strong{Beta}: 2 parameters (\eqn{\gamma, \delta}), \eqn{\alpha = 1, \beta = 1, \lambda = 1} fixed - All positive. (\eqn{\gamma, \delta} correspond to standard Beta shape1, shape2).
 }
-Note: While the theoretical range for \eqn{\delta} is often \eqn{\delta \ge 0}, the \code{"nlminb"} and \code{"optim"} fitting methods currently enforce a strict positive lower bound (\code{> 1e-5}) by default for numerical stability, matching the other parameters.
 
-\strong{Choosing the Fitting Method (\code{fit} argument):}
+This function uses Template Model Builder (TMB) for parameter estimation, which provides accurate and efficient automatic differentiation.
+
+\strong{Optimizer Method (\code{method} argument):}
 \itemize{
-\item \code{"tmb"}: Generally recommended. Uses C++ templates via the TMB package for automatic differentiation, which is accurate and efficient. Requires TMB installation. The internal optimizer used by TMB can be chosen with the \code{method} argument (\code{"nlminb"} or \code{"optim"}).
-\item \code{"nr"}: Uses a custom C++ implementation (\code{gkwreg::nrgkw}) featuring Newton-Raphson and Trust-Region methods with adaptive scaling and regularization. Can be very fast but might be sensitive to starting values or complex likelihood surfaces. Does not require TMB.
-\item \code{"nlminb"}: Uses R's built-in \code{stats::nlminb} optimizer. Good for problems with box constraints. Relies on user-provided analytic gradients (via \verb{gr*} functions) for efficiency.
-\item \code{"optim"}: Uses R's built-in \code{stats::optim} optimizer with the "L-BFGS-B" method, suitable for box constraints. Also relies on analytic gradients.
+\item \code{"nlminb"}: Uses R's built-in \code{stats::nlminb} optimizer. Good for problems with box constraints. Default option.
+\item \code{"Nelder-Mead"}: Uses R's \code{stats::optim} with the Nelder-Mead simplex algorithm, which doesn't require derivatives.
+\item \code{"BFGS"}: Uses R's \code{stats::optim} with the BFGS quasi-Newton method for unconstrained optimization.
+\item \code{"CG"}: Uses R's \code{stats::optim} with conjugate gradients method for unconstrained optimization.
+\item \code{"L-BFGS-B"}: Uses R's \code{stats::optim} with the limited-memory BFGS method with box constraints.
+\item \code{"SANN"}: Uses R's stats::optim with simulated annealing, a global optimization method useful for problems with multiple local minima.
 }
 
 \strong{Optimizer Control (\code{optimizer.control}):}
 Pass a list with parameters specific to the chosen optimizer:
 \itemize{
-\item For \code{fit = "tmb"}: Controls are passed to \code{TMB::MakeADFun}'s internal call to \code{nlminb} or \code{optim}. See \code{?nlminb} or \code{?optim} for options like \code{eval.max}, \code{iter.max}, \code{trace}, \code{rel.tol} (for nlminb) or \code{maxit}, \code{trace}, \code{factr}, \code{pgtol} (for optim/BFGS).
-\item For \code{fit = "nr"}: Controls are passed to \code{gkwreg::nrgkw}. See \code{?gkwreg::nrgkw} for options like \code{tol}, \code{max_iter}, \code{optimization_method} (within \code{nrgkw}), \code{adaptive_scaling}, \code{min_param_val}, etc.
-\item For \code{fit = "nlminb"}: Controls passed to \code{stats::nlminb}. See \code{?nlminb} (e.g., \code{eval.max}, \code{iter.max}, \code{trace}, \code{rel.tol}, \code{abs.tol}).
-\item For \code{fit = "optim"}: Controls passed to \code{stats::optim}. See \code{?optim} (e.g., \code{maxit}, \code{trace}, \code{factr}, \code{pgtol}).
+\item For \code{method = "nlminb"}: Controls are passed to \code{stats::nlminb}. See \code{?nlminb} for options like \code{eval.max}, \code{iter.max}, \code{trace}, \code{rel.tol}, etc.
+\item For other methods: Controls are passed to \code{stats::optim}. See \code{?optim} for options like \code{maxit}, \code{trace}, \code{factr}, \code{pgtol}, etc.
 }
 If \code{optimizer.control} is empty, reasonable defaults are used for each method.
 
@@ -146,37 +132,31 @@ If \code{optimizer.control} is empty, reasonable defaults are used for each meth
 }
 \examples{
 \dontrun{
-# Ensure the package and dependencies (like TMB, numDeriv, ggplot2) are loaded
-# library(gkwreg) # Or your package name
-# library(TMB) # Needed for fit = "tmb"
-# library(numDeriv) # Needed for hessian = TRUE with nlminb/optim
+# Ensure the package and dependencies (like TMB, ggplot2) are loaded
+# library(TMB) # Required for all fitting methods
 # library(ggplot2) # Needed for plot = TRUE
 # library(patchwork) # Needed for plot = TRUE
 
-## Example 1: Fit Kumaraswamy using different methods
+## Example 1: Fit Kumaraswamy using different optimization methods
 set.seed(123)
 n <- 200
 # Assuming rkw is available
 kw_data <- rkw(n, alpha = 2.5, beta = 1.5)
 
-# Fit using TMB (default internal method nlminb)
-fit_tmb <- gkwfit(data = kw_data, family = "kw", fit = "tmb", silent = TRUE)
+# Fit using default nlminb
+fit_nlminb <- gkwfit(data = kw_data, family = "kw", method = "nlminb", silent = TRUE)
 
-# Fit using custom Newton-Raphson
-fit_nr <- gkwfit(data = kw_data, family = "kw", fit = "nr", silent = TRUE)
+# Fit using Nelder-Mead
+fit_nm <- gkwfit(data = kw_data, family = "kw", method = "Nelder-Mead", silent = TRUE)
 
-# Fit using R's nlminb
-fit_nlminb <- gkwfit(data = kw_data, family = "kw", fit = "nlminb", silent = TRUE)
-
-# Fit using R's optim (L-BFGS-B)
-fit_optim <- gkwfit(data = kw_data, family = "kw", fit = "optim", silent = TRUE)
+# Fit using BFGS
+fit_bfgs <- gkwfit(data = kw_data, family = "kw", method = "BFGS", silent = TRUE)
 
 # Compare coefficients
 coef_compare <- data.frame(
-  TMB = coef(fit_tmb),
-  NR = coef(fit_nr),
   NLMINB = coef(fit_nlminb),
-  OPTIM = coef(fit_optim)
+  NM = coef(fit_nm),
+  BFGS = coef(fit_bfgs)
 )
 print(round(coef_compare, 3))
 
@@ -189,26 +169,28 @@ gkw_data <- rgkw(n, alpha = 2, beta = 3, gamma = 1.5, delta = 0, lambda = 1.2) #
 fit_gkw_fix <- gkwfit(
   data = gkw_data, family = "gkw",
   fixed = list(delta = 0), # Fix delta
-  fit = "nlminb",
+  method = "nlminb",
   optimizer.control = list(iter.max = 500, trace = 1)
 )
 
 summary(fit_gkw_fix)
 
-## Example 3: Fit Beta using optim and check SEs
+## Example 3: Fit Beta using L-BFGS-B and check profile likelihoods
 set.seed(404)
 beta_data <- stats::rbeta(n, shape1 = 2.0, shape2 = 3.0)
 
-fit_beta_optim <- gkwfit(
+fit_beta <- gkwfit(
   data = beta_data, family = "beta",
-  fit = "optim", hessian = TRUE
+  method = "L-BFGS-B",
+  hessian = TRUE,
+  profile = TRUE
 )
 
 # Display summary with SEs
-summary(fit_beta_optim)
+summary(fit_beta)
 
-# Check variance-covariance matrix
-vcov(fit_beta_optim)
+# Check profile likelihood
+plot(fit_beta$profile)
 
 # End dontrun
 }
@@ -220,14 +202,10 @@ random processes. \emph{Journal of Hydrology}, 46(1-2), 79-88. \doi{10.1016/0022
 Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
 \emph{Journal of Statistical Computation and Simulation}, 81(7), 883-898. \doi{10.1080/00949650903530745}
 
-Nash, J. C. (1990). \emph{Compact numerical methods for computers: linear algebra and function minimisation}. Adam Hilger. (Basis for optim)
-
-Gay, D. M. (1990). Usage summary for selected optimization routines. \emph{Computing Science Technical Report}, 153. AT&T Bell Laboratories. (nlminb based on PORT library)
-
 Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016). TMB: Automatic Differentiation and Laplace Approximation. \emph{Journal of Statistical Software}, 70(5), 1–21. \doi{10.18637/jss.v070.i05}
 }
 \seealso{
-Provided internal functions: \code{\link{.fit_tmb}}, \code{\link{.fit_nr}}, \code{\link{.fit_nlminb}}, \code{\link{.fit_optim}}. User-facing S3 methods: \code{\link{summary.gkwfit}}, \code{\link{print.gkwfit}}, \code{\link{plot.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{confint.gkwfit}}. Density/distribution functions: \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}}.
+User-facing S3 methods: \code{\link{summary.gkwfit}}, \code{\link{print.gkwfit}}, \code{\link{plot.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{confint.gkwfit}}. Density/distribution functions: \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}}.
 }
 \author{
 Lopes, J. E.

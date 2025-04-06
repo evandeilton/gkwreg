@@ -2319,3 +2319,6 @@ print.summary.gkwgof <- function(x, ...) {
   # Return invisibly
   invisible(x)
 }
+
+
+## gkwgof

@@ -51,11 +51,11 @@
 #'   global parameter estimates.
 #' @param fixed An optional named list specifying parameters or coefficients to be
 #'   held fixed at specific values during estimation. Currently not fully implemented.
-#' @param fit Character string specifying the estimation engine. Currently, only
-#'   \code{"tmb"} (Template Model Builder) is supported and required.
-#' @param method Character string specifying the optimization algorithm used by TMB.
-#'   Options are \code{"nlminb"} (default, using \code{\link[stats]{nlminb}}) or
-#'   \code{"optim"} (using \code{\link[stats]{optim}} with \code{method = "BFGS"}).
+#' @param method Character string specifying the optimization algorithm to use.
+#'   Options are \code{"nlminb"} (default, using \code{\link[stats]{nlminb}}),
+#'   \code{"BFGS"}, \code{"Nelder-Mead"}, \code{"CG"}, \code{"SANN"}, or \code{"L-BFGS-B"}.
+#'   If \code{"nlminb"} is selected, R's \code{\link[stats]{nlminb}} function is used;
+#'   otherwise, R's \code{\link[stats]{optim}} function is used with the specified method.
 #' @param hessian Logical. If \code{TRUE} (default), the Hessian matrix is computed
 #'   via \code{\link[TMB]{sdreport}} to obtain standard errors and the covariance
 #'   matrix of the estimated coefficients. Setting to \code{FALSE} speeds up fitting
@@ -168,6 +168,16 @@
 #' Maximum Likelihood Estimation (MLE) is performed using C++ templates via the
 #' \code{TMB} package, which provides automatic differentiation and efficient
 #' optimization capabilities. The specific TMB template used depends on the chosen \code{family}.
+#'
+#' \strong{Optimizer Method (\code{method} argument):}
+#' \itemize{
+#'   \item \code{"nlminb"}: Uses R's built-in \code{stats::nlminb} optimizer. Good for problems with box constraints. Default option.
+#'   \item \code{"Nelder-Mead"}: Uses R's \code{stats::optim} with the Nelder-Mead simplex algorithm, which doesn't require derivatives.
+#'   \item \code{"BFGS"}: Uses R's \code{stats::optim} with the BFGS quasi-Newton method for unconstrained optimization.
+#'   \item \code{"CG"}: Uses R's \code{stats::optim} with conjugate gradients method for unconstrained optimization.
+#'   \item \code{"SANN"}: Uses R's \code{stats::optim} with simulated annealing, a global optimization method useful for problems with multiple local minima.
+#'   \item \code{"L-BFGS-B"}: Uses R's \code{stats::optim} with the limited-memory BFGS method with box constraints.
+#' }
 #'
 #' @examples
 #' \dontrun{
@@ -383,11 +393,8 @@ gkwreg <- function(formula,
                    link = NULL,
                    start = NULL,
                    fixed = NULL,
-                   fit = "tmb",
-                   method = c("nlminb", "optim"),
+                   method = c("nlminb", "BFGS", "Nelder-Mead", "CG", "SANN", "L-BFGS-B"),
                    hessian = TRUE,
-                   # profile = FALSE,
-                   # npoints = 20,
                    plot = TRUE,
                    conf.level = 0.95,
                    optimizer.control = list(),
@@ -403,12 +410,21 @@ gkwreg <- function(formula,
                    ...) {
   # Match arguments
   family <- match.arg(family, choices = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"))
-  method <- match.arg(method, choices = c("nlminb", "optim"))
+  method <- match.arg(method, choices = c("nlminb", "BFGS", "Nelder-Mead", "CG", "SANN", "L-BFGS-B"))
+
+  # Determine if we're using nlminb or optim (with specified method)
+  use_nlminb <- method == "nlminb"
+
   call <- match.call()
 
   # Load Formula package for multi-part formula
   if (!requireNamespace("Formula", quietly = TRUE)) {
     stop("The 'Formula' package is required for this function. Please install it.")
+  }
+
+  # Load TMB package for model fitting
+  if (!requireNamespace("TMB", quietly = TRUE)) {
+    stop("The 'TMB' package is required for this function. Please install it.")
   }
 
   # Get parameter information for the specified family
@@ -430,7 +446,6 @@ gkwreg <- function(formula,
   link_ints <- .convert_links_to_int(link_list)
 
   # Extract model frames, responses, and model matrices
-  # ** FIXED: Pass the original call to .extract_model_data() **
   model_data <- .extract_model_data(
     formula_list = formula_list,
     data = data,
@@ -490,42 +505,54 @@ gkwreg <- function(formula,
   )
 
   # Set up optimizer control parameters
-  default_control <- switch(method,
-    "nlminb" = list(eval.max = 500, iter.max = 300),
-    "optim" = list(maxit = 500)
-  )
-  opt_control <- modifyList(default_control, optimizer.control)
+  if (use_nlminb) {
+    default_control <- list(eval.max = 500, iter.max = 300, trace = ifelse(silent, 0, 1))
+  } else { # optim methods
+    default_control <- list(maxit = 500, trace = ifelse(silent, 0, 1))
+  }
+
+  opt_control <- utils::modifyList(default_control, optimizer.control)
 
   # Optimize the model
-  if (method == "nlminb") {
+  if (use_nlminb) {
     if (!silent) message("Optimizing with nlminb...")
-    opt <- stats::nlminb(
-      start = obj$par,
-      objective = obj$fn,
-      gradient = obj$gr,
-      control = opt_control
+    opt <- tryCatch(
+      stats::nlminb(
+        start = obj$par,
+        objective = obj$fn,
+        gradient = obj$gr,
+        control = opt_control
+      ),
+      error = function(e) {
+        stop("Optimization with nlminb failed: ", e$message)
+      }
     )
     fit_result <- list(
       coefficients = obj$env$last.par,
       loglik = -opt$objective,
-      convergence = opt$convergence,
+      convergence = opt$convergence == 0,
       message = opt$message,
       iterations = opt$iterations
     )
-  } else { # optim
-    if (!silent) message("Optimizing with optim...")
-    opt <- stats::optim(
-      par = obj$par,
-      fn = obj$fn,
-      gr = obj$gr,
-      method = "BFGS",
-      control = opt_control
+  } else { # optim methods
+    if (!silent) message(paste("Optimizing with optim method:", method, "..."))
+    opt <- tryCatch(
+      stats::optim(
+        par = obj$par,
+        fn = obj$fn,
+        gr = obj$gr,
+        method = method,
+        control = opt_control
+      ),
+      error = function(e) {
+        stop(paste("Optimization with optim method", method, "failed:", e$message))
+      }
     )
     fit_result <- list(
       coefficients = opt$par,
       loglik = -opt$value,
-      convergence = opt$convergence,
-      message = ifelse(opt$convergence == 0, "Successful convergence", "Optimization failed"),
+      convergence = opt$convergence == 0,
+      message = if (opt$convergence == 0) "Successful convergence" else "Optimization failed",
       iterations = opt$counts[1]
     )
   }
@@ -644,7 +671,8 @@ gkwreg <- function(formula,
     iterations = fit_result$iterations,
     rmse = rmse,
     efron_r2 = efron_r2,
-    mean_absolute_error = mean_absolute_error
+    mean_absolute_error = mean_absolute_error,
+    method = method
   )
 
   # Add extra information if requested
@@ -661,6 +689,8 @@ gkwreg <- function(formula,
   # Return the final result
   return(result)
 }
+
+
 
 
 #' Prepare TMB Parameters for GKw Regression
@@ -1554,7 +1584,6 @@ print.summary.gkwreg <- function(x, digits = max(3, getOption("digits") - 3),
 }
 
 
-
 #' @title Predictions from a Fitted Generalized Kumaraswamy Regression Model
 #'
 #' @description
@@ -1711,16 +1740,16 @@ print.summary.gkwreg <- function(x, digits = max(3, getOption("digits") - 3),
 #'
 #' @export
 predict.gkwreg <- function(object, newdata = NULL,
-                           type = c(
-                             "response", "link", "parameter",
-                             "alpha", "beta", "gamma", "delta", "lambda",
-                             "variance", "density", "pdf",
-                             "probability", "cdf", "quantile"
-                           ),
+                           type = "response",
                            na.action = stats::na.pass, at = 0.5,
                            elementwise = NULL, family = NULL, ...) {
   # Match type argument
-  type <- match.arg(type)
+  type <- match.arg(type, c(
+    "response", "link", "parameter",
+    "alpha", "beta", "gamma", "delta", "lambda",
+    "variance", "density", "pdf",
+    "probability", "cdf", "quantile"
+  ))
 
   # Aliases for some types
   if (type == "pdf") type <- "density"
@@ -2150,15 +2179,13 @@ predict.gkwreg <- function(object, newdata = NULL,
     }
   } else {
     # Create model matrices from the new data
+    # This is the part that needed fixing
     formula <- object$formula
 
     # Ensure formula is a Formula object
-    if (class(formula)[1] == "formula") {
+    if (!inherits(formula, "Formula")) {
       formula <- Formula::as.Formula(formula)
     }
-
-    # Process newdata
-    mf <- stats::model.frame(formula, newdata, na.action = na.action, drop.unused.levels = TRUE)
 
     # Safely get the number of RHS parts
     rhs_parts <- 0
@@ -2166,21 +2193,32 @@ predict.gkwreg <- function(object, newdata = NULL,
       rhs_parts <- length(attr(formula, "rhs"))
     }
 
-    # Construct model matrices for each parameter
+    # Initialize X matrices
     X <- vector("list", 5)
     param_names <- c("alpha", "beta", "gamma", "delta", "lambda")
 
+    # Process each RHS part separately
     for (i in seq_len(5)) {
       if (i <= rhs_parts) {
+        # Extract the terms for this part of the formula
+        component_terms <- stats::delete.response(stats::terms(formula, rhs = i))
+
+        # Create model frame and matrix for this component
         tryCatch(
           {
-            X_i <- model.matrix(formula, data = mf, rhs = i)
+            mf_i <- stats::model.frame(component_terms, newdata,
+              na.action = na.action,
+              xlev = object$xlevels
+            )
+
+            X_i <- stats::model.matrix(component_terms, mf_i)
+
             if (ncol(X_i) == 0) {
               if (i == 1) {
                 stop("The first RHS (for alpha) cannot be empty.")
               } else {
                 X[[i]] <- matrix(1,
-                  nrow = nrow(mf), ncol = 1,
+                  nrow = nrow(newdata), ncol = 1,
                   dimnames = list(NULL, "(Intercept)")
                 )
               }
@@ -2191,15 +2229,15 @@ predict.gkwreg <- function(object, newdata = NULL,
           error = function(e) {
             # If extraction fails, use intercept-only
             X[[i]] <- matrix(1,
-              nrow = nrow(mf), ncol = 1,
+              nrow = nrow(newdata), ncol = 1,
               dimnames = list(NULL, "(Intercept)")
             )
           }
         )
       } else {
-        # Missing parts -> intercept-only
+        # For parts beyond the specified ones, use intercept-only
         X[[i]] <- matrix(1,
-          nrow = nrow(mf), ncol = 1,
+          nrow = nrow(newdata), ncol = 1,
           dimnames = list(NULL, "(Intercept)")
         )
       }
@@ -3473,7 +3511,7 @@ plot.gkwreg <- function(x,
       which = which,
       plot_titles = plot_titles,
       sub.caption = sub.caption,
-      ask = ask,
+      ask = FALSE,
       arrange_plots = arrange_plots,
       theme_fn = theme_fn,
       ...

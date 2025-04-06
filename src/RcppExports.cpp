@@ -24,7 +24,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dgkw
-arma::vec dgkw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool log_prob);
+Rcpp::NumericVector dgkw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool log_prob);
 RcppExport SEXP _gkwreg_dgkw(SEXP xSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -41,7 +41,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // pgkw
-arma::vec pgkw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+Rcpp::NumericVector pgkw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_pgkw(SEXP qSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -59,7 +59,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // qgkw
-arma::vec qgkw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+Rcpp::NumericVector qgkw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_qgkw(SEXP pSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -77,7 +77,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rgkw
-arma::vec rgkw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda);
+Rcpp::NumericVector rgkw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda);
 RcppExport SEXP _gkwreg_rgkw(SEXP nSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -129,7 +129,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dkkw
-arma::vec dkkw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool log_prob);
+Rcpp::NumericVector dkkw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool log_prob);
 RcppExport SEXP _gkwreg_dkkw(SEXP xSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -145,7 +145,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // pkkw
-arma::vec pkkw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+Rcpp::NumericVector pkkw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_pkkw(SEXP qSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -162,7 +162,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // qkkw
-arma::vec qkkw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+Rcpp::NumericVector qkkw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_qkkw(SEXP pSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -179,7 +179,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rkkw
-arma::vec rkkw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda);
+Rcpp::NumericVector rkkw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda);
 RcppExport SEXP _gkwreg_rkkw(SEXP nSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -230,7 +230,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dbkw
-arma::vec dbkw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool log_prob);
+Rcpp::NumericVector dbkw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool log_prob);
 RcppExport SEXP _gkwreg_dbkw(SEXP xSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -246,7 +246,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // pbkw
-arma::vec pbkw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool lower_tail, bool log_p);
+Rcpp::NumericVector pbkw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_pbkw(SEXP qSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -263,7 +263,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // qbkw
-arma::vec qbkw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool lower_tail, bool log_p);
+Rcpp::NumericVector qbkw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_qbkw(SEXP pSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -280,7 +280,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rbkw
-arma::vec rbkw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta);
+Rcpp::NumericVector rbkw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta);
 RcppExport SEXP _gkwreg_rbkw(SEXP nSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP gammaSEXP, SEXP deltaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -331,7 +331,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dekw
-arma::vec dekw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& lambda, bool log_prob);
+Rcpp::NumericVector dekw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& lambda, bool log_prob);
 RcppExport SEXP _gkwreg_dekw(SEXP xSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP lambdaSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -346,7 +346,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // pekw
-arma::vec pekw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+Rcpp::NumericVector pekw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_pekw(SEXP qSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -362,7 +362,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // qekw
-arma::vec qekw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+Rcpp::NumericVector qekw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_qekw(SEXP pSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -378,7 +378,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rekw
-arma::vec rekw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& lambda);
+Rcpp::NumericVector rekw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, const Rcpp::NumericVector& lambda);
 RcppExport SEXP _gkwreg_rekw(SEXP nSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -428,7 +428,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dmc
-arma::vec dmc(const arma::vec& x, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool log_prob);
+Rcpp::NumericVector dmc(const arma::vec& x, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool log_prob);
 RcppExport SEXP _gkwreg_dmc(SEXP xSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -443,7 +443,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // pmc
-arma::vec pmc(const arma::vec& q, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+Rcpp::NumericVector pmc(const arma::vec& q, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_pmc(SEXP qSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -459,7 +459,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // qmc
-arma::vec qmc(const arma::vec& p, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
+Rcpp::NumericVector qmc(const arma::vec& p, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_qmc(SEXP pSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -475,7 +475,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmc
-arma::vec rmc(int n, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda);
+Rcpp::NumericVector rmc(int n, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, const Rcpp::NumericVector& lambda);
 RcppExport SEXP _gkwreg_rmc(SEXP nSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -525,7 +525,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dkw
-arma::vec dkw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, bool log_prob);
+Rcpp::NumericVector dkw(const arma::vec& x, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, bool log_prob);
 RcppExport SEXP _gkwreg_dkw(SEXP xSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -539,7 +539,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // pkw
-arma::vec pkw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, bool lower_tail, bool log_p);
+Rcpp::NumericVector pkw(const arma::vec& q, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_pkw(SEXP qSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -554,7 +554,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // qkw
-arma::vec qkw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, bool lower_tail, bool log_p);
+Rcpp::NumericVector qkw(const arma::vec& p, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_qkw(SEXP pSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -569,7 +569,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rkw
-arma::vec rkw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta);
+Rcpp::NumericVector rkw(int n, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& beta);
 RcppExport SEXP _gkwreg_rkw(SEXP nSEXP, SEXP alphaSEXP, SEXP betaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -618,7 +618,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dbeta_
-arma::vec dbeta_(const arma::vec& x, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool log_prob);
+Rcpp::NumericVector dbeta_(const arma::vec& x, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool log_prob);
 RcppExport SEXP _gkwreg_dbeta_(SEXP xSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -632,7 +632,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // pbeta_
-arma::vec pbeta_(const arma::vec& q, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool lower_tail, bool log_p);
+Rcpp::NumericVector pbeta_(const arma::vec& q, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_pbeta_(SEXP qSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -647,7 +647,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // qbeta_
-arma::vec qbeta_(const arma::vec& p, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool lower_tail, bool log_p);
+Rcpp::NumericVector qbeta_(const arma::vec& p, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta, bool lower_tail, bool log_p);
 RcppExport SEXP _gkwreg_qbeta_(SEXP pSEXP, SEXP gammaSEXP, SEXP deltaSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -662,7 +662,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rbeta_
-arma::vec rbeta_(int n, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta);
+Rcpp::NumericVector rbeta_(int n, const Rcpp::NumericVector& gamma, const Rcpp::NumericVector& delta);
 RcppExport SEXP _gkwreg_rbeta_(SEXP nSEXP, SEXP gammaSEXP, SEXP deltaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
