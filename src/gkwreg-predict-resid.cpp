@@ -20,7 +20,7 @@ const double eps_pos       = 1e-10;
 const double eps_prob      = 1e-12;
 const double inf_repl      = 1e10;
 const double max_exp       = 30.0;
-const double discretize_step = 0.01;
+// const double discretize_step = 0.01;
 
 // ========================
 // Safe numerical operations

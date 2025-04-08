@@ -3689,7 +3689,7 @@ double llkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
  // Stability constants
  const double min_eps = std::numeric_limits<double>::min() * 1e4;
  const double eps = 1e-10;
- const double exp_threshold = -700.0;
+ // const double exp_threshold = -700.0;
 
  // Special case optimization: when delta = 0, use EKw implementation
  bool is_ekw = (delta < min_eps);
@@ -4019,7 +4019,7 @@ Rcpp::NumericVector grkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  // Constants for numerical stability
  const double min_eps = 1e-15;
  const double eps = 1e-10;
- const double exp_threshold = -700.0;
+ // const double exp_threshold = -700.0;
 
  // Initialize component accumulators
  double d_alpha = n / alpha;
@@ -4356,7 +4356,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  // Stability constants
  const double min_eps = 1e-15;
  const double eps = 1e-10;
- const double exp_threshold = -700.0;
+ // const double exp_threshold = -700.0;
  const double max_contrib = 1e6;  // Limit for individual contributions
 
  // Initialize Hessian matrix
@@ -4503,7 +4503,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
      acc_beta_lambda += dw_dbeta / w;
    } else {
      // --- Calculate z = 1-w^λ and derivatives ---
-     double w_lambda, w_lambda_m1, w_lambda_m2, z, log_z;
+     double w_lambda, w_lambda_m1, w_lambda_m2, z;
 
      if (lambda > 100.0 || lambda * std::abs(log_w) > 1.0) {
        // Log-domain calculation for large lambda
@@ -4520,10 +4520,10 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
      if (w_lambda > 0.9995) {
        // Complementary precision for w^λ near 1
        z = -std::expm1(lambda * log_w);
-       log_z = std::log(z);
+       // double log_z = std::log(z);
      } else {
        z = 1.0 - w_lambda;
-       log_z = log1p(-w_lambda);  // More accurate than log(1-w_lambda)
+       // double log_z = log1p(-w_lambda);
      }
 
      // Ensure z is not too small
@@ -7589,7 +7589,6 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    // ---- Compute w = 1-v^β and its derivatives safely ----
    double v_beta; // v^β
    double w; // w = 1 - v^β
-   double ln_w; // ln(w)
 
    // Compute v^β safely using log domain when helpful
    if (beta > 100 || v < 0.01) {
@@ -7615,7 +7614,8 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
    }
 
    // Compute ln(w) safely
-   ln_w = safe_log(w);
+   // double ln_w; // ln(w)
+   // double ln_w = safe_log(w);
 
    // ---- Derivatives for w ----
    // dw/dv = -β * v^(β-1)
@@ -10175,7 +10175,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
  arma::mat H(3,3, arma::fill::zeros);
 
  // Stability constants
- const double eps = std::numeric_limits<double>::epsilon() * 100;
+ // const double eps = std::numeric_limits<double>::epsilon() * 100;
  const double min_v = 1e-10;  // Minimum value for v = 1-x^α
  const double min_w = 1e-10;  // Minimum value for w = 1-(1-x^α)^β
  const double exp_threshold = -700.0;  // Threshold for log-domain calculations
@@ -12140,7 +12140,7 @@ double llmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
 
  // Stability constants
  const double eps = 1e-10;
- const double exp_threshold = -700.0;
+ // const double exp_threshold = -700.0;
 
  // Compute log(Beta(gamma, delta+1)) stably
  double log_B;
@@ -15867,7 +15867,7 @@ if (H.n_rows != H.n_cols) {
 }
 
 // Ensure symmetry by averaging with transpose using a numerically stable approach
-double sym_tol = 1e-8;
+// double sym_tol = 1e-8;
 double max_asym = 0.0;
 
 // Check asymmetry level
@@ -15930,7 +15930,7 @@ bool needs_strong_reg = (condition_number > 1e10) || (min_eig < -1e3 * min_eigen
 // If extreme conditioning or large negative eigenvalues, use modified approach
 if (needs_strong_reg) {
  // Apply progressive regularization for better numerical stability
- double shift = std::max(min_eigenval, -min_eig + min_eigenval * 10.0);
+ // double shift = std::max(min_eigenval, -min_eig + min_eigenval * 10.0);
 
  // Adaptive scaling based on eigenvalue magnitude
  double scale_factor = std::max(0.01, std::min(1.0, 1e6 / condition_number));
@@ -16888,7 +16888,7 @@ result["ratio"] = 0.0;
 // Evaluate function and gradient at current point
 double f0;
 Rcpp::NumericVector g0;
-bool valid_evaluation = true;
+// bool valid_evaluation = true;
 
 try {
  f0 = ll_func(params, data);

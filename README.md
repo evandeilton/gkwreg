@@ -135,11 +135,10 @@ predictors.
 
 ## Computational Engine: TMB
 
-The package uses **Template Model Builder (TMB)** ([Kristensen et
-al. 2016](https://doi.org/10.18637/jss.v070.i05)) as its computational
-backend. TMB translates the statistical model into C++ templates and
-uses **Automatic Differentiation (AD)** to compute exact gradients and
-Hessians, providing several advantages:
+The package uses **Template Model Builder (TMB)** (Kristensen et
+al. 2016) as its computational backend. TMB translates the statistical
+model into C++ templates and uses **Automatic Differentiation (AD)** to
+compute exact gradients and Hessians, providing several advantages:
 
 - **Speed:** AD combined with compiled C++ is significantly faster than
   numerical differentiation or pure R implementations
@@ -249,7 +248,7 @@ pred <- predict(model, type = "response")
 
 - Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized
   distributions. *Journal of Statistical Computation and Simulation*,
-  81(7), 883-898. <https://doi.org/10.1080/00949650903530745>
+  81(7), 883-898.
 
 - Carrasco, J. M. F., Ferrari, S. L. P., & Cordeiro, G. M. (2010). A new
   generalized Kumaraswamy distribution. *arXiv preprint
@@ -258,28 +257,24 @@ pred <- predict(model, type = "response")
 - Jones, M. C. (2009). Kumaraswamy’s distribution: A beta-type
   distribution with some tractability advantages. *Statistical
   Methodology*, 6(1), 70-81.
-  <https://doi.org/10.1016/j.stamet.2008.04.001>
 
 - Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M.
   (2016). TMB: Automatic Differentiation and Laplace Approximation.
   *Journal of Statistical Software*, 70(5), 1-21.
-  <https://doi.org/10.18637/jss.v070.i05>
 
 - Kumaraswamy, P. (1980). A generalized probability density function for
   double-bounded random processes. *Journal of Hydrology*, 46(1-2),
-  79-88. <https://doi.org/10.1016/0022-1694(80)90036-0>
+  79-88.
 
 - Ferrari, S. L. P., & Cribari-Neto, F. (2004). Beta regression for
   modelling rates and proportions. *Journal of Applied Statistics*,
-  31(7), 799-815. <https://doi.org/10.1080/0266476042000214501>
+  31(7), 799-815.
 
 - Cribari-Neto, F., & Zeileis, A. (2010). Beta Regression in R. *Journal
   of Statistical Software*, 34(2), 1-24.
-  <https://doi.org/10.18637/jss.v034.i02>
 
 - Lopes, J. E. (2025). Generalized Kumaraswamy Regression Models with
   gkwreg. *Journal of Statistical Software*, forthcoming.
-  <https://doi.org/10.18637/jss.v000.i00>
 
 ## Comparing with Other Packages
 
@@ -303,8 +298,8 @@ repository](https://github.com/evandeilton/gkwreg).
 
 ## License
 
-This package is licensed under the MIT License. See the
-[LICENSE.md](LICENSE.md) file for details.
+This package is licensed under the MIT License. See the LICENSE file for
+details.
 
 ## Author and Maintainer
 
