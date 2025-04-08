@@ -5,7 +5,6 @@
 status](https://www.r-pkg.org/badges/version/gkwreg)](https://CRAN.R-project.org/package=gkwreg)
 [![R-CMD-check](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gkwreg)](https://cran.r-project.org/package=gkwreg)
-<!-- [![DOI](https://zenodo.org/badge/DOI/10.18637/jss.v000.i00.svg)](https://doi.org/10.18637/jss.v000.i00) -->
 
 ## Overview
 
