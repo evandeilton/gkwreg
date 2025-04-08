@@ -94,75 +94,102 @@ rcmdcheck::rcmdcheck(args = c("--as-cran"))
 #' # exemplos_aqui <- extract_examples_from_package(".")
 #' # print(names(exemplos_aqui))
 #' }
-extract_examples_from_package <- function(pkg_path = ".") {
+# extract_examples_from_package <- function(pkg_path = ".") {
+#
+#   # Carregar o pacote tools se não estiver carregado (geralmente está)
+#   # requireNamespace("tools", quietly = TRUE) # Rd2ex está em tools
+#
+#   # 1. Encontrar arquivos Rd
+#   rd_dir <- file.path(pkg_path, "man")
+#   if (!dir.exists(rd_dir)) {
+#     stop("Diretório 'man/' não encontrado em '", pkg_path, "'. ",
+#          "Tem certeza que este é um diretório raiz de pacote R?")
+#   }
+#
+#   rd_files <- list.files(rd_dir, pattern = "\\.Rd$", full.names = TRUE, ignore.case = TRUE)
+#
+#   if (length(rd_files) == 0) {
+#     message("Nenhum arquivo .Rd encontrado em ", rd_dir)
+#     return(list())
+#   }
+#
+#   # 2. Inicializar lista para armazenar resultados
+#   all_examples <- list()
+#   message("Extraindo exemplos de ", length(rd_files), " arquivo(s) Rd...")
+#
+#   # 3. Iterar, extrair, ler e armazenar
+#   for (rd_file in rd_files) {
+#     topic_name <- tools::file_path_sans_ext(basename(rd_file))
+#     # Usar arquivo temporário para a saída de Rd2ex
+#     temp_out_file <- tempfile(fileext = ".R")
+#     extracted_code_lines <- NULL # Para armazenar as linhas lidas
+#
+#     # Usar tryCatch para robustez caso Rd2ex falhe em algum arquivo
+#     outcome <- tryCatch({
+#       # Rd2ex escreve o código R executável no arquivo temp_out_file
+#       tools::Rd2ex(rd_file, out = temp_out_file, commentDontrun = FALSE, commentDonttest = FALSE)
+#
+#       # Verificar se o arquivo foi criado e tem conteúdo
+#       if (file.exists(temp_out_file) && file.info(temp_out_file)$size > 0) {
+#         extracted_code_lines <- readLines(temp_out_file, warn = FALSE)
+#       } else {
+#         # Arquivo vazio ou não criado = sem exemplos (ou Rd2ex não extraiu nada)
+#         extracted_code_lines <- character(0)
+#       }
+#       TRUE # Sucesso
+#     }, error = function(e) {
+#       warning("Falha ao processar exemplos de '", basename(rd_file), "': ",
+#               conditionMessage(e), call. = FALSE)
+#       FALSE # Falha
+#     })
+#
+#     # Limpar arquivo temporário sempre
+#     if (file.exists(temp_out_file)) {
+#       unlink(temp_out_file)
+#     }
+#
+#     # Armazenar se a extração funcionou e se há código
+#     if (outcome && length(extracted_code_lines) > 0) {
+#       # Juntar as linhas em uma única string com quebras de linha
+#       all_examples[[topic_name]] <- paste(extracted_code_lines, collapse = "\n")
+#     }
+#   } # Fim do loop
+#
+#   message("Extração concluída. ", length(all_examples), " tópico(s) com exemplos encontrados.")
+#   return(all_examples)
+# }
+#
+# lista_exemplos <- extract_examples_from_package(".")
+#
+# sapply(lista_exemplos, cat)
+#
+# cat(lista_exemplos$summary.gkwfit)
 
-  # Carregar o pacote tools se não estiver carregado (geralmente está)
-  # requireNamespace("tools", quietly = TRUE) # Rd2ex está em tools
 
-  # 1. Encontrar arquivos Rd
-  rd_dir <- file.path(pkg_path, "man")
-  if (!dir.exists(rd_dir)) {
-    stop("Diretório 'man/' não encontrado em '", pkg_path, "'. ",
-         "Tem certeza que este é um diretório raiz de pacote R?")
-  }
 
-  rd_files <- list.files(rd_dir, pattern = "\\.Rd$", full.names = TRUE, ignore.case = TRUE)
-
-  if (length(rd_files) == 0) {
-    message("Nenhum arquivo .Rd encontrado em ", rd_dir)
-    return(list())
-  }
-
-  # 2. Inicializar lista para armazenar resultados
-  all_examples <- list()
-  message("Extraindo exemplos de ", length(rd_files), " arquivo(s) Rd...")
-
-  # 3. Iterar, extrair, ler e armazenar
-  for (rd_file in rd_files) {
-    topic_name <- tools::file_path_sans_ext(basename(rd_file))
-    # Usar arquivo temporário para a saída de Rd2ex
-    temp_out_file <- tempfile(fileext = ".R")
-    extracted_code_lines <- NULL # Para armazenar as linhas lidas
-
-    # Usar tryCatch para robustez caso Rd2ex falhe em algum arquivo
-    outcome <- tryCatch({
-      # Rd2ex escreve o código R executável no arquivo temp_out_file
-      tools::Rd2ex(rd_file, out = temp_out_file, commentDontrun = FALSE, commentDonttest = FALSE)
-
-      # Verificar se o arquivo foi criado e tem conteúdo
-      if (file.exists(temp_out_file) && file.info(temp_out_file)$size > 0) {
-        extracted_code_lines <- readLines(temp_out_file, warn = FALSE)
-      } else {
-        # Arquivo vazio ou não criado = sem exemplos (ou Rd2ex não extraiu nada)
-        extracted_code_lines <- character(0)
-      }
-      TRUE # Sucesso
-    }, error = function(e) {
-      warning("Falha ao processar exemplos de '", basename(rd_file), "': ",
-              conditionMessage(e), call. = FALSE)
-      FALSE # Falha
-    })
-
-    # Limpar arquivo temporário sempre
-    if (file.exists(temp_out_file)) {
-      unlink(temp_out_file)
-    }
-
-    # Armazenar se a extração funcionou e se há código
-    if (outcome && length(extracted_code_lines) > 0) {
-      # Juntar as linhas em uma única string com quebras de linha
-      all_examples[[topic_name]] <- paste(extracted_code_lines, collapse = "\n")
-    }
-  } # Fim do loop
-
-  message("Extração concluída. ", length(all_examples), " tópico(s) com exemplos encontrados.")
-  return(all_examples)
-}
-
-lista_exemplos <- extract_examples_from_package(".")
-
-sapply(lista_exemplos, cat)
-
-cat(lista_exemplos$summary.gkwfit)
-
+#
+# library(showtext)
+# library(hexSticker)
+#
+# # Carregar a biblioteca ggplot2 (se ainda não estiver carregada)
+# library(ggplot2)
+#
+# # Criar o gráfico usando expression()
+# g <- ggplot() +
+#   annotate(geom = "text",
+#            x = 0.5,
+#            y = 0.5,
+#            label = expression( "(0,1)"^7 ),
+#            size = 30,    # Tamanho grande
+#            color = "black") +
+#
+#   # Definir limites (opcional, mas útil)
+#   coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+#
+#   # Usar theme_void() para o fundo invisível
+#   theme_void()
+#
+# sticker(g,
+#         package="gkwreg", p_size=30, s_x=1.05, s_y=.8, s_width=2, s_height=1.5,
+#         filename="inst/figures/gkwreg.png")
 
