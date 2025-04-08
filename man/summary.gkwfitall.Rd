@@ -17,3 +17,6 @@ A summarized version of the gkwfitall object
 \description{
 Summary method for gkwfitall objects
 }
+\author{
+Lopes, J. E.
+}

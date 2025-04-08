@@ -83,27 +83,141 @@ distributions overlaid on diagnostic plots.
 }
 \examples{
 \dontrun{
-# Create sample data
-set.seed(123)
-sample_data <- rbeta(200, 2, 3)
+# Example 1: Basic usage - Fitting all distributions to beta-distributed data
+set.seed(2203) # Set seed for reproducibility
+# Generate 1000 observations from a Beta(2,5) distribution
+y <- rbeta(1000, shape1 = 2, shape2 = 5)
+# Fit all GKw family distributions
+all_fits <- gkwfitall(y)
+# View comparison statistics sorted by AIC
+all_fits$comparison[order(all_fits$comparison$AIC), ]
+# Plot the results
+print(all_fits$plots)
+#
+# Example 2: Fitting selected distributions to Kumaraswamy data
+set.seed(2203)
 
-# Fit all GKw family distributions and compare
-results <- gkwfitall(sample_data)
-
+# Fit selected distributions for comparison
+selected_fits <- gkwfitall(y, family = c("kw", "bkw", "beta", "gkw"))
 # View comparison statistics
-results$comparison
+selected_fits$comparison
+#
+# Example 3: Using method of moments for initial values
+# Fit all distributions with moment-based starting values
+mom_fits <- gkwfitall(y, use_moments = TRUE)
 
-# View comparison plots
-print(results$plots)
+# Example 4: Using different optimization methods
+# Try BFGS optimization method
+bfgs_fits <- gkwfitall(y, method = "BFGS")
 
-# Fit only selected distributions
-results_subset <- gkwfitall(sample_data, family = c("kw", "beta", "gkw"))
-
-# Generate a comprehensive report
-results_report <- gkwfitall(sample_data,
-  export_report = TRUE,
-  report_file = "my_gkw_analysis.html"
+# Compare convergence with and without method of moments
+rbind(
+  all_fits$comparison$AIC,
+  mom_fits$comparison$AIC,
+  bfgs_fits$comparison$AIC
 )
+
+# Example 5: Working with real data
+# Load data from betareg package
+library(betareg)
+data("ReadingSkills")
+y <- ReadingSkills$accuracy # Already in (0,1) range
+# Fit all distributions to reading skills data
+real_fits <- gkwfitall(y)
+# View comparison metrics
+real_fits$comparison[order(real_fits$comparison$AIC), ]
+# Extract the best model based on AIC
+best_model_name <- real_fits$comparison$Family[which.min(real_fits$comparison$AIC)]
+best_model <- real_fits$fits[[best_model_name]]
+summary(best_model)
+#
+# Example 6: Generating a comprehensive report
+# Fit models and generate HTML report
+report_fits <- gkwfitall(y,
+  export_report = TRUE,
+  report_file = "reading_skills_analysis.html"
+)
+
+# Example 7: Using profile likelihood
+# Fit models with profile likelihood computation
+profile_fits <- gkwfitall(data_kw,
+  profile = TRUE,
+  npoints = 30,
+  family = c("kw", "beta")
+)
+# Plot profile likelihood for best model parameters
+best_profile_model <- profile_fits$fits[[which.min(profile_fits$comparison$AIC)]]
+plot(gkwgof(best_profile_model, print_summary = FALSE), title = "")
+
+# Example 8: Customizing plots with a different theme
+
+custom_fits <- gkwfitall(data_kw,
+  family = c("kw", "beta", "gkw"),
+  theme_fn = theme_classic
+)
+# Display the customized plots
+print(custom_fits$plots)
+
+# Example 9: Modified optimization controls
+# Increase maximum iterations and set higher tolerance
+custom_control <- list(
+  maxit = 1000, # Maximum iterations
+  trace = 0, # No tracing
+  rel.tol = 1e-10 # Tighter tolerance
+)
+# Fit with custom optimization controls
+control_fits <- gkwfitall(data_kw,
+  optimizer.control = custom_control,
+  method = "L-BFGS-B"
+)
+# Check if optimization improved
+print(control_fits$comparison)
+
+# Example 10: Model selection for nested models using likelihood ratio tests
+# Function to perform likelihood ratio test between nested models
+perform_lrt <- function(full_model, reduced_model, df_diff) {
+  lr_stat <- 2 * (full_model$loglik - reduced_model$loglik)
+  p_value <- 1 - pchisq(lr_stat, df = df_diff)
+  return(list(statistic = lr_stat, p_value = p_value))
 }
 
+# Fit models for LR testing
+nested_fits <- gkwfitall(data_kw, family = c("gkw", "bkw", "kw"))
+
+# Test if GKw is significantly better than BKw (testing lambda = 1)
+lrt_gkw_bkw <- perform_lrt(
+  nested_fits$fits$gkw, # Full model (unrestricted)
+  nested_fits$fits$bkw, # Reduced model (lambda = 1)
+  df_diff = 1 # Testing 1 parameter (lambda)
+)
+#
+# Test if BKw is significantly better than Kw (testing gamma = 1, delta = 1)
+lrt_bkw_kw <- perform_lrt(
+  nested_fits$fits$bkw, # Full model (unrestricted)
+  nested_fits$fits$kw, # Reduced model (gamma = delta = 1)
+  df_diff = 2 # Testing 2 parameters
+)
+#
+# Display LRT results
+cat("Likelihood Ratio Tests for Nested Models:\n")
+cat("GKw vs BKw (lambda = 1):\n")
+cat("  Statistic:", round(lrt_gkw_bkw$statistic, 4), "\n")
+cat("  P-value:", format.pval(lrt_gkw_bkw$p_value), "\n")
+cat("  Decision:", ifelse(lrt_gkw_bkw$p_value < 0.05,
+  "Reject H0 - GKw is necessary",
+  "Fail to reject H0 - BKw is adequate"
+), "\n\n")
+
+cat("BKw vs Kw (gamma = delta = 1):\n")
+cat("  Statistic:", round(lrt_bkw_kw$statistic, 4), "\n")
+cat("  P-value:", format.pval(lrt_bkw_kw$p_value), "\n")
+cat("  Decision:", ifelse(lrt_bkw_kw$p_value < 0.05,
+  "Reject H0 - BKw is necessary",
+  "Fail to reject H0 - Kw is adequate"
+), "\n")
+}
+
+}
+\author{
+Lopes, J. E.
 }

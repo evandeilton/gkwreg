@@ -105,180 +105,186 @@
 #'
 #' @examples
 #' \dontrun{
-#'   require(gkwreg)
-#'   # Example 1: Simulate and analyze data from a Kumaraswamy (Kw) distribution
-#'   set.seed(2203)  # Set seed for reproducibility
-#'   # Simulate 1000 observations from Kumaraswamy distribution with parameters alpha=2.5, beta=1.8
-#'   data_kw <- rkw(n = 1000, alpha = 2.5, beta = 1.8)
-#'   # Fit the Kumaraswamy distribution to the data
-#'   fit_kw <- gkwfit(data_kw, family = "kw")
-#'   # Basic goodness-of-fit analysis
-#'   gof_kw <- gkwgof(fit_kw)
-#'   # Analysis with bootstrap simulated p-values
-#'   gof_kw_bootstrap <- gkwgof(fit_kw, simulate_p_values = TRUE, n_bootstrap = 500)
-#'   # Detailed summary with additional explanations
-#'   gof_kw_verbose <- gkwgof(fit_kw, verbose = TRUE)
+#' require(gkwreg)
+#' # Example 1: Simulate and analyze data from a Kumaraswamy (Kw) distribution
+#' set.seed(2203) # Set seed for reproducibility
+#' # Simulate 1000 observations from Kumaraswamy distribution with parameters alpha=2.5, beta=1.8
+#' data_kw <- rkw(n = 1000, alpha = 2.5, beta = 1.8)
+#' # Fit the Kumaraswamy distribution to the data
+#' fit_kw <- gkwfit(data_kw, family = "kw")
+#' # Basic goodness-of-fit analysis
+#' gof_kw <- gkwgof(fit_kw)
+#' # Analysis with bootstrap simulated p-values
+#' gof_kw_bootstrap <- gkwgof(fit_kw, simulate_p_values = TRUE, n_bootstrap = 500)
+#' # Detailed summary with additional explanations
+#' gof_kw_verbose <- gkwgof(fit_kw, verbose = TRUE)
 #'
-#'   # Example 2: Comparing different distributions from the GKw family
-#'   # Simulate data from the Generalized Kumaraswamy (GKw) distribution
-#'   data_gkw <- rgkw(n = 1000, alpha = 2.0, beta = 1.5, gamma = 3.0, delta = 2.0, lambda = 1.2)
-#'   # Fit different models to the same data
-#'   fit_kw <- gkwfit(data_gkw, family = "kw")     # Kumaraswamy model (simplified)
-#'   fit_bkw <- gkwfit(data_gkw, family = "bkw")   # Beta-Kumaraswamy model
-#'   fit_ekw <- gkwfit(data_gkw, family = "ekw")   # Exponentiated Kumaraswamy model
-#'   fit_gkw <- gkwfit(data_gkw, family = "gkw")   # Full Generalized Kumaraswamy model
-#'   fit_beta <- gkwfit(data_gkw, family = "beta") # Standard Beta model
-#'   # Goodness-of-fit analysis for each model (without printing summaries)
-#'   gof_kw <- gkwgof(fit_kw, print_summary = FALSE)
-#'   gof_bkw <- gkwgof(fit_bkw, print_summary = FALSE)
-#'   gof_ekw <- gkwgof(fit_ekw, print_summary = FALSE)
-#'   gof_gkw <- gkwgof(fit_gkw, print_summary = FALSE)
-#'   gof_beta <- gkwgof(fit_beta, print_summary = FALSE)
-#'   # Information criteria comparison for model selection
-#'   ic_comparison <- data.frame(
-#'     family = c("kw", "bkw", "ekw", "gkw", "beta"),
-#'     n_params = c(
-#'       length(gof_kw$coefficients),
-#'       length(gof_bkw$coefficients),
-#'       length(gof_ekw$coefficients),
-#'       length(gof_gkw$coefficients),
-#'       length(gof_beta$coefficients)
-#'     ),
-#'     logLik = c(
-#'       gof_kw$likelihood$loglik,
-#'       gof_bkw$likelihood$loglik,
-#'       gof_ekw$likelihood$loglik,
-#'       gof_gkw$likelihood$loglik,
-#'       gof_beta$likelihood$loglik
-#'     ),
-#'     AIC = c(
-#'       gof_kw$information_criteria$AIC,
-#'       gof_bkw$information_criteria$AIC,
-#'       gof_ekw$information_criteria$AIC,
-#'       gof_gkw$information_criteria$AIC,
-#'       gof_beta$information_criteria$AIC
-#'     ),
-#'     BIC = c(
-#'       gof_kw$information_criteria$BIC,
-#'       gof_bkw$information_criteria$BIC,
-#'       gof_ekw$information_criteria$BIC,
-#'       gof_gkw$information_criteria$BIC,
-#'       gof_beta$information_criteria$BIC
-#'     ),
-#'     AICc = c(
-#'       gof_kw$information_criteria$AICc,
-#'       gof_bkw$information_criteria$AICc,
-#'       gof_ekw$information_criteria$AICc,
-#'       gof_gkw$information_criteria$AICc,
-#'       gof_beta$information_criteria$AICc
+#' # Example 2: Comparing different distributions from the GKw family
+#' # Simulate data from the Generalized Kumaraswamy (GKw) distribution
+#' data_gkw <- rgkw(n = 1000, alpha = 2.0, beta = 1.5, gamma = 3.0, delta = 2.0, lambda = 1.2)
+#' # Fit different models to the same data
+#' fit_kw <- gkwfit(data_gkw, family = "kw") # Kumaraswamy model (simplified)
+#' fit_bkw <- gkwfit(data_gkw, family = "bkw") # Beta-Kumaraswamy model
+#' fit_ekw <- gkwfit(data_gkw, family = "ekw") # Exponentiated Kumaraswamy model
+#' fit_gkw <- gkwfit(data_gkw, family = "gkw") # Full Generalized Kumaraswamy model
+#' fit_beta <- gkwfit(data_gkw, family = "beta") # Standard Beta model
+#' # Goodness-of-fit analysis for each model (without printing summaries)
+#' gof_kw <- gkwgof(fit_kw, print_summary = FALSE)
+#' gof_bkw <- gkwgof(fit_bkw, print_summary = FALSE)
+#' gof_ekw <- gkwgof(fit_ekw, print_summary = FALSE)
+#' gof_gkw <- gkwgof(fit_gkw, print_summary = FALSE)
+#' gof_beta <- gkwgof(fit_beta, print_summary = FALSE)
+#' # Information criteria comparison for model selection
+#' ic_comparison <- data.frame(
+#'   family = c("kw", "bkw", "ekw", "gkw", "beta"),
+#'   n_params = c(
+#'     length(gof_kw$coefficients),
+#'     length(gof_bkw$coefficients),
+#'     length(gof_ekw$coefficients),
+#'     length(gof_gkw$coefficients),
+#'     length(gof_beta$coefficients)
+#'   ),
+#'   logLik = c(
+#'     gof_kw$likelihood$loglik,
+#'     gof_bkw$likelihood$loglik,
+#'     gof_ekw$likelihood$loglik,
+#'     gof_gkw$likelihood$loglik,
+#'     gof_beta$likelihood$loglik
+#'   ),
+#'   AIC = c(
+#'     gof_kw$information_criteria$AIC,
+#'     gof_bkw$information_criteria$AIC,
+#'     gof_ekw$information_criteria$AIC,
+#'     gof_gkw$information_criteria$AIC,
+#'     gof_beta$information_criteria$AIC
+#'   ),
+#'   BIC = c(
+#'     gof_kw$information_criteria$BIC,
+#'     gof_bkw$information_criteria$BIC,
+#'     gof_ekw$information_criteria$BIC,
+#'     gof_gkw$information_criteria$BIC,
+#'     gof_beta$information_criteria$BIC
+#'   ),
+#'   AICc = c(
+#'     gof_kw$information_criteria$AICc,
+#'     gof_bkw$information_criteria$AICc,
+#'     gof_ekw$information_criteria$AICc,
+#'     gof_gkw$information_criteria$AICc,
+#'     gof_beta$information_criteria$AICc
+#'   )
+#' )
+#' # Sort by AIC (lower is better)
+#' ic_comparison <- ic_comparison[order(ic_comparison$AIC), ]
+#' print(ic_comparison)
+#'
+#' # Example 3: Comparative visualization
+#' # Generate data from Beta distribution to demonstrate another case
+#' set.seed(2203)
+#' data_beta <- rbeta_(n = 1000, gamma = 2.5, delta = 1.5)
+#' # Fit different distributions
+#' fit_beta_true <- gkwfit(data_beta, family = "beta")
+#' fit_kw_misspec <- gkwfit(data_beta, family = "kw")
+#' fit_gkw_complex <- gkwfit(data_beta, family = "gkw")
+#' # Goodness-of-fit analysis
+#' gof_beta_true <- gkwgof(fit_beta_true, print_summary = FALSE, plot = FALSE)
+#' gof_kw_misspec <- gkwgof(fit_kw_misspec, print_summary = FALSE, plot = FALSE)
+#' gof_gkw_complex <- gkwgof(fit_gkw_complex, print_summary = FALSE, plot = FALSE)
+#' # Comparative goodness-of-fit plot
+#' plot.new()
+#' plotcompare(
+#'   list(
+#'     "Beta (correct)" = gof_beta_true,
+#'     "Kw (underspecified)" = gof_kw_misspec,
+#'     "GKw (overspecified)" = gof_gkw_complex
+#'   ),
+#'   title = "Comparison of fits for Beta data"
+#' )
+#'
+#' # Example 4: Real dataset
+#' # Load data from betareg package
+#' library(betareg)
+#' data("GasolineYield")
+#' y <- GasolineYield$yield
+#' # Fit various distributions to real data
+#' real_fit_beta <- gkwfit(y, family = "beta")
+#' real_fit_kw <- gkwfit(y, family = "kw")
+#' real_fit_bkw <- gkwfit(y, family = "bkw")
+#' real_fit_gkw <- gkwfit(y, family = "gkw")
+#' # Complete analysis for the best model (determined by AIC)
+#' gof_real <- gkwgof(real_fit_beta,
+#'   simulate_p_values = TRUE,
+#'   n_bootstrap = 500,
+#'   title = "Goodness-of-fit analysis for gasoline yield data"
+#' )
+#'
+#' # Example 5: Likelihood ratio tests for nested models
+#' # Testing if the GKw distribution is significantly better than BKw (lambda = 1)
+#' # Null hypothesis: lambda = 1 (BKw is adequate)
+#' # Alternative hypothesis: lambda != 1 (GKw is necessary)
+#' # Fitting nested models to data
+#' nested_data <- rgkw(n = 1000, alpha = 2.0, beta = 1.5, gamma = 3.0, delta = 2.0, lambda = 1.0)
+#' nested_fit_bkw <- gkwfit(nested_data, family = "bkw") # Restricted model (lambda = 1)
+#' nested_fit_gkw <- gkwfit(nested_data, family = "gkw") # Unrestricted model
+#'
+#' # Extracting log-likelihoods
+#' ll_bkw <- nested_fit_bkw$loglik
+#' ll_gkw <- nested_fit_gkw$loglik
+#' # Calculating likelihood ratio test statistic
+#' lr_stat <- 2 * (ll_gkw - ll_bkw)
+#' # Calculating p-value (chi-square with 1 degree of freedom)
+#' lr_pvalue <- 1 - pchisq(lr_stat, df = 1)
+#' # Displaying test results
+#' cat("Likelihood ratio test:\n")
+#' cat("Test statistic:", round(lr_stat, 4), "\n")
+#' cat("P-value:", format.pval(lr_pvalue), "\n")
+#' cat("Conclusion:", ifelse(lr_pvalue < 0.05,
+#'   "Reject H0 - GKw is necessary",
+#'   "Fail to reject H0 - BKw is adequate"
+#' ), "\n")
+#'
+#' # Example 6: Power simulation
+#' # Checking the power of goodness-of-fit tests in detecting misspecifications
+#' # Function to simulate power
+#' simulate_power <- function(n_sim = 1000, n_obs = 1000, alpha_level = 0.05) {
+#'   # Counters for rejections
+#'   ks_rejections <- 0
+#'   ad_rejections <- 0
+#'
+#'   for (i in 1:n_sim) {
+#'     # Simulating data from GKw, but fitting a Kw model (incorrect)
+#'     sim_data <- rgkw(
+#'       n = n_obs, alpha = 2.0, beta = 1.5,
+#'       gamma = 3.0, delta = 2.0, lambda = 1.5
 #'     )
-#'   )
-#'   # Sort by AIC (lower is better)
-#'   ic_comparison <- ic_comparison[order(ic_comparison$AIC), ]
-#'   print(ic_comparison)
 #'
-#'   # Example 3: Comparative visualization
-#'   # Generate data from Beta distribution to demonstrate another case
-#'   set.seed(2203)
-#'   data_beta <- rbeta_(n = 1000, gamma = 2.5, delta = 1.5)
-#'   # Fit different distributions
-#'   fit_beta_true <- gkwfit(data_beta, family = "beta")
-#'   fit_kw_misspec <- gkwfit(data_beta, family = "kw")
-#'   fit_gkw_complex <- gkwfit(data_beta, family = "gkw")
-#'   # Goodness-of-fit analysis
-#'   gof_beta_true <- gkwgof(fit_beta_true, print_summary = FALSE, plot = FALSE)
-#'   gof_kw_misspec <- gkwgof(fit_kw_misspec, print_summary = FALSE, plot = FALSE)
-#'   gof_gkw_complex <- gkwgof(fit_gkw_complex, print_summary = FALSE, plot = FALSE)
-#'   # Comparative goodness-of-fit plot
-#'   plot.new()
-#'   plotcompare(
-#'     list(
-#'       "Beta (correct)" = gof_beta_true,
-#'       "Kw (underspecified)" = gof_kw_misspec,
-#'       "GKw (overspecified)" = gof_gkw_complex
-#'     ),
-#'     title = "Comparison of fits for Beta data"
-#'   )
+#'     # Fitting incorrect model
+#'     sim_fit_kw <- gkwfit(sim_data, family = "kw")
 #'
-#'   # Example 4: Real dataset
-#'   # Load data from betareg package
-#'   library(betareg)
-#'   data("GasolineYield")
-#'   y <- GasolineYield$yield
-#'   # Fit various distributions to real data
-#'   real_fit_beta <- gkwfit(y, family = "beta")
-#'   real_fit_kw <- gkwfit(y, family = "kw")
-#'   real_fit_bkw <- gkwfit(y, family = "bkw")
-#'   real_fit_gkw <- gkwfit(y, family = "gkw")
-#'   # Complete analysis for the best model (determined by AIC)
-#'   gof_real <- gkwgof(real_fit_beta,
-#'                      simulate_p_values = TRUE,
-#'                      n_bootstrap = 500,
-#'                      title = "Goodness-of-fit analysis for gasoline yield data")
+#'     # Calculating test statistics
+#'     sim_gof <- gkwgof(sim_fit_kw,
+#'       simulate_p_values = TRUE,
+#'       n_bootstrap = 200, print_summary = FALSE, plot = FALSE
+#'     )
 #'
-#'   # Example 5: Likelihood ratio tests for nested models
-#'   # Testing if the GKw distribution is significantly better than BKw (lambda = 1)
-#'   # Null hypothesis: lambda = 1 (BKw is adequate)
-#'   # Alternative hypothesis: lambda != 1 (GKw is necessary)
-#'   # Fitting nested models to data
-#'   nested_data <- rgkw(n = 1000, alpha = 2.0, beta = 1.5, gamma = 3.0, delta = 2.0, lambda = 1.0)
-#'   nested_fit_bkw <- gkwfit(nested_data, family = "bkw")  # Restricted model (lambda = 1)
-#'   nested_fit_gkw <- gkwfit(nested_data, family = "gkw")  # Unrestricted model
-#'
-#'   # Extracting log-likelihoods
-#'   ll_bkw <- nested_fit_bkw$loglik
-#'   ll_gkw <- nested_fit_gkw$loglik
-#'   # Calculating likelihood ratio test statistic
-#'   lr_stat <- 2 * (ll_gkw - ll_bkw)
-#'   # Calculating p-value (chi-square with 1 degree of freedom)
-#'   lr_pvalue <- 1 - pchisq(lr_stat, df = 1)
-#'   # Displaying test results
-#'   cat("Likelihood ratio test:\n")
-#'   cat("Test statistic:", round(lr_stat, 4), "\n")
-#'   cat("P-value:", format.pval(lr_pvalue), "\n")
-#'   cat("Conclusion:", ifelse(lr_pvalue < 0.05,
-#'                             "Reject H0 - GKw is necessary",
-#'                             "Fail to reject H0 - BKw is adequate"), "\n")
-#'
-#'   # Example 6: Power simulation
-#'   # Checking the power of goodness-of-fit tests in detecting misspecifications
-#'   # Function to simulate power
-#'   simulate_power <- function(n_sim = 1000, n_obs = 1000, alpha_level = 0.05) {
-#'     # Counters for rejections
-#'     ks_rejections <- 0
-#'     ad_rejections <- 0
-#'
-#'     for (i in 1:n_sim) {
-#'       # Simulating data from GKw, but fitting a Kw model (incorrect)
-#'       sim_data <- rgkw(n = n_obs, alpha = 2.0, beta = 1.5,
-#'                        gamma = 3.0, delta = 2.0, lambda = 1.5)
-#'
-#'       # Fitting incorrect model
-#'       sim_fit_kw <- gkwfit(sim_data, family = "kw")
-#'
-#'       # Calculating test statistics
-#'       sim_gof <- gkwgof(sim_fit_kw, simulate_p_values = TRUE,
-#'                         n_bootstrap = 200, print_summary = FALSE, plot = FALSE)
-#'
-#'       # Checking rejections in tests
-#'       if (sim_gof$p_values$ks < alpha_level) ks_rejections <- ks_rejections + 1
-#'       if (sim_gof$p_values$ad < alpha_level) ad_rejections <- ad_rejections + 1
-#'     }
-#'
-#'     # Calculating power
-#'     power_ks <- ks_rejections / n_sim
-#'     power_ad <- ad_rejections / n_sim
-#'
-#'     return(list(
-#'       power_ks = power_ks,
-#'       power_ad = power_ad
-#'     ))
+#'     # Checking rejections in tests
+#'     if (sim_gof$p_values$ks < alpha_level) ks_rejections <- ks_rejections + 1
+#'     if (sim_gof$p_values$ad < alpha_level) ad_rejections <- ad_rejections + 1
 #'   }
 #'
-#'   # Run power simulation with reduced number of repetitions for example
-#'   power_results <- simulate_power(n_sim = 100)
-#'   cat("Estimated power (KS):", round(power_results$power_ks, 2), "\n")
-#'   cat("Estimated power (AD):", round(power_results$power_ad, 2), "\n")
+#'   # Calculating power
+#'   power_ks <- ks_rejections / n_sim
+#'   power_ad <- ad_rejections / n_sim
+#'
+#'   return(list(
+#'     power_ks = power_ks,
+#'     power_ad = power_ad
+#'   ))
+#' }
+#'
+#' # Run power simulation with reduced number of repetitions for example
+#' power_results <- simulate_power(n_sim = 100)
+#' cat("Estimated power (KS):", round(power_results$power_ks, 2), "\n")
+#' cat("Estimated power (AD):", round(power_results$power_ad, 2), "\n")
 #' }
 #'
 #' @seealso \code{\link{gkwfit}}, \code{\link{summary.gkwfit}}, \code{\link{print.gkwgof}},

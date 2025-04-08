@@ -688,7 +688,6 @@ User-facing S3 methods: \code{\link{summary.gkwfit}}, \code{\link{print.gkwfit}}
 Lopes, J. E.
 }
 \keyword{distribution}
-\keyword{hplot}
 \keyword{mle}
 \keyword{models}
 \keyword{optimization}

@@ -21,17 +21,19 @@ devtools::load_all(recompile = TRUE, quiet = FALSE)
 Rcpp::compileAttributes()
 roxygen2::roxygenize()
 devtools::document()
+# Verifique como o CRAN faria
+rcmdcheck::rcmdcheck(args = c("--as-cran"))
 
-devtools::check(cran = TRUE)
-
-usethis::use_version(which = "dev")
+# devtools::check(cran = TRUE)
+# usethis::use_version(which = "dev")
 devtools::test()
-devtools::install(force = TRUE)
 
 ## -------------------------------------------------------------------------- ##
 devtools::build()
 devtools::build_readme()
 devtools::build_manual()
+
+devtools::install(force = TRUE)
 
 
 # devtools::build_vignettes()

@@ -17,3 +17,6 @@ Invisibly returns the input object
 \description{
 Print method for gkwfitall objects
 }
+\author{
+Lopes, J. E.
+}

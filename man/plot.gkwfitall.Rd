@@ -22,3 +22,6 @@ Invisibly returns the input object
 \description{
 Plot method for gkwfitall objects
 }
+\author{
+Lopes, J. E.
+}
