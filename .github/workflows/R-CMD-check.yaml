@@ -27,6 +27,7 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
 
     steps:
+      # [Your existing R-CMD-check job steps remain unchanged]
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r@v2
@@ -35,7 +36,7 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      # Configuração específica para Windows - adiciona Rtools
+      # Windows-specific configuration
       - uses: r-lib/actions/setup-r-dependencies@v2
         if: matrix.config.os == 'windows-latest'
         with:
@@ -43,13 +44,10 @@ jobs:
           needs: check
           windows-path-include-mingw: true
 
-      # Instalação de dependências do sistema para Windows
       - name: Install system dependencies (Windows)
         if: matrix.config.os == 'windows-latest'
         run: |
-          # Tentar pacotes específicos do MinGW que estão disponíveis via Chocolatey
           choco install --no-progress mingw-w64 -y || echo "MinGW installation attempted"
-          # Verificar se temos acesso ao compilador
           g++ --version || echo "G++ not found in PATH"
 
       - name: Install pak
@@ -98,14 +96,13 @@ jobs:
       TZ: UTC
     
     steps:
-      - name: Install system dependencies
+      - name: Install essential system dependencies
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
             ca-certificates \
             dirmngr \
             gnupg \
-            software-properties-common \
             wget \
             git \
             build-essential \
@@ -117,9 +114,8 @@ jobs:
             gfortran \
             qpdf \
             ghostscript \
-            pandoc \
-            pandoc-citeproc
-      
+            pandoc
+
       - name: Setup R repositories
         run: |
           # Add CRAN repository
@@ -127,8 +123,10 @@ jobs:
           wget -q -O- https://cloud.r-project.org/bin/linux/debian/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_debian_key.asc
           
           if [ "${{ matrix.debian-version }}" = "stable" ]; then
+            # Current stable is Debian 11 (Bullseye)
             echo "deb https://cloud.r-project.org/bin/linux/debian bullseye-cran40/" >> /etc/apt/sources.list
           else
+            # Current testing is Debian 12 (Bookworm)
             echo "deb https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" >> /etc/apt/sources.list
           fi
           
@@ -136,11 +134,7 @@ jobs:
       
       - name: Install R
         run: |
-          if [ "${{ matrix.r-version }}" = "devel" ]; then
-            apt-get install -y r-base-dev
-          else
-            apt-get install -y r-base
-          fi
+          apt-get install -y r-base r-base-dev
       
       - uses: actions/checkout@v4
       
@@ -149,6 +143,18 @@ jobs:
           R -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
           R -e 'remotes::install_deps(dependencies = TRUE)'
           R -e 'install.packages("rcmdcheck", repos="https://cloud.r-project.org")'
+      
+      - name: Install additional system libraries for R packages
+        run: |
+          # Install system libraries that may be needed by your R package dependencies
+          apt-get install -y --no-install-recommends \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libfreetype6-dev \
+            libpng-dev \
+            libtiff5-dev \
+            libjpeg-dev \
+            || echo "Some optional libraries may not be available"
       
       - name: Check
         run: |
