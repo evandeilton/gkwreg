@@ -2,17 +2,17 @@
 % Please edit documentation in R/gkwfitall.R
 \name{get_quantile_function}
 \alias{get_quantile_function}
-\title{Get the appropriate quantile function for a fitted model}
+\title{Get the quantile function for a fitted GKw distribution model}
 \usage{
 get_quantile_function(fit)
 }
 \arguments{
-\item{fit}{A gkwfit object}
+\item{fit}{An object of class \code{"gkwfit"} from the gkwfit function}
 }
 \value{
-A function that calculates quantile values
+A function that computes quantiles for the fitted distribution
 }
 \description{
-Get the appropriate quantile function for a fitted model
+Get the quantile function for a fitted GKw distribution model
 }
 \keyword{internal}

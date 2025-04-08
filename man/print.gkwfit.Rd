@@ -24,23 +24,18 @@ number of observations, and a convergence warning if applicable.
 }
 \examples{
 \dontrun{
-# Assume 'rkw' function exists to generate Kumaraswamy data
-# Assume 'gkwfit' function exists to fit the model
+# Generate a small sample from Kumaraswamy distribution
+set.seed(2203)
+y <- rkw(50, alpha = 2.5, beta = 1.5)
 
-set.seed(123)
-kw_data_sample <- rkw(50, alpha = 2.5, beta = 1.5) # Small n for quick example
+# Fit the model with minimal options for speed
+fit <- gkwfit(data = y, family = "kw", plot = FALSE, silent = TRUE)
 
-# Fit the model (suppressing plots and messages for cleaner example)
-fit_object <- gkwfit(
-  data = kw_data_sample, family = "kw",
-  plot = FALSE, silent = TRUE, hessian = FALSE
-) # Turn off hessian for speed
+# Print method displays concise model summary
+print(fit)
 
-# Print the fitted object summary
-print(fit_object)
-
-# Alternatively, auto-printing works when the object is returned:
-fit_object
+# Alternative: object prints automatically when returned
+fit
 }
 
 }

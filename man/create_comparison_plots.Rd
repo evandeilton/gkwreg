@@ -2,19 +2,21 @@
 % Please edit documentation in R/gkwfitall.R
 \name{create_comparison_plots}
 \alias{create_comparison_plots}
-\title{Create comparison plots of all fitted distributions}
+\title{Create enhanced comparison plots of all fitted distributions}
 \usage{
-create_comparison_plots(fits, data)
+create_comparison_plots(fits, data, theme_fn = ggplot2::theme_minimal)
 }
 \arguments{
 \item{fits}{List of fitted gkwfit models}
 
 \item{data}{Original data vector}
+
+\item{theme_fn}{Function to apply a custom theme to plots}
 }
 \value{
 A ggplot2 object with multiple panels
 }
 \description{
-Create comparison plots of all fitted distributions
+Create enhanced comparison plots of all fitted distributions
 }
 \keyword{internal}

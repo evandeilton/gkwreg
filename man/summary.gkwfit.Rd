@@ -60,42 +60,16 @@ handled by \code{\link{print.summary.gkwfit}}.
 }
 \examples{
 \dontrun{
-# Assume 'rkw' and 'gkwfit' functions from your package exist
+# Generate data and fit model
+set.seed(2203)
+y <- rkw(50, alpha = 2, beta = 3)
+fit <- gkwfit(data = y, family = "kw", plot = FALSE)
 
-set.seed(123)
-# Generate sample data (use rkw if available, otherwise placeholder)
-# kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
-kw_data_sample <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
-kw_data_sample <- 1 - (1 - kw_data_sample)^(1 / 2.5) # Placeholder
-kw_data_sample <- pmax(1e-6, pmin(1 - 1e-6, kw_data_sample)) # Ensure (0,1)
+# Display detailed summary with parameter estimates and standard errors
+summary(fit)
 
-# Fit the model, ensuring hessian=TRUE (default) for SEs
-fit_object <- gkwfit(
-  data = kw_data_sample, family = "kw",
-  plot = FALSE, silent = TRUE
-)
-
-# Check if fit converged and has coefficients/vcov
-if (fit_object$convergence == 0 && !is.null(fit_object$coefficients)) {
-  # Calculate the summary object
-  summary_info <- summary(fit_object)
-
-  # Print the summary (uses print.summary.gkwfit)
-  print(summary_info)
-
-  # Calculate summary including correlation matrix
-  summary_info_corr <- summary(fit_object, correlation = TRUE)
-  print(summary_info_corr)
-
-  # Access specific parts of the summary object
-  print(summary_info$coefficients)
-  print(summary_info$loglik)
-  print(summary_info$convergence)
-  print(summary_info$message)
-} else {
-  print("Fit did not converge or is missing essential components.")
-  print(fit_object) # Print the raw object for debugging
-}
+# Control digits in output
+summary(fit, digits = 4)
 }
 
 }

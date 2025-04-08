@@ -2,19 +2,29 @@
 % Please edit documentation in R/gkwfitall.R
 \name{gkwfitall}
 \alias{gkwfitall}
-\title{Fit All Generalized Kumaraswamy Family Distributions and Compare Them}
+\title{Fit All or Selected Generalized Kumaraswamy Family Distributions and Compare Them}
 \usage{
 gkwfitall(
   data,
+  family = NULL,
   method = "nlminb",
   use_moments = FALSE,
   profile = TRUE,
   npoints = 20,
-  plot = TRUE
+  plot = TRUE,
+  optimizer.control = list(),
+  gof_tests = c("ks", "ad", "cvm"),
+  theme_fn = ggplot2::theme_minimal,
+  export_report = FALSE,
+  report_file = "gkw_comparison_report.html"
 )
 }
 \arguments{
 \item{data}{A numeric vector with values strictly between 0 and 1.}
+
+\item{family}{A character vector specifying which families to fit. Options are
+"gkw", "bkw", "kkw", "ekw", "mc", "kw", and "beta". If \code{NULL} (default),
+all seven distributions will be fitted.}
 
 \item{method}{Optimization method to use. One of: \code{"nlminb"} (default), \code{"Nelder-Mead"},
 \code{"BFGS"}, \code{"CG"}, \code{"L-BFGS-B"} or \code{"SANN"}.}
@@ -27,18 +37,33 @@ as initial values. Default: \code{FALSE}.}
 \item{npoints}{Integer; number of points to use in profile likelihood calculations. Default: 20.}
 
 \item{plot}{Logical; if \code{TRUE}, generates comparison plots. Default: \code{TRUE}.}
+
+\item{optimizer.control}{List of control parameters passed to the chosen optimizer. Default: \code{list()}.}
+
+\item{gof_tests}{Character vector specifying which goodness-of-fit tests to perform.
+Options are "ks" (Kolmogorov-Smirnov), "ad" (Anderson-Darling), and "cvm" (Cramer-von Mises).
+Default: c("ks", "ad", "cvm").}
+
+\item{theme_fn}{Function to apply a custom theme to plots. Default: \code{ggplot2::theme_minimal}.}
+
+\item{export_report}{Logical; if \code{TRUE}, generates an R Markdown report summarizing results.
+Default: \code{FALSE}.}
+
+\item{report_file}{Character; file path for the R Markdown report if \code{export_report = TRUE}.
+Default: "gkw_comparison_report.html".}
 }
 \value{
 A list containing:
-\item{fits}{A list of \code{gkwfit} objects for all seven distribution families.}
+\item{fits}{A list of \code{gkwfit} objects for all fitted distribution families.}
 \item{comparison}{A data frame with comparison statistics (AIC, BIC, log-likelihood, etc.) for all models.}
 \item{plots}{A ggplot2 object with diagnostic plots for all models if \code{plot = TRUE}.}
+\item{metrics}{A list with additional comparative metrics including RMSE and MAE.}
 }
 \description{
-Fits all seven distributions from the Generalized Kumaraswamy (GKw) family to data
-using maximum likelihood estimation through Template Model Builder (TMB).
-It provides a comprehensive comparison of fit quality across all families
-through statistics and visualization.
+Fits all seven or a user-specified subset of distributions from the Generalized
+Kumaraswamy (GKw) family to data using maximum likelihood estimation through
+Template Model Builder (TMB). It provides a comprehensive comparison of fit quality
+across the selected families through statistics and visualization.
 }
 \details{
 This function fits all seven distributions in the GKw family:
@@ -71,9 +96,14 @@ results$comparison
 # View comparison plots
 print(results$plots)
 
-# Examine the best-fitting model
-best_model <- results$fits[[which.min(results$comparison$AIC)]]
-summary(best_model)
+# Fit only selected distributions
+results_subset <- gkwfitall(sample_data, family = c("kw", "beta", "gkw"))
+
+# Generate a comprehensive report
+results_report <- gkwfitall(sample_data,
+  export_report = TRUE,
+  report_file = "my_gkw_analysis.html"
+)
 }
 
 }

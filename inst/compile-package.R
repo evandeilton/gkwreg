@@ -1,4 +1,4 @@
-# usethis::use_package("numDeriv")
+# usethis::use_package("reshape2")
 # usethis::use_mit_license()
 # usethis::use_git()
 # usethis::use_rcpp()
@@ -21,17 +21,18 @@ devtools::load_all(recompile = TRUE, quiet = FALSE)
 Rcpp::compileAttributes()
 roxygen2::roxygenize()
 devtools::document()
+
 devtools::check(cran = TRUE)
 
-# usethis::use_version()
-devtools::install(force = TRUE)
+usethis::use_version(which = "dev")
 devtools::test()
-
+devtools::install(force = TRUE)
 
 ## -------------------------------------------------------------------------- ##
 devtools::build()
 devtools::build_readme()
 devtools::build_manual()
+
 
 # devtools::build_vignettes()
 
@@ -53,7 +54,7 @@ devtools::build_manual()
 rcmdcheck::rcmdcheck(args = c("--as-cran"))
 
 # Verifique erros de ortografia
-spelling::spell_check_package()
+# spelling::spell_check_package()
 
 
 

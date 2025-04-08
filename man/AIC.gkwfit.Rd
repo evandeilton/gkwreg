@@ -45,13 +45,13 @@ data frame to facilitate this comparison when multiple objects are provided.
 \dontrun{
 # Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
 
-set.seed(123)
-sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
+set.seed(2203)
+y <- rkw(1000, alpha = 2.5, beta = 1.5)
 
 # Fit different models to the same data
-fit1_kw <- gkwfit(sample_data, family = "kw", silent = TRUE)
-fit2_bkw <- gkwfit(sample_data, family = "bkw", silent = TRUE) # Assuming bkw fits
-fit3_gkw <- gkwfit(sample_data, family = "gkw", silent = TRUE) # Assuming gkw fits
+fit1_kw <- gkwfit(y, family = "kw", silent = TRUE)
+fit2_bkw <- gkwfit(y, family = "bkw", silent = TRUE) # Assuming bkw fits
+fit3_gkw <- gkwfit(y, family = "gkw", silent = TRUE) # Assuming gkw fits
 
 # Calculate AIC for a single model
 aic1 <- AIC(fit1_kw)

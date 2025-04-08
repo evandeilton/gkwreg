@@ -37,29 +37,22 @@ No user interaction (like menu selection) is required.
 }
 \examples{
 \dontrun{
-# Assume 'rkw' and 'gkwfit' functions exist
+# Load required package
+library(ggplot2)
 
-set.seed(123)
-kw_data_sample <- rkw(150, alpha = 2.5, beta = 1.5)
+# Generate data and fit model
+set.seed(2203)
+y <- rbeta_(50, gamma = 2, delta = 3)
+fit <- gkwfit(data = y, family = "beta", plot = FALSE)
 
-# Fit the model (with plot=FALSE initially)
-fit_object_no_plots <- gkwfit(
-  data = kw_data_sample, family = "kw",
-  plot = FALSE, silent = TRUE
-)
+# Generate standard diagnostic plots
+plot(fit)
 
-# Generate plots using the plot method
-plot(fit_object_no_plots)
+# Generate data and fit model with profile = TRUE
+fit <- gkwfit(data = y, family = "gkw", profile = TRUE, npoints = 15)
 
-# Fit the model including profile likelihoods (with plot=TRUE)
-fit_object_profiles <- gkwfit(
-  data = kw_data_sample, family = "kw",
-  profile = TRUE, npoints = 10, # Fewer points for example speed
-  plot = TRUE, silent = TRUE
-)
-
-# Display the pre-generated plots using the plot method
-plot(fit_object_profiles)
+# Standard diagnostic plots
+plot(fit)
 }
 
 }

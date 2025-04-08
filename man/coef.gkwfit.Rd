@@ -22,20 +22,20 @@ Extracts the estimated coefficients for the parameters of a model fitted by
 }
 \examples{
 \dontrun{
-# Assume 'rkw' and 'gkwfit' functions exist
+# Generate data and fit model
+set.seed(2203)
+y <- rgkw(50, alpha = 1.5, beta = 2.5, gamma = 1.2, delta = 0.3, lambda = 1.1)
+fit <- gkwfit(data = y, family = "gkw", plot = FALSE)
 
-set.seed(123)
-kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+# Extract all coefficients
+params <- coef(fit)
+print(params)
 
-# Fit the model
-fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
-
-# Extract coefficients using the method
-coefficients_vector <- coef(fit_obj)
-print(coefficients_vector)
-
-# Can also use the generic function
-stats::coef(fit_obj)
+# Access specific parameters
+alpha_est <- coef(fit)["alpha"]
+lambda_est <- coef(fit)["lambda"]
+cat("Estimated alpha:", alpha_est, "\n")
+cat("Estimated lambda:", lambda_est, "\n")
 }
 
 }

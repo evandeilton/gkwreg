@@ -32,44 +32,28 @@ attributes (\code{object$df} for the number of estimated parameters and
 }
 \examples{
 \dontrun{
-# Assume 'rkw' and 'gkwfit' functions from your package exist
+# Generate data and fit two models
+set.seed(2203)
+y <- rgkw(50, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1.5)
 
-set.seed(123)
-# Generate sample data (use rkw if available, otherwise placeholder)
-# kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
-kw_data_sample <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
-kw_data_sample <- 1 - (1 - kw_data_sample)^(1 / 2.5) # Placeholder
-kw_data_sample <- pmax(1e-6, pmin(1 - 1e-6, kw_data_sample)) # Ensure (0,1)
+fit1 <- gkwfit(data = y, family = "kkw", plot = FALSE) # KKw model
+fit2 <- gkwfit(data = y, family = "ekw", plot = FALSE) # EKw model
 
-# Fit the model
-fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
+# Extract log-likelihood values
+ll1 <- logLik(fit1)
+ll2 <- logLik(fit2)
 
-# Check if fit converged and has necessary components
-if (fit_obj$convergence == 0 && !is.null(fit_obj$loglik)) {
-  # Extract the log-likelihood object
-  ll <- logLik(fit_obj)
+print(ll1)
+print(ll2)
 
-  # Print the value (uses print.logLik)
-  print(ll)
+# Use for likelihood ratio test
+lr_stat <- -2 * (as.numeric(ll1) - as.numeric(ll2))
+df_diff <- attr(ll1, "df") - attr(ll2, "df")
+p_value <- pchisq(lr_stat, df = abs(df_diff), lower.tail = FALSE)
 
-  # Show attributes
-  attributes(ll)
-
-  # Use with standard functions (requires the corresponding AIC/BIC methods
-  # for gkwfit OR relies on them calling this logLik method)
-  AIC(fit_obj) # Should work if AIC.gkwfit calls logLik(fit_obj)
-  BIC(fit_obj) # Should work if BIC.gkwfit calls logLik(fit_obj)
-
-  # Extract components directly
-  logLik_value <- as.numeric(ll)
-  degrees_freedom <- attr(ll, "df")
-  num_observations <- attr(ll, "nobs")
-  cat("LogLik:", logLik_value, "\n")
-  cat("df:", degrees_freedom, "\n")
-  cat("nobs:", num_observations, "\n")
-} else {
-  print("Fit did not converge or is missing log-likelihood.")
-}
+cat("LR statistic:", lr_stat, "\n")
+cat("df:", df_diff, "\n")
+cat("p-value:", p_value, "\n")
 }
 
 }

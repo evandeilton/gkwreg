@@ -54,36 +54,22 @@ estimation issues).
 }
 \examples{
 \dontrun{
-# Assume 'rkw' and 'gkwfit' functions exist
+# Generate data and fit model
+set.seed(2203)
+y <- rkw(50, alpha = 2, beta = 3)
+fit <- gkwfit(data = y, family = "kw", plot = FALSE, hessian = TRUE)
 
-set.seed(123)
-kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+# Calculate confidence intervals for all parameters
+ci <- confint(fit)
+print(ci)
 
-# Fit the model, ensuring hessian is computed (default TRUE)
-fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
-
-# Calculate default 95\% confidence intervals for all parameters
-ci_default <- confint(fit_obj)
-print(ci_default)
-
-# Calculate 90\% confidence intervals
-ci_90 <- confint(fit_obj, level = 0.90)
+# 90\% confidence interval
+ci_90 <- confint(fit, level = 0.90)
 print(ci_90)
 
-# Calculate interval for a specific parameter by name
-ci_alpha <- confint(fit_obj, parm = "alpha")
+# Confidence interval for specific parameter
+ci_alpha <- confint(fit, parm = "alpha")
 print(ci_alpha)
-
-# Calculate interval for specific parameters by index
-# (Indices refer to parameters with SEs, here alpha=1, beta=2)
-ci_indexed <- confint(fit_obj, parm = 1:2) # Should be same as default for Kw
-print(ci_indexed)
-
-# Fit a model with a fixed parameter (example for KKw)
-kkw_data_sample <- rkkw(100, alpha = 2, beta = 3, delta = 1.5, lambda = 0.8) # Assume rkkw
-fit_kkw_fixed <- gkwfit(kkw_data_sample, family = "kkw", fixed = list(lambda = 0.8))
-ci_kkw_fixed <- confint(fit_kkw_fixed) # Should only show CIs for alpha, beta, delta
-print(ci_kkw_fixed)
 }
 
 }

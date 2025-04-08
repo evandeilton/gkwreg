@@ -41,21 +41,21 @@
   if (family != "gkw") {
     # Set fixed parameters based on family
     if (family == "bkw") {
-      family_fixed$lambda <- 1 # BKw: λ = 1 fixed
+      family_fixed$lambda <- 1 # BKw: lambda = 1 fixed
     } else if (family == "kkw") {
-      family_fixed$gamma <- 1 # KKw: γ = 1 fixed
+      family_fixed$gamma <- 1 # KKw: gamma = 1 fixed
     } else if (family == "ekw") {
-      family_fixed$gamma <- 1 # EKw: γ = 1, δ = 0 fixed
+      family_fixed$gamma <- 1 # EKw: gamma = 1, delta = 0 fixed
       family_fixed$delta <- 0
     } else if (family == "mc") {
-      family_fixed$alpha <- 1 # Mc: α = 1, β = 1 fixed
+      family_fixed$alpha <- 1 # Mc: alpha = 1, beta = 1 fixed
       family_fixed$beta <- 1
     } else if (family == "kw") {
-      family_fixed$gamma <- 1 # Kw: γ = 1, δ = 0, λ = 1 fixed
+      family_fixed$gamma <- 1 # Kw: gamma = 1, delta = 0, lambda = 1 fixed
       family_fixed$delta <- 0
       family_fixed$lambda <- 1
     } else if (family == "beta") {
-      family_fixed$alpha <- 1 # Beta: α = 1, β = 1, λ = 1 fixed
+      family_fixed$alpha <- 1 # Beta: alpha = 1, beta = 1, lambda = 1 fixed
       family_fixed$beta <- 1
       family_fixed$lambda <- 1
     }
@@ -73,17 +73,17 @@
   if (family == "gkw") {
     start <- list(alpha = 2, beta = 2, gamma = 1, delta = 0.5, lambda = 2)
   } else if (family == "bkw") {
-    start <- list(alpha = 2, beta = 2, gamma = 1, delta = 0.5) # λ = 1 fixed
+    start <- list(alpha = 2, beta = 2, gamma = 1, delta = 0.5) # lambda = 1 fixed
   } else if (family == "kkw") {
-    start <- list(alpha = 2, beta = 2, delta = 0.5, lambda = 2) # γ = 1 fixed
+    start <- list(alpha = 2, beta = 2, delta = 0.5, lambda = 2) # gamma = 1 fixed
   } else if (family == "ekw") {
-    start <- list(alpha = 2, beta = 2, lambda = 2) # γ = 1, δ = 0 fixed
+    start <- list(alpha = 2, beta = 2, lambda = 2) # gamma = 1, delta = 0 fixed
   } else if (family == "mc") {
-    start <- list(gamma = 1, delta = 0.5, lambda = 2) # α = 1, β = 1 fixed
+    start <- list(gamma = 1, delta = 0.5, lambda = 2) # alpha = 1, beta = 1 fixed
   } else if (family == "kw") {
-    start <- list(alpha = 2, beta = 2) # γ = 1, δ = 0, λ = 1 fixed
+    start <- list(alpha = 2, beta = 2) # gamma = 1, delta = 0, lambda = 1 fixed
   } else if (family == "beta") {
-    start <- list(gamma = 1, delta = 0.5) # α = 1, β = 1, λ = 1 fixed
+    start <- list(gamma = 1, delta = 0.5) # alpha = 1, beta = 1, lambda = 1 fixed
   }
 
   return(start)
@@ -336,16 +336,16 @@
       # User or family provided fixed value
       full_start_tmb[[param_name]] <- log(fixed[[param]])
     } else if (param == "alpha" || param == "beta") {
-      # Default α, β = 1 when not specified
+      # Default alpha, beta = 1 when not specified
       full_start_tmb[[param_name]] <- log(1)
     } else if (param == "gamma") {
-      # Default γ = 1 when not specified
+      # Default gamma = 1 when not specified
       full_start_tmb[[param_name]] <- log(1)
     } else if (param == "delta") {
-      # Default δ = 0 when not specified (use small value to avoid log(0))
+      # Default delta = 0 when not specified (use small value to avoid log(0))
       full_start_tmb[[param_name]] <- log(0.0001)
     } else if (param == "lambda") {
-      # Default λ = 1 when not specified
+      # Default lambda = 1 when not specified
       full_start_tmb[[param_name]] <- log(1)
     }
 
@@ -1418,68 +1418,545 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Ensure the package and dependencies (like TMB, ggplot2) are loaded
-#' # library(TMB) # Required for all fitting methods
-#' # library(ggplot2) # Needed for plot = TRUE
-#' # library(patchwork) # Needed for plot = TRUE
+#' # Load required packages
+#' library(ggplot2)
+#' library(patchwork)
+#' library(betareg)
 #'
-#' ## Example 1: Fit Kumaraswamy using different optimization methods
-#' set.seed(123)
-#' n <- 200
-#' # Assuming rkw is available
-#' kw_data <- rkw(n, alpha = 2.5, beta = 1.5)
+#' # ============================================================================
+#' # EXAMPLE 1: Basic Usage with Simulated Data for Different Distributions
+#' # ============================================================================
+#' # Set seed for reproducibility
+#' set.seed(2203)
+#' n <- 1000
 #'
-#' # Fit using default nlminb
-#' fit_nlminb <- gkwfit(data = kw_data, family = "kw", method = "nlminb", silent = TRUE)
+#' # Generate random samples from various distributions in the GKw family
+#' y_gkw <- rgkw(n, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5, lambda = 1.2)
+#' y_bkw <- rbkw(n, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5) # BKw has lambda fixed at 1
+#' y_kw <- rkw(n, alpha = 2, beta = 3) # Standard Kumaraswamy (gamma=1, delta=0, lambda=1)
+#' y_beta <- rbeta_(n, gamma = 2, delta = 3) # Beta with shape1=2, shape2=3
 #'
-#' # Fit using Nelder-Mead
-#' fit_nm <- gkwfit(data = kw_data, family = "kw", method = "Nelder-Mead", silent = TRUE)
+#' # Calculate densities for the first 5 observations
+#' head(dgkw(y_gkw[1:5], alpha = 2, beta = 3, gamma = 1.5, delta = 0.5, lambda = 1.2))
 #'
-#' # Fit using BFGS
-#' fit_bfgs <- gkwfit(data = kw_data, family = "kw", method = "BFGS", silent = TRUE)
+#' # Compare with beta density (note different parameterization)
+#' head(dbeta_(y_beta[1:5], gamma = 2, delta = 3))
 #'
-#' # Compare coefficients
-#' coef_compare <- data.frame(
-#'   NLMINB = coef(fit_nlminb),
-#'   NM = coef(fit_nm),
-#'   BFGS = coef(fit_bfgs)
+#' # Compute log-likelihood using parameter vector format
+#' # Parameter order: alpha, beta, gamma, delta, lambda
+#' par_gkw <- c(2, 3, 1.5, 0.5, 1.2)
+#' ll_gkw <- llgkw(par_gkw, y_gkw)
+#'
+#' par_kw <- c(2, 3) # Kumaraswamy parameters
+#' ll_kw <- llkw(par_kw, y_kw)
+#'
+#' cat("Log-likelihood GKw:", ll_gkw, "\nLog-likelihood Kw:", ll_kw, "\n")
+#'
+#' # ============================================================================
+#' # EXAMPLE 2: Visualization and Distribution Comparisons
+#' # ============================================================================
+#' # Generate data for plotting
+#' x_vals <- seq(0.001, 0.999, length.out = 500)
+#'
+#' # Calculate densities for different distributions
+#' dens_gkw <- dgkw(x_vals, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5, lambda = 1.2)
+#' dens_bkw <- dbkw(x_vals, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5)
+#' dens_kw <- dkw(x_vals, alpha = 2, beta = 3)
+#' dens_beta <- dbeta_(x_vals, gamma = 2, delta = 3)
+#'
+#' # Create and display plot
+#' df <- data.frame(
+#'   x = rep(x_vals, 4),
+#'   density = c(dens_gkw, dens_bkw, dens_kw, dens_beta),
+#'   Distribution = rep(c("GKw", "BKw", "Kw", "Beta"), each = length(x_vals))
 #' )
-#' print(round(coef_compare, 3))
 #'
-#' ## Example 2: Fit GKw with fixed delta and custom nlminb control
-#' set.seed(456)
-#' # Assuming rgkw is available
-#' gkw_data <- rgkw(n, alpha = 2, beta = 3, gamma = 1.5, delta = 0, lambda = 1.2) # True delta = 0
+#' p <- ggplot(df, aes(x = x, y = density, color = Distribution)) +
+#'   geom_line(linewidth = 1) +
+#'   theme_minimal() +
+#'   labs(
+#'     title = "Density Comparison of GKw Distribution Family",
+#'     x = "x", y = "Density"
+#'   )
 #'
-#' # Fit fixing delta=0, increase iterations for nlminb
-#' fit_gkw_fix <- gkwfit(
-#'   data = gkw_data, family = "gkw",
-#'   fixed = list(delta = 0), # Fix delta
-#'   method = "nlminb",
-#'   optimizer.control = list(iter.max = 500, trace = 1)
+#' print(p)
+#'
+#' # Examine quantile functions
+#' # Calculate 0.25, 0.5, and 0.75 quantiles for each distribution
+#' probs <- c(0.25, 0.5, 0.75)
+#' qgkw_values <- qgkw(probs, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5, lambda = 1.2)
+#' qkw_values <- qkw(probs, alpha = 2, beta = 3)
+#' qbeta_values <- qbeta_(probs, gamma = 2, delta = 3)
+#'
+#' # Display the quantiles
+#' quantile_df <- data.frame(
+#'   Probability = probs,
+#'   GKw = qgkw_values,
+#'   Kw = qkw_values,
+#'   Beta = qbeta_values
+#' )
+#' print(quantile_df)
+#'
+#' # ============================================================================
+#' # EXAMPLE 3: Model Fitting with Simulated Data
+#' # ============================================================================
+#' # Simulate data from GKw
+#' set.seed(2203)
+#' true_params <- list(alpha = 2.5, beta = 1.8, gamma = 1.3, delta = 0.4, lambda = 1.5)
+#' y <- rgkw(n,
+#'   alpha = true_params$alpha,
+#'   beta = true_params$beta,
+#'   gamma = true_params$gamma,
+#'   delta = true_params$delta,
+#'   lambda = true_params$lambda
 #' )
 #'
-#' summary(fit_gkw_fix)
+#' # Fit full GKw model
+#' fit_gkw <- gkwfit(data = y, family = "gkw")
+#' summary(fit_gkw)
 #'
-#' ## Example 3: Fit Beta using L-BFGS-B and check profile likelihoods
-#' set.seed(404)
-#' beta_data <- stats::rbeta(n, shape1 = 2.0, shape2 = 3.0)
+#' # Fit restricted models for comparison
+#' fit_bkw <- gkwfit(data = y, family = "bkw")
+#' fit_kkw <- gkwfit(data = y, family = "kkw")
+#' fit_kw <- gkwfit(data = y, family = "kw")
 #'
-#' fit_beta <- gkwfit(
-#'   data = beta_data, family = "beta",
-#'   method = "L-BFGS-B",
-#'   hessian = TRUE,
-#'   profile = TRUE
+#' # Compare models using AIC
+#' models <- c("GKw", "BKw", "KKw", "Kw")
+#' AIC_values <- c(fit_gkw$AIC, fit_bkw$AIC, fit_kkw$AIC, fit_kw$AIC)
+#' model_comparison <- data.frame(Model = models, AIC = AIC_values)
+#' model_comparison <- model_comparison[order(model_comparison$AIC), ]
+#' print(model_comparison)
+#'
+#' # ============================================================================
+#' # EXAMPLE 4: Fixed Parameter Estimation and Likelihood Ratio Tests
+#' # ============================================================================
+#' # Simulate data where delta = 0
+#' set.seed(2203)
+#' true_params <- list(alpha = 1.8, beta = 2.2, gamma = 0.9, delta = 0, lambda = 1.2)
+#' y <- rgkw(n,
+#'   alpha = true_params$alpha,
+#'   beta = true_params$beta,
+#'   gamma = true_params$gamma,
+#'   delta = true_params$delta,
+#'   lambda = true_params$lambda
 #' )
 #'
-#' # Display summary with SEs
-#' summary(fit_beta)
+#' # Fit model with delta fixed at 0
+#' fit_fixed <- gkwfit(data = y, family = "gkw", method = "L-BFGS-B", fixed = list(delta = 0.5))
+#' summary(fit_fixed)
 #'
-#' # Check profile likelihood
-#' plot(fit_beta$profile)
+#' # Fit model without fixing delta (should estimate close to 0)
+#' fit_free <- gkwfit(data = y, family = "gkw")
+#' summary(fit_free)
 #'
-#' # End dontrun
+#' # Compare models via likelihood ratio test
+#' # H0: delta = 0 vs H1: delta != 0
+#' LR_stat <- -2 * (fit_fixed$loglik - fit_free$loglik)
+#' p_value <- 1 - pchisq(LR_stat, df = 1)
+#' cat("LR test statistic:", LR_stat, "\np-value:", p_value, "\n")
+#'
+#' # ============================================================================
+#' # EXAMPLE 5: Profile Likelihood Analysis
+#' # ============================================================================
+#' set.seed(2203)
+#' y <- rgkw(n, alpha = 2, beta = 3, gamma = 1.5, delta = 0, lambda = 1.2)
+#'
+#' # Fit with profile likelihood
+#' fit_profile <- gkwfit(
+#'   data = y,
+#'   family = "gkw",
+#'   profile = TRUE,
+#'   npoints = 15
+#' )
+#'
+#' # Examine profile objects
+#' str(fit_profile$profile)
+#' fit_profile$plots
+#'
+#' # ============================================================================
+#' # EXAMPLE 6: Real Data Application with Beta Regression Datasets
+#' # ============================================================================
+#' # Example 1: Reading Skills data
+#' data("ReadingSkills", package = "betareg")
+#' y <- ReadingSkills$accuracy
+#'
+#' # Summary statistics of the response variable
+#' summary(y)
+#'
+#' # Fit different distributions to this data
+#' fit_rs_beta <- gkwfit(data = y, family = "beta")
+#' fit_rs_kw <- gkwfit(data = y, family = "kw")
+#' fit_rs_gkw <- gkwfit(data = y, family = "gkw")
+#'
+#' # Model comparison
+#' rs_models <- c("Beta", "Kumaraswamy", "GKw")
+#' rs_AICs <- c(fit_rs_beta$AIC, fit_rs_kw$AIC, fit_rs_gkw$AIC)
+#' rs_BICs <- c(fit_rs_beta$BIC, fit_rs_kw$BIC, fit_rs_gkw$BIC)
+#' rs_comparison <- data.frame(
+#'   Model = rs_models,
+#'   AIC = rs_AICs,
+#'   BIC = rs_BICs,
+#'   Parameters = c(
+#'     length(coef(fit_rs_beta)),
+#'     length(coef(fit_rs_kw)),
+#'     length(coef(fit_rs_gkw))
+#'   )
+#' )
+#' print(rs_comparison[order(rs_comparison$AIC), ])
+#'
+#' # Example 2: Gasoline Yield data
+#' data("GasolineYield", package = "betareg")
+#' y <- GasolineYield$yield
+#'
+#' # Check range and make adjustments if needed (data must be in (0,1))
+#' if (min(y) <= 0 || max(y) >= 1) {
+#'   # Apply common transformation for proportions that include 0 or 1
+#'   n_obs <- length(y)
+#'   y <- (y * (n_obs - 1) + 0.5) / n_obs
 #' }
+#'
+#' # Fit best model based on previous comparison
+#' best_family <- rs_comparison$Model[1]
+#' fit_gas <- gkwfit(data = y, family = tolower(best_family))
+#' summary(fit_gas)
+#'
+#' # Plot fitted density over histogram of data
+#' # Get parameters from fitted model
+#' params <- coef(fit_gas)
+#'
+#' # Generate x values and calculate density
+#' x_seq <- seq(min(y), max(y), length.out = 100)
+#' fitted_density <- switch(tolower(best_family),
+#'   "beta" = dbeta_(x_seq, gamma = params["gamma"], delta = params["delta"]),
+#'   "kumaraswamy" = dkw(x_seq, alpha = params["alpha"], beta = params["beta"]),
+#'   "gkw" = dgkw(x_seq,
+#'     alpha = params["alpha"], beta = params["beta"],
+#'     gamma = params["gamma"], delta = params["delta"],
+#'     lambda = params["lambda"]
+#'   )
+#' )
+#'
+#' # Create data frame for plotting
+#' df_plot <- data.frame(x = x_seq, density = fitted_density)
+#'
+#' # Create plot
+#' p <- ggplot() +
+#'   geom_histogram(
+#'     data = data.frame(y = y), aes(x = y, y = after_stat(density)),
+#'     bins = 30, fill = "lightblue", color = "black", alpha = 0.7
+#'   ) +
+#'   geom_line(data = df_plot, aes(x = x, y = density), color = "red", size = 1) +
+#'   labs(
+#'     title = paste("Fitted", best_family, "Distribution to Gasoline Yield Data"),
+#'     x = "Yield",
+#'     y = "Density"
+#'   ) +
+#'   theme_minimal()
+#'
+#' print(p)
+#'
+#' # ============================================================================
+#' # EXAMPLE 7: Beta Distribution Variants and Special Functions
+#' # ============================================================================
+#' # Generate samples from beta distribution
+#' set.seed(2203)
+#' y_beta <- rbeta_(n, gamma = 2, delta = 3)
+#'
+#' # Calculate density and log-likelihood
+#' beta_dens <- dbeta_(y_beta[1:5], gamma = 2, delta = 3)
+#'
+#' # Using parameter vector format for log-likelihood (gamma, delta)
+#' par_beta <- c(2, 3)
+#' beta_ll <- llbeta(par_beta, y_beta)
+#' cat("Beta density (first 5):", beta_dens, "\n")
+#' cat("Beta log-likelihood:", beta_ll, "\n")
+#'
+#' # Gradient of log-likelihood with respect to parameters
+#' beta_grad <- grbeta(par_beta, y_beta)
+#' cat("Gradient of Beta log-likelihood:\n")
+#' print(beta_grad)
+#'
+#' # Hessian of log-likelihood with respect to parameters
+#' beta_hess <- hsbeta(par_beta, y_beta)
+#' cat("Hessian of Beta log-likelihood:\n")
+#' print(beta_hess)
+#'
+#' # ============================================================================
+#' # EXAMPLE 8: Gradient and Hessian Functions for GKw Distribution
+#' # ============================================================================
+#' # Set seed and generate data
+#' set.seed(2203)
+#'
+#' # Define parameters
+#' alpha <- 2
+#' beta <- 1.5
+#' gamma <- 1.2
+#' delta <- 0.3
+#' lambda <- 1.1
+#' par_gkw <- c(alpha, beta, gamma, delta, lambda)
+#'
+#' # Generate random sample
+#' y <- rgkw(n, alpha, beta, gamma, delta, lambda)
+#'
+#' # Calculate log-likelihood of the sample using parameter vector format
+#' ll <- llgkw(par_gkw, y)
+#' cat("GKw log-likelihood:", ll, "\n")
+#'
+#' # Calculate gradient of log-likelihood
+#' gr <- grgkw(par_gkw, y)
+#' cat("GKw log-likelihood gradient:\n")
+#' print(gr)
+#'
+#' # Calculate Hessian matrix of log-likelihood
+#' hs <- hsgkw(par_gkw, y)
+#' cat("GKw log-likelihood Hessian:\n")
+#' print(hs)
+#'
+#' # ============================================================================
+#' # EXAMPLE 9: Optimization with Custom Gradient and Hessian
+#' # ============================================================================
+#' # Manual optimization demonstration
+#' set.seed(2203)
+#'
+#' # Generate data from a known distribution
+#' true_par <- c(alpha = 1.8, beta = 2.5, gamma = 1.3, delta = 0.2, lambda = 1.1)
+#' y <- rgkw(n,
+#'   alpha = true_par["alpha"],
+#'   beta = true_par["beta"],
+#'   gamma = true_par["gamma"],
+#'   delta = true_par["delta"],
+#'   lambda = true_par["lambda"]
+#' )
+#'
+#' # Define the negative log-likelihood function (for minimization)
+#' nll <- function(log_par) {
+#'   # Transform from log-scale to natural scale (ensures positivity)
+#'   par <- exp(log_par)
+#'
+#'   # Return negative log-likelihood
+#'   -llgkw(par, y)
+#' }
+#'
+#' # Define the gradient function using analytical gradient
+#' gr_func <- function(log_par) {
+#'   # Transform parameters
+#'   par <- exp(log_par)
+#'
+#'   # Get the gradient with respect to the original parameters
+#'   gradient <- grgkw(par, y)
+#'
+#'   # Apply chain rule for the log transformation
+#'   gradient <- gradient * par
+#'
+#'   # Return negative gradient for minimization
+#'   gradient
+#' }
+#'
+#' # Starting values (on log scale to ensure positivity)
+#' start_log_par <- log(c(1, 1, 1, 0.1, 1))
+#'
+#' # Optimize using L-BFGS-B method with analytic gradient
+#' opt_result <- optim(
+#'   par = start_log_par,
+#'   fn = nll,
+#'   gr = gr_func,
+#'   method = "BFGS",
+#'   control = list(trace = 1, maxit = 100)
+#' )
+#'
+#' # Transform parameters back to original scale
+#' estimated_par <- exp(opt_result$par)
+#' names(estimated_par) <- c("alpha", "beta", "gamma", "delta", "lambda")
+#'
+#' # Compare with true parameters
+#' params_comparison <- data.frame(
+#'   True = true_par,
+#'   Estimated = estimated_par,
+#'   Absolute_Error = abs(true_par - estimated_par),
+#'   Relative_Error = abs((true_par - estimated_par) / true_par)
+#' )
+#' print(params_comparison)
+#'
+#' # ============================================================================
+#' # EXAMPLE 10: Third Betareg Dataset (ImpreciseTask) and McDonald Distribution
+#' # ============================================================================
+#' data("ImpreciseTask", package = "betareg")
+#' y <- ImpreciseTask$location
+#'
+#' # Make sure data is within (0, 1)
+#' if (min(y) <= 0 || max(y) >= 1) {
+#'   # Apply common transformation for proportions
+#'   n_obs <- length(y)
+#'   y <- (y * (n_obs - 1) + 0.5) / n_obs
+#' }
+#'
+#' # Fit models from the GKw family
+#' fit_beta <- gkwfit(data = y, family = "beta")
+#' fit_kw <- gkwfit(data = y, family = "kw")
+#' fit_mc <- gkwfit(data = y, family = "mc") # McDonald distribution
+#'
+#' # Compare information criteria
+#' ic_comparison <- data.frame(
+#'   Model = c("Beta", "Kumaraswamy", "McDonald"),
+#'   AIC = c(fit_beta$AIC, fit_kw$AIC, fit_mc$AIC),
+#'   BIC = c(fit_beta$BIC, fit_kw$BIC, fit_mc$BIC),
+#'   LogLik = c(fit_beta$loglik, fit_kw$loglik, fit_mc$loglik)
+#' )
+#' print(ic_comparison[order(ic_comparison$AIC), ])
+#'
+#' # Get best model
+#' best_model <- ic_comparison$Model[which.min(ic_comparison$AIC)]
+#' best_fit <- switch(tolower(best_model),
+#'   "beta" = fit_beta,
+#'   "kumaraswamy" = fit_kw,
+#'   "mcdonald" = fit_mc
+#' )
+#'
+#' # Goodness of fit tests
+#' print(paste("Best model:", best_model))
+#' print(best_fit$gof)
+#'
+#' # Generate values from fitted McDonald distribution (if it's the best model)
+#' if (best_model == "McDonald") {
+#'   # McDonald's parameters: gamma, delta, lambda (alpha=1, beta=1 fixed)
+#'   gamma_mc <- coef(fit_mc)["gamma"]
+#'   delta_mc <- coef(fit_mc)["delta"]
+#'   lambda_mc <- coef(fit_mc)["lambda"]
+#'
+#'   # Generate new sample using fitted parameters
+#'   set.seed(2203)
+#'   y_mc_simulated <- rmc(n, gamma = gamma_mc, delta = delta_mc, lambda = lambda_mc)
+#'
+#'   # Compare histograms of original and simulated data
+#'   df_orig <- data.frame(value = y, type = "Original")
+#'   df_sim <- data.frame(value = y_mc_simulated, type = "Simulated")
+#'   df_combined <- rbind(df_orig, df_sim)
+#'
+#'   # Create comparative histogram
+#'   p <- ggplot(df_combined, aes(x = value, fill = type)) +
+#'     geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+#'     labs(
+#'       title = "Comparison of Original Data and Simulated McDonald Distribution",
+#'       x = "Value",
+#'       y = "Count"
+#'     ) +
+#'     theme_minimal()
+#'
+#'   print(p)
+#' }
+#'
+#' # ============================================================================
+#' # EXAMPLE 11: Working with Alternative Distributions in the GKw Family
+#' # ============================================================================
+#' # Explore EKw - Exponential Kumaraswamy distribution (alpha, beta, lambda)
+#' set.seed(2203)
+#'
+#' # Generate EKw sample
+#' y_ekw <- rekw(n, alpha = 2.5, beta = 1.5, lambda = 2.0)
+#'
+#' # Calculate density and distribution function
+#' ekw_density <- dekw(y_ekw[1:5], alpha = 2.5, beta = 1.5, lambda = 2.0)
+#' ekw_cdf <- pekw(y_ekw[1:5], alpha = 2.5, beta = 1.5, lambda = 2.0)
+#'
+#' # Calculate log-likelihood
+#' par_ekw <- c(2.5, 1.5, 2.0) # alpha, beta, lambda for EKw
+#' ll_ekw <- llekw(par_ekw, y_ekw)
+#'
+#' cat("EKw density (first 5):", ekw_density, "\n")
+#' cat("EKw CDF (first 5):", ekw_cdf, "\n")
+#' cat("EKw log-likelihood:", ll_ekw, "\n")
+#'
+#' # Calculate gradient and Hessian
+#' gr_ekw <- grekw(par_ekw, y_ekw)
+#' hs_ekw <- hsekw(par_ekw, y_ekw)
+#'
+#' cat("EKw gradient:\n")
+#' print(gr_ekw)
+#'
+#' cat("EKw Hessian (first 2x2):\n")
+#' print(hs_ekw)
+#'
+#' # Fit EKw model to data
+#' fit_ekw <- gkwfit(data = y_ekw, family = "ekw")
+#' summary(fit_ekw)
+#'
+#' # Compare with true parameters
+#' cat("True parameters: alpha=2.5, beta=1.5, lambda=2.0\n")
+#' cat("Estimated parameters:\n")
+#' print(coef(fit_ekw))
+#'
+#' # ============================================================================
+#' # EXAMPLE 12: Comprehensive Parameter Recovery Simulation
+#' # ============================================================================
+#' # Function to simulate data and recover parameters
+#' simulate_and_recover <- function(family, true_params, n = 1000) {
+#'   set.seed(2203)
+#'
+#'   # Generate data based on family
+#'   y <- switch(family,
+#'     "gkw" = rgkw(n,
+#'       alpha = true_params[1], beta = true_params[2],
+#'       gamma = true_params[3], delta = true_params[4],
+#'       lambda = true_params[5]
+#'     ),
+#'     "bkw" = rbkw(n,
+#'       alpha = true_params[1], beta = true_params[2],
+#'       gamma = true_params[3], delta = true_params[4]
+#'     ),
+#'     "kw" = rkw(n, alpha = true_params[1], beta = true_params[2]),
+#'     "beta" = rbeta_(n, gamma = true_params[1], delta = true_params[2])
+#'   )
+#'
+#'   # Fit model
+#'   fit <- gkwfit(data = y, family = family, silent = TRUE)
+#'
+#'   # Return comparison
+#'   list(
+#'     family = family,
+#'     true = true_params,
+#'     estimated = coef(fit),
+#'     loglik = fit$loglik,
+#'     AIC = fit$AIC,
+#'     converged = fit$convergence
+#'   )
+#' }
+#'
+#' # Define true parameters for each family
+#' params_gkw <- c(alpha = 2.0, beta = 3.0, gamma = 1.5, delta = 0.5, lambda = 1.2)
+#' params_bkw <- c(alpha = 2.5, beta = 1.8, gamma = 1.2, delta = 0.3)
+#' params_kw <- c(alpha = 1.5, beta = 2.0)
+#' params_beta <- c(gamma = 2.0, delta = 3.0)
+#'
+#' # Run simulations
+#' result_gkw <- simulate_and_recover("gkw", params_gkw)
+#' result_bkw <- simulate_and_recover("bkw", params_bkw)
+#' result_kw <- simulate_and_recover("kw", params_kw)
+#' result_beta <- simulate_and_recover("beta", params_beta)
+#'
+#' # Create summary table
+#' create_comparison_df <- function(result) {
+#'   param_names <- names(result$true)
+#'   df <- data.frame(
+#'     Parameter = param_names,
+#'     True = result$true,
+#'     Estimated = result$estimated[param_names],
+#'     Abs_Error = abs(result$true - result$estimated[param_names]),
+#'     Rel_Error = abs((result$true - result$estimated[param_names]) / result$true) * 100
+#'   )
+#'   return(df)
+#' }
+#'
+#' # Print results
+#' cat("===== GKw Parameter Recovery =====\n")
+#' print(create_comparison_df(result_gkw))
+#' cat("\n===== BKw Parameter Recovery =====\n")
+#' print(create_comparison_df(result_bkw))
+#' cat("\n===== Kw Parameter Recovery =====\n")
+#' print(create_comparison_df(result_kw))
+#' cat("\n===== Beta Parameter Recovery =====\n")
+#' print(create_comparison_df(result_beta))
+#' }
+#'
 #' @references
 #' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
 #' random processes. *Journal of Hydrology*, 46(1-2), 79-88. \doi{10.1016/0022-1694(80)90036-0}
@@ -1490,7 +1967,7 @@
 #' Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016). TMB: Automatic Differentiation and Laplace Approximation. *Journal of Statistical Software*, 70(5), 1–21. \doi{10.18637/jss.v070.i05}
 #'
 #' @seealso User-facing S3 methods: \code{\link{summary.gkwfit}}, \code{\link{print.gkwfit}}, \code{\link{plot.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{confint.gkwfit}}. Density/distribution functions: \code{\link{dgkw}}, \code{\link{pgkw}}, \code{\link{qgkw}}, \code{\link{rgkw}}.
-#' @keywords distribution models mle optimization hplot
+#' @keywords distribution models mle optimization
 #' @author Lopes, J. E.
 #' @export
 gkwfit <- function(data,
@@ -1506,7 +1983,7 @@ gkwfit <- function(data,
                    conf.level = 0.95,
                    optimizer.control = list(),
                    submodels = FALSE,
-                   silent = FALSE,
+                   silent = TRUE,
                    ...) {
   # --- Argument Matching and Validation ---
   call <- match.call()
@@ -1605,16 +2082,16 @@ gkwfit <- function(data,
       # User or family provided fixed value
       full_start_tmb[[param_name]] <- log(fixed[[param]])
     } else if (param == "alpha" || param == "beta") {
-      # Default α, β = 1 when not specified
+      # Default alpha, beta = 1 when not specified
       full_start_tmb[[param_name]] <- log(1)
     } else if (param == "gamma") {
-      # Default γ = 1 when not specified
+      # Default gamma = 1 when not specified
       full_start_tmb[[param_name]] <- log(1)
     } else if (param == "delta") {
-      # Default δ = 0 when not specified (use small value to avoid log(0))
+      # Default delta = 0 when not specified (use small value to avoid log(0))
       full_start_tmb[[param_name]] <- log(0.0001)
     } else if (param == "lambda") {
-      # Default λ = 1 when not specified
+      # Default lambda = 1 when not specified
       full_start_tmb[[param_name]] <- log(1)
     }
 
@@ -1940,23 +2417,18 @@ gkwfit <- function(data,
 #'
 #' @examples
 #' \dontrun{
-#' # Assume 'rkw' function exists to generate Kumaraswamy data
-#' # Assume 'gkwfit' function exists to fit the model
+#' # Generate a small sample from Kumaraswamy distribution
+#' set.seed(2203)
+#' y <- rkw(50, alpha = 2.5, beta = 1.5)
 #'
-#' set.seed(123)
-#' kw_data_sample <- rkw(50, alpha = 2.5, beta = 1.5) # Small n for quick example
+#' # Fit the model with minimal options for speed
+#' fit <- gkwfit(data = y, family = "kw", plot = FALSE, silent = TRUE)
 #'
-#' # Fit the model (suppressing plots and messages for cleaner example)
-#' fit_object <- gkwfit(
-#'   data = kw_data_sample, family = "kw",
-#'   plot = FALSE, silent = TRUE, hessian = FALSE
-#' ) # Turn off hessian for speed
+#' # Print method displays concise model summary
+#' print(fit)
 #'
-#' # Print the fitted object summary
-#' print(fit_object)
-#'
-#' # Alternatively, auto-printing works when the object is returned:
-#' fit_object
+#' # Alternative: object prints automatically when returned
+#' fit
 #' }
 #'
 #' @keywords methods internal
@@ -2044,42 +2516,16 @@ print.gkwfit <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #'
 #' @examples
 #' \dontrun{
-#' # Assume 'rkw' and 'gkwfit' functions from your package exist
+#' # Generate data and fit model
+#' set.seed(2203)
+#' y <- rkw(50, alpha = 2, beta = 3)
+#' fit <- gkwfit(data = y, family = "kw", plot = FALSE)
 #'
-#' set.seed(123)
-#' # Generate sample data (use rkw if available, otherwise placeholder)
-#' # kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
-#' kw_data_sample <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
-#' kw_data_sample <- 1 - (1 - kw_data_sample)^(1 / 2.5) # Placeholder
-#' kw_data_sample <- pmax(1e-6, pmin(1 - 1e-6, kw_data_sample)) # Ensure (0,1)
+#' # Display detailed summary with parameter estimates and standard errors
+#' summary(fit)
 #'
-#' # Fit the model, ensuring hessian=TRUE (default) for SEs
-#' fit_object <- gkwfit(
-#'   data = kw_data_sample, family = "kw",
-#'   plot = FALSE, silent = TRUE
-#' )
-#'
-#' # Check if fit converged and has coefficients/vcov
-#' if (fit_object$convergence == 0 && !is.null(fit_object$coefficients)) {
-#'   # Calculate the summary object
-#'   summary_info <- summary(fit_object)
-#'
-#'   # Print the summary (uses print.summary.gkwfit)
-#'   print(summary_info)
-#'
-#'   # Calculate summary including correlation matrix
-#'   summary_info_corr <- summary(fit_object, correlation = TRUE)
-#'   print(summary_info_corr)
-#'
-#'   # Access specific parts of the summary object
-#'   print(summary_info$coefficients)
-#'   print(summary_info$loglik)
-#'   print(summary_info$convergence)
-#'   print(summary_info$message)
-#' } else {
-#'   print("Fit did not converge or is missing essential components.")
-#'   print(fit_object) # Print the raw object for debugging
-#' }
+#' # Control digits in output
+#' summary(fit, digits = 4)
 #' }
 #'
 #' @keywords methods summary
@@ -2377,31 +2823,25 @@ print.summary.gkwfit <- function(x, digits = max(3L, getOption("digits") - 3L),
 #' @return Invisibly returns the original input object \code{x}. This function is called for its side effect of producing a plot.
 #'
 #' @seealso \code{\link{gkwfit}}, \code{\link{summary.gkwfit}}
+#'
 #' @examples
 #' \dontrun{
-#' # Assume 'rkw' and 'gkwfit' functions exist
+#' # Load required package
+#' library(ggplot2)
 #'
-#' set.seed(123)
-#' kw_data_sample <- rkw(150, alpha = 2.5, beta = 1.5)
+#' # Generate data and fit model
+#' set.seed(2203)
+#' y <- rbeta_(50, gamma = 2, delta = 3)
+#' fit <- gkwfit(data = y, family = "beta", plot = FALSE)
 #'
-#' # Fit the model (with plot=FALSE initially)
-#' fit_object_no_plots <- gkwfit(
-#'   data = kw_data_sample, family = "kw",
-#'   plot = FALSE, silent = TRUE
-#' )
+#' # Generate standard diagnostic plots
+#' plot(fit)
 #'
-#' # Generate plots using the plot method
-#' plot(fit_object_no_plots)
+#' # Generate data and fit model with profile = TRUE
+#' fit <- gkwfit(data = y, family = "gkw", profile = TRUE, npoints = 15)
 #'
-#' # Fit the model including profile likelihoods (with plot=TRUE)
-#' fit_object_profiles <- gkwfit(
-#'   data = kw_data_sample, family = "kw",
-#'   profile = TRUE, npoints = 10, # Fewer points for example speed
-#'   plot = TRUE, silent = TRUE
-#' )
-#'
-#' # Display the pre-generated plots using the plot method
-#' plot(fit_object_profiles)
+#' # Standard diagnostic plots
+#' plot(fit)
 #' }
 #'
 #' @keywords hplot methods
@@ -2435,20 +2875,20 @@ plot.gkwfit <- function(x, ...) {
 #'
 #' @examples
 #' \dontrun{
-#' # Assume 'rkw' and 'gkwfit' functions exist
+#' # Generate data and fit model
+#' set.seed(2203)
+#' y <- rgkw(50, alpha = 1.5, beta = 2.5, gamma = 1.2, delta = 0.3, lambda = 1.1)
+#' fit <- gkwfit(data = y, family = "gkw", plot = FALSE)
 #'
-#' set.seed(123)
-#' kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+#' # Extract all coefficients
+#' params <- coef(fit)
+#' print(params)
 #'
-#' # Fit the model
-#' fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
-#'
-#' # Extract coefficients using the method
-#' coefficients_vector <- coef(fit_obj)
-#' print(coefficients_vector)
-#'
-#' # Can also use the generic function
-#' stats::coef(fit_obj)
+#' # Access specific parameters
+#' alpha_est <- coef(fit)["alpha"]
+#' lambda_est <- coef(fit)["lambda"]
+#' cat("Estimated alpha:", alpha_est, "\n")
+#' cat("Estimated lambda:", lambda_est, "\n")
 #' }
 #'
 #' @keywords methods models
@@ -2486,24 +2926,22 @@ coef.gkwfit <- function(object, ...) {
 #'
 #' @examples
 #' \dontrun{
-#' # Assume 'rkw' and 'gkwfit' functions exist
+#' # Generate data and fit model (ensure hessian = TRUE for vcov)
+#' set.seed(2203)
+#' y <- rbkw(50, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5)
+#' fit <- gkwfit(data = y, family = "bkw", plot = FALSE, hessian = TRUE)
 #'
-#' set.seed(123)
-#' kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
-#'
-#' # Fit the model, ensuring hessian is computed (default TRUE)
-#' fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
-#'
-#' # Extract variance-covariance matrix using the method
-#' vcov_matrix <- vcov(fit_obj)
+#' # Extract variance-covariance matrix
+#' vcov_matrix <- vcov(fit)
 #' print(vcov_matrix)
-#'
-#' # Can also use the generic function
-#' stats::vcov(fit_obj)
 #'
 #' # Extract standard errors from the diagonal
 #' std_errors <- sqrt(diag(vcov_matrix))
 #' print(std_errors)
+#'
+#' # Compare with standard errors from summary
+#' summary_se <- summary(fit)$coefficients[, "Std. Error"]
+#' all.equal(std_errors, summary_se)
 #' }
 #'
 #' @keywords methods models
@@ -2582,36 +3020,22 @@ vcov.gkwfit <- function(object, ...) {
 #'
 #' @examples
 #' \dontrun{
-#' # Assume 'rkw' and 'gkwfit' functions exist
+#' # Generate data and fit model
+#' set.seed(2203)
+#' y <- rkw(50, alpha = 2, beta = 3)
+#' fit <- gkwfit(data = y, family = "kw", plot = FALSE, hessian = TRUE)
 #'
-#' set.seed(123)
-#' kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
+#' # Calculate confidence intervals for all parameters
+#' ci <- confint(fit)
+#' print(ci)
 #'
-#' # Fit the model, ensuring hessian is computed (default TRUE)
-#' fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
-#'
-#' # Calculate default 95% confidence intervals for all parameters
-#' ci_default <- confint(fit_obj)
-#' print(ci_default)
-#'
-#' # Calculate 90% confidence intervals
-#' ci_90 <- confint(fit_obj, level = 0.90)
+#' # 90% confidence interval
+#' ci_90 <- confint(fit, level = 0.90)
 #' print(ci_90)
 #'
-#' # Calculate interval for a specific parameter by name
-#' ci_alpha <- confint(fit_obj, parm = "alpha")
+#' # Confidence interval for specific parameter
+#' ci_alpha <- confint(fit, parm = "alpha")
 #' print(ci_alpha)
-#'
-#' # Calculate interval for specific parameters by index
-#' # (Indices refer to parameters with SEs, here alpha=1, beta=2)
-#' ci_indexed <- confint(fit_obj, parm = 1:2) # Should be same as default for Kw
-#' print(ci_indexed)
-#'
-#' # Fit a model with a fixed parameter (example for KKw)
-#' kkw_data_sample <- rkkw(100, alpha = 2, beta = 3, delta = 1.5, lambda = 0.8) # Assume rkkw
-#' fit_kkw_fixed <- gkwfit(kkw_data_sample, family = "kkw", fixed = list(lambda = 0.8))
-#' ci_kkw_fixed <- confint(fit_kkw_fixed) # Should only show CIs for alpha, beta, delta
-#' print(ci_kkw_fixed)
 #' }
 #'
 #' @keywords methods models
@@ -2781,44 +3205,28 @@ confint.gkwfit <- function(object, parm, level = 0.95, ...) {
 #'
 #' @examples
 #' \dontrun{
-#' # Assume 'rkw' and 'gkwfit' functions from your package exist
+#' # Generate data and fit two models
+#' set.seed(2203)
+#' y <- rgkw(50, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1.5)
 #'
-#' set.seed(123)
-#' # Generate sample data (use rkw if available, otherwise placeholder)
-#' # kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
-#' kw_data_sample <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
-#' kw_data_sample <- 1 - (1 - kw_data_sample)^(1 / 2.5) # Placeholder
-#' kw_data_sample <- pmax(1e-6, pmin(1 - 1e-6, kw_data_sample)) # Ensure (0,1)
+#' fit1 <- gkwfit(data = y, family = "kkw", plot = FALSE) # KKw model
+#' fit2 <- gkwfit(data = y, family = "ekw", plot = FALSE) # EKw model
 #'
-#' # Fit the model
-#' fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
+#' # Extract log-likelihood values
+#' ll1 <- logLik(fit1)
+#' ll2 <- logLik(fit2)
 #'
-#' # Check if fit converged and has necessary components
-#' if (fit_obj$convergence == 0 && !is.null(fit_obj$loglik)) {
-#'   # Extract the log-likelihood object
-#'   ll <- logLik(fit_obj)
+#' print(ll1)
+#' print(ll2)
 #'
-#'   # Print the value (uses print.logLik)
-#'   print(ll)
+#' # Use for likelihood ratio test
+#' lr_stat <- -2 * (as.numeric(ll1) - as.numeric(ll2))
+#' df_diff <- attr(ll1, "df") - attr(ll2, "df")
+#' p_value <- pchisq(lr_stat, df = abs(df_diff), lower.tail = FALSE)
 #'
-#'   # Show attributes
-#'   attributes(ll)
-#'
-#'   # Use with standard functions (requires the corresponding AIC/BIC methods
-#'   # for gkwfit OR relies on them calling this logLik method)
-#'   AIC(fit_obj) # Should work if AIC.gkwfit calls logLik(fit_obj)
-#'   BIC(fit_obj) # Should work if BIC.gkwfit calls logLik(fit_obj)
-#'
-#'   # Extract components directly
-#'   logLik_value <- as.numeric(ll)
-#'   degrees_freedom <- attr(ll, "df")
-#'   num_observations <- attr(ll, "nobs")
-#'   cat("LogLik:", logLik_value, "\n")
-#'   cat("df:", degrees_freedom, "\n")
-#'   cat("nobs:", num_observations, "\n")
-#' } else {
-#'   print("Fit did not converge or is missing log-likelihood.")
-#' }
+#' cat("LR statistic:", lr_stat, "\n")
+#' cat("df:", df_diff, "\n")
+#' cat("p-value:", p_value, "\n")
 #' }
 #'
 #' @keywords methods models utility
@@ -2921,13 +3329,13 @@ logLik.gkwfit <- function(object, ...) {
 #' \dontrun{
 #' # Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
 #'
-#' set.seed(123)
-#' sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
+#' set.seed(2203)
+#' y <- rkw(1000, alpha = 2.5, beta = 1.5)
 #'
 #' # Fit different models to the same data
-#' fit1_kw <- gkwfit(sample_data, family = "kw", silent = TRUE)
-#' fit2_bkw <- gkwfit(sample_data, family = "bkw", silent = TRUE) # Assuming bkw fits
-#' fit3_gkw <- gkwfit(sample_data, family = "gkw", silent = TRUE) # Assuming gkw fits
+#' fit1_kw <- gkwfit(y, family = "kw", silent = TRUE)
+#' fit2_bkw <- gkwfit(y, family = "bkw", silent = TRUE) # Assuming bkw fits
+#' fit3_gkw <- gkwfit(y, family = "gkw", silent = TRUE) # Assuming gkw fits
 #'
 #' # Calculate AIC for a single model
 #' aic1 <- AIC(fit1_kw)
@@ -3274,23 +3682,249 @@ BIC.gkwfit <- function(object, ...) {
 #'
 #' @examples
 #' \dontrun{
-#' # Assume necessary functions (rkw, rbkw, gkwfit, logLik.gkwfit) exist
+#' # Load required packages
+#' library(ggplot2)
+#' library(patchwork)
 #'
-#' set.seed(123)
-#' sample_data <- rkw(150, alpha = 2.5, beta = 1.5) # Data from Kw
+#' # Generate data from GKw distribution
+#' set.seed(2203)
+#' n <- 1000
+#' y <- rgkw(n, alpha = 2, beta = 3, gamma = 1.5, delta = 0.2, lambda = 1.2)
 #'
-#' # Fit nested models (e.g., Kw is nested within BKw, which is nested within GKw)
-#' fit_kw <- gkwfit(sample_data, family = "kw", silent = TRUE) # 2 params
-#' fit_bkw <- gkwfit(sample_data, family = "bkw", silent = TRUE) # 4 params
-#' fit_gkw <- gkwfit(sample_data, family = "gkw", silent = TRUE) # 5 params
+#' # Fit models from GKw family respecting their parameter structures
+#' # Full GKw model: 5 parameters (alpha, beta, gamma, delta, lambda)
+#' fit_gkw <- gkwfit(data = y, family = "gkw", plot = FALSE)
 #'
-#' # Compare the nested models using LRT
-#' lrt_results <- anova(fit_kw, fit_bkw, fit_gkw)
-#' print(lrt_results)
+#' # BKw model: 4 parameters (alpha, beta, gamma, delta)
+#' fit_bkw <- gkwfit(data = y, family = "bkw", plot = FALSE)
 #'
-#' # Example comparing only two models
-#' anova(fit_kw, fit_gkw)
+#' # KKw model: 4 parameters (alpha, beta, delta, lambda)
+#' fit_kkw <- gkwfit(data = y, family = "kkw", plot = FALSE)
+#'
+#' # EKw model: 3 parameters (alpha, beta, lambda)
+#' fit_ekw <- gkwfit(data = y, family = "ekw", plot = FALSE)
+#'
+#' # Mc model: 3 parameters (gamma, delta, lambda)
+#' fit_mc <- gkwfit(data = y, family = "mc", plot = FALSE)
+#'
+#' # Kw model: 2 parameters (alpha, beta)
+#' fit_kw <- gkwfit(data = y, family = "kw", plot = FALSE)
+#'
+#' # Beta model: 2 parameters (gamma, delta)
+#' fit_beta <- gkwfit(data = y, family = "beta", plot = FALSE)
+#'
+#' # Test 1: BKw vs GKw (testing lambda)
+#' # H0: lambda=1 (BKw) vs H1: lambda!=1 (GKw)
+#' cat("=== Testing BKw vs GKw (adding lambda parameter) ===\n")
+#' test_bkw_gkw <- anova(fit_bkw, fit_gkw)
+#' print(test_bkw_gkw)
+#'
+#' # Test 2: KKw vs GKw (testing gamma)
+#' # H0: gamma=1 (KKw) vs H1: gamma!=1 (GKw)
+#' cat("\n=== Testing KKw vs GKw (adding gamma parameter) ===\n")
+#' test_kkw_gkw <- anova(fit_kkw, fit_gkw)
+#' print(test_kkw_gkw)
+#'
+#' # Test 3: Kw vs EKw (testing lambda)
+#' # H0: lambda=1 (Kw) vs H1: lambda!=1 (EKw)
+#' cat("\n=== Testing Kw vs EKw (adding lambda parameter) ===\n")
+#' test_kw_ekw <- anova(fit_kw, fit_ekw)
+#' print(test_kw_ekw)
+#'
+#' # Test 4: Beta vs Mc (testing lambda)
+#' # H0: lambda=1 (Beta) vs H1: lambda!=1 (Mc)
+#' cat("\n=== Testing Beta vs Mc (adding lambda parameter) ===\n")
+#' test_beta_mc <- anova(fit_beta, fit_mc)
+#' print(test_beta_mc)
+#'
+#' # Visualize model comparison
+#' # Create dataframe summarizing all models
+#' models_df <- data.frame(
+#'   Model = c("GKw", "BKw", "KKw", "EKw", "Mc", "Kw", "Beta"),
+#'   Parameters = c(
+#'     paste("alpha,beta,gamma,delta,lambda"),
+#'     paste("alpha,beta,gamma,delta"),
+#'     paste("alpha,beta,delta,lambda"),
+#'     paste("alpha,beta,lambda"),
+#'     paste("gamma,delta,lambda"),
+#'     paste("alpha,beta"),
+#'     paste("gamma,delta")
+#'   ),
+#'   Param_count = c(5, 4, 4, 3, 3, 2, 2),
+#'   LogLik = c(
+#'     as.numeric(logLik(fit_gkw)),
+#'     as.numeric(logLik(fit_bkw)),
+#'     as.numeric(logLik(fit_kkw)),
+#'     as.numeric(logLik(fit_ekw)),
+#'     as.numeric(logLik(fit_mc)),
+#'     as.numeric(logLik(fit_kw)),
+#'     as.numeric(logLik(fit_beta))
+#'   ),
+#'   AIC = c(
+#'     fit_gkw$AIC,
+#'     fit_bkw$AIC,
+#'     fit_kkw$AIC,
+#'     fit_ekw$AIC,
+#'     fit_mc$AIC,
+#'     fit_kw$AIC,
+#'     fit_beta$AIC
+#'   ),
+#'   BIC = c(
+#'     fit_gkw$BIC,
+#'     fit_bkw$BIC,
+#'     fit_kkw$BIC,
+#'     fit_ekw$BIC,
+#'     fit_mc$BIC,
+#'     fit_kw$BIC,
+#'     fit_beta$BIC
+#'   )
+#' )
+#'
+#' # Sort by AIC
+#' models_df <- models_df[order(models_df$AIC), ]
+#' print(models_df)
+#'
+#' # Create comprehensive visualization
+#' # Plot showing model hierarchy and information criteria
+#' p1 <- ggplot(models_df, aes(x = Param_count, y = LogLik, label = Model)) +
+#'   geom_point(size = 3) +
+#'   geom_text(vjust = -0.8) +
+#'   labs(
+#'     title = "Log-likelihood vs Model Complexity",
+#'     x = "Number of Parameters",
+#'     y = "Log-likelihood"
+#'   ) +
+#'   theme_minimal()
+#'
+#' # Create information criteria comparison
+#' models_df_long <- tidyr::pivot_longer(
+#'   models_df,
+#'   cols = c("AIC", "BIC"),
+#'   names_to = "Criterion",
+#'   values_to = "Value"
+#' )
+#'
+#' p2 <- ggplot(models_df_long, aes(x = reorder(Model, -Value), y = Value, fill = Criterion)) +
+#'   geom_bar(stat = "identity", position = "dodge") +
+#'   labs(
+#'     title = "Information Criteria Comparison",
+#'     x = "Model",
+#'     y = "Value (lower is better)"
+#'   ) +
+#'   theme_minimal() +
+#'   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#'
+#' # Print plots
+#' print(p1 + p2)
+#'
+#' # ============================================================================
+#' # Manual LR tests to demonstrate underlying calculations
+#' # ============================================================================
+#' # Function to perform manual likelihood ratio test
+#' manual_lr_test <- function(model_restricted, model_full, alpha = 0.05) {
+#'   # Extract log-likelihoods
+#'   ll_restricted <- as.numeric(logLik(model_restricted))
+#'   ll_full <- as.numeric(logLik(model_full))
+#'
+#'   # Calculate test statistic
+#'   lr_stat <- -2 * (ll_restricted - ll_full)
+#'
+#'   # Calculate degrees of freedom (parameter difference)
+#'   df <- length(coef(model_full)) - length(coef(model_restricted))
+#'
+#'   # Calculate p-value
+#'   p_value <- pchisq(lr_stat, df = df, lower.tail = FALSE)
+#'
+#'   # Return results
+#'   list(
+#'     lr_statistic = lr_stat,
+#'     df = df,
+#'     p_value = p_value,
+#'     significant = p_value < alpha,
+#'     critical_value = qchisq(1 - alpha, df = df)
+#'   )
 #' }
+#'
+#' # Example: Manual LR test for BKw vs GKw (testing lambda parameter)
+#' cat("\n=== Manual LR test: BKw vs GKw ===\n")
+#' lr_bkw_gkw <- manual_lr_test(fit_bkw, fit_gkw)
+#' cat("LR statistic:", lr_bkw_gkw$lr_statistic, "\n")
+#' cat("Degrees of freedom:", lr_bkw_gkw$df, "\n")
+#' cat("P-value:", lr_bkw_gkw$p_value, "\n")
+#' cat("Critical value (alpha=0.05):", lr_bkw_gkw$critical_value, "\n")
+#' cat("Decision:", ifelse(lr_bkw_gkw$significant,
+#'   "Reject H0: Lambda is significantly different from 1",
+#'   "Fail to reject H0: Lambda is not significantly different from 1"
+#' ), "\n")
+#'
+#' # Example: Manual LR test for Kw vs EKw (testing lambda parameter)
+#' cat("\n=== Manual LR test: Kw vs EKw ===\n")
+#' lr_kw_ekw <- manual_lr_test(fit_kw, fit_ekw)
+#' cat("LR statistic:", lr_kw_ekw$lr_statistic, "\n")
+#' cat("Degrees of freedom:", lr_kw_ekw$df, "\n")
+#' cat("P-value:", lr_kw_ekw$p_value, "\n")
+#' cat("Critical value (alpha=0.05):", lr_kw_ekw$critical_value, "\n")
+#' cat("Decision:", ifelse(lr_kw_ekw$significant,
+#'   "Reject H0: Lambda is significantly different from 1",
+#'   "Fail to reject H0: Lambda is not significantly different from 1"
+#' ), "\n")
+#'
+#' # ============================================================================
+#' # Real data application with correct model nesting
+#' # ============================================================================
+#' if (requireNamespace("betareg", quietly = TRUE)) {
+#'   data("ReadingSkills", package = "betareg")
+#'   y <- ReadingSkills$accuracy
+#'
+#'   # Fit models
+#'   rs_gkw <- gkwfit(data = y, family = "gkw", plot = FALSE)
+#'   rs_bkw <- gkwfit(data = y, family = "bkw", plot = FALSE)
+#'   rs_kkw <- gkwfit(data = y, family = "kkw", plot = FALSE)
+#'   rs_kw <- gkwfit(data = y, family = "kw", plot = FALSE)
+#'   rs_beta <- gkwfit(data = y, family = "beta", plot = FALSE)
+#'
+#'   # Test nested models
+#'   cat("\n=== Real data: Testing BKw vs GKw (adding lambda) ===\n")
+#'   rs_test_bkw_gkw <- anova(rs_bkw, rs_gkw)
+#'   print(rs_test_bkw_gkw)
+#'
+#'   cat("\n=== Real data: Testing Kw vs KKw (adding delta and lambda) ===\n")
+#'   rs_test_kw_kkw <- anova(rs_kw, rs_kkw)
+#'   print(rs_test_kw_kkw)
+#'
+#'   # Compare non-nested models with information criteria
+#'   cat("\n=== Real data: Comparing non-nested Beta vs Kw ===\n")
+#'   rs_compare_beta_kw <- anova(rs_beta, rs_kw)
+#'   print(rs_compare_beta_kw)
+#'
+#'   # Summarize all models
+#'   cat("\n=== Real data: Model comparison summary ===\n")
+#'   models_rs <- c("GKw", "BKw", "KKw", "Kw", "Beta")
+#'   aic_values <- c(rs_gkw$AIC, rs_bkw$AIC, rs_kkw$AIC, rs_kw$AIC, rs_beta$AIC)
+#'   bic_values <- c(rs_gkw$BIC, rs_bkw$BIC, rs_kkw$BIC, rs_kw$BIC, rs_beta$BIC)
+#'   loglik_values <- c(
+#'     as.numeric(logLik(rs_gkw)),
+#'     as.numeric(logLik(rs_bkw)),
+#'     as.numeric(logLik(rs_kkw)),
+#'     as.numeric(logLik(rs_kw)),
+#'     as.numeric(logLik(rs_beta))
+#'   )
+#'
+#'   df_rs <- data.frame(
+#'     Model = models_rs,
+#'     LogLik = loglik_values,
+#'     AIC = aic_values,
+#'     BIC = bic_values
+#'   )
+#'   df_rs <- df_rs[order(df_rs$AIC), ]
+#'   print(df_rs)
+#'
+#'   # Determine the best model for the data
+#'   best_model <- df_rs$Model[which.min(df_rs$AIC)]
+#'   cat("\nBest model based on AIC:", best_model, "\n")
+#' }
+#' }
+#'
 #' @keywords models methods regression htest
 #' @author Lopes, J. E.
 #' @export

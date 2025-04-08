@@ -2,17 +2,17 @@
 % Please edit documentation in R/gkwfitall.R
 \name{get_density_function}
 \alias{get_density_function}
-\title{Get the appropriate density function for a fitted model}
+\title{Get the density function for a fitted GKw distribution model}
 \usage{
 get_density_function(fit)
 }
 \arguments{
-\item{fit}{A gkwfit object}
+\item{fit}{An object of class \code{"gkwfit"} from the gkwfit function}
 }
 \value{
-A function that calculates density values
+A function that computes density values for the fitted distribution
 }
 \description{
-Get the appropriate density function for a fitted model
+Get the density function for a fitted GKw distribution model
 }
 \keyword{internal}

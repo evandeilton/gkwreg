@@ -2,17 +2,17 @@
 % Please edit documentation in R/gkwfitall.R
 \name{get_cdf_function}
 \alias{get_cdf_function}
-\title{Get the appropriate CDF function for a fitted model}
+\title{Get the CDF function for a fitted GKw distribution model}
 \usage{
 get_cdf_function(fit)
 }
 \arguments{
-\item{fit}{A gkwfit object}
+\item{fit}{An object of class \code{"gkwfit"} from the gkwfit function}
 }
 \value{
-A function that calculates CDF values
+A function that computes CDF values for the fitted distribution
 }
 \description{
-Get the appropriate CDF function for a fitted model
+Get the CDF function for a fitted GKw distribution model
 }
 \keyword{internal}

@@ -4,12 +4,17 @@
 \alias{plot.gkwfitall}
 \title{Plot method for gkwfitall objects}
 \usage{
-\method{plot}{gkwfitall}(x, ...)
+\method{plot}{gkwfitall}(x, which = "all", theme_fn = ggplot2::theme_minimal, ...)
 }
 \arguments{
 \item{x}{An object of class \code{"gkwfitall"}}
 
-\item{...}{Additional arguments (currently ignored)}
+\item{which}{Character vector specifying which plots to show. Options are "all" (default),
+"density", "pp", "qq", "residuals", "aic", or "parameters".}
+
+\item{theme_fn}{Function to apply a custom theme to plots. Default: \code{ggplot2::theme_minimal}.}
+
+\item{...}{Additional arguments passed to plotting functions}
 }
 \value{
 Invisibly returns the input object

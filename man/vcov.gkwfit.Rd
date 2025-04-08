@@ -27,24 +27,22 @@ for the generic \code{\link[stats]{vcov}} function.
 }
 \examples{
 \dontrun{
-# Assume 'rkw' and 'gkwfit' functions exist
+# Generate data and fit model (ensure hessian = TRUE for vcov)
+set.seed(2203)
+y <- rbkw(50, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5)
+fit <- gkwfit(data = y, family = "bkw", plot = FALSE, hessian = TRUE)
 
-set.seed(123)
-kw_data_sample <- rkw(100, alpha = 2.5, beta = 1.5)
-
-# Fit the model, ensuring hessian is computed (default TRUE)
-fit_obj <- gkwfit(data = kw_data_sample, family = "kw", silent = TRUE)
-
-# Extract variance-covariance matrix using the method
-vcov_matrix <- vcov(fit_obj)
+# Extract variance-covariance matrix
+vcov_matrix <- vcov(fit)
 print(vcov_matrix)
-
-# Can also use the generic function
-stats::vcov(fit_obj)
 
 # Extract standard errors from the diagonal
 std_errors <- sqrt(diag(vcov_matrix))
 print(std_errors)
+
+# Compare with standard errors from summary
+summary_se <- summary(fit)$coefficients[, "Std. Error"]
+all.equal(std_errors, summary_se)
 }
 
 }

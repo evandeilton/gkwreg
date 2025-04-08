@@ -3,7 +3,7 @@ utils::globalVariables(c(
   "upper", "log", "log_scale", "calculateResponseResiduals", "::", ":::", ".gkwreg_env", "get_tmb_info",
   "x", "Theoretical", "Empirical", "value", "loglik", "cook_dist", "fitted", "abs_resid", "leverage", "y_obs",
   "linpred", "resid", "model_label", "metric", "y", "Type", "Deviation", "object", "p_empirical", "p_theoretical",
-  "statistic", "type", "Residual"
+  "statistic", "type", "Residual","Family","Value","Criterion","Parameter"
 ))
 
 
