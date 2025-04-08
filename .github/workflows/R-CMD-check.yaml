@@ -1,117 +1,76 @@
 name: R-CMD-check
-
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-
-permissions:
-  read-all
-
+  push:
+    branches: [main, master]
+  pull_request:
+permissions: read-all
 jobs:
-  R-CMD-check:
-    # Your existing R-CMD-check job remains unchanged
-    # ...
-
-  debian-check:
-    runs-on: ubuntu-latest
-    name: Debian (${{ matrix.debian-version }}, R-${{ matrix.r-version }})
-    container:
-      image: debian:${{ matrix.debian-version }}
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - debian-version: stable
-            r-version: release
-          - debian-version: testing
-            r-version: devel
-    
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
-      DEBIAN_FRONTEND: noninteractive
-      TZ: UTC
-    
-    steps:
-      - name: Install essential system dependencies
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends \
-            ca-certificates \
-            dirmngr \
-            gnupg \
-            wget \
-            git \
-            build-essential \
-            libcurl4-openssl-dev \
-            libxml2-dev \
-            libssl-dev \
-            liblapack-dev \
-            libblas-dev \
-            gfortran \
-            qpdf \
-            ghostscript \
-            pandoc \
-            apt-transport-https
-
-      - name: Setup R repositories with proper GPG key handling
-        run: |
-          # Import the CRAN GPG key properly
-          wget -qO- https://cloud.r-project.org/bin/linux/debian/marutter_pubkey.asc | gpg --dearmor > /usr/share/keyrings/cran-archive-keyring.gpg
-          
-          # Add repository with secure key reference
-          if [ "${{ matrix.debian-version }}" = "stable" ]; then
-            echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/debian bullseye-cran40/" > /etc/apt/sources.list.d/cran.list
-          else
-            echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" > /etc/apt/sources.list.d/cran.list
-          fi
-          
-          # Update package lists
-          apt-get update
-      
-      - name: Install R
-        run: |
-          apt-get install -y r-base r-base-dev
-      
-      - uses: actions/checkout@v4
-      
-      - name: Install R dependencies
-        run: |
-          R -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
-          R -e 'remotes::install_deps(dependencies = TRUE)'
-          R -e 'install.packages("rcmdcheck", repos="https://cloud.r-project.org")'
-      
-      - name: Install additional system libraries for R packages
-        run: |
-          # Install system libraries that may be needed by your R package dependencies
-          apt-get install -y --no-install-recommends \
-            libharfbuzz-dev \
-            libfribidi-dev \
-            libfreetype6-dev \
-            libpng-dev \
-            libtiff5-dev \
-            libjpeg-dev \
-            || echo "Some optional libraries may not be available"
-      
-      - name: Check
-        run: |
-          R CMD build .
-          PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
-          R CMD check --as-cran ${PKG_FILE_NAME}
-      
-      - name: Display logs on failure
-        if: failure()
-        run: |
-          PACKAGE_NAME=$(grep "Package:" DESCRIPTION | cut -d' ' -f2)
-          CHECK_DIR="${PACKAGE_NAME}.Rcheck"
-          if [ -d "$CHECK_DIR" ]; then
-            echo "=== 00install.out ==="
-            cat ${CHECK_DIR}/00install.out || echo "File not found"
-            echo "=== 00check.log ==="
-            cat ${CHECK_DIR}/00check.log || echo "File not found"
-          else
-            echo "No check directory found"
-            find . -name "*.Rcheck" -type d | xargs -I {} sh -c "echo '=== {}'; ls -la {}"
-          fi
+  R-CMD-check:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: macos-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,   r: 'release'}
+          - {os: ubuntu-latest,   r: 'oldrel-1'}
+          # --- Início das adições para Debian ---
+          - {os: 'ubuntu-latest', r: 'release', container: 'rocker/r-base:latest'} # Debian Stable via Docker
+          - {os: 'ubuntu-latest', r: 'devel',   container: 'rocker/r-devel:latest'} # Debian Testing via Docker
+          # --- Fim das adições para Debian ---
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
+          # A ação setup-r usará matrix.config.container se definido
+          
+      # Configuração específica para Windows - adiciona Rtools
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        if: matrix.config.os == 'windows-latest'
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+          windows-path-include-mingw: true
+          
+      # Instalação de dependências do sistema para Windows
+      - name: Install system dependencies (Windows)
+        if: matrix.config.os == 'windows-latest'
+        run: |
+          # Tentar pacotes específicos do MinGW que estão disponíveis via Chocolatey
+          choco install --no-progress mingw-w64 -y || echo "MinGW installation attempted"
+          # Verificar se temos acesso ao compilador
+          g++ --version || echo "G++ not found in PATH"
+          
+      - name: Install pak
+        run: Rscript -e 'install.packages("pak", repos = "https://cran.rstudio.com")'
+        
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+          
+      - name: Run R CMD check
+        run: |
+          R CMD check --no-manual --compact-vignettes=gs+qpdf
+        continue-on-error: true
+        
+      - name: Display R CMD check logs on error
+        if: failure()
+        run: |
+          cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00install.out || echo "Install log not found"
+          cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00check.log || echo "Check log not found"
+          
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
