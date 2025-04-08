@@ -1,76 +1,120 @@
 name: R-CMD-check
+
 on:
-  push:
-    branches: [main, master]
-  pull_request:
+  push:
+    branches: [main, master]
+  pull_request:
+
 permissions: read-all
+
 jobs:
-  R-CMD-check:
-    runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - {os: macos-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,   r: 'release'}
-          - {os: ubuntu-latest,   r: 'oldrel-1'}
-          # --- Início das adições para Debian ---
-          - {os: 'ubuntu-latest', r: 'release', container: 'rocker/r-base:latest'} # Debian Stable via Docker
-          - {os: 'ubuntu-latest', r: 'devel',   container: 'rocker/r-devel:latest'} # Debian Testing via Docker
-          # --- Fim das adições para Debian ---
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
-    steps:
-      - uses: actions/checkout@v4
-      - uses: r-lib/actions/setup-pandoc@v2
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: ${{ matrix.config.r }}
-          http-user-agent: ${{ matrix.config.http-user-agent }}
-          use-public-rspm: true
-          # A ação setup-r usará matrix.config.container se definido
-          
-      # Configuração específica para Windows - adiciona Rtools
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        if: matrix.config.os == 'windows-latest'
-        with:
-          extra-packages: any::rcmdcheck
-          needs: check
-          windows-path-include-mingw: true
-          
-      # Instalação de dependências do sistema para Windows
-      - name: Install system dependencies (Windows)
-        if: matrix.config.os == 'windows-latest'
-        run: |
-          # Tentar pacotes específicos do MinGW que estão disponíveis via Chocolatey
-          choco install --no-progress mingw-w64 -y || echo "MinGW installation attempted"
-          # Verificar se temos acesso ao compilador
-          g++ --version || echo "G++ not found in PATH"
-          
-      - name: Install pak
-        run: Rscript -e 'install.packages("pak", repos = "https://cran.rstudio.com")'
-        
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::rcmdcheck
-          needs: check
-          
-      - name: Run R CMD check
-        run: |
-          R CMD check --no-manual --compact-vignettes=gs+qpdf
-        continue-on-error: true
-        
-      - name: Display R CMD check logs on error
-        if: failure()
-        run: |
-          cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00install.out || echo "Install log not found"
-          cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00check.log || echo "Check log not found"
-          
-      - uses: r-lib/actions/check-r-package@v2
-        with:
-          upload-snapshots: true
-          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+  R-CMD-check:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    
+    # We use a configuration matrix to test across multiple platforms
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          # Standard tests on different operating systems and R versions
+          - {os: macos-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,  r: 'release'}
+          - {os: ubuntu-latest,  r: 'oldrel-1'}
+          
+          # Tests in Debian environments via Rocker containers
+          - {os: 'ubuntu-latest', r: 'release', container: 'rocker/r-base:latest'}    # Debian Stable
+          - {os: 'ubuntu-latest', r: 'devel',   container: 'rocker/r-devel:latest'}   # Debian Testing
+    
+    # Container will be automatically used if specified in the matrix
+    container: ${{ matrix.config.container }}
+    
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      # Specific settings for containerized environments
+      DEBIAN_FRONTEND: noninteractive
+      TZ: UTC
+    
+    steps:
+      # Basic environment preparation
+      - uses: actions/checkout@v4
+      
+      # Set up Pandoc (not needed in Rocker containers, but doesn't cause issues)
+      - uses: r-lib/actions/setup-pandoc@v2
+        if: matrix.config.container == null
+      
+      # Set up R environment (the action automatically detects if we're in a container)
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
+      
+      # Windows-specific configuration - adds Rtools
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        if: matrix.config.os == 'windows-latest'
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+          windows-path-include-mingw: true
+      
+      # Installation of Windows-specific dependencies
+      - name: Install system dependencies (Windows)
+        if: matrix.config.os == 'windows-latest'
+        run: |
+          # Install MinGW (C/C++ compiler for Windows)
+          choco install --no-progress mingw-w64 -y || echo "MinGW installation attempted"
+          # Check if compiler is accessible
+          g++ --version || echo "G++ not found in PATH"
+      
+      # Install pak for R package management (faster than install.packages)
+      - name: Install pak
+        run: Rscript -e 'install.packages("pak", repos = "https://cran.rstudio.com")'
+      
+      # Install R package dependencies (applied to all environments)
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+      
+      # Add specific libraries for Debian containers
+      - name: Install additional libraries (Debian containers)
+        if: matrix.config.container != null
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            liblapack-dev \
+            libblas-dev \
+            gfortran \
+            qpdf \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libfreetype6-dev
+      
+      # Run R CMD check
+      - name: Run R CMD check
+        run: |
+          R CMD check --no-manual --compact-vignettes=gs+qpdf
+        continue-on-error: true
+      
+      # Display logs in case of failure
+      - name: Display R CMD check logs on error
+        if: failure()
+        run: |
+          # Adaptive for different operating systems
+          if [ "${{ matrix.config.os }}" == "windows-latest" ]; then
+            cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00install.out || echo "Install log not found"
+            cat D:/a/gkwreg/gkwreg/check/gkwreg.Rcheck/00check.log || echo "Check log not found"
+          else
+            find . -name "*.Rcheck" -type d -exec bash -c "echo '=== {}'; cat {}/00install.out {}/00check.log" \; || echo "Log files not found"
+          fi
+      
+      # Final R package check and upload results
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
