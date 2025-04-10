@@ -53,7 +53,7 @@ errors, not necessarily all parameters in the model (if some were fixed or had
 estimation issues).
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate data and fit model
 set.seed(2203)
 y <- rkw(50, alpha = 2, beta = 3)

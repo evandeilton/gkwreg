@@ -55,7 +55,7 @@ minimizing the negative log-likelihood. They correspond to the relevant componen
 of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\alpha=1, \beta=1}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
 
 # Generate sample data
@@ -111,7 +111,7 @@ if (mle_result_mc$convergence == 0 &&
 
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

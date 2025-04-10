@@ -66,7 +66,7 @@ via \code{qbeta(p, gamma, delta + 1, ...)} while respecting the
 GKw quantile function (\code{\link{qgkw}}) evaluated with \eqn{\alpha=1, \beta=1}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 p_vals <- c(0.1, 0.5, 0.9)
 gamma_par <- 2.0
@@ -100,8 +100,8 @@ print(paste("Max difference:", max(abs(quantiles - quantiles_gkw)))) # Should be
 
 # Verify inverse relationship with pmc
 p_check <- 0.75
-q_calc <- qmc(p_check, gamma_par, delta_par, lambda_par = 1.5) # Use lambda != 1
-p_recalc <- pmc(q_calc, gamma_par, delta_par, lambda_par = 1.5)
+q_calc <- qmc(p_check, gamma_par, delta_par, lambda_par) # Use lambda != 1
+p_recalc <- pmc(q_calc, gamma_par, delta_par, lambda_par)
 print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
 
@@ -109,12 +109,7 @@ print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 print(qmc(c(0, 1), gamma_par, delta_par, lambda_par)) # Should be 0, 1
 print(qmc(c(-Inf, 0), gamma_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
 
-# Vectorized parameters
-lambdas_vec <- c(0.5, 1.0, 2.0)
-quantiles_vec <- qmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-print(quantiles_vec) # Median for 3 different lambda values
-
-} # End of \dontrun block
+}
 
 }
 \references{

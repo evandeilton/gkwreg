@@ -53,7 +53,7 @@ The Kw distribution is a special case of several generalized distributions:
 The implementation uses the closed-form expression for efficiency.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 q_vals <- c(0.2, 0.5, 0.8)
 alpha_par <- 2.0
@@ -92,12 +92,7 @@ lines(curve_q, pkw(curve_q, alpha = 1, beta = 3), col = "orange")
 legend("bottomright", legend = c("a=2, b=3", "a=3, b=2", "a=0.5, b=0.5", "a=5, b=1", "a=1, b=3"),
        col = c("blue", "red", "green", "purple", "orange"), lty = 1, bty = "n", ncol = 2)
 
-# Vectorized parameters
-alphas_vec <- c(1.5, 2.0, 2.5)
-probs_vec <- pkw(0.5, alpha = alphas_vec, beta = 3.0)
-print(probs_vec) # CDF at q=0.5 for 3 different alpha values
-
-} # End of \dontrun block
+}
 
 }
 \references{

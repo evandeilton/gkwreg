@@ -48,7 +48,7 @@ Numerical stability is maintained, including using the log-gamma function
 (\code{\link[base]{lgamma}}) for the Beta function term.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rmc, grmc, hsmc functions for Mc distribution
 
 # Generate sample data from a known Mc distribution
@@ -110,7 +110,7 @@ if (mle_result_mc$convergence == 0 &&
    cat("Requires convergence, 'numDeriv' package and functions 'grmc', 'hsmc'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

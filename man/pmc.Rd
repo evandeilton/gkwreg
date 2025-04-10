@@ -58,7 +58,7 @@ This is evaluated using the \code{\link[stats]{pbeta}} function as
 \code{pbeta(q^lambda, shape1 = gamma, shape2 = delta + 1)}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 q_vals <- c(0.2, 0.5, 0.8)
 gamma_par <- 2.0
@@ -101,13 +101,7 @@ lines(curve_q, curve_p1, col = "blue")
 lines(curve_q, curve_p3, col = "green")
 legend("bottomright", legend = c("lambda=0.5", "lambda=1.0 (Beta)", "lambda=2.0"),
        col = c("blue", "red", "green"), lty = 1, bty = "n")
-
-# Vectorized parameters
-lambdas_vec <- c(0.5, 1.0, 2.0)
-probs_vec <- pmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-print(probs_vec) # CDF at q=0.5 for 3 different lambda values
-
-} # End of \dontrun block
+}
 
 }
 \references{

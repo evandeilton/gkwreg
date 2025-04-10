@@ -21,7 +21,7 @@ Extracts the estimated coefficients for the parameters of a model fitted by
 \code{\link{gkwfit}}. This is an S3 method for the generic \code{\link[stats]{coef}} function.
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate data and fit model
 set.seed(2203)
 y <- rgkw(50, alpha = 1.5, beta = 2.5, gamma = 1.2, delta = 0.3, lambda = 1.1)

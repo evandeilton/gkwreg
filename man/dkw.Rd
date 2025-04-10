@@ -47,7 +47,7 @@ the Kumaraswamy-Kumaraswamy (\code{\link{dkkw}}) with \eqn{\delta = 0}
 and \eqn{\lambda = 1}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 x_vals <- c(0.2, 0.5, 0.8)
 alpha_par <- 2.0
@@ -79,13 +79,7 @@ lines(curve_x, dkw(curve_x, alpha = 5, beta = 1), col = "purple") # J-shaped
 lines(curve_x, dkw(curve_x, alpha = 1, beta = 3), col = "orange") # J-shaped (reversed)
 legend("top", legend = c("a=2, b=3", "a=3, b=2", "a=0.5, b=0.5", "a=5, b=1", "a=1, b=3"),
        col = c("blue", "red", "green", "purple", "orange"), lty = 1, bty = "n", ncol = 2)
-
-# Vectorized parameters
-alphas_vec <- c(1.5, 2.0, 2.5)
-densities_vec <- dkw(0.5, alpha = alphas_vec, beta = 3.0)
-print(densities_vec) # Density at x=0.5 for 3 different alpha values
-
-} # End of \dontrun block
+}
 
 }
 \references{

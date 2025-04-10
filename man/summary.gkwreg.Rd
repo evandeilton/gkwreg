@@ -70,10 +70,7 @@ original \code{gkwreg} call), the coefficient table will only contain estimates,
 and confidence intervals will not be available.
 }
 \examples{
-\dontrun{
-# Assuming 'df' is a data frame with response 'y' and predictors 'x1', 'x2'
-# and that rkw() function is available and generates data in (0,1).
-
+\donttest{
 set.seed(123)
 n <- 100
 x1 <- runif(n, -2, 2)
@@ -101,10 +98,6 @@ print(summary_kw)
 # Extract coefficient table directly from the summary object
 coef_table <- coef(summary_kw) # Equivalent to summary_kw$coefficients
 print(coef_table)
-
-# Extract confidence intervals
-conf_intervals <- confint(summary_kw) # Uses summary_kw$conf.int
-print(conf_intervals)
 }
 
 }

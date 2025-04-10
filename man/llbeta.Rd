@@ -50,7 +50,7 @@ evaluated at \eqn{\lambda=1}. The term \eqn{\ln B(\gamma, \delta+1)} is typicall
 computed using log-gamma functions (\code{\link[base]{lgamma}}) for numerical stability.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 
 # Generate sample data from a Beta(2, 4) distribution
@@ -116,7 +116,7 @@ if (mle_result_beta$convergence == 0 &&
    cat("Requires convergence, 'numDeriv' pkg & functions 'grbeta', 'hsbeta'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

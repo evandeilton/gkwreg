@@ -55,7 +55,7 @@ Specifying a \code{family} different from the one used to fit the model will
 always force recalculation using the \code{predict} method (step 4).
 }
 \examples{
-\dontrun{
+\donttest{
 # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
 # and that rgkw() is available and data is appropriate (0 < y < 1).
 set.seed(456)

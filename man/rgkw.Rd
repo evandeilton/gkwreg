@@ -58,7 +58,7 @@ are recycled to match the length required by \code{n}. Numerical stability is
 maintained by handling potential edge cases during the transformations.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(1234) # for reproducibility
 
 # Generate 1000 random values from a specific GKw distribution (Kw case)

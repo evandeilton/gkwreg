@@ -62,7 +62,7 @@ The implementation uses this closed-form expression for efficiency and handles
 \code{lower_tail} and \code{log_p} arguments appropriately.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 q_vals <- c(0.2, 0.5, 0.8)
 alpha_par <- 2.0
@@ -99,12 +99,7 @@ curve_p <- pkkw(curve_q, alpha_par, beta_par, delta_par, lambda_par)
 plot(curve_q, curve_p, type = "l", main = "kkw CDF Example",
      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
 
-# Vectorized parameters
-alphas_vec <- c(1.5, 2.0, 2.5)
-probs_vec <- pkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
-print(probs_vec) # CDF at q=0.5 for 3 different alpha values
-
-} # End of \dontrun block
+}
 
 }
 \references{

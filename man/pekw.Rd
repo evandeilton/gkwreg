@@ -59,7 +59,7 @@ The implementation uses this closed-form expression for efficiency and handles
 \code{lower_tail} and \code{log_p} arguments appropriately.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 q_vals <- c(0.2, 0.5, 0.8)
 alpha_par <- 2.0
@@ -100,13 +100,7 @@ lines(curve_q, curve_p1, col = "blue")
 lines(curve_q, curve_p3, col = "green")
 legend("bottomright", legend = c("lambda=0.5", "lambda=1.0 (Kw)", "lambda=2.0"),
        col = c("blue", "red", "green"), lty = 1, bty = "n")
-
-# Vectorized parameters
-lambdas_vec <- c(0.5, 1.0, 2.0)
-probs_vec <- pekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
-print(probs_vec) # CDF at q=0.5 for 3 different lambda values
-
-} # End of \dontrun block
+}
 
 }
 \references{

@@ -21,7 +21,7 @@ Extracts the most important goodness-of-fit statistics from one or more gkwgof o
 into a concise data frame format for easy comparison and reporting.
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate sample data
 set.seed(123)
 data <- rkw(n = 200, alpha = 2.5, beta = 1.8)

@@ -66,7 +66,7 @@ The function uses this closed-form expression and correctly handles the
 appropriately before applying the formula.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 p_vals <- c(0.1, 0.5, 0.9)
 alpha_par <- 2.0
@@ -110,7 +110,7 @@ print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 print(qkkw(c(0, 1), alpha_par, beta_par, delta_par, lambda_par)) # Should be 0, 1
 print(qkkw(c(-Inf, 0), alpha_par, beta_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
 
-} # End of \dontrun block
+}
 
 }
 \references{

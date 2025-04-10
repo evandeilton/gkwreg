@@ -60,7 +60,7 @@ This corresponds to the relevant submatrix of the 5x5 GKw Hessian (\code{\link{h
 evaluated at \eqn{\gamma=1}. The exact analytical formulas are implemented directly.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 
 # Generate sample data
@@ -121,7 +121,7 @@ if (mle_result_kkw$convergence == 0 &&
   cat("Requires convergence, 'numDeriv' package, and function 'hskkw'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

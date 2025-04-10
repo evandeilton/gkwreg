@@ -62,7 +62,7 @@ directly (often derived using symbolic differentiation) for accuracy and
 efficiency, typically using C++.
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate sample data from a known GKw distribution
 set.seed(123)
 true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -122,7 +122,7 @@ if (mle_result$convergence == 0) {
   warning("Optimization did not converge. Hessian comparison skipped.")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

@@ -49,7 +49,7 @@ consistent parameter recycling and handling within the C++ environment,
 matching the style of other functions in the related families.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(2030) # for reproducibility
 
 # Generate 1000 samples using rbeta_
@@ -64,12 +64,10 @@ summary(x_sample)
 # Compare with stats::rbeta
 x_sample_stats <- stats::rbeta(1000, shape1 = shape1, shape2 = shape2)
 # Visually compare histograms or QQ-plots
-par(mfrow=c(1,2))
 hist(x_sample, main="rbeta_ Sample", freq=FALSE, breaks=30)
 curve(dbeta_(x, gamma_par, delta_par), add=TRUE, col="red", lwd=2)
 hist(x_sample_stats, main="stats::rbeta Sample", freq=FALSE, breaks=30)
 curve(stats::dbeta(x, shape1, shape2), add=TRUE, col="blue", lwd=2)
-par(mfrow=c(1,1))
 # Compare summary stats (should be similar due to randomness)
 print(summary(x_sample))
 print(summary(x_sample_stats))
@@ -85,13 +83,7 @@ x_sample_mc <- rmc(1000, gamma = gamma_par, delta = delta_par, lambda = 1.0)
 print("Summary stats for rmc(l=1) sample:")
 print(summary(x_sample_mc))
 
-# Vectorized parameters (e.g., generating from Beta(g, 4) for different g)
-gammas_vec <- c(1.0, 2.0, 3.0)
-n_param <- length(gammas_vec)
-samples_vec <- rbeta_(n_param, gamma = gammas_vec, delta = 3.0)
-print(samples_vec) # One sample for each gamma value
-
-} # End of \dontrun block
+}
 
 }
 \references{

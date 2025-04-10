@@ -2416,7 +2416,7 @@ gkwfit <- function(data,
 #' @seealso \code{\link{gkwfit}}, \code{\link{summary.gkwfit}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate a small sample from Kumaraswamy distribution
 #' set.seed(2203)
 #' y <- rkw(50, alpha = 2.5, beta = 1.5)
@@ -2515,7 +2515,7 @@ print.gkwfit <- function(x, digits = max(3, getOption("digits") - 3), ...) {
 #' @seealso \code{\link{gkwfit}}, \code{\link{print.summary.gkwfit}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}, \code{\link{AIC.gkwfit}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate data and fit model
 #' set.seed(2203)
 #' y <- rkw(50, alpha = 2, beta = 3)
@@ -2825,7 +2825,7 @@ print.summary.gkwfit <- function(x, digits = max(3L, getOption("digits") - 3L),
 #' @seealso \code{\link{gkwfit}}, \code{\link{summary.gkwfit}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Load required package
 #' library(ggplot2)
 #'
@@ -2874,7 +2874,7 @@ plot.gkwfit <- function(x, ...) {
 #' @seealso \code{\link{gkwfit}}, \code{\link[stats]{coef}}, \code{\link{vcov.gkwfit}}, \code{\link{logLik.gkwfit}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate data and fit model
 #' set.seed(2203)
 #' y <- rgkw(50, alpha = 1.5, beta = 2.5, gamma = 1.2, delta = 0.3, lambda = 1.1)
@@ -2925,7 +2925,7 @@ coef.gkwfit <- function(object, ...) {
 #' @seealso \code{\link{gkwfit}}, \code{\link[stats]{vcov}}, \code{\link{coef.gkwfit}}, \code{\link{logLik.gkwfit}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate data and fit model (ensure hessian = TRUE for vcov)
 #' set.seed(2203)
 #' y <- rbkw(50, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5)
@@ -3019,7 +3019,7 @@ vcov.gkwfit <- function(object, ...) {
 #' @seealso \code{\link{gkwfit}}, \code{\link[stats]{confint}}, \code{\link{coef.gkwfit}}, \code{\link{vcov.gkwfit}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate data and fit model
 #' set.seed(2203)
 #' y <- rkw(50, alpha = 2, beta = 3)
@@ -3204,7 +3204,7 @@ confint.gkwfit <- function(object, parm, level = 0.95, ...) {
 #' @seealso \code{\link{gkwfit}}, \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}}, \code{\link[stats]{logLik}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate data and fit two models
 #' set.seed(2203)
 #' y <- rgkw(50, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1.5)
@@ -3326,34 +3326,22 @@ logLik.gkwfit <- function(object, ...) {
 #' @seealso \code{\link{gkwfit}}, \code{\link[stats]{AIC}}, \code{\link{logLik.gkwfit}}, \code{\link{BIC.gkwfit}}
 #'
 #' @examples
-#' \dontrun{
-#' # Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
-#'
+#' \donttest{
 #' set.seed(2203)
 #' y <- rkw(1000, alpha = 2.5, beta = 1.5)
 #'
 #' # Fit different models to the same data
 #' fit1_kw <- gkwfit(y, family = "kw", silent = TRUE)
-#' fit2_bkw <- gkwfit(y, family = "bkw", silent = TRUE) # Assuming bkw fits
-#' fit3_gkw <- gkwfit(y, family = "gkw", silent = TRUE) # Assuming gkw fits
+#' fit2_bkw <- gkwfit(y, family = "bkw", silent = TRUE)
+#' fit3_gkw <- gkwfit(y, family = "gkw", silent = TRUE)
 #'
 #' # Calculate AIC for a single model
 #' aic1 <- AIC(fit1_kw)
 #' print(aic1)
 #'
 #' # Compare AIC values for multiple models
-#' aic_comparison <- AIC(fit1_kw, fit2_bkw, fit3_gkw)
-#' print(aic_comparison) # Sorted by AIC
-#'
-#' # Compare BIC values for multiple models
-#' # Get nobs from one of the models (must be fitted to same data)
-#' n_obs <- attr(logLik(fit1_kw), "nobs")
-#' bic_comparison <- AIC(fit1_kw, fit2_bkw, fit3_gkw, k = log(n_obs))
-#' print(bic_comparison)
-#' # Note: Column is still named 'AIC', but values represent BIC
-#' # Optional: rename column for clarity
-#' # colnames(bic_comparison)[colnames(bic_comparison) == "AIC"] <- "BIC"
-#' # print(bic_comparison)
+#' aic_comparison <- c(AIC(fit1_kw), AIC(fit2_bkw), AIC(fit3_gkw))
+#' print(aic_comparison)
 #' }
 #'
 #' @keywords models methods
@@ -3474,50 +3462,23 @@ AIC.gkwfit <- function(object, ..., k = 2) {
 #' @seealso \code{\link{gkwfit}}, \code{\link[stats]{BIC}}, \code{\link{logLik.gkwfit}}, \code{\link{AIC.gkwfit}}
 #'
 #' @examples
-#' \dontrun{
-#' # Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
+#' \donttest{
 #'
-#' set.seed(123)
-#' # Generate sample data (use rkw if available, otherwise placeholder)
-#' # sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
-#' sample_data <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
-#' sample_data <- 1 - (1 - sample_data)^(1 / 2.5) # Placeholder
-#' sample_data <- pmax(1e-6, pmin(1 - 1e-6, sample_data)) # Ensure (0,1)
+#' set.seed(2203)
+#' y <- rkw(1000, alpha = 2.5, beta = 1.5)
 #'
 #' # Fit different models to the same data
-#' fit1_kw <- tryCatch(gkwfit(sample_data, family = "kw", silent = TRUE),
-#'   error = function(e) NULL
-#' )
-#' fit2_bkw <- tryCatch(gkwfit(sample_data, family = "bkw", silent = TRUE),
-#'   error = function(e) NULL
-#' ) # Assuming bkw fits
-#' fit3_gkw <- tryCatch(gkwfit(sample_data, family = "gkw", silent = TRUE),
-#'   error = function(e) NULL
-#' ) # Assuming gkw fits
+#' fit1_kw <- gkwfit(y, family = "kw", silent = TRUE)
+#' fit2_bkw <- gkwfit(y, family = "bkw", silent = TRUE)
+#' fit3_gkw <- gkwfit(y, family = "gkw", silent = TRUE)
 #'
-#' # Ensure fits were successful before proceeding
-#' fit_list <- Filter(Negate(is.null), list(
-#'   fit1_kw = fit1_kw,
-#'   fit2_bkw = fit2_bkw, fit3_gkw = fit3_gkw
-#' ))
+#' # Calculate BIC for a single model
+#' bic1 <- BIC(fit1_kw)
+#' print(bic1)
 #'
-#' if (length(fit_list) > 0) {
-#'   # Calculate BIC for a single model (if fit1_kw exists)
-#'   if (!is.null(fit1_kw)) {
-#'     bic1 <- BIC(fit1_kw)
-#'     print(bic1)
-#'   }
-#'
-#'   # Compare BIC values for multiple models (if more than one fit exists)
-#'   if (length(fit_list) > 1) {
-#'     # Pass models individually using do.call
-#'     bic_comparison <- do.call(BIC, fit_list)
-#'     # Or if saved in a list: BIC(fit_list[[1]], fit_list[[2]], ...)
-#'     print(bic_comparison) # Sorted by BIC
-#'   }
-#' } else {
-#'   print("No models fitted successfully.")
-#' }
+#' # Compare BIC values for multiple models
+#' bic_comparison <- c(BIC(fit1_kw), BIC(fit2_bkw), BIC(fit3_gkw))
+#' print(bic_comparison)
 #' }
 #'
 #' @keywords models methods stats
@@ -3685,7 +3646,7 @@ BIC.gkwfit <- function(object, ...) {
 #' # Load required packages
 #' library(ggplot2)
 #' library(patchwork)
-#'
+#' library(betareg)
 #' # Generate data from GKw distribution
 #' set.seed(2203)
 #' n <- 1000
@@ -4047,6 +4008,7 @@ anova.gkwfit <- function(object, ...) {
 #' @param digits Minimum number of significant digits to print.
 #' @param signif.stars Logical; if TRUE, add significance stars.
 #' @param ... Other args passed to
+#' @return An object of class \code{"anova.gkwfit"} and prints a summary.
 #' @export
 print.anova.gkwfit <- function(x, digits = max(getOption("digits") - 2L, 3L),
                                signif.stars = getOption("show.signif.stars", TRUE), ...) {

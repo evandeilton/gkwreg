@@ -45,7 +45,7 @@ When comparing multiple models passed via \code{...}, the function relies on
 which in turn calls \code{logLik} for each provided object.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
 # and that rkw() is available and data is appropriate (0 < y < 1).
 set.seed(123)
@@ -69,7 +69,7 @@ bic1 <- BIC(kw_reg1)
 print(bic1)
 
 # Compare models using BIC (lower is better)
-model_comparison_bic <- BIC(kw_reg1, kw_reg2, kw_reg3)
+model_comparison_bic <- c(BIC(kw_reg1), BIC(kw_reg2), BIC(kw_reg3))
 print(model_comparison_bic)
 }
 

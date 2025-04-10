@@ -116,7 +116,7 @@ evaluated at \eqn{\lambda=1}. Note that the component for \eqn{\lambda} is omitt
 Numerical stability is maintained through careful implementation.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 
 # Generate sample data
@@ -180,9 +180,9 @@ if (mle_result_bkw$convergence == 0 && exists("grgkw")) {
   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
 }
 
-} # End of \dontrun block
+}
 
-\dontrun{
+\donttest{
 # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 
 # Generate sample data
@@ -246,7 +246,7 @@ if (mle_result_bkw$convergence == 0 && exists("grgkw")) {
   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

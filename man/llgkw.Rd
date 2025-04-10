@@ -55,7 +55,7 @@ close to 0 or 1 accurately.
 }
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate sample data from a known GKw distribution
 set.seed(123)
 true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -125,7 +125,7 @@ if (requireNamespace("numDeriv", quietly = TRUE) &&
    cat("Requires 'numDeriv' package and functions 'grgkw', 'hsgkw'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

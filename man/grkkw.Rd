@@ -68,7 +68,7 @@ evaluated at \eqn{\gamma=1}. Note that the component for \eqn{\gamma} is omitted
 Numerical stability is maintained through careful implementation.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 
 # Generate sample data
@@ -131,7 +131,7 @@ if (mle_result_kkw$convergence == 0 && exists("grgkw")) {
   print(max(abs(ana_grad_kkw - ana_grad_gkw_subset))) # Should be very small
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

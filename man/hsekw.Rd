@@ -59,7 +59,7 @@ This corresponds to the relevant 3x3 submatrix of the 5x5 GKw Hessian (\code{\li
 evaluated at \eqn{\gamma=1, \delta=0}. The exact analytical formulas are implemented directly.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
 
 # Generate sample data
@@ -121,7 +121,7 @@ if (mle_result_ekw$convergence == 0 &&
   cat("Requires convergence, 'numDeriv' package, and function 'hsekw'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

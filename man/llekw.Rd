@@ -52,7 +52,7 @@ suitable for minimization using optimization routines like \code{\link[stats]{op
 Numerical stability is maintained similarly to \code{\link{llgkw}}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rekw, grekw, hsekw functions for EKw distribution
 
 # Generate sample data from a known EKw distribution
@@ -120,7 +120,7 @@ if (mle_result_ekw$convergence == 0 &&
    cat("Requires convergence, 'numDeriv' package and functions 'grekw', 'hsekw'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

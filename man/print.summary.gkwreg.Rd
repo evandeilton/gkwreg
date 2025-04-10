@@ -53,22 +53,6 @@ p-values, optionally marked with significance stars (using
 \item Convergence status and number of iterations.
 }
 }
-\examples{
-\dontrun{
-# Assuming 'kw_reg' is a fitted object from gkwreg() as in the
-# summary.gkwreg example:
-# kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
-
-# Create the summary object
-summary_obj <- summary(kw_reg)
-
-# Print the summary object - this automatically calls print.summary.gkwreg
-summary_obj
-# Or explicitly:
-# print(summary_obj, digits = 4, signif.stars = TRUE)
-}
-
-}
 \seealso{
 \code{\link{summary.gkwreg}}, \code{\link{gkwreg}},
 \code{\link[stats]{printCoefmat}}

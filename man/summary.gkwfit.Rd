@@ -59,7 +59,7 @@ The returned object is of class \code{"summary.gkwfit"}, and its printing is
 handled by \code{\link{print.summary.gkwfit}}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate data and fit model
 set.seed(2203)
 y <- rkw(50, alpha = 2, beta = 3)

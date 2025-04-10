@@ -57,7 +57,7 @@ difference from the standard Beta distribution (\code{shape2 = delta + 1}).
 The returned matrix is symmetric.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 
 # Generate sample data from a Beta(2, 4) distribution
@@ -115,7 +115,7 @@ if (mle_result_beta$convergence == 0 &&
   cat("Requires convergence, 'numDeriv' package, and function 'hsbeta'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

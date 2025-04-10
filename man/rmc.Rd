@@ -50,7 +50,7 @@ algorithm simplifies significantly:
 This procedure is implemented efficiently, handling parameter recycling as needed.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(2028) # for reproducibility
 
 # Generate 1000 random values from a specific Mc distribution
@@ -94,14 +94,7 @@ print(summary(x_sample_mc_qq))
 print("Summary stats for rgkw(alpha=1, beta=1) sample:")
 print(summary(x_sample_gkw)) # Should be similar
 
-# Vectorized parameters: generate 1 value for each lambda
-lambdas_vec <- c(0.5, 1.0, 2.0)
-n_param <- length(lambdas_vec)
-samples_vec <- rmc(n_param, gamma = gamma_par, delta = delta_par,
-                   lambda = lambdas_vec)
-print(samples_vec) # One sample for each lambda value
-
-} # End of \dontrun block
+}
 
 }
 \references{

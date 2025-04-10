@@ -60,7 +60,7 @@ This corresponds to the relevant 4x4 submatrix of the 5x5 GKw Hessian (\code{\li
 evaluated at \eqn{\lambda=1}. The exact analytical formulas are implemented directly.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 
 # Generate sample data
@@ -122,7 +122,7 @@ if (mle_result_bkw$convergence == 0 &&
   cat("Requires convergence, 'numDeriv' package, and function 'hsbkw'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

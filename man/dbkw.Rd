@@ -55,7 +55,7 @@ Numerical evaluation is performed using algorithms similar to those for \code{dg
 ensuring stability.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 x_vals <- c(0.2, 0.5, 0.8)
 alpha_par <- 2.0
@@ -91,13 +91,7 @@ lines(curve_x, curve_y2, col = "red")
 lines(curve_x, curve_y3, col = "green")
 legend("topright", legend = c("gamma=0.5", "gamma=1.0", "gamma=2.0"),
        col = c("blue", "red", "green"), lty = 1, bty = "n")
-
-# Vectorized parameters
-gammas_vec <- c(0.5, 1.0, 2.0)
-densities_vec <- dbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
-print(densities_vec) # Density at x=0.5 for 3 different gamma values
-
-} # End of \dontrun block
+}
 
 }
 \references{

@@ -71,7 +71,7 @@ The returned matrix is symmetric, with rows/columns corresponding to
 \eqn{\gamma, \delta, \lambda}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
 
 # Generate sample data
@@ -128,7 +128,7 @@ if (mle_result_mc$convergence == 0 &&
   cat("Requires convergence, 'numDeriv' package, and function 'hsmc'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

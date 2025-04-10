@@ -72,7 +72,7 @@ Numerical stability is maintained by handling boundary cases (\code{p = 0},
 arguments to powers are non-negative).
 }
 \examples{
-\dontrun{
+\donttest{
 # Basic quantile calculation (median)
 median_val <- qgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 print(median_val)
@@ -98,7 +98,7 @@ print(median_logp) # Should match median_val
 alphas_vec <- c(0.5, 1.0, 2.0)
 betas_vec <- c(1.0, 2.0, 3.0)
 # Get median for 3 different GKw distributions
-medians_vec <- qgkw(0.5, alpha = alphas_vec, beta = betas_vec)
+medians_vec <- qgkw(0.5, alpha = alphas_vec, beta = betas_vec, gamma = 1, delta = 0, lambda = 1)
 print(medians_vec)
 
 # Verify inverse relationship with pgkw
@@ -106,12 +106,6 @@ p_val <- 0.75
 x_val <- qgkw(p_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 p_check <- pgkw(x_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 print(paste("Calculated p:", p_check, " (Expected:", p_val, ")"))
-# abs(p_check - p_val) < 1e-9 # Should be TRUE
-
-# Edge cases
-qgkw(c(0, 1), alpha = 2, beta = 3) # Should return 0, 1
-qgkw(c(-0.1, 1.1), alpha = 2, beta = 3) # Should return NaN, NaN
-qgkw(0.5, alpha = -1, beta = 3) # Should return NaN (invalid alpha)
 }
 }
 \references{

@@ -56,7 +56,7 @@ consistent parameter recycling and handling within the C++ environment,
 matching the style of other functions in the related families.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 q_vals <- c(0.2, 0.5, 0.8)
 gamma_par <- 2.0 # Corresponds to shape1
@@ -100,7 +100,7 @@ curve(stats::pbeta(x, 2, 4), add=TRUE, col="red", lty=2)
 legend("bottomright", legend=c("pbeta_(gamma=2, delta=3)", "stats::pbeta(shape1=2, shape2=4)"),
        col=c("blue", "red"), lty=c(1,2), bty="n")
 
-} # End of \dontrun block
+}
 
 }
 \references{

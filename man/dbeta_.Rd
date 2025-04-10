@@ -55,7 +55,7 @@ where \code{dbeta(x, shape1, shape2)} uses \code{shape2} directly. Here,
 \code{shape1 = gamma} and \code{shape2 = delta + 1}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 x_vals <- c(0.2, 0.5, 0.8)
 gamma_par <- 2.0 # Corresponds to shape1
@@ -94,7 +94,7 @@ curve(stats::dbeta(x, 2, 4), add=TRUE, col="red", lty=2)
 legend("topright", legend=c("dbeta_(gamma=2, delta=3)", "stats::dbeta(shape1=2, shape2=4)"),
        col=c("blue", "red"), lty=c(1,2), bty="n")
 
-} # End of \dontrun block
+}
 
 }
 \references{

@@ -891,7 +891,7 @@ return valid;
 //' \code{\link[stats]{dbeta}}, \code{\link[stats]{integrate}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Simple density evaluation at a point
 //' dgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
 //'
@@ -922,10 +922,6 @@ return valid;
 //' print(log_pdf_val)
 //' print(log(dgkw(0.5, 2, 3, 1, 0, 1))) # Should match
 //'
-//' # Vectorized parameter example
-//' alphas_vec <- c(0.5, 1.5, 3.0)
-//' # Returns 3 density values for the same x
-//' dgkw(0.5, alpha = alphas_vec, beta = 2, gamma = 1, delta = 0, lambda = 1)
 //' }
 //'
 //' @export
@@ -1112,7 +1108,7 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' \code{\link[stats]{pbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Simple CDF evaluation
 //' prob <- pgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
 //' print(prob)
@@ -1135,7 +1131,8 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' q_vals <- c(0.2, 0.5, 0.8)
 //' alphas_vec <- c(0.5, 1.0, 2.0)
 //' betas_vec <- c(1.0, 2.0, 3.0)
-//' pgkw(q_vals, alpha = alphas_vec, beta = betas_vec) # Vectorizes over q, alpha, beta
+//' # Vectorizes over q, alpha, beta
+//' pgkw(q_vals, alpha = alphas_vec, beta = betas_vec, gamma = 1, delta = 0.5, lambda = 0.5)
 //'
 //' # Plotting the CDF for special cases
 //' x_seq <- seq(0.01, 0.99, by = 0.01)
@@ -1365,7 +1362,7 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' \code{\link[stats]{qbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Basic quantile calculation (median)
 //' median_val <- qgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 //' print(median_val)
@@ -1391,7 +1388,7 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' alphas_vec <- c(0.5, 1.0, 2.0)
 //' betas_vec <- c(1.0, 2.0, 3.0)
 //' # Get median for 3 different GKw distributions
-//' medians_vec <- qgkw(0.5, alpha = alphas_vec, beta = betas_vec)
+//' medians_vec <- qgkw(0.5, alpha = alphas_vec, beta = betas_vec, gamma = 1, delta = 0, lambda = 1)
 //' print(medians_vec)
 //'
 //' # Verify inverse relationship with pgkw
@@ -1399,12 +1396,6 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' x_val <- qgkw(p_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 //' p_check <- pgkw(x_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 //' print(paste("Calculated p:", p_check, " (Expected:", p_val, ")"))
-//' # abs(p_check - p_val) < 1e-9 # Should be TRUE
-//'
-//' # Edge cases
-//' qgkw(c(0, 1), alpha = 2, beta = 3) # Should return 0, 1
-//' qgkw(c(-0.1, 1.1), alpha = 2, beta = 3) # Should return NaN, NaN
-//' qgkw(0.5, alpha = -1, beta = 3) # Should return NaN (invalid alpha)
 //'}
 //' @export
 // [[Rcpp::export]]
@@ -1627,7 +1618,7 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' \code{\link[stats]{rbeta}}, \code{\link[base]{set.seed}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' set.seed(1234) # for reproducibility
 //'
 //' # Generate 1000 random values from a specific GKw distribution (Kw case)
@@ -1853,7 +1844,7 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}, \code{\link[base]{log1p}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Generate sample data from a known GKw distribution
 //' set.seed(123)
 //' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -1923,7 +1914,7 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //'    cat("Requires 'numDeriv' package and functions 'grgkw', 'hsgkw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -2088,7 +2079,7 @@ return -(constant_term + term1 + term2 + term3 + term4);
 //' \code{\link[base]{digamma}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Generate sample data from a known GKw distribution
 //' set.seed(123)
 //' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -2140,7 +2131,7 @@ return -(constant_term + term1 + term2 + term3 + term4);
 //'   cat("\nSkipping gradient comparison (requires 'numDeriv' package or convergence).\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -2317,7 +2308,7 @@ return grad;
 //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Generate sample data from a known GKw distribution
 //' set.seed(123)
 //' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -2377,7 +2368,7 @@ return grad;
 //'   warning("Optimization did not converge. Hessian comparison skipped.")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -2776,7 +2767,7 @@ Then sum across data, multiply n to the constants, etc.
 //' \code{\link[stats]{dbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' x_vals <- c(0.2, 0.5, 0.8)
 //' alpha_par <- 2.0
@@ -2806,12 +2797,7 @@ Then sum across data, multiply n to the constants, etc.
 //' plot(curve_x, curve_y, type = "l", main = "kkw Density Example",
 //'      xlab = "x", ylab = "f(x)", col = "blue")
 //'
-//' # Vectorized parameters
-//' alphas_vec <- c(1.5, 2.0, 2.5)
-//' densities_vec <- dkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
-//' print(densities_vec) # Density at x=0.5 for 3 different alpha values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -2977,7 +2963,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{pbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' q_vals <- c(0.2, 0.5, 0.8)
 //' alpha_par <- 2.0
@@ -3014,12 +3000,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' plot(curve_q, curve_p, type = "l", main = "kkw CDF Example",
 //'      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
 //'
-//' # Vectorized parameters
-//' alphas_vec <- c(1.5, 2.0, 2.5)
-//' probs_vec <- pkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
-//' print(probs_vec) # CDF at q=0.5 for 3 different alpha values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -3201,7 +3182,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{qbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' p_vals <- c(0.1, 0.5, 0.9)
 //' alpha_par <- 2.0
@@ -3245,7 +3226,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print(qkkw(c(0, 1), alpha_par, beta_par, delta_par, lambda_par)) # Should be 0, 1
 //' print(qkkw(c(-Inf, 0), alpha_par, beta_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -3416,7 +3397,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{runif}}, \code{\link[stats]{rbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' set.seed(2025) # for reproducibility
 //'
 //' # Generate 1000 random values from a specific kkw distribution
@@ -3456,15 +3437,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print(summary(x_sample_kkw))
 //' print("Summary stats for rgkw(gamma=1) sample:")
 //' print(summary(x_sample_gkw)) # Should be similar
-//'
-//' # Vectorized parameters: generate 1 value for each alpha
-//' alphas_vec <- c(1.5, 2.0, 2.5)
-//' n_param <- length(alphas_vec)
-//' samples_vec <- rkkw(n_param, alpha = alphas_vec, beta = beta_par,
-//'                       delta = delta_par, lambda = lambda_par)
-//' print(samples_vec) # One sample for each alpha value
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -3599,7 +3572,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{optim}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rkkw, grkkw, hskkw functions for kkw distribution
 //'
 //' # Generate sample data from a known kkw distribution
@@ -3666,7 +3639,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //'    cat("Requires convergence, 'numDeriv' package and functions 'grkkw', 'hskkw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -3923,7 +3896,7 @@ double llkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
 //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 //'
 //' # Generate sample data
@@ -3986,7 +3959,7 @@ double llkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
 //'   print(max(abs(ana_grad_kkw - ana_grad_gkw_subset))) # Should be very small
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -4260,7 +4233,7 @@ Rcpp::NumericVector grkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 //'
 //' # Generate sample data
@@ -4321,7 +4294,7 @@ Rcpp::NumericVector grkkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //'   cat("Requires convergence, 'numDeriv' package, and function 'hskkw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -4667,7 +4640,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[stats]{optim}}
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rkkw, grkkw, hskkw functions for kkw distribution
 // //'
 // //' # Generate sample data from a known kkw distribution
@@ -4734,7 +4707,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'    cat("Requires convergence, 'numDeriv' package and functions 'grkkw', 'hskkw'.\n")
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -4874,7 +4847,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 // //'
 // //' # Generate sample data
@@ -4937,7 +4910,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'   print(max(abs(ana_grad_kkw - ana_grad_gkw_subset))) # Should be very small
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -5112,7 +5085,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 // //'
 // //' # Generate sample data
@@ -5173,7 +5146,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'   cat("Requires convergence, 'numDeriv' package, and function 'hskkw'.\n")
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -5416,7 +5389,7 @@ Rcpp::NumericMatrix hskkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' This function is implemented in C++ for computational efficiency.
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Generate sample data from a KKw distribution
 // //' set.seed(123)
 // //' x <- rkkw(100, 2, 3, 1.5, 0.5)
@@ -5798,7 +5771,7 @@ This file defines:
 //' \code{\link{pbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}} (other BKw functions),
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' x_vals <- c(0.2, 0.5, 0.8)
 //' alpha_par <- 2.0
@@ -5834,13 +5807,7 @@ This file defines:
 //' lines(curve_x, curve_y3, col = "green")
 //' legend("topright", legend = c("gamma=0.5", "gamma=1.0", "gamma=2.0"),
 //'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-//'
-//' # Vectorized parameters
-//' gammas_vec <- c(0.5, 1.0, 2.0)
-//' densities_vec <- dbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
-//' print(densities_vec) # Density at x=0.5 for 3 different gamma values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -5995,7 +5962,7 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' \code{\link[stats]{pbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' q_vals <- c(0.2, 0.5, 0.8)
 //' alpha_par <- 2.0
@@ -6031,13 +5998,7 @@ return Rcpp::NumericVector(result.memptr(), result.memptr() + result.n_elem);
 //' curve_p <- pbkw(curve_q, alpha = 2, beta = 3, gamma = 0.5, delta = 1)
 //' plot(curve_q, curve_p, type = "l", main = "BKw CDF Example",
 //'      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
-//'
-//' # Vectorized parameters
-//' gammas_vec <- c(0.5, 1.0, 2.0)
-//' probs_vec <- pbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
-//' print(probs_vec) # CDF at q=0.5 for 3 different gamma values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -6208,7 +6169,7 @@ return Rcpp::NumericVector(res.memptr(), res.memptr() + res.n_elem);
 //' \code{\link[stats]{qbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' p_vals <- c(0.1, 0.5, 0.9)
 //' alpha_par <- 2.0
@@ -6251,7 +6212,7 @@ return Rcpp::NumericVector(res.memptr(), res.memptr() + res.n_elem);
 //' print(qbkw(c(0, 1), alpha_par, beta_par, gamma_par, delta_par)) # Should be 0, 1
 //' print(qbkw(c(-Inf, 0), alpha_par, beta_par, gamma_par, delta_par, log_p = TRUE)) # Should be 0, 1
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -6417,7 +6378,7 @@ return Rcpp::NumericVector(res.memptr(), res.memptr() + res.n_elem);
 //' \code{\link[stats]{rbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' set.seed(2026) # for reproducibility
 //'
 //' # Generate 1000 random values from a specific BKw distribution
@@ -6458,14 +6419,7 @@ return Rcpp::NumericVector(res.memptr(), res.memptr() + res.n_elem);
 //' print("Summary stats for rgkw(lambda=1) sample:")
 //' print(summary(x_sample_gkw)) # Should be similar
 //'
-//' # Vectorized parameters: generate 1 value for each gamma
-//' gammas_vec <- c(0.5, 1.0, 2.0)
-//' n_param <- length(gammas_vec)
-//' samples_vec <- rbkw(n_param, alpha = alpha_par, beta = beta_par,
-//'                     gamma = gammas_vec, delta = delta_par)
-//' print(samples_vec) # One sample for each gamma value
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -6599,21 +6553,14 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
 //'
 //' @examples
-//' \dontrun{
-//' # Assuming existence of rbkw, grbkw, hsbkw functions for BKw distribution
+//' \donttest{
 //'
 //' # Generate sample data from a known BKw distribution
-//' set.seed(124)
-//' true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.0, delta = 0.5)
-//' # Use rbkw if it exists, otherwise use rgkw with lambda=1
-//' if (exists("rbkw")) {
-//'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+//' set.seed(2203)
+//' true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.5, delta = 0.5)
+//' sample_data_bkw <- rbkw(1000, alpha = true_par_bkw[1], beta = true_par_bkw[2],
 //'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
-//' } else {
-//'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
-//'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
-//' }
-//' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.0, 0.5) Sample")
+//' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.5, 0.5) Sample")
 //'
 //' # --- Maximum Likelihood Estimation using optim ---
 //' # Initial parameter guess
@@ -6666,7 +6613,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //'    cat("Requires convergence, 'numDeriv' package and functions 'grbkw', 'hsbkw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -6870,7 +6817,7 @@ double llbkw(const Rcpp::NumericVector& par,
 //' \code{\link[base]{digamma}}.
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 //'
 //' # Generate sample data
@@ -6934,7 +6881,7 @@ double llbkw(const Rcpp::NumericVector& par,
 //'   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 //' @title Gradient of the Negative Log-Likelihood for the BKw Distribution
@@ -7017,7 +6964,7 @@ double llbkw(const Rcpp::NumericVector& par,
 //' \code{\link[base]{digamma}}.
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 //'
 //' # Generate sample data
@@ -7081,7 +7028,7 @@ double llbkw(const Rcpp::NumericVector& par,
 //'   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -7352,7 +7299,7 @@ Rcpp::NumericVector grbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 //'
 //' # Generate sample data
@@ -7414,7 +7361,7 @@ Rcpp::NumericVector grbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //'   cat("Requires convergence, 'numDeriv' package, and function 'hsbkw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -7779,7 +7726,7 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rbkw, grbkw, hsbkw functions for BKw distribution
 // //'
 // //' # Generate sample data from a known BKw distribution
@@ -7846,7 +7793,7 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'    cat("Requires convergence, 'numDeriv' package and functions 'grbkw', 'hsbkw'.\n")
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -7991,7 +7938,7 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[base]{digamma}}.
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 // //'
 // //' # Generate sample data
@@ -8055,7 +8002,7 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -8216,7 +8163,7 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 // //'
 // //' # Generate sample data
@@ -8278,7 +8225,7 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'   cat("Requires convergence, 'numDeriv' package, and function 'hsbkw'.\n")
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -8470,7 +8417,7 @@ Rcpp::NumericMatrix hsbkw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' This function is implemented in C++ for computational efficiency.
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Generate sample data from a BKw distribution
 // //' set.seed(123)
 // //' x <- rbkw(100, 2, 3, 1, 0.5)
@@ -8793,7 +8740,7 @@ return true;
 //' \code{\link{pekw}}, \code{\link{qekw}}, \code{\link{rekw}} (other EKw functions),
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' x_vals <- c(0.2, 0.5, 0.8)
 //' alpha_par <- 2.0
@@ -8827,13 +8774,7 @@ return true;
 //' lines(curve_x, curve_y3, col = "green")
 //' legend("topright", legend = c("lambda=0.5", "lambda=1.0 (Kw)", "lambda=2.0"),
 //'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-//'
-//' # Vectorized parameters
-//' lambdas_vec <- c(0.5, 1.0, 2.0)
-//' densities_vec <- dekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
-//' print(densities_vec) # Density at x=0.5 for 3 different lambda values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -8976,7 +8917,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link{dekw}}, \code{\link{qekw}}, \code{\link{rekw}} (other EKw functions),
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' q_vals <- c(0.2, 0.5, 0.8)
 //' alpha_par <- 2.0
@@ -9017,13 +8958,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' lines(curve_q, curve_p3, col = "green")
 //' legend("bottomright", legend = c("lambda=0.5", "lambda=1.0 (Kw)", "lambda=2.0"),
 //'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-//'
-//' # Vectorized parameters
-//' lambdas_vec <- c(0.5, 1.0, 2.0)
-//' probs_vec <- pekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
-//' print(probs_vec) # CDF at q=0.5 for 3 different lambda values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -9177,7 +9112,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{qunif}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' p_vals <- c(0.1, 0.5, 0.9)
 //' alpha_par <- 2.0
@@ -9218,13 +9153,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' # Boundary conditions
 //' print(qekw(c(0, 1), alpha_par, beta_par, lambda_par)) # Should be 0, 1
 //' print(qekw(c(-Inf, 0), alpha_par, beta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
-//'
-//' # Vectorized parameters
-//' lambdas_vec <- c(0.5, 1.0, 2.0)
-//' quantiles_vec <- qekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
-//' print(quantiles_vec) # Median for 3 different lambda values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -9367,7 +9296,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{runif}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' set.seed(2027) # for reproducibility
 //'
 //' # Generate 1000 random values from a specific EKw distribution
@@ -9405,14 +9334,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print("Summary stats for rgkw(gamma=1, delta=0) sample:")
 //' print(summary(x_sample_gkw)) # Should be similar
 //'
-//' # Vectorized parameters: generate 1 value for each lambda
-//' lambdas_vec <- c(0.5, 1.0, 2.0)
-//' n_param <- length(lambdas_vec)
-//' samples_vec <- rekw(n_param, alpha = alpha_par, beta = beta_par,
-//'                     lambda = lambdas_vec)
-//' print(samples_vec) # One sample for each lambda value
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -9542,7 +9464,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{optim}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rekw, grekw, hsekw functions for EKw distribution
 //'
 //' # Generate sample data from a known EKw distribution
@@ -9610,7 +9532,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //'    cat("Requires convergence, 'numDeriv' package and functions 'grekw', 'hsekw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -9807,7 +9729,7 @@ double llekw(const Rcpp::NumericVector& par,
 //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
 //'
 //' # Generate sample data
@@ -9868,7 +9790,7 @@ double llekw(const Rcpp::NumericVector& par,
 //'
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -10080,7 +10002,7 @@ Rcpp::NumericVector grekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
 //'
 //' # Generate sample data
@@ -10142,7 +10064,7 @@ Rcpp::NumericVector grekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 //'   cat("Requires convergence, 'numDeriv' package, and function 'hsekw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -10388,7 +10310,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[stats]{optim}}
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rekw, grekw, hsekw functions for EKw distribution
 // //'
 // //' # Generate sample data from a known EKw distribution
@@ -10456,7 +10378,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'    cat("Requires convergence, 'numDeriv' package and functions 'grekw', 'hsekw'.\n")
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -10585,7 +10507,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
 // //'
 // //' # Generate sample data
@@ -10646,7 +10568,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -10805,7 +10727,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
 // //'
 // //' # Generate sample data
@@ -10867,7 +10789,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //'   cat("Requires convergence, 'numDeriv' package, and function 'hsekw'.\n")
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -11040,7 +10962,7 @@ Rcpp::NumericMatrix hsekw(const Rcpp::NumericVector& par, const Rcpp::NumericVec
 // //' This function is implemented in C++ for computational efficiency.
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Generate sample data from an EKw distribution
 // //' set.seed(123)
 // //' x <- rekw(100, 2, 3, 0.5)
@@ -11336,7 +11258,7 @@ return true;
 //' \code{\link[stats]{dbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' x_vals <- c(0.2, 0.5, 0.8)
 //' gamma_par <- 2.0
@@ -11370,13 +11292,7 @@ return true;
 //' lines(curve_x, curve_y3, col = "green")
 //' legend("topright", legend = c("lambda=0.5", "lambda=1.0 (Beta)", "lambda=2.0"),
 //'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-//'
-//' # Vectorized parameters
-//' lambdas_vec <- c(0.5, 1.0, 2.0)
-//' densities_vec <- dmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-//' print(densities_vec) # Density at x=0.5 for 3 different lambda values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -11514,7 +11430,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{pbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' q_vals <- c(0.2, 0.5, 0.8)
 //' gamma_par <- 2.0
@@ -11557,13 +11473,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' lines(curve_q, curve_p3, col = "green")
 //' legend("bottomright", legend = c("lambda=0.5", "lambda=1.0 (Beta)", "lambda=2.0"),
 //'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-//'
-//' # Vectorized parameters
-//' lambdas_vec <- c(0.5, 1.0, 2.0)
-//' probs_vec <- pmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-//' print(probs_vec) # CDF at q=0.5 for 3 different lambda values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -11699,7 +11609,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{qbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' p_vals <- c(0.1, 0.5, 0.9)
 //' gamma_par <- 2.0
@@ -11733,8 +11643,8 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //'
 //' # Verify inverse relationship with pmc
 //' p_check <- 0.75
-//' q_calc <- qmc(p_check, gamma_par, delta_par, lambda_par = 1.5) # Use lambda != 1
-//' p_recalc <- pmc(q_calc, gamma_par, delta_par, lambda_par = 1.5)
+//' q_calc <- qmc(p_check, gamma_par, delta_par, lambda_par) # Use lambda != 1
+//' p_recalc <- pmc(q_calc, gamma_par, delta_par, lambda_par)
 //' print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 //' # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
 //'
@@ -11742,12 +11652,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print(qmc(c(0, 1), gamma_par, delta_par, lambda_par)) # Should be 0, 1
 //' print(qmc(c(-Inf, 0), gamma_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
 //'
-//' # Vectorized parameters
-//' lambdas_vec <- c(0.5, 1.0, 2.0)
-//' quantiles_vec <- qmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-//' print(quantiles_vec) # Median for 3 different lambda values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -11886,7 +11791,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{rbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' set.seed(2028) # for reproducibility
 //'
 //' # Generate 1000 random values from a specific Mc distribution
@@ -11930,14 +11835,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print("Summary stats for rgkw(alpha=1, beta=1) sample:")
 //' print(summary(x_sample_gkw)) # Should be similar
 //'
-//' # Vectorized parameters: generate 1 value for each lambda
-//' lambdas_vec <- c(0.5, 1.0, 2.0)
-//' n_param <- length(lambdas_vec)
-//' samples_vec <- rmc(n_param, gamma = gamma_par, delta = delta_par,
-//'                    lambda = lambdas_vec)
-//' print(samples_vec) # One sample for each lambda value
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -12053,7 +11951,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rmc, grmc, hsmc functions for Mc distribution
 //'
 //' # Generate sample data from a known Mc distribution
@@ -12115,7 +12013,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //'    cat("Requires convergence, 'numDeriv' package and functions 'grmc', 'hsmc'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -12284,7 +12182,7 @@ double llmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
 //' \code{\link[base]{digamma}}.
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
 //'
 //' # Generate sample data
@@ -12340,7 +12238,7 @@ double llmc(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data) {
 //'
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -12540,7 +12438,7 @@ Rcpp::NumericVector grmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 //' \code{\link[base]{trigamma}}.
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
 //'
 //' # Generate sample data
@@ -12597,7 +12495,7 @@ Rcpp::NumericVector grmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 //'   cat("Requires convergence, 'numDeriv' package, and function 'hsmc'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -12820,7 +12718,7 @@ Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 // //' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rmc, grmc, hsmc functions for Mc distribution
 // //'
 // //' # Generate sample data from a known Mc distribution
@@ -12882,7 +12780,7 @@ Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 // //'    cat("Requires convergence, 'numDeriv' package and functions 'grmc', 'hsmc'.\n")
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -13000,7 +12898,7 @@ Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 // //' \code{\link[base]{digamma}}.
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
 // //'
 // //' # Generate sample data
@@ -13056,7 +12954,7 @@ Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 // //'
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -13208,7 +13106,7 @@ Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 // //' \code{\link[base]{trigamma}}.
 // //'
 // //' @examples
-// //' \dontrun{
+// //' \donttest{
 // //' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
 // //'
 // //' # Generate sample data
@@ -13265,7 +13163,7 @@ Rcpp::NumericMatrix hsmc(const Rcpp::NumericVector& par, const Rcpp::NumericVect
 // //'   cat("Requires convergence, 'numDeriv' package, and function 'hsmc'.\n")
 // //' }
 // //'
-// //' } # End of \dontrun block
+// //' }
 // //'
 // //' @export
 // // [[Rcpp::export]]
@@ -13467,7 +13365,7 @@ return true;
 //' \code{\link[stats]{dbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' x_vals <- c(0.2, 0.5, 0.8)
 //' alpha_par <- 2.0
@@ -13499,13 +13397,7 @@ return true;
 //' lines(curve_x, dkw(curve_x, alpha = 1, beta = 3), col = "orange") # J-shaped (reversed)
 //' legend("top", legend = c("a=2, b=3", "a=3, b=2", "a=0.5, b=0.5", "a=5, b=1", "a=1, b=3"),
 //'        col = c("blue", "red", "green", "purple", "orange"), lty = 1, bty = "n", ncol = 2)
-//'
-//' # Vectorized parameters
-//' alphas_vec <- c(1.5, 2.0, 2.5)
-//' densities_vec <- dkw(0.5, alpha = alphas_vec, beta = 3.0)
-//' print(densities_vec) # Density at x=0.5 for 3 different alpha values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -13625,7 +13517,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{pbeta}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' q_vals <- c(0.2, 0.5, 0.8)
 //' alpha_par <- 2.0
@@ -13664,12 +13556,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' legend("bottomright", legend = c("a=2, b=3", "a=3, b=2", "a=0.5, b=0.5", "a=5, b=1", "a=1, b=3"),
 //'        col = c("blue", "red", "green", "purple", "orange"), lty = 1, bty = "n", ncol = 2)
 //'
-//' # Vectorized parameters
-//' alphas_vec <- c(1.5, 2.0, 2.5)
-//' probs_vec <- pkw(0.5, alpha = alphas_vec, beta = 3.0)
-//' print(probs_vec) # CDF at q=0.5 for 3 different alpha values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -13801,7 +13688,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{qbeta}}, \code{\link[stats]{qunif}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' p_vals <- c(0.1, 0.5, 0.9)
 //' alpha_par <- 2.0
@@ -13840,12 +13727,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print(qkw(c(0, 1), alpha_par, beta_par)) # Should be 0, 1
 //' print(qkw(c(-Inf, 0), alpha_par, beta_par, log_p = TRUE)) # Should be 0, 1
 //'
-//' # Vectorized parameters
-//' alphas_vec <- c(1.5, 2.0, 2.5)
-//' quantiles_vec <- qkw(0.5, alpha = alphas_vec, beta = 3.0)
-//' print(quantiles_vec) # Median for 3 different alpha values
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -13973,7 +13855,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{runif}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' set.seed(2029) # for reproducibility
 //'
 //' # Generate 1000 random values from a specific Kw distribution
@@ -14009,13 +13891,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print("Summary stats for rgkw(gamma=1, delta=0, lambda=1) sample:")
 //' print(summary(x_sample_gkw)) # Should be similar
 //'
-//' # Vectorized parameters: generate 1 value for each alpha
-//' alphas_vec <- c(1.5, 2.0, 2.5)
-//' n_param <- length(alphas_vec)
-//' samples_vec <- rkw(n_param, alpha = alphas_vec, beta = beta_par)
-//' print(samples_vec) # One sample for each alpha value
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -14127,7 +14003,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{optim}}
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rkw, grkw, hskw functions for Kw distribution
 //'
 //' # Generate sample data from a known Kw distribution
@@ -14189,7 +14065,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //'    cat("Requires convergence, 'numDeriv' package and functions 'grkw', 'hskw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -14292,7 +14168,7 @@ return -loglike;
 //' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rkw, llkw, grkw, hskw functions for Kw
 //'
 //' # Generate sample data
@@ -14348,7 +14224,7 @@ return -loglike;
 //'
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -14485,7 +14361,7 @@ return grad;
 //' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rkw, llkw, grkw, hskw functions for Kw
 //'
 //' # Generate sample data
@@ -14542,7 +14418,7 @@ return grad;
 //'   cat("Requires convergence, 'numDeriv' package, and function 'hskw'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -14731,7 +14607,7 @@ return true;
 //' \code{pbeta_}, \code{qbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' x_vals <- c(0.2, 0.5, 0.8)
 //' gamma_par <- 2.0 # Corresponds to shape1
@@ -14770,7 +14646,7 @@ return true;
 //' legend("topright", legend=c("dbeta_(gamma=2, delta=3)", "stats::dbeta(shape1=2, shape2=4)"),
 //'        col=c("blue", "red"), lty=c(1,2), bty="n")
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -14890,7 +14766,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{dbeta_}, \code{qbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' q_vals <- c(0.2, 0.5, 0.8)
 //' gamma_par <- 2.0 # Corresponds to shape1
@@ -14934,7 +14810,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' legend("bottomright", legend=c("pbeta_(gamma=2, delta=3)", "stats::pbeta(shape1=2, shape2=4)"),
 //'        col=c("blue", "red"), lty=c(1,2), bty="n")
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -15059,7 +14935,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{dbeta_}, \code{pbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Example values
 //' p_vals <- c(0.1, 0.5, 0.9)
 //' gamma_par <- 2.0 # Corresponds to shape1
@@ -15106,7 +14982,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print(qbeta_(c(0, 1), gamma_par, delta_par)) # Should be 0, 1
 //' print(qbeta_(c(-Inf, 0), gamma_par, delta_par, log_p = TRUE)) # Should be 0, 1
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -15229,7 +15105,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{dbeta_}, \code{pbeta_}, \code{qbeta_} (other functions for this parameterization, if they exist).
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' set.seed(2030) # for reproducibility
 //'
 //' # Generate 1000 samples using rbeta_
@@ -15244,12 +15120,10 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' # Compare with stats::rbeta
 //' x_sample_stats <- stats::rbeta(1000, shape1 = shape1, shape2 = shape2)
 //' # Visually compare histograms or QQ-plots
-//' par(mfrow=c(1,2))
 //' hist(x_sample, main="rbeta_ Sample", freq=FALSE, breaks=30)
 //' curve(dbeta_(x, gamma_par, delta_par), add=TRUE, col="red", lwd=2)
 //' hist(x_sample_stats, main="stats::rbeta Sample", freq=FALSE, breaks=30)
 //' curve(stats::dbeta(x, shape1, shape2), add=TRUE, col="blue", lwd=2)
-//' par(mfrow=c(1,1))
 //' # Compare summary stats (should be similar due to randomness)
 //' print(summary(x_sample))
 //' print(summary(x_sample_stats))
@@ -15265,13 +15139,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' print("Summary stats for rmc(l=1) sample:")
 //' print(summary(x_sample_mc))
 //'
-//' # Vectorized parameters (e.g., generating from Beta(g, 4) for different g)
-//' gammas_vec <- c(1.0, 2.0, 3.0)
-//' n_param <- length(gammas_vec)
-//' samples_vec <- rbeta_(n_param, gamma = gammas_vec, delta = 3.0)
-//' print(samples_vec) # One sample for each gamma value
-//'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -15373,7 +15241,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}.
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 //'
 //' # Generate sample data from a Beta(2, 4) distribution
@@ -15439,7 +15307,7 @@ return Rcpp::NumericVector(out.memptr(), out.memptr() + out.n_elem);
 //'    cat("Requires convergence, 'numDeriv' pkg & functions 'grbeta', 'hsbeta'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -15549,7 +15417,7 @@ return -loglike;
 //' \code{\link[base]{digamma}}.
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 //'
 //' # Generate sample data from a Beta(2, 4) distribution
@@ -15606,7 +15474,7 @@ return -loglike;
 //'
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -15726,7 +15594,7 @@ return grad; // Already negated for negative log-likelihood
 //' \code{\link[base]{trigamma}}.
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 //'
 //' # Generate sample data from a Beta(2, 4) distribution
@@ -15784,7 +15652,7 @@ return grad; // Already negated for negative log-likelihood
 //'   cat("Requires convergence, 'numDeriv' package, and function 'hsbeta'.\n")
 //' }
 //'
-//' } # End of \dontrun block
+//' }
 //'
 //' @export
 // [[Rcpp::export]]
@@ -17590,7 +17458,7 @@ extern Rcpp::NumericVector grbeta(const Rcpp::NumericVector& par, const Rcpp::Nu
 extern Rcpp::NumericMatrix hsbeta(const Rcpp::NumericVector& par, const Rcpp::NumericVector& data);
 
 
-//' @title Enhanced Newton-Raphson Optimization for GKw Family Distributions (nrgkw_v2)
+//' @title Enhanced Newton-Raphson Optimization for GKw Family Distributions
 //' @author Enhanced by Lopes, J. E.
 //' @keywords distribution optimization likelihood mle newton-raphson kumaraswamy mcdonald beta
 //'
@@ -17921,13 +17789,13 @@ extern Rcpp::NumericMatrix hsbeta(const Rcpp::NumericVector& par, const Rcpp::Nu
 //' random processes. Journal of Hydrology, 46(1-2), 79-88.
 //'
 //' @examples
-//' \dontrun{
+//' \donttest{
 //' # Generate sample data from a Beta(2,5) distribution for testing
 //' set.seed(123)
-//' sample_data <- stats::rbeta(200, shape1 = 2, shape2 = 5)
+//' sample_data <- rbeta_(200, 2, 5)
 //'
 //' # Automatic initialization (recommended for beginners)
-//' result_auto <- nrgkw_v2(NULL, sample_data, family = "beta", verbose = TRUE)
+//' result_auto <- nrgkw(NULL, sample_data, family = "beta", verbose = FALSE)
 //' print(result_auto$parameters)
 //' print(result_auto$loglik)
 //'
@@ -17936,40 +17804,25 @@ extern Rcpp::NumericMatrix hsbeta(const Rcpp::NumericVector& par, const Rcpp::Nu
 //' results <- list()
 //'
 //' for (method in methods) {
-//'   results[[method]] <- nrgkw_v2(NULL, sample_data, family = "beta",
+//'   results[[method]] <- nrgkw(NULL, sample_data, family = "beta",
 //'                                optimization_method = method)
 //'   cat(sprintf("Method: %s, AIC: %.4f\n", method, results[[method]]$aic))
 //' }
 //'
 //' # Fit the full GKw model with diagnostic information
-//' gkw_result <- nrgkw_v2(NULL, sample_data, family = "gkw",
-//'                       verbose = TRUE, get_num_hess = TRUE)
+//' gkw_result <- nrgkw(NULL, sample_data, family = "gkw",
+//'                       verbose = FALSE, get_num_hess = TRUE)
 //'
 //' # Examine parameter identifiability through condition number
 //' cat(sprintf("Condition number: %.2e\n", gkw_result$condition_number))
-//'
-//' # Evaluate parameter significance
-//' param_summary <- data.frame(
-//'   Parameter = names(gkw_result$parameters),
-//'   Estimate = gkw_result$parameters,
-//'   StdError = gkw_result$std_errors,
-//'   Z_value = gkw_result$z_values,
-//'   P_value = gkw_result$p_values
-//' )
-//' print(param_summary)
+//' print(gkw_result)
 //'
 //' # Compare with simpler models using information criteria
 //' cat("Information criteria comparison:\n")
 //' cat(sprintf("GKw: AIC=%.4f, BIC=%.4f\n", gkw_result$aic, gkw_result$bic))
 //' cat(sprintf("Beta: AIC=%.4f, BIC=%.4f\n",
 //'            results[["trust-region"]]$aic, results[["trust-region"]]$bic))
-//'
-//' # Plot convergence history
-//' plot(1:length(gkw_result$loglik_history), gkw_result$loglik_history,
-//'      type = "l", xlab = "Iteration", ylab = "Log-likelihood",
-//'      main = "Convergence History")
-//' }
-//'
+//'}
 //' @export
 // [[Rcpp::export]]
 Rcpp::List nrgkw(

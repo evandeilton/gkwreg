@@ -147,7 +147,7 @@ The function relies on internal helper functions to calculate the necessary diag
 quantities and generate the plots using either base R or \code{ggplot2}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
 # and that rgkw() is available and data is appropriate (0 < y < 1).
 set.seed(456)

@@ -71,7 +71,7 @@ via \code{qbeta(p, gamma, delta + 1, ...)} while respecting the
 \code{lower_tail} and \code{log_p} arguments.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 p_vals <- c(0.1, 0.5, 0.9)
 alpha_par <- 2.0
@@ -114,7 +114,7 @@ print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 print(qbkw(c(0, 1), alpha_par, beta_par, gamma_par, delta_par)) # Should be 0, 1
 print(qbkw(c(-Inf, 0), alpha_par, beta_par, gamma_par, delta_par, log_p = TRUE)) # Should be 0, 1
 
-} # End of \dontrun block
+}
 
 }
 \references{

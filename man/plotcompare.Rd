@@ -31,7 +31,7 @@ Creates a comparison of goodness-of-fit statistics and plots across multiple mod
 from the GKw family of distributions.
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate sample data
 set.seed(123)
 data <- rkw(n = 200, alpha = 2.5, beta = 1.8)

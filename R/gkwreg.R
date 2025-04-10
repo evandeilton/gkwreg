@@ -180,14 +180,10 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' # Load required packages (assuming they are installed)
-#' # require(gkwreg) # Assuming this package provides rgkw, rkw
-#' # require(stats)
-#'
+#' \donttest{
 #' ## Example 1: Simple Kumaraswamy regression model ----
 #' set.seed(123)
-#' n <- 100 # Reduced N for faster example execution
+#' n <- 1000
 #' x1 <- runif(n, -2, 2)
 #' x2 <- rnorm(n)
 #'
@@ -202,32 +198,19 @@
 #' beta_true <- exp(eta_beta)
 #'
 #' # Generate responses from Kumaraswamy distribution (assuming rkw is available)
-#' # Replace rkw with relevant function if needed (e.g., from this package)
-#' if (exists("rkw", mode = "function")) {
-#'   y <- rkw(n, alpha = alpha_true, beta = beta_true)
-#' } else {
-#'   # Placeholder if rkw is not available in the environment
-#'   warning("rkw function not found, generating approximate data.")
-#'   y <- stats::rbeta(n, shape1 = alpha_true, shape2 = beta_true) # Approximation
-#' }
-#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
-#'
+#' y <- rkw(n, alpha = alpha_true, beta = beta_true)
 #' # Create data frame
 #' df1 <- data.frame(y = y, x1 = x1, x2 = x2)
 #'
 #' # Fit Kumaraswamy regression model using extended formula syntax
 #' # Model alpha ~ x1 + x2 and beta ~ x1 + x2
-#' kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = FALSE)
+#' kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = TRUE)
 #'
 #' # Display summary
 #' summary(kw_reg)
 #'
-#' # Plot diagnostics (requires plot.gkwreg method)
-#' # plot(kw_reg)
-#'
 #' ## Example 2: Generalized Kumaraswamy regression ----
 #' set.seed(456)
-#' n <- 150 # Reduced N
 #' x1 <- runif(n, -1, 1)
 #' x2 <- rnorm(n)
 #' x3 <- factor(rbinom(n, 1, 0.5), labels = c("A", "B")) # Factor variable
@@ -254,36 +237,26 @@
 #' lambda <- exp(X_lambda %*% lambda_coef)
 #'
 #' # Generate response from GKw distribution (assuming rgkw is available)
-#' if (exists("rgkw", mode = "function")) {
-#'   y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
-#' } else {
-#'   warning("rgkw function not found, skipping GKw data generation.")
-#'   y <- NULL
-#' }
+#' y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
 #'
-#' if (!is.null(y)) {
-#'   y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
+#' # Create data frame
+#' df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
 #'
-#'   # Create data frame
-#'   df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+#' # Fit GKw regression with parameter-specific formulas
+#' # alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
+#' gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
 #'
-#'   # Fit GKw regression with parameter-specific formulas
-#'   # alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
-#'   gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
-#'
-#'   # Compare true vs. estimated coefficients
-#'   print("Estimated Coefficients (GKw):")
-#'   print(coef(gkw_reg))
-#'   print("True Coefficients (approx):")
-#'   print(list(
-#'     alpha = alpha_coef, beta = beta_coef, gamma = gamma_coef,
-#'     delta = delta_coef, lambda = lambda_coef
-#'   ))
-#' }
+#' # Compare true vs. estimated coefficients
+#' print("Estimated Coefficients (GKw):")
+#' print(coef(gkw_reg))
+#' print("True Coefficients (approx):")
+#' print(list(
+#'   alpha = alpha_coef, beta = beta_coef, gamma = gamma_coef,
+#'   delta = delta_coef, lambda = lambda_coef
+#' ))
 #'
 #' ## Example 3: Beta regression for comparison ----
 #' set.seed(789)
-#' n <- 100 # Reduced N
 #' x1 <- runif(n, -1, 1)
 #'
 #' # True coefficients for Beta parameters (gamma = shape1, delta = shape2)
@@ -296,37 +269,29 @@
 #' delta_true <- exp(X_beta_eg %*% delta_coef)
 #'
 #' # Generate response from Beta distribution
-#' y <- stats::rbeta(n, shape1 = gamma_true, shape2 = delta_true)
-#' y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
+#' y <- rbeta_(n, gamma_true, delta_true)
 #'
 #' # Create data frame
 #' df_beta <- data.frame(y = y, x1 = x1)
 #'
 #' # Fit Beta regression model using gkwreg
-#' # Formula maps to gamma and delta: y ~ . | . | x1 | x1 | .
-#' # The "." parts for alpha, beta, lambda are ignored by family="beta"
-#' beta_reg <- gkwreg(y ~ . | . | x1 | x1,
+#' # Formula maps to gamma and delta: y ~  x1 | x1
+#' beta_reg <- gkwreg(y ~ x1 | x1,
 #'   data = df_beta, family = "beta",
 #'   link = list(gamma = "log", delta = "log")
 #' ) # Specify links if non-default
-#'
-#' # Display confidence intervals for coefficients
-#' confint(beta_reg)
 #'
 #' ## Example 4: Model comparison using AIC/BIC ----
 #' # Fit an alternative model, e.g., Kumaraswamy, to the same beta-generated data
 #' kw_reg2 <- try(gkwreg(y ~ x1 | x1, data = df_beta, family = "kw"))
 #'
-#' if (!inherits(kw_reg2, "try-error")) {
-#'   print("AIC Comparison (Beta vs Kw):")
-#'   print(stats::AIC(beta_reg, kw_reg2))
-#'   print("BIC Comparison (Beta vs Kw):")
-#'   print(stats::BIC(beta_reg, kw_reg2))
-#' } else {
-#'   print("Could not fit Kw model for comparison on beta-generated data.")
-#' }
+#' print("AIC Comparison (Beta vs Kw):")
+#' c(AIC(beta_reg), AIC(kw_reg2))
+#' print("BIC Comparison (Beta vs Kw):")
+#' c(BIC(beta_reg), BIC(kw_reg2))
 #'
-#' ## Example 5: Predicting with a fitted model ----
+#' ## Example 5: Predicting with a fitted model
+#'
 #' # Use the Beta regression model from Example 3
 #' newdata <- data.frame(x1 = seq(-1, 1, length.out = 20))
 #'
@@ -337,7 +302,7 @@
 #' pred_link <- predict(beta_reg, newdata = newdata, type = "link")
 #'
 #' # Predict parameters on the original scale (shape1, shape2)
-#' pred_params <- predict(beta_reg, newdata = newdata, type = "parameters")
+#' pred_params <- predict(beta_reg, newdata = newdata, type = "parameter")
 #'
 #' # Plot original data and predicted mean response curve
 #' plot(df_beta$x1, df_beta$y,
@@ -352,14 +317,11 @@
 #' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
 #' random processes. \emph{Journal of Hydrology}, \strong{46}(1-2), 79-88.
 #'
-#'
 #' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
 #' \emph{Journal of Statistical Computation and Simulation}, \strong{81}(7), 883-898.
 #'
-#'
 #' Ferrari, S. L. P., & Cribari-Neto, F. (2004). Beta regression for modelling rates and
 #' proportions. \emph{Journal of Applied Statistics}, \strong{31}(7), 799-815.
-#'
 #'
 #' Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016). TMB:
 #' Automatic Differentiation and Laplace Approximation. \emph{Journal of Statistical
@@ -383,9 +345,7 @@
 #'   \code{\link[TMB]{sdreport}}
 #'
 #' @keywords regression models hoss
-#'
 #' @author  Lopes, J. E.
-#'
 #' @export
 gkwreg <- function(formula,
                    data,
@@ -1235,23 +1195,6 @@ gkwreg <- function(formula,
 #'
 #' @keywords coefficients methods regression
 #'
-#' @examples
-#' \dontrun{
-#' # Assuming 'kw_reg' is a fitted object from gkwreg() as in the
-#' # summary.gkwreg example:
-#' # kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
-#'
-#' # Extract coefficients using the coef method
-#' model_coefficients <- coef(kw_reg)
-#'
-#' # Print the coefficients
-#' print(model_coefficients)
-#'
-#' # Alternatively, using the alias:
-#' model_coefficients_alt <- coefficients(kw_reg)
-#' print(model_coefficients_alt)
-#' }
-#'
 #' @export
 coef.gkwreg <- function(object, ...) {
   object$coefficients
@@ -1327,10 +1270,7 @@ coef.gkwreg <- function(object, ...) {
 #' @keywords summary models regression
 #'
 #' @examples
-#' \dontrun{
-#' # Assuming 'df' is a data frame with response 'y' and predictors 'x1', 'x2'
-#' # and that rkw() function is available and generates data in (0,1).
-#'
+#' \donttest{
 #' set.seed(123)
 #' n <- 100
 #' x1 <- runif(n, -2, 2)
@@ -1358,10 +1298,6 @@ coef.gkwreg <- function(object, ...) {
 #' # Extract coefficient table directly from the summary object
 #' coef_table <- coef(summary_kw) # Equivalent to summary_kw$coefficients
 #' print(coef_table)
-#'
-#' # Extract confidence intervals
-#' conf_intervals <- confint(summary_kw) # Uses summary_kw$conf.int
-#' print(conf_intervals)
 #' }
 #'
 #' @export
@@ -1493,21 +1429,6 @@ summary.gkwreg <- function(object, conf.level = 0.95, ...) {
 #'
 #' @keywords print methods internal hoss
 #'
-#' @examples
-#' \dontrun{
-#' # Assuming 'kw_reg' is a fitted object from gkwreg() as in the
-#' # summary.gkwreg example:
-#' # kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
-#'
-#' # Create the summary object
-#' summary_obj <- summary(kw_reg)
-#'
-#' # Print the summary object - this automatically calls print.summary.gkwreg
-#' summary_obj
-#' # Or explicitly:
-#' # print(summary_obj, digits = 4, signif.stars = TRUE)
-#' }
-#'
 #' @export
 print.summary.gkwreg <- function(x, digits = max(3, getOption("digits") - 3),
                                  signif.stars = getOption("show.signif.stars"), ...) {
@@ -1587,157 +1508,556 @@ print.summary.gkwreg <- function(x, digits = max(3, getOption("digits") - 3),
 #' @title Predictions from a Fitted Generalized Kumaraswamy Regression Model
 #'
 #' @description
-#' Obtains various types of predictions and associated quantities from a fitted
-#' Generalized Kumaraswamy (GKw) regression model object of class \code{"gkwreg"}.
-#' Calculations are based on the estimated coefficients and potentially new data.
+#' Computes predictions and related quantities from a fitted Generalized
+#' Kumaraswamy (GKw) regression model object. This method can extract fitted values,
+#' predicted means, linear predictors, parameter values, variances, densities,
+#' probabilities, and quantiles based on the estimated model. Predictions can be made
+#' for new data or for the original data used to fit the model.
 #'
 #' @param object An object of class \code{"gkwreg"}, typically the result of a
 #'   call to \code{\link{gkwreg}}.
-#' @param newdata Optionally, a data frame containing predictor variables for which
-#'   to make predictions. Column names must match the variables used in the
-#'   original model formula. If omitted or \code{NULL}, predictions are computed
-#'   for the original data used to fit the model.
-#' @param type Character string indicating the type of prediction required. Options are:
-#'   \itemize{
-#'     \item \code{"response"} or \code{"mean"}: (Default) Predicted mean (expected value)
-#'       of the response variable. Returns a numeric vector.
-#'     \item \code{"link"}: Linear predictors for all modeled parameters before applying
-#'       the inverse link function. Returns a matrix or data frame with columns
-#'       corresponding to the parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}).
-#'     \item \code{"parameter"}: Predicted values of all relevant distribution
-#'       parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) on their original scale
-#'       (after applying the inverse link function). Returns a matrix or data frame.
-#'     \item \code{"alpha"}, \code{"beta"}, \code{"gamma"}, \code{"delta"}, \code{"lambda"}:
-#'       Predicted values for the specified individual parameter on its original scale.
-#'       Returns a numeric vector.
-#'     \item \code{"variance"}: Predicted variance of the response variable. Returns a
-#'       numeric vector. Requires the calculation formula for the specific family's variance.
-#'     \item \code{"density"} or \code{"pdf"}: Predicted probability density function (PDF)
-#'       values evaluated at the points specified by the \code{at} argument.
-#'       Return type depends on \code{elementwise}.
-#'     \item \code{"probability"} or \code{"cdf"}: Predicted cumulative distribution
-#'       function (CDF) values evaluated at the points specified by the \code{at} argument.
-#'       Return type depends on \code{elementwise}.
-#'     \item \code{"quantile"}: Predicted quantiles corresponding to the probabilities
-#'       specified by the \code{at} argument. Return type depends on \code{elementwise}.
+#' @param newdata An optional data frame containing the variables needed for prediction.
+#'   If omitted, predictions are made for the data used to fit the model.
+#' @param type A character string specifying the type of prediction. Options are:
+#'   \describe{
+#'     \item{\code{"response"} or \code{"mean"}}{Predicted mean response (default).}
+#'     \item{\code{"link"}}{Linear predictors for each parameter before applying
+#'       inverse link functions.}
+#'     \item{\code{"parameter"}}{Parameter values on their original scale (after
+#'       applying inverse link functions).}
+#'     \item{\code{"alpha"}, \code{"beta"}, \code{"gamma"}, \code{"delta"},
+#'       \code{"lambda"}}{Values for a specific distribution parameter.}
+#'     \item{\code{"variance"}}{Predicted variance of the response.}
+#'     \item{\code{"density"} or \code{"pdf"}}{Density function values at points
+#'       specified by \code{at}.}
+#'     \item{\code{"probability"} or \code{"cdf"}}{Cumulative distribution function
+#'       values at points specified by \code{at}.}
+#'     \item{\code{"quantile"}}{Quantiles corresponding to probabilities specified
+#'       by \code{at}.}
 #'   }
-#' @param na.action Function determining how missing values (\code{NA}) in \code{newdata}
-#'   should be handled. The default is typically \code{\link[stats]{na.pass}}, which
-#'   results in \code{NA} predictions where predictor values are missing. Other options
-#'   like \code{\link[stats]{na.omit}} or \code{\link[stats]{na.exclude}} might be relevant.
-#' @param at Numeric vector. For \code{type = "density"}, \code{type = "probability"},
-#'   these are the values at which the density or CDF is evaluated. For
-#'   \code{type = "quantile"}, these are the probabilities for which quantiles are calculated
-#'   (must be between 0 and 1). Required for these types.
-#' @param elementwise Logical. Only relevant when \code{at} is provided and has the same
-#'   length as the number of predictions being made (e.g., same length as \code{newdata}).
-#'   If \code{TRUE}, the i-th prediction's density/CDF/quantile is evaluated only at the
-#'   i-th value of \code{at}. If \code{FALSE} (default), each prediction's density/CDF/quantile
-#'   is evaluated at *all* values specified in \code{at}, typically returning a matrix.
-#' @param family Character string specifying the distribution family assumptions
-#'   to use for calculating predictions (especially for mean, variance, density, cdf, quantile).
-#'   If \code{NULL} (default), the family from the fitted \code{object} is used.
-#'   Specifying a different family (e.g., \code{"beta"} for a model fitted as \code{"gkw"})
-#'   will use the fitted coefficients mapped to the parameters of the *new* family to
-#'   calculate the requested quantity based on that *new* family's properties.
-#'   Available options match those in \code{\link{gkwreg}}: \code{"gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"}.
-#' @param ... Further arguments passed to or from other methods (currently often unused).
+#' @param na.action Function determining how to handle missing values in \code{newdata}.
+#'   Default is \code{stats::na.pass}, which returns \code{NA} for cases with missing
+#'   predictors.
+#' @param at Numeric vector of values at which to evaluate densities, probabilities,
+#'   or for which to compute quantiles, depending on \code{type}. Required for
+#'   \code{type = "density"}, \code{type = "probability"}, or \code{type = "quantile"}.
+#'   Defaults to 0.5.
+#' @param elementwise Logical. If \code{TRUE} and \code{at} has the same length as
+#'   the number of observations, applies each value in \code{at} to the corresponding
+#'   observation. If \code{FALSE} (default), applies all values in \code{at} to each
+#'   observation, returning a matrix.
+#' @param family Character string specifying the distribution family to use for
+#'   calculations. If \code{NULL} (default), uses the family from the fitted model.
+#'   Options match those in \code{\link{gkwreg}}: \code{"gkw"}, \code{"bkw"},
+#'   \code{"kkw"}, \code{"ekw"}, \code{"mc"}, \code{"kw"}, \code{"beta"}.
+#' @param ... Additional arguments (currently not used).
 #'
 #' @details
-#' This function calculates predictions based on the fitted \code{gkwreg} model.
-#' For types \code{"link"}, \code{"parameter"}, and individual parameters, it computes
-#' the linear predictors using the estimated coefficients and the predictor values
-#' from \code{newdata} (or the original data). It then applies the inverse link
-#' functions for types involving parameters on the original scale.
+#' The \code{predict.gkwreg} function provides a flexible framework for obtaining
+#' predictions and inference from fitted Generalized Kumaraswamy regression models.
+#' It handles all subfamilies of GKw distributions and respects the parametrization
+#' and link functions specified in the original model.
 #'
-#' For \code{type = "response"} (mean) and \code{type = "variance"}, it calculates the
-#' expected value or variance based on the predicted parameters and the theoretical
-#' formulas for the specified (or overridden) distribution \code{family}.
-#'
-#' For \code{type = "density"}, \code{type = "probability"}, and \code{type = "quantile"},
-#' it uses the predicted parameters and the corresponding distribution functions
-#' (PDF, CDF, quantile function) for the specified \code{family}, evaluated at the values
-#' provided in the \code{at} argument.
-#'
-#' Using the \code{family} argument allows exploring predictions under alternative
-#' distributional assumptions, using the coefficient estimates from the original fit.
-#'
-#' @return The format of the returned value depends on the \code{type} argument:
+#' \subsection{Prediction Types}{
+#' The function supports several types of predictions:
 #' \itemize{
-#'   \item For \code{"response"}, \code{"variance"}, or individual parameters
-#'     (\code{"alpha"}, \code{"beta"}, etc.): A numeric vector of the same length
-#'     as the number of rows in \code{newdata} (or the original data).
-#'   \item For \code{"link"} or \code{"parameter"}: A matrix or data frame where rows
-#'     correspond to observations and columns correspond to the distribution parameters.
-#'   \item For \code{"density"}, \code{"probability"}, \code{"quantile"}:
-#'     If \code{elementwise = TRUE}, a numeric vector. If \code{elementwise = FALSE},
-#'     typically a matrix where rows correspond to observations and columns correspond
-#'     to the values in \code{at}.
+#'   \item \strong{Response/Mean}: Computes the expected value of the response variable
+#'     based on the model parameters. For most GKw family distributions, this requires
+#'     numerical integration or special formulas.
+#'
+#'   \item \strong{Link}: Returns the linear predictors for each parameter without
+#'     applying inverse link functions. These are the values \eqn{\eta_j = X\beta_j}
+#'     for each parameter \eqn{j}.
+#'
+#'   \item \strong{Parameter}: Computes the distribution parameter values on their original
+#'     scale by applying the appropriate inverse link functions to the linear predictors.
+#'     For example, if alpha uses a log link, then \eqn{\alpha = \exp(X\beta_\alpha)}.
+#'
+#'   \item \strong{Individual Parameters}: Extract specific parameter values (alpha, beta,
+#'     gamma, delta, lambda) on their original scale.
+#'
+#'   \item \strong{Variance}: Estimates the variance of the response based on the model
+#'     parameters. For some distributions, analytical formulas are used; for others,
+#'     numerical approximations are employed.
+#'
+#'   \item \strong{Density/PDF}: Evaluates the probability density function at specified
+#'     points given the model parameters.
+#'
+#'   \item \strong{Probability/CDF}: Computes the cumulative distribution function at
+#'     specified points given the model parameters.
+#'
+#'   \item \strong{Quantile}: Calculates quantiles corresponding to specified probabilities
+#'     given the model parameters.
+#' }
 #' }
 #'
-#' @author Lopes, J. E.
+#' \subsection{Link Functions}{
+#' The function respects the link functions specified in the original model for each
+#' parameter. The supported link functions are:
+#' \itemize{
+#'   \item \code{"log"}: \eqn{g(\mu) = \log(\mu)}, \eqn{g^{-1}(\eta) = \exp(\eta)}
+#'   \item \code{"logit"}: \eqn{g(\mu) = \log(\mu/(1-\mu))}, \eqn{g^{-1}(\eta) = 1/(1+\exp(-\eta))}
+#'   \item \code{"probit"}: \eqn{g(\mu) = \Phi^{-1}(\mu)}, \eqn{g^{-1}(\eta) = \Phi(\eta)}
+#'   \item \code{"cauchy"}: \eqn{g(\mu) = \tan(\pi*(\mu-0.5))}, \eqn{g^{-1}(\eta) = 0.5 + (1/\pi) \arctan(\eta)}
+#'   \item \code{"cloglog"}: \eqn{g(\mu) = \log(-\log(1-\mu))}, \eqn{g^{-1}(\eta) = 1 - \exp(-\exp(\eta))}
+#'   \item \code{"identity"}: \eqn{g(\mu) = \mu}, \eqn{g^{-1}(\eta) = \eta}
+#'   \item \code{"sqrt"}: \eqn{g(\mu) = \sqrt{\mu}}, \eqn{g^{-1}(\eta) = \eta^2}
+#'   \item \code{"inverse"}: \eqn{g(\mu) = 1/\mu}, \eqn{g^{-1}(\eta) = 1/\eta}
+#'   \item \code{"inverse-square"}: \eqn{g(\mu) = 1/\sqrt{\mu}}, \eqn{g^{-1}(\eta) = 1/\eta^2}
+#' }
+#' }
 #'
-#' @seealso \code{\link{gkwreg}}, \code{\link{summary.gkwreg}},
-#'   \code{\link[stats]{predict}}
+#' \subsection{Family-Specific Constraints}{
+#' The function enforces appropriate constraints for each distribution family:
+#' \itemize{
+#'   \item \code{"gkw"}: All 5 parameters (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) are used.
+#'   \item \code{"bkw"}: \eqn{\lambda = 1} is fixed.
+#'   \item \code{"kkw"}: \eqn{\gamma = 1} is fixed.
+#'   \item \code{"ekw"}: \eqn{\gamma = 1, \delta = 0} are fixed.
+#'   \item \code{"mc"}: \eqn{\alpha = 1, \beta = 1} are fixed.
+#'   \item \code{"kw"}: \eqn{\gamma = 1, \delta = 0, \lambda = 1} are fixed.
+#'   \item \code{"beta"}: \eqn{\alpha = 1, \beta = 1, \lambda = 1} are fixed.
+#' }
+#' }
 #'
-#' @keywords predict methods regression
+#' \subsection{Parameter Bounds}{
+#' All parameters are constrained to their valid ranges:
+#' \itemize{
+#'   \item \eqn{\alpha, \beta, \gamma, \lambda > 0}
+#'   \item \eqn{0 < \delta < 1}
+#' }
+#' }
+#'
+#' \subsection{Using with New Data}{
+#' When providing \code{newdata}, ensure it contains all variables used in the model's
+#' formula. The function extracts the terms for each parameter's model matrix and applies
+#' the appropriate link functions to calculate predictions. If any variables are missing,
+#' the function will attempt to substitute reasonable defaults or raise an error if
+#' critical variables are absent.
+#' }
+#'
+#' \subsection{Using for Model Evaluation}{
+#' The function is useful for model checking, generating predicted values for plotting,
+#' and evaluating the fit of different distribution families. By specifying the \code{family}
+#' parameter, you can compare predictions under different distributional assumptions.
+#' }
+#'
+#' @return The return value depends on the \code{type} argument:
+#' \itemize{
+#'   \item For \code{type = "response"}, \code{type = "variance"}, or individual
+#'     parameters (\code{type = "alpha"}, etc.): A numeric vector of length equal
+#'     to the number of rows in \code{newdata} (or the original data).
+#'
+#'   \item For \code{type = "link"} or \code{type = "parameter"}: A data frame with
+#'     columns for each parameter and rows corresponding to observations.
+#'
+#'   \item For \code{type = "density"}, \code{type = "probability"}, or
+#'     \code{type = "quantile"}:
+#'     \itemize{
+#'       \item If \code{elementwise = TRUE}: A numeric vector of length equal to
+#'         the number of rows in \code{newdata} (or the original data).
+#'       \item If \code{elementwise = FALSE}: A matrix where rows correspond to
+#'         observations and columns correspond to the values in \code{at}.
+#'     }
+#' }
 #'
 #' @examples
-#' \dontrun{
-#' # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
-#' # and that rgkw() is available and data is appropriate (0 < y < 1).
-#' set.seed(456)
-#' n <- 100
-#' x1 <- runif(n, -1, 1)
+#' \donttest{
+#' # Generate a sample dataset (n = 1000)
+#' set.seed(123)
+#' n <- 1000
+#'
+#' # Create predictors
+#' x1 <- runif(n, -2, 2)
 #' x2 <- rnorm(n)
-#' alpha <- exp(0.5 + 0.2 * x1)
-#' beta <- exp(0.8 - 0.3 * x1 + 0.1 * x2)
-#' gamma <- exp(0.6)
-#' delta <- plogis(0.0 + 0.2 * x1)
-#' lambda <- exp(-0.2 + 0.1 * x2)
-#' # Use stats::rbeta as placeholder if rgkw is not available
-#' y <- stats::rbeta(n, shape1 = gamma * alpha, shape2 = delta * beta) # Approximation
+#' x3 <- factor(rbinom(n, 1, 0.4))
+#'
+#' # Simulate Kumaraswamy distributed data
+#' # True parameters with specific relationships to predictors
+#' true_alpha <- exp(0.7 + 0.3 * x1)
+#' true_beta <- exp(1.2 - 0.2 * x2 + 0.4 * (x3 == "1"))
+#'
+#' # Generate random responses
+#' y <- rkw(n, alpha = true_alpha, beta = true_beta)
+#'
+#' # Ensure responses are strictly in (0, 1)
 #' y <- pmax(pmin(y, 1 - 1e-7), 1e-7)
-#' mydata <- data.frame(y = y, x1 = x1, x2 = x2)
 #'
-#' # Fit a GKw model (modeling alpha and beta, others intercept-only)
-#' model <- gkwreg(y ~ x1 | x1 + x2 | 1 | x1 | x2, data = mydata, family = "gkw")
+#' # Create data frame
+#' df <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
 #'
-#' # --- Predictions on new data ---
-#' newdata <- data.frame(x1 = seq(-1, 1, by = 0.5), x2 = rep(mean(mydata$x2), 5))
+#' # Split into training and test sets
+#' set.seed(456)
+#' train_idx <- sample(n, 800)
+#' train_data <- df[train_idx, ]
+#' test_data <- df[-train_idx, ]
 #'
-#' # Predict mean response
-#' pred_mean <- predict(model, newdata, type = "response")
-#' print(pred_mean)
+#' # ====================================================================
+#' # Example 1: Basic usage - Fit a Kumaraswamy model and make predictions
+#' # ====================================================================
 #'
-#' # Predict linear predictors
-#' pred_link <- predict(model, newdata, type = "link")
-#' print(pred_link)
+#' # Fit the model
+#' kw_model <- gkwreg(y ~ x1 | x2 + x3, data = train_data, family = "kw")
 #'
-#' # Predict parameters on original scale
-#' pred_params <- predict(model, newdata, type = "parameter")
-#' print(pred_params)
+#' # Predict mean response for test data
+#' pred_mean <- predict(kw_model, newdata = test_data, type = "response")
 #'
-#' # Predict only the alpha parameter
-#' pred_alpha <- predict(model, newdata, type = "alpha")
-#' print(pred_alpha)
+#' # Calculate prediction error
+#' mse <- mean((test_data$y - pred_mean)^2)
+#' cat("Mean Squared Error:", mse, "\n")
 #'
-#' # Predict densities at specific points for each prediction in newdata
-#' # Returns a matrix (5 rows x 3 columns)
-#' pred_dens <- predict(model, newdata, type = "density", at = c(0.2, 0.5, 0.8))
-#' print(pred_dens)
+#' # ====================================================================
+#' # Example 2: Different prediction types
+#' # ====================================================================
 #'
-#' # Predict 10th percentile (quantile at p=0.1) for each prediction
-#' pred_q10 <- predict(model, newdata, type = "quantile", at = 0.1)
-#' print(pred_q10)
+#' # Create a grid of values for visualization
+#' x1_grid <- seq(-2, 2, length.out = 100)
+#' grid_data <- data.frame(x1 = x1_grid, x2 = 0, x3 = 0)
 #'
-#' # --- Predict using a different family ---
-#' # Predict response assuming a Beta distribution structure, using the
-#' # coefficients originally fitted for gamma and delta in the GKw model.
-#' pred_beta_mean <- predict(model, newdata, type = "response", family = "beta")
-#' print(pred_beta_mean)
+#' # Predict different quantities
+#' pred_mean <- predict(kw_model, newdata = grid_data, type = "response")
+#' pred_var <- predict(kw_model, newdata = grid_data, type = "variance")
+#' pred_params <- predict(kw_model, newdata = grid_data, type = "parameter")
+#' pred_alpha <- predict(kw_model, newdata = grid_data, type = "alpha")
+#' pred_beta <- predict(kw_model, newdata = grid_data, type = "beta")
+#'
+#' # Plot predicted mean and parameters against x1
+#' plot(x1_grid, pred_mean,
+#'   type = "l", col = "blue",
+#'   xlab = "x1", ylab = "Predicted Mean", main = "Mean Response vs x1"
+#' )
+#' plot(x1_grid, pred_var,
+#'   type = "l", col = "red",
+#'   xlab = "x1", ylab = "Predicted Variance", main = "Response Variance vs x1"
+#' )
+#' plot(x1_grid, pred_alpha,
+#'   type = "l", col = "purple",
+#'   xlab = "x1", ylab = "Alpha", main = "Alpha Parameter vs x1"
+#' )
+#' plot(x1_grid, pred_beta,
+#'   type = "l", col = "green",
+#'   xlab = "x1", ylab = "Beta", main = "Beta Parameter vs x1"
+#' )
+#'
+#' # ====================================================================
+#' # Example 3: Computing densities, CDFs, and quantiles
+#' # ====================================================================
+#'
+#' # Select a single observation
+#' obs_data <- test_data[1, ]
+#'
+#' # Create a sequence of y values for plotting
+#' y_seq <- seq(0.01, 0.99, length.out = 100)
+#'
+#' # Compute density at each y value
+#' dens_values <- predict(kw_model,
+#'   newdata = obs_data,
+#'   type = "density", at = y_seq, elementwise = FALSE
+#' )
+#'
+#' # Compute CDF at each y value
+#' cdf_values <- predict(kw_model,
+#'   newdata = obs_data,
+#'   type = "probability", at = y_seq, elementwise = FALSE
+#' )
+#'
+#' # Compute quantiles for a sequence of probabilities
+#' prob_seq <- seq(0.1, 0.9, by = 0.1)
+#' quant_values <- predict(kw_model,
+#'   newdata = obs_data,
+#'   type = "quantile", at = prob_seq, elementwise = FALSE
+#' )
+#'
+#' # Plot density and CDF
+#' plot(y_seq, dens_values,
+#'   type = "l", col = "blue",
+#'   xlab = "y", ylab = "Density", main = "Predicted PDF"
+#' )
+#' plot(y_seq, cdf_values,
+#'   type = "l", col = "red",
+#'   xlab = "y", ylab = "Cumulative Probability", main = "Predicted CDF"
+#' )
+#'
+#' # ====================================================================
+#' # Example 4: Prediction under different distributional assumptions
+#' # ====================================================================
+#'
+#' # Fit models with different families
+#' beta_model <- gkwreg(y ~ x1 | x2 + x3, data = train_data, family = "beta")
+#' gkw_model <- gkwreg(y ~ x1 | x2 + x3 | 1 | 1 | x3, data = train_data, family = "gkw")
+#'
+#' # Predict means using different families
+#' pred_kw <- predict(kw_model, newdata = test_data, type = "response")
+#' pred_beta <- predict(beta_model, newdata = test_data, type = "response")
+#' pred_gkw <- predict(gkw_model, newdata = test_data, type = "response")
+#'
+#' # Calculate MSE for each family
+#' mse_kw <- mean((test_data$y - pred_kw)^2)
+#' mse_beta <- mean((test_data$y - pred_beta)^2)
+#' mse_gkw <- mean((test_data$y - pred_gkw)^2)
+#'
+#' cat("MSE by family:\n")
+#' cat("Kumaraswamy:", mse_kw, "\n")
+#' cat("Beta:", mse_beta, "\n")
+#' cat("GKw:", mse_gkw, "\n")
+#'
+#' # Compare predictions from different families visually
+#' plot(test_data$y, pred_kw,
+#'   col = "blue", pch = 16,
+#'   xlab = "Observed", ylab = "Predicted", main = "Predicted vs Observed"
+#' )
+#' points(test_data$y, pred_beta, col = "red", pch = 17)
+#' points(test_data$y, pred_gkw, col = "green", pch = 18)
+#' abline(0, 1, lty = 2)
+#' legend("topleft",
+#'   legend = c("Kumaraswamy", "Beta", "GKw"),
+#'   col = c("blue", "red", "green"), pch = c(16, 17, 18)
+#' )
+#'
+#' # ====================================================================
+#' # Example 5: Working with linear predictors and link functions
+#' # ====================================================================
+#'
+#' # Extract linear predictors and parameter values
+#' lp <- predict(kw_model, newdata = test_data, type = "link")
+#' params <- predict(kw_model, newdata = test_data, type = "parameter")
+#'
+#' # Verify that inverse link transformation works correctly
+#' # For Kumaraswamy model, alpha and beta use log links by default
+#' alpha_from_lp <- exp(lp$alpha)
+#' beta_from_lp <- exp(lp$beta)
+#'
+#' # Compare with direct parameter predictions
+#' cat("Manual inverse link vs direct parameter prediction:\n")
+#' cat("Alpha difference:", max(abs(alpha_from_lp - params$alpha)), "\n")
+#' cat("Beta difference:", max(abs(beta_from_lp - params$beta)), "\n")
+#'
+#' # ====================================================================
+#' # Example 6: Elementwise calculations
+#' # ====================================================================
+#'
+#' # Generate probabilities specific to each observation
+#' probs <- runif(nrow(test_data), 0.1, 0.9)
+#'
+#' # Calculate quantiles for each observation at its own probability level
+#' quant_elementwise <- predict(kw_model,
+#'   newdata = test_data,
+#'   type = "quantile", at = probs, elementwise = TRUE
+#' )
+#'
+#' # Calculate probabilities at each observation's actual value
+#' prob_at_y <- predict(kw_model,
+#'   newdata = test_data,
+#'   type = "probability", at = test_data$y, elementwise = TRUE
+#' )
+#'
+#' # Create Q-Q plot
+#' plot(sort(prob_at_y), seq(0, 1, length.out = length(prob_at_y)),
+#'   xlab = "Empirical Probability", ylab = "Theoretical Probability",
+#'   main = "P-P Plot", type = "l"
+#' )
+#' abline(0, 1, lty = 2, col = "red")
+#'
+#' # ====================================================================
+#' # Example 7: Predicting for the original data
+#' # ====================================================================
+#'
+#' # Fit a model with original data
+#' full_model <- gkwreg(y ~ x1 + x2 + x3 | x1 + x2 + x3, data = df, family = "kw")
+#'
+#' # Get fitted values using predict and compare with model's fitted.values
+#' fitted_from_predict <- predict(full_model, type = "response")
+#' fitted_from_model <- full_model$fitted.values
+#'
+#' # Compare results
+#' cat(
+#'   "Max difference between predict() and fitted.values:",
+#'   max(abs(fitted_from_predict - fitted_from_model)), "\n"
+#' )
+#'
+#' # ====================================================================
+#' # Example 8: Handling missing data
+#' # ====================================================================
+#'
+#' # Create test data with some missing values
+#' test_missing <- test_data
+#' test_missing$x1[1:5] <- NA
+#' test_missing$x2[6:10] <- NA
+#'
+#' # Predict with different na.action options
+#' pred_na_pass <- tryCatch(
+#'   predict(kw_model, newdata = test_missing, na.action = na.pass),
+#'   error = function(e) rep(NA, nrow(test_missing))
+#' )
+#' pred_na_omit <- tryCatch(
+#'   predict(kw_model, newdata = test_missing, na.action = na.omit),
+#'   error = function(e) rep(NA, nrow(test_missing))
+#' )
+#'
+#' # Show which positions have NAs
+#' cat("Rows with missing predictors:", which(is.na(pred_na_pass)), "\n")
+#' cat("Length after na.omit:", length(pred_na_omit), "\n")
 #' }
 #'
+#' @seealso
+#' \code{\link{gkwreg}} for fitting Generalized Kumaraswamy regression models,
+#' \code{\link{fitted.gkwreg}} for extracting fitted values,
+#' \code{\link{residuals.gkwreg}} for calculating residuals,
+#' \code{\link{summary.gkwreg}} for model summaries,
+#' \code{\link{coef.gkwreg}} for extracting coefficients.
+#'
+#' @references
+#' Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions.
+#' \emph{Journal of Statistical Computation and Simulation}, \strong{81}(7), 883-898.
+#'
+#' Kumaraswamy, P. (1980). A generalized probability density function for double-bounded
+#' random processes. \emph{Journal of Hydrology}, \strong{46}(1-2), 79-88.
+#'
+#' Ferrari, S. L. P., & Cribari-Neto, F. (2004). Beta regression for modelling rates and
+#' proportions. \emph{Journal of Applied Statistics}, \strong{31}(7), 799-815.
+#'
+#' Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution with some
+#' tractability advantages. \emph{Statistical Methodology}, \strong{6}(1), 70-81.
+#'
+#' @examples
+#' \donttest{
+#' ## Example 1: Simple Kumaraswamy regression model ----
+#' set.seed(123)
+#' n <- 1000
+#' x1 <- runif(n, -2, 2)
+#' x2 <- rnorm(n)
+#'
+#' # True regression coefficients
+#' alpha_coef <- c(0.8, 0.3, -0.2) # Intercept, x1, x2
+#' beta_coef <- c(1.2, -0.4, 0.1) # Intercept, x1, x2
+#'
+#' # Generate linear predictors and transform to parameters using inverse link (exp)
+#' eta_alpha <- alpha_coef[1] + alpha_coef[2] * x1 + alpha_coef[3] * x2
+#' eta_beta <- beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2
+#' alpha_true <- exp(eta_alpha)
+#' beta_true <- exp(eta_beta)
+#'
+#' # Generate responses from Kumaraswamy distribution (assuming rkw is available)
+#' y <- rkw(n, alpha = alpha_true, beta = beta_true)
+#' # Create data frame
+#' df1 <- data.frame(y = y, x1 = x1, x2 = x2)
+#'
+#' # Fit Kumaraswamy regression model using extended formula syntax
+#' # Model alpha ~ x1 + x2 and beta ~ x1 + x2
+#' kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = TRUE)
+#'
+#' # Display summary
+#' summary(kw_reg)
+#'
+#' ## Example 2: Generalized Kumaraswamy regression ----
+#' set.seed(456)
+#' x1 <- runif(n, -1, 1)
+#' x2 <- rnorm(n)
+#' x3 <- factor(rbinom(n, 1, 0.5), labels = c("A", "B")) # Factor variable
+#'
+#' # True regression coefficients
+#' alpha_coef <- c(0.5, 0.2) # Intercept, x1
+#' beta_coef <- c(0.8, -0.3, 0.1) # Intercept, x1, x2
+#' gamma_coef <- c(0.6, 0.4) # Intercept, x3B
+#' delta_coef <- c(0.0, 0.2) # Intercept, x3B (logit scale)
+#' lambda_coef <- c(-0.2, 0.1) # Intercept, x2
+#'
+#' # Design matrices
+#' X_alpha <- model.matrix(~x1, data = data.frame(x1 = x1))
+#' X_beta <- model.matrix(~ x1 + x2, data = data.frame(x1 = x1, x2 = x2))
+#' X_gamma <- model.matrix(~x3, data = data.frame(x3 = x3))
+#' X_delta <- model.matrix(~x3, data = data.frame(x3 = x3))
+#' X_lambda <- model.matrix(~x2, data = data.frame(x2 = x2))
+#'
+#' # Generate linear predictors and transform to parameters
+#' alpha <- exp(X_alpha %*% alpha_coef)
+#' beta <- exp(X_beta %*% beta_coef)
+#' gamma <- exp(X_gamma %*% gamma_coef)
+#' delta <- plogis(X_delta %*% delta_coef) # logit link for delta
+#' lambda <- exp(X_lambda %*% lambda_coef)
+#'
+#' # Generate response from GKw distribution (assuming rgkw is available)
+#' y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
+#'
+#' # Create data frame
+#' df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+#'
+#' # Fit GKw regression with parameter-specific formulas
+#' # alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
+#' gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
+#'
+#' # Compare true vs. estimated coefficients
+#' print("Estimated Coefficients (GKw):")
+#' print(coef(gkw_reg))
+#' print("True Coefficients (approx):")
+#' print(list(
+#'   alpha = alpha_coef, beta = beta_coef, gamma = gamma_coef,
+#'   delta = delta_coef, lambda = lambda_coef
+#' ))
+#'
+#' ## Example 3: Beta regression for comparison ----
+#' set.seed(789)
+#' x1 <- runif(n, -1, 1)
+#'
+#' # True coefficients for Beta parameters (gamma = shape1, delta = shape2)
+#' gamma_coef <- c(1.0, 0.5) # Intercept, x1 (log scale for shape1)
+#' delta_coef <- c(1.5, -0.7) # Intercept, x1 (log scale for shape2)
+#'
+#' # Generate linear predictors and transform (default link is log for Beta params here)
+#' X_beta_eg <- model.matrix(~x1, data.frame(x1 = x1))
+#' gamma_true <- exp(X_beta_eg %*% gamma_coef)
+#' delta_true <- exp(X_beta_eg %*% delta_coef)
+#'
+#' # Generate response from Beta distribution
+#' y <- rbeta_(n, gamma_true, delta_true)
+#'
+#' # Create data frame
+#' df_beta <- data.frame(y = y, x1 = x1)
+#'
+#' # Fit Beta regression model using gkwreg
+#' # Formula maps to gamma and delta: y ~  x1 | x1
+#' beta_reg <- gkwreg(y ~ x1 | x1,
+#'   data = df_beta, family = "beta",
+#'   link = list(gamma = "log", delta = "log")
+#' ) # Specify links if non-default
+#'
+#' ## Example 4: Model comparison using AIC/BIC ----
+#' # Fit an alternative model, e.g., Kumaraswamy, to the same beta-generated data
+#' kw_reg2 <- try(gkwreg(y ~ x1 | x1, data = df_beta, family = "kw"))
+#'
+#' print("AIC Comparison (Beta vs Kw):")
+#' c(AIC(beta_reg), AIC(kw_reg2))
+#' print("BIC Comparison (Beta vs Kw):")
+#' c(BIC(beta_reg), BIC(kw_reg2))
+#'
+#' ## Example 5: Predicting with a fitted model
+#'
+#' # Use the Beta regression model from Example 3
+#' newdata <- data.frame(x1 = seq(-1, 1, length.out = 20))
+#'
+#' # Predict expected response (mean of the Beta distribution)
+#' pred_response <- predict(beta_reg, newdata = newdata, type = "response")
+#'
+#' # Predict parameters (gamma and delta) on the scale of the link function
+#' pred_link <- predict(beta_reg, newdata = newdata, type = "link")
+#'
+#' # Predict parameters on the original scale (shape1, shape2)
+#' pred_params <- predict(beta_reg, newdata = newdata, type = "parameter")
+#'
+#' # Plot original data and predicted mean response curve
+#' plot(df_beta$x1, df_beta$y,
+#'   pch = 20, col = "grey", xlab = "x1", ylab = "y",
+#'   main = "Beta Regression Fit (using gkwreg)"
+#' )
+#' lines(newdata$x1, pred_response, col = "red", lwd = 2)
+#' legend("topright", legend = "Predicted Mean", col = "red", lty = 1, lwd = 2)
+#' }
+#'
+#' @author Lopes, J. E. and contributors
+#'
+#' @keywords models regression predict
+#' @importFrom stats predict
+#' @method predict gkwreg
 #' @export
 predict.gkwreg <- function(object, newdata = NULL,
                            type = "response",
@@ -1869,7 +2189,7 @@ predict.gkwreg <- function(object, newdata = NULL,
               result[i] <- dkw(y_i, alpha_i, beta_i)
             },
             "beta" = {
-              result[i] <- dbeta_(y_i, gamma_i, delta_i + 1)
+              result[i] <- dbeta_(y_i, gamma_i, delta_i)
             }
           )
         } else if (type == "probability") {
@@ -1894,7 +2214,7 @@ predict.gkwreg <- function(object, newdata = NULL,
               result[i] <- pkw(y_i, alpha_i, beta_i)
             },
             "beta" = {
-              result[i] <- pbeta_(y_i, gamma_i, delta_i + 1)
+              result[i] <- pbeta_(y_i, gamma_i, delta_i)
             }
           )
         } else if (type == "quantile") {
@@ -1919,7 +2239,7 @@ predict.gkwreg <- function(object, newdata = NULL,
               result[i] <- qkw(y_i, alpha_i, beta_i)
             },
             "beta" = {
-              result[i] <- qbeta_(y_i, gamma_i, delta_i + 1)
+              result[i] <- qbeta_(y_i, gamma_i, delta_i)
             }
           )
         }
@@ -2098,88 +2418,92 @@ predict.gkwreg <- function(object, newdata = NULL,
     }
   }
 
-  # Prepare new data or use original data
+  # Get parameter information for the family
+  param_info <- .get_family_param_info(family)
+  param_names <- param_info$names
+  param_positions <- param_info$positions
+  fixed_params <- param_info$fixed
+
+  # Identify non-fixed parameters for this family
+  non_fixed_params <- setdiff(param_names, names(fixed_params))
+
+  # Prepare model matrices for prediction
   if (is.null(newdata)) {
-    # Try different ways to access model matrices
+    # Try different approaches to access model matrices
     if (!is.null(object$x)) {
-      # Model was fitted with x=TRUE
-      X1 <- object$x$alpha
-      X2 <- object$x$beta
-      X3 <- object$x$gamma
-      X4 <- object$x$delta
-      X5 <- object$x$lambda
+      # Model matrices stored directly (fitted with x=TRUE)
+      matrices <- list()
+      for (param in param_names) {
+        pos <- param_positions[[param]]
+        if (param %in% names(object$x)) {
+          matrices[[paste0("X", pos)]] <- object$x[[param]]
+        } else {
+          # Default intercept-only matrix for missing parameters
+          n_obs <- length(object$y)
+          matrices[[paste0("X", pos)]] <- matrix(1, n_obs, 1,
+            dimnames = list(NULL, "(Intercept)")
+          )
+        }
+      }
     } else if (!is.null(object$model) && !is.null(object$formula)) {
-      # Recreate model matrices from the model frame and formula
-      formula <- object$formula
+      # Reconstruct matrices from model frame and formula
+      matrices <- list()
+      formula_obj <- object$formula
       mf <- object$model
 
-      # Extract model matrices from the model frame
-      formula_obj <- formula
-      if (class(formula_obj)[1] == "formula") {
+      # Ensure formula is a Formula object
+      if (!inherits(formula_obj, "Formula")) {
         formula_obj <- Formula::as.Formula(formula_obj)
       }
 
-      # Safely get the number of RHS parts
-      rhs_parts <- 0
-      if (inherits(formula_obj, "Formula")) {
-        rhs_parts <- length(attr(formula_obj, "rhs"))
-      }
+      # Get number of RHS parts
+      n_parts <- length(attr(Formula::Formula(formula_obj), "rhs"))
 
-      # Initialize X matrices
-      X <- vector("list", 5)
-      param_names <- c("alpha", "beta", "gamma", "delta", "lambda")
+      # Create matrix for each parameter
+      for (i in seq_along(param_names)) {
+        param <- param_names[i]
+        pos <- param_positions[[param]]
 
-      for (i in seq_len(5)) {
-        if (i <= rhs_parts) {
-          # Try to extract the model matrix for this part
+        if (i <= n_parts) {
+          # Try to extract matrix for this formula part
           tryCatch(
             {
-              X_i <- model.matrix(formula_obj, data = mf, rhs = i)
-              X[[i]] <- X_i
+              X_i <- stats::model.matrix(formula_obj, data = mf, rhs = i)
+              matrices[[paste0("X", pos)]] <- X_i
             },
             error = function(e) {
-              # If extraction fails, use intercept-only
-              X[[i]] <- matrix(1,
-                nrow = nrow(mf), ncol = 1,
+              # Default to intercept-only if extraction fails
+              matrices[[paste0("X", pos)]] <- matrix(1, nrow(mf), 1,
                 dimnames = list(NULL, "(Intercept)")
               )
             }
           )
         } else {
-          # For parts beyond the specified ones, use intercept-only
-          X[[i]] <- matrix(1,
-            nrow = nrow(mf), ncol = 1,
+          # Default to intercept-only for parts beyond those specified
+          matrices[[paste0("X", pos)]] <- matrix(1, nrow(mf), 1,
             dimnames = list(NULL, "(Intercept)")
           )
         }
       }
-      names(X) <- param_names
-
-      X1 <- X$alpha
-      X2 <- X$beta
-      X3 <- X$gamma
-      X4 <- X$delta
-      X5 <- X$lambda
     } else if (!is.null(object$tmb_object) && !is.null(object$tmb_object$env$data)) {
-      # Try using TMB object if available
+      # Use matrices from TMB object
       tmb_data <- object$tmb_object$env$data
-      if (!is.null(tmb_data$X1) && !is.null(tmb_data$X2) &&
-        !is.null(tmb_data$X3) && !is.null(tmb_data$X4) &&
-        !is.null(tmb_data$X5)) {
-        X1 <- tmb_data$X1
-        X2 <- tmb_data$X2
-        X3 <- tmb_data$X3
-        X4 <- tmb_data$X4
-        X5 <- tmb_data$X5
-      } else {
-        stop("Cannot extract original model matrices. Please provide 'newdata'.")
+      matrices <- list()
+
+      for (param in param_names) {
+        pos <- param_positions[[param]]
+        matrix_name <- paste0("X", pos)
+
+        if (!is.null(tmb_data[[matrix_name]])) {
+          matrices[[matrix_name]] <- tmb_data[[matrix_name]]
+        }
       }
     } else {
-      stop("Cannot extract original model matrices. Please provide 'newdata' or set x=TRUE when fitting the model.")
+      stop("Cannot extract model matrices. Please provide 'newdata' or set x=TRUE when fitting the model.")
     }
   } else {
-    # Create model matrices from the new data
-    # This is the part that needed fixing
+    # Create model matrices from newdata
+    matrices <- list()
     formula <- object$formula
 
     # Ensure formula is a Formula object
@@ -2187,23 +2511,19 @@ predict.gkwreg <- function(object, newdata = NULL,
       formula <- Formula::as.Formula(formula)
     }
 
-    # Safely get the number of RHS parts
-    rhs_parts <- 0
-    if (inherits(formula, "Formula")) {
-      rhs_parts <- length(attr(formula, "rhs"))
-    }
+    # Get number of RHS parts
+    n_parts <- length(attr(Formula::Formula(formula), "rhs"))
 
-    # Initialize X matrices
-    X <- vector("list", 5)
-    param_names <- c("alpha", "beta", "gamma", "delta", "lambda")
+    # Process each part of the formula for each parameter
+    for (i in seq_along(param_names)) {
+      param <- param_names[i]
+      pos <- param_positions[[param]]
 
-    # Process each RHS part separately
-    for (i in seq_len(5)) {
-      if (i <= rhs_parts) {
-        # Extract the terms for this part of the formula
+      if (i <= n_parts) {
+        # Extract terms for this formula part
         component_terms <- stats::delete.response(stats::terms(formula, rhs = i))
 
-        # Create model frame and matrix for this component
+        # Create model frame and matrix
         tryCatch(
           {
             mf_i <- stats::model.frame(component_terms, newdata,
@@ -2213,135 +2533,105 @@ predict.gkwreg <- function(object, newdata = NULL,
 
             X_i <- stats::model.matrix(component_terms, mf_i)
 
-            if (ncol(X_i) == 0) {
-              if (i == 1) {
-                stop("The first RHS (for alpha) cannot be empty.")
-              } else {
-                X[[i]] <- matrix(1,
-                  nrow = nrow(newdata), ncol = 1,
-                  dimnames = list(NULL, "(Intercept)")
-                )
-              }
+            if (ncol(X_i) > 0) {
+              matrices[[paste0("X", pos)]] <- X_i
             } else {
-              X[[i]] <- X_i
+              matrices[[paste0("X", pos)]] <- matrix(1, nrow(newdata), 1,
+                dimnames = list(NULL, "(Intercept)")
+              )
             }
           },
           error = function(e) {
-            # If extraction fails, use intercept-only
-            X[[i]] <- matrix(1,
-              nrow = nrow(newdata), ncol = 1,
+            # Use intercept-only matrix if model frame creation fails
+            matrices[[paste0("X", pos)]] <- matrix(1, nrow(newdata), 1,
               dimnames = list(NULL, "(Intercept)")
             )
           }
         )
       } else {
-        # For parts beyond the specified ones, use intercept-only
-        X[[i]] <- matrix(1,
-          nrow = nrow(newdata), ncol = 1,
+        # Default intercept-only matrix for parts beyond those in formula
+        matrices[[paste0("X", pos)]] <- matrix(1, nrow(newdata), 1,
           dimnames = list(NULL, "(Intercept)")
         )
       }
     }
-    names(X) <- param_names
-
-    # Handle offset if it exists (only in alpha)
-    if (!is.null(object$offset)) {
-      warning("Offset not applied to predictions with newdata")
-    }
-
-    X1 <- X$alpha
-    X2 <- X$beta
-    X3 <- X$gamma
-    X4 <- X$delta
-    X5 <- X$lambda
   }
 
-  # Number of observations
-  n <- nrow(X1)
+  # Fill in any missing matrices with intercept-only
+  for (i in 1:max(unlist(param_positions))) {
+    matrix_name <- paste0("X", i)
+    if (is.null(matrices[[matrix_name]])) {
+      n_obs <- nrow(matrices[[1]])
+      matrices[[matrix_name]] <- matrix(1, n_obs, 1, dimnames = list(NULL, "(Intercept)"))
+    }
+  }
 
-  # Extract the coefficients
-  coefs <- object$coefficients
+  # Extract coefficients for each parameter
+  coefs <- list()
 
-  # Handle different coefficient structures
-  if (is.list(coefs)) {
-    # If coefficients are a list with parameter names
-    beta1 <- coefs$alpha
-    beta2 <- coefs$beta
-    beta3 <- coefs$gamma
-    beta4 <- coefs$delta
-    beta5 <- coefs$lambda
-  } else if (!is.null(names(coefs))) {
-    # If coefficients are named, extract them using regex patterns
-    beta1 <- coefs[grep("^alpha:", names(coefs))]
-    beta2 <- coefs[grep("^beta:", names(coefs))]
-    beta3 <- coefs[grep("^gamma:", names(coefs))]
-    beta4 <- coefs[grep("^delta:", names(coefs))]
-    beta5 <- coefs[grep("^lambda:", names(coefs))]
-
-    # If regex didn't work, try another approach
-    if (length(beta1) == 0 || length(beta2) == 0) {
-      # Split the coefficient vector based on matrix dimensions
-      all_coefs <- coefs
-
-      # Make sure we have the right number of coefficients
-      total_cols <- ncol(X1) + ncol(X2) + ncol(X3) + ncol(X4) + ncol(X5)
-      if (length(all_coefs) != total_cols) {
-        stop("Number of coefficients doesn't match design matrices dimensions")
+  if (is.list(object$coefficients) && !is.null(names(object$coefficients))) {
+    # If coefficients are in a named list
+    for (param in param_names) {
+      if (param %in% names(object$coefficients)) {
+        coefs[[param]] <- object$coefficients[[param]]
+      } else if (param %in% names(fixed_params)) {
+        # Use fixed value for fixed parameters
+        coefs[[param]] <- fixed_params[[param]]
       }
-
-      beta1 <- all_coefs[1:ncol(X1)]
-      remaining <- all_coefs[-(1:ncol(X1))]
-
-      beta2 <- remaining[1:ncol(X2)]
-      remaining <- remaining[-(1:ncol(X2))]
-
-      beta3 <- remaining[1:ncol(X3)]
-      remaining <- remaining[-(1:ncol(X3))]
-
-      beta4 <- remaining[1:ncol(X4)]
-      remaining <- remaining[-(1:ncol(X4))]
-
-      beta5 <- remaining[1:ncol(X5)]
     }
   } else {
-    # If coefficients are unnamed, split based on matrix dimensions
-    all_coefs <- coefs
+    # If coefficients are in a vector, extract using parameter names pattern
+    all_coefs <- object$coefficients
 
-    # Make sure we have the right number of coefficients
-    total_cols <- ncol(X1) + ncol(X2) + ncol(X3) + ncol(X4) + ncol(X5)
-    if (length(all_coefs) != total_cols) {
-      stop("Number of coefficients doesn't match design matrices dimensions")
+    for (param in param_names) {
+      # Try to find coefficients for this parameter using pattern matching
+      param_pattern <- paste0("^", param, ":")
+      param_coefs <- all_coefs[grep(param_pattern, names(all_coefs))]
+
+      if (length(param_coefs) > 0) {
+        coefs[[param]] <- param_coefs
+      } else if (param %in% names(fixed_params)) {
+        # Use fixed value for fixed parameters
+        coefs[[param]] <- fixed_params[[param]]
+      }
     }
 
-    beta1 <- all_coefs[1:ncol(X1)]
-    remaining <- all_coefs[-(1:ncol(X1))]
+    # If pattern matching didn't work, try positional approach using matrix dimensions
+    if (all(sapply(coefs, length) == 0) && !is.null(all_coefs)) {
+      remaining_coefs <- all_coefs
 
-    beta2 <- remaining[1:ncol(X2)]
-    remaining <- remaining[-(1:ncol(X2))]
+      for (param in param_names) {
+        if (param %in% names(fixed_params)) {
+          coefs[[param]] <- fixed_params[[param]]
+          next
+        }
 
-    beta3 <- remaining[1:ncol(X3)]
-    remaining <- remaining[-(1:ncol(X3))]
+        pos <- param_positions[[param]]
+        X <- matrices[[paste0("X", pos)]]
 
-    beta4 <- remaining[1:ncol(X4)]
-    remaining <- remaining[-(1:ncol(X4))]
-
-    beta5 <- remaining[1:ncol(X5)]
+        if (!is.null(X) && ncol(X) > 0 && length(remaining_coefs) >= ncol(X)) {
+          coefs[[param]] <- remaining_coefs[1:ncol(X)]
+          remaining_coefs <- remaining_coefs[-(1:ncol(X))]
+        }
+      }
+    }
   }
 
-  # Verify coefficient dimensions match design matrices
-  if (length(beta1) != ncol(X1) ||
-    length(beta2) != ncol(X2) ||
-    length(beta3) != ncol(X3) ||
-    length(beta4) != ncol(X4) ||
-    length(beta5) != ncol(X5)) {
-    stop("Mismatch between coefficient dimensions and design matrices")
+  # Check if any coefficients are missing
+  missing_coefs <- setdiff(non_fixed_params, names(coefs)[sapply(coefs, length) > 0])
+  if (length(missing_coefs) > 0) {
+    stop(
+      "Could not extract coefficients for parameter(s): ",
+      paste(missing_coefs, collapse = ", ")
+    )
   }
 
-  # Extract link information
-  if (!is.null(object$link_codes)) {
-    link_types <- as.integer(unlist(object$link_codes))
-  } else if (!is.null(object$link)) {
-    # Convert link functions to codes
+  # Extract link functions
+  link_types <- rep(NA, 5)
+  names(link_types) <- c("alpha", "beta", "gamma", "delta", "lambda")
+
+  if (!is.null(object$link)) {
+    # Link functions are stored directly
     link_map <- c(
       "log" = 1,
       "logit" = 2,
@@ -2353,76 +2643,180 @@ predict.gkwreg <- function(object, newdata = NULL,
       "inverse" = 8,
       "inverse-square" = 9
     )
-    link_types <- sapply(object$link, function(l) link_map[l])
-  } else {
-    # Default link types if not specified
-    link_types <- c(1, 1, 1, 2, 1) # log for most parameters, logit for delta
+
+    for (param in names(object$link)) {
+      if (param %in% c("alpha", "beta", "gamma", "delta", "lambda")) {
+        link_types[param] <- link_map[object$link[[param]]]
+      }
+    }
   }
 
-  # Extract scale factors
-  if (!is.null(object$scale_factors)) {
-    scale_factors <- as.numeric(unlist(object$scale_factors))
-  } else {
-    # Default scale factors
-    scale_factors <- c(10, 10, 10, 1, 10) # 10 for most parameters, 1 for delta
-  }
+  # Fill in default link types for any missing ones
+  if (is.na(link_types["alpha"])) link_types["alpha"] <- 1 # log
+  if (is.na(link_types["beta"])) link_types["beta"] <- 1 # log
+  if (is.na(link_types["gamma"])) link_types["gamma"] <- 1 # log
+  if (is.na(link_types["delta"])) link_types["delta"] <- 2 # logit
+  if (is.na(link_types["lambda"])) link_types["lambda"] <- 1 # log
+
+  # Extract scale factors (or use defaults)
+  scale_factors <- c(10, 10, 10, 1, 10) # Default scale factors
 
   # If the type is "link", calculate and return the linear predictors
   if (type == "link") {
-    eta1 <- as.vector(X1 %*% beta1)
-    eta2 <- as.vector(X2 %*% beta2)
-    eta3 <- as.vector(X3 %*% beta3)
-    eta4 <- as.vector(X4 %*% beta4)
-    eta5 <- as.vector(X5 %*% beta5)
+    # Initialize results
+    n_obs <- nrow(matrices[[1]])
+    result <- data.frame(
+      alpha = rep(NA_real_, n_obs),
+      beta = rep(NA_real_, n_obs),
+      gamma = rep(NA_real_, n_obs),
+      delta = rep(NA_real_, n_obs),
+      lambda = rep(NA_real_, n_obs)
+    )
 
-    return(data.frame(
-      alpha = eta1,
-      beta = eta2,
-      gamma = eta3,
-      delta = eta4,
-      lambda = eta5
-    ))
+    # Calculate linear predictor for each parameter
+    for (param in param_names) {
+      if (param %in% names(fixed_params)) next
+
+      pos <- param_positions[[param]]
+      X <- matrices[[paste0("X", pos)]]
+      beta <- coefs[[param]]
+
+      # Match dimensions of X and beta
+      if (length(beta) != ncol(X)) {
+        warning(
+          "Dimension mismatch for ", param, ": X has ", ncol(X),
+          " columns but beta has ", length(beta), " elements."
+        )
+        next
+      }
+
+      result[[param]] <- as.vector(X %*% beta)
+    }
+
+    return(result)
   }
 
-  # For the other types, we need the distribution parameters
-  params <- calculateParameters(
-    X1, X2, X3, X4, X5,
-    beta1, beta2, beta3, beta4, beta5,
-    link_types, scale_factors,
-    family = family
+  # For the other types, calculate distribution parameters on original scale
+  params <- matrix(0, nrow = nrow(matrices[[1]]), ncol = 5)
+  colnames(params) <- c("alpha", "beta", "gamma", "delta", "lambda")
+
+  # Calculate parameters for each observation
+  for (param in c("alpha", "beta", "gamma", "delta", "lambda")) {
+    param_idx <- match(param, c("alpha", "beta", "gamma", "delta", "lambda"))
+
+    if (param %in% names(fixed_params)) {
+      # Fixed parameter - same value for all observations
+      params[, param_idx] <- fixed_params[[param]]
+    } else if (param %in% param_names) {
+      # Calculate from model matrix and coefficients
+      pos <- param_positions[[param]]
+      X <- matrices[[paste0("X", pos)]]
+      beta <- coefs[[param]]
+      link_type <- link_types[param]
+
+      # Check dimension compatibility
+      if (length(beta) != ncol(X)) {
+        stop(
+          "Dimension mismatch for ", param, ": X has ", ncol(X),
+          " columns but beta has ", length(beta), " elements."
+        )
+      }
+
+      # Calculate linear predictor
+      eta <- as.vector(X %*% beta)
+
+      # Apply inverse link function
+      params[, param_idx] <- switch(as.character(link_type),
+        "1" = exp(eta), # log
+        "2" = 1 / (1 + exp(-eta)), # logit
+        "3" = pnorm(eta), # probit
+        "4" = 0.5 + (1 / pi) * atan(eta), # cauchy
+        "5" = 1 - exp(-exp(eta)), # cloglog
+        "6" = eta, # identity
+        "7" = eta^2, # sqrt
+        "8" = 1 / eta, # inverse
+        "9" = 1 / sqrt(eta), # inverse-square
+        exp(eta) # default to log
+      )
+    }
+  }
+
+  # Apply family-specific constraints to ensure proper parameter ranges
+  switch(family,
+    "gkw" = {
+      # All parameters used, no extra constraints needed
+    },
+    "bkw" = {
+      # lambda = 1 fixed
+      params[, "lambda"] <- 1
+    },
+    "kkw" = {
+      # gamma = 1 fixed
+      params[, "gamma"] <- 1
+    },
+    "ekw" = {
+      # gamma = 1, delta = 0 fixed
+      params[, "gamma"] <- 1
+      params[, "delta"] <- 0
+    },
+    "mc" = {
+      # alpha = 1, beta = 1 fixed
+      params[, "alpha"] <- 1
+      params[, "beta"] <- 1
+    },
+    "kw" = {
+      # gamma = 1, delta = 0, lambda = 1 fixed
+      params[, "gamma"] <- 1
+      params[, "delta"] <- 0
+      params[, "lambda"] <- 1
+    },
+    "beta" = {
+      # alpha = 1, beta = 1, lambda = 1 fixed
+      params[, "alpha"] <- 1
+      params[, "beta"] <- 1
+      params[, "lambda"] <- 1
+    }
   )
+
+  # Handle remaining parameter range constraints
+  params[, "alpha"] <- pmax(1e-7, params[, "alpha"])
+  params[, "beta"] <- pmax(1e-7, params[, "beta"])
+  params[, "gamma"] <- pmax(1e-7, params[, "gamma"])
+  params[, "delta"] <- pmax(1e-7, pmin(1 - 1e-7, params[, "delta"]))
+  params[, "lambda"] <- pmax(1e-7, params[, "lambda"])
 
   # Return the parameters if requested
   if (type == "parameter") {
     return(data.frame(
-      alpha = params[, 1],
-      beta = params[, 2],
-      gamma = params[, 3],
-      delta = params[, 4],
-      lambda = params[, 5]
+      alpha = params[, "alpha"],
+      beta = params[, "beta"],
+      gamma = params[, "gamma"],
+      delta = params[, "delta"],
+      lambda = params[, "lambda"]
     ))
   } else if (type %in% c("alpha", "beta", "gamma", "delta", "lambda")) {
-    param_index <- match(type, c("alpha", "beta", "gamma", "delta", "lambda"))
-    return(params[, param_index])
+    param_idx <- match(type, c("alpha", "beta", "gamma", "delta", "lambda"))
+    return(params[, param_idx])
   }
 
-  # Calculate and return the mean if requested
+  # Calculate mean response
   if (type == "response") {
     means <- calculateMeans(params, family = family)
     return(means)
   } else if (type == "variance") {
     # Calculate means first
     means <- calculateMeans(params, family = family)
+    n_obs <- nrow(params)
 
     # Calculate variance for each observation
-    variances <- numeric(n)
+    variances <- numeric(n_obs)
 
-    for (i in 1:n) {
-      alpha_i <- params[i, 1]
-      beta_i <- params[i, 2]
-      gamma_i <- params[i, 3]
-      delta_i <- params[i, 4]
-      lambda_i <- params[i, 5]
+    for (i in 1:n_obs) {
+      alpha_i <- params[i, "alpha"]
+      beta_i <- params[i, "beta"]
+      gamma_i <- params[i, "gamma"]
+      delta_i <- params[i, "delta"]
+      lambda_i <- params[i, "lambda"]
 
       # Different variance approximations based on family
       if (family == "beta") {
@@ -2481,19 +2875,21 @@ predict.gkwreg <- function(object, newdata = NULL,
     return(variances)
   }
 
-  # For the remaining types, we need the 'at' argument
+  # For the remaining types (density, probability, quantile), we need the 'at' argument
   if (!is.numeric(at)) {
     stop("'at' must be numeric")
   }
 
   # Check if the elementwise mode should be used
   if (is.null(elementwise)) {
-    elementwise <- length(at) == n
+    elementwise <- length(at) == nrow(params)
   }
 
-  # Prepare the data for calculation based on 'at'
+  n_obs <- nrow(params)
+
+  # Prepare data for calculation based on elementwise mode
   if (elementwise) {
-    if (length(at) != n) {
+    if (length(at) != n_obs) {
       stop("For elementwise=TRUE, length of 'at' must equal number of observations")
     }
     eval_y <- at
@@ -2502,21 +2898,21 @@ predict.gkwreg <- function(object, newdata = NULL,
     # Repeat params for each value in 'at'
     eval_params <- do.call(rbind, lapply(seq_len(length(at)), function(i) params))
     # Repeat each value of 'at' for each row of params
-    eval_y <- rep(at, each = n)
+    eval_y <- rep(at, each = n_obs)
   }
 
-  # Calculate the requested quantities using specific family functions
+  # Calculate the requested quantities using appropriate distribution functions
   result <- numeric(length(eval_y))
 
   for (i in seq_along(eval_y)) {
-    alpha_i <- eval_params[i, 1]
-    beta_i <- eval_params[i, 2]
-    gamma_i <- eval_params[i, 3]
-    delta_i <- eval_params[i, 4]
-    lambda_i <- eval_params[i, 5]
+    alpha_i <- eval_params[i, "alpha"]
+    beta_i <- eval_params[i, "beta"]
+    gamma_i <- eval_params[i, "gamma"]
+    delta_i <- eval_params[i, "delta"]
+    lambda_i <- eval_params[i, "lambda"]
     y_i <- eval_y[i]
 
-    # Use the appropriate function based on family and type
+    # Use the appropriate distribution function based on family and type
     if (type == "density") {
       switch(family,
         "gkw" = {
@@ -2538,7 +2934,7 @@ predict.gkwreg <- function(object, newdata = NULL,
           result[i] <- dkw(y_i, alpha_i, beta_i)
         },
         "beta" = {
-          result[i] <- dbeta_(y_i, gamma_i, delta_i + 1)
+          result[i] <- dbeta_(y_i, gamma_i, delta_i)
         }
       )
     } else if (type == "probability") {
@@ -2562,7 +2958,7 @@ predict.gkwreg <- function(object, newdata = NULL,
           result[i] <- pkw(y_i, alpha_i, beta_i)
         },
         "beta" = {
-          result[i] <- pbeta_(y_i, gamma_i, delta_i + 1)
+          result[i] <- pbeta_(y_i, gamma_i, delta_i)
         }
       )
     } else if (type == "quantile") {
@@ -2592,15 +2988,16 @@ predict.gkwreg <- function(object, newdata = NULL,
     }
   }
 
-  # Format the result
+  # Format the result according to elementwise mode
   if (elementwise) {
     return(result)
   } else {
-    result_matrix <- matrix(result, nrow = n, ncol = length(at))
+    result_matrix <- matrix(result, nrow = n_obs, ncol = length(at))
     colnames(result_matrix) <- as.character(at)
     return(result_matrix)
   }
 }
+
 
 
 #' @title Extract Fitted Values from a Generalized Kumaraswamy Regression Model
@@ -2657,7 +3054,7 @@ predict.gkwreg <- function(object, newdata = NULL,
 #' @keywords fitted methods regression
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
 #' # and that rgkw() is available and data is appropriate (0 < y < 1).
 #' set.seed(456)
@@ -2962,7 +3359,7 @@ fitted.gkwreg <- function(object, family = NULL, ...) {
 #' @keywords residuals methods regression diagnostics
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
 #' # and that rgkw() is available and data is appropriate (0 < y < 1).
 #' set.seed(456)
@@ -2990,7 +3387,6 @@ fitted.gkwreg <- function(object, family = NULL, ...) {
 #'
 #' # --- Diagnostic Plots ---
 #' # QQ-plot for quantile residuals (should be approx. normal)
-#' oldpar <- par(mfrow = c(1, 2)) # Arrange plots side-by-side
 #' stats::qqnorm(quant_res, main = "QQ Plot: GKw Quantile Residuals")
 #' stats::qqline(quant_res, col = "blue")
 #'
@@ -3000,23 +3396,19 @@ fitted.gkwreg <- function(object, family = NULL, ...) {
 #'   main = "Cox-Snell Residual Plot", pch = 1
 #' )
 #' abline(0, 1, col = "red")
-#' par(oldpar) # Reset plotting layout
 #'
 #' # --- Compare residuals using a different family assumption ---
 #' # Calculate quantile residuals assuming underlying Beta dist
 #' quant_res_beta <- residuals(model, type = "quantile", family = "beta")
 #'
 #' # Compare QQ-plots
-#' oldpar <- par(mfrow = c(1, 2))
 #' stats::qqnorm(quant_res, main = "GKw Quantile Residuals")
 #' stats::qqline(quant_res, col = "blue")
 #' stats::qqnorm(quant_res_beta, main = "Beta Quantile Residuals (from GKw Fit)")
 #' stats::qqline(quant_res_beta, col = "darkgreen")
-#' par(oldpar)
 #'
 #' # --- Partial Residuals ---
 #' # Examine effect of x1 on the alpha parameter's linear predictor
-#' # Assuming x1 is the 2nd term (after intercept) in the alpha model part: ~ x1
 #' if ("x1" %in% colnames(model$x$alpha)) { # Check if x1 is in alpha model matrix
 #'   # Find index for 'x1' (could be 2 if intercept is first)
 #'   x1_idx_alpha <- which(colnames(model$x$alpha) == "x1")
@@ -3036,7 +3428,6 @@ fitted.gkwreg <- function(object, family = NULL, ...) {
 #' }
 #'
 #' # Examine effect of x2 on the beta parameter's linear predictor
-#' # Assuming x2 is the 3rd term in the beta model part: ~ x1 + x2
 #' if ("x2" %in% colnames(model$x$beta)) {
 #'   x2_idx_beta <- which(colnames(model$x$beta) == "x2")
 #'   if (length(x2_idx_beta) == 1) {
@@ -3402,7 +3793,7 @@ residuals.gkwreg <- function(
 #' @keywords plot methods regression diagnostics hplot
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
 #' # and that rgkw() is available and data is appropriate (0 < y < 1).
 #' set.seed(456)
@@ -3964,7 +4355,6 @@ plot.gkwreg <- function(x,
 #' @keywords internal
 .sample_model_data <- function(n, sample_size, y_obs, fitted_vals, model_matrices) {
   # For reproducibility
-  set.seed(123)
   idx <- sample(n, size = min(sample_size, n))
 
   # Sample matrices - ensure we maintain the structure
@@ -4211,7 +4601,6 @@ plot.gkwreg <- function(x,
   lambdaVec <- param_vectors$lambdaVec
 
   # Simulate envelope
-  set.seed(54321)
   envelope_data <- matrix(NA, nrow = length(idx), ncol = nsim)
 
   cat("Simulating envelope (", nsim, "iterations): ")
@@ -5033,7 +5422,7 @@ extract_profile_ci <- function(profile_obj, level = 0.95) {
 #' @keywords log-likelihood models likelihood
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
 #' # and that rkw() is available and data is appropriate (0 < y < 1).
 #' set.seed(123)
@@ -5197,7 +5586,7 @@ logLik.gkwreg <- function(object, ...) {
 #' @keywords AIC models likelihood model selection
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
 #' # and that rkw() is available and data is appropriate (0 < y < 1).
 #' set.seed(123)
@@ -5221,7 +5610,7 @@ logLik.gkwreg <- function(object, ...) {
 #' print(aic1)
 #'
 #' # Compare models using AIC (lower is better)
-#' model_comparison_aic <- AIC(kw_reg1, kw_reg2, kw_reg3)
+#' model_comparison_aic <- c(AIC(kw_reg1), AIC(kw_reg2), AIC(kw_reg3))
 #' print(model_comparison_aic)
 #'
 #' # Calculate AIC with a different penalty (e.g., k=4)
@@ -5349,7 +5738,7 @@ AIC.gkwreg <- function(object, ..., k = 2) {
 #' @keywords BIC models likelihood model selection
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
 #' # and that rkw() is available and data is appropriate (0 < y < 1).
 #' set.seed(123)
@@ -5373,7 +5762,7 @@ AIC.gkwreg <- function(object, ..., k = 2) {
 #' print(bic1)
 #'
 #' # Compare models using BIC (lower is better)
-#' model_comparison_bic <- BIC(kw_reg1, kw_reg2, kw_reg3)
+#' model_comparison_bic <- c(BIC(kw_reg1), BIC(kw_reg2), BIC(kw_reg3))
 #' print(model_comparison_bic)
 #' }
 #'
@@ -5502,24 +5891,10 @@ BIC.gkwreg <- function(object, ...) {
 #' the model was fitted with \code{hessian = FALSE}), the function returns \code{NULL}
 #' with a warning.
 #'
-#' @examples
-#' \dontrun{
-#' # Fit a Kumaraswamy regression model
-#' kw_reg <- gkwreg(y ~ x1 + x2 | x3, data = df, family = "kw", hessian = TRUE)
-#'
-#' # Extract variance-covariance matrix
-#' vcov_mat <- vcov(kw_reg)
-#'
-#' # Extract standard errors (square root of diagonal elements)
-#' std_errors <- sqrt(diag(vcov_mat))
-#' print(std_errors)
-#'
-#' # Compare with the standard errors from the summary
-#' summary(kw_reg)
-#' }
-#'
 #' @seealso \code{\link{gkwreg}}, \code{\link{confint}}, \code{\link{summary.gkwreg}}
 #'
+#' @importFrom stats vcov
+#' @method vcov gkwreg
 #' @export
 vcov.gkwreg <- function(object, complete = TRUE, ...) {
   # Check if the object is of class gkwreg

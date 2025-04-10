@@ -56,7 +56,7 @@ Substituting this \eqn{W} into the GKw transformation yields the same result
 as evaluating \eqn{Q(1-V)} above (noting \eqn{p = 1-V} is also Uniform).
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(2025) # for reproducibility
 
 # Generate 1000 random values from a specific kkw distribution
@@ -96,15 +96,7 @@ print("Summary stats for rkkw sample:")
 print(summary(x_sample_kkw))
 print("Summary stats for rgkw(gamma=1) sample:")
 print(summary(x_sample_gkw)) # Should be similar
-
-# Vectorized parameters: generate 1 value for each alpha
-alphas_vec <- c(1.5, 2.0, 2.5)
-n_param <- length(alphas_vec)
-samples_vec <- rkkw(n_param, alpha = alphas_vec, beta = beta_par,
-                      delta = delta_par, lambda = lambda_par)
-print(samples_vec) # One sample for each alpha value
-
-} # End of \dontrun block
+}
 
 }
 \references{

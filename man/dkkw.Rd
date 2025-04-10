@@ -54,7 +54,7 @@ term \eqn{B(1, \delta+1)} when \eqn{\gamma=1}.
 Numerical evaluation follows similar stability considerations as \code{\link{dgkw}}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 x_vals <- c(0.2, 0.5, 0.8)
 alpha_par <- 2.0
@@ -84,12 +84,7 @@ curve_y <- dkkw(curve_x, alpha_par, beta_par, delta_par, lambda_par)
 plot(curve_x, curve_y, type = "l", main = "kkw Density Example",
      xlab = "x", ylab = "f(x)", col = "blue")
 
-# Vectorized parameters
-alphas_vec <- c(1.5, 2.0, 2.5)
-densities_vec <- dkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
-print(densities_vec) # Density at x=0.5 for 3 different alpha values
-
-} # End of \dontrun block
+}
 
 }
 \references{

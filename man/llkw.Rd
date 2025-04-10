@@ -45,7 +45,7 @@ It is equivalent to the negative log-likelihood of the GKw distribution
 (\code{\link{llgkw}}) evaluated at \eqn{\gamma=1, \delta=0, \lambda=1}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rkw, grkw, hskw functions for Kw distribution
 
 # Generate sample data from a known Kw distribution
@@ -107,7 +107,7 @@ if (mle_result_kw$convergence == 0 &&
    cat("Requires convergence, 'numDeriv' package and functions 'grkw', 'hskw'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

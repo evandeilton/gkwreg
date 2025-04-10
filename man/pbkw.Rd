@@ -60,7 +60,7 @@ F(q; \alpha, \beta, \gamma, \delta) = I_{1 - (1 - q^\alpha)^\beta}(\gamma, \delt
 This is evaluated using the \code{\link[stats]{pbeta}} function.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 q_vals <- c(0.2, 0.5, 0.8)
 alpha_par <- 2.0
@@ -96,13 +96,7 @@ curve_q <- seq(0.01, 0.99, length.out = 200)
 curve_p <- pbkw(curve_q, alpha = 2, beta = 3, gamma = 0.5, delta = 1)
 plot(curve_q, curve_p, type = "l", main = "BKw CDF Example",
      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
-
-# Vectorized parameters
-gammas_vec <- c(0.5, 1.0, 2.0)
-probs_vec <- pbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
-print(probs_vec) # CDF at q=0.5 for 3 different gamma values
-
-} # End of \dontrun block
+}
 
 }
 \references{

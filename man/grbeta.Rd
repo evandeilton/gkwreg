@@ -52,7 +52,7 @@ of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\alpha=1, \b
 Note the parameterization: the standard Beta shape parameters are \eqn{\gamma} and \eqn{\delta+1}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 
 # Generate sample data from a Beta(2, 4) distribution
@@ -109,7 +109,7 @@ if (mle_result_beta$convergence == 0 &&
 
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

@@ -46,20 +46,4 @@ package, compiles it, and stores the result in the cache directory.
 \item Provides diagnostic messages regarding compilation status and exported symbols.
 }
 }
-\examples{
-\dontrun{
-# Check if "gkwreg" DLL is compiled or else compile it:
-.check_and_compile_TMB_code("gkwreg")
-
-# Compile a different model:
-.check_and_compile_TMB_code("another_model")
-
-# Force recompilation:
-.check_and_compile_TMB_code("gkwreg", force_recompile = TRUE)
-
-# Quiet mode:
-.check_and_compile_TMB_code("gkwreg", verbose = FALSE)
-}
-
-}
 \keyword{internal}

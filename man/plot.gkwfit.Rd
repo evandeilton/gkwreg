@@ -36,7 +36,7 @@ The arrangement of plots is handled automatically by \code{patchwork::wrap_plots
 No user interaction (like menu selection) is required.
 }
 \examples{
-\dontrun{
+\donttest{
 # Load required package
 library(ggplot2)
 

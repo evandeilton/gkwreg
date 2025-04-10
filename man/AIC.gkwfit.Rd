@@ -42,34 +42,22 @@ lower AIC or BIC value is generally preferred. The function returns a sorted
 data frame to facilitate this comparison when multiple objects are provided.
 }
 \examples{
-\dontrun{
-# Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
-
+\donttest{
 set.seed(2203)
 y <- rkw(1000, alpha = 2.5, beta = 1.5)
 
 # Fit different models to the same data
 fit1_kw <- gkwfit(y, family = "kw", silent = TRUE)
-fit2_bkw <- gkwfit(y, family = "bkw", silent = TRUE) # Assuming bkw fits
-fit3_gkw <- gkwfit(y, family = "gkw", silent = TRUE) # Assuming gkw fits
+fit2_bkw <- gkwfit(y, family = "bkw", silent = TRUE)
+fit3_gkw <- gkwfit(y, family = "gkw", silent = TRUE)
 
 # Calculate AIC for a single model
 aic1 <- AIC(fit1_kw)
 print(aic1)
 
 # Compare AIC values for multiple models
-aic_comparison <- AIC(fit1_kw, fit2_bkw, fit3_gkw)
-print(aic_comparison) # Sorted by AIC
-
-# Compare BIC values for multiple models
-# Get nobs from one of the models (must be fitted to same data)
-n_obs <- attr(logLik(fit1_kw), "nobs")
-bic_comparison <- AIC(fit1_kw, fit2_bkw, fit3_gkw, k = log(n_obs))
-print(bic_comparison)
-# Note: Column is still named 'AIC', but values represent BIC
-# Optional: rename column for clarity
-# colnames(bic_comparison)[colnames(bic_comparison) == "AIC"] <- "BIC"
-# print(bic_comparison)
+aic_comparison <- c(AIC(fit1_kw), AIC(fit2_bkw), AIC(fit3_gkw))
+print(aic_comparison)
 }
 
 }

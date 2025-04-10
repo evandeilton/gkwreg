@@ -54,7 +54,7 @@ to the standard Beta distribution with parameters \eqn{\gamma} and
 \eqn{\delta+1}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 x_vals <- c(0.2, 0.5, 0.8)
 gamma_par <- 2.0
@@ -88,13 +88,7 @@ lines(curve_x, curve_y1, col = "blue")
 lines(curve_x, curve_y3, col = "green")
 legend("topright", legend = c("lambda=0.5", "lambda=1.0 (Beta)", "lambda=2.0"),
        col = c("blue", "red", "green"), lty = 1, bty = "n")
-
-# Vectorized parameters
-lambdas_vec <- c(0.5, 1.0, 2.0)
-densities_vec <- dmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-print(densities_vec) # Density at x=0.5 for 3 different lambda values
-
-} # End of \dontrun block
+}
 
 }
 \references{

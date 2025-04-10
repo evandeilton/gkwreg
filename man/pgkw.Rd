@@ -67,7 +67,7 @@ The function utilizes numerical algorithms for computing the regularized
 incomplete beta function accurately, especially near the boundaries.
 }
 \examples{
-\dontrun{
+\donttest{
 # Simple CDF evaluation
 prob <- pgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
 print(prob)
@@ -90,7 +90,8 @@ print(exp(log_prob))
 q_vals <- c(0.2, 0.5, 0.8)
 alphas_vec <- c(0.5, 1.0, 2.0)
 betas_vec <- c(1.0, 2.0, 3.0)
-pgkw(q_vals, alpha = alphas_vec, beta = betas_vec) # Vectorizes over q, alpha, beta
+# Vectorizes over q, alpha, beta
+pgkw(q_vals, alpha = alphas_vec, beta = betas_vec, gamma = 1, delta = 0.5, lambda = 0.5)
 
 # Plotting the CDF for special cases
 x_seq <- seq(0.01, 0.99, by = 0.01)

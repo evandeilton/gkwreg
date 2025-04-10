@@ -67,7 +67,7 @@ The function includes checks for valid parameters and input values \code{x}.
 It uses numerical stabilization for \code{x} close to 0 or 1.
 }
 \examples{
-\dontrun{
+\donttest{
 # Simple density evaluation at a point
 dgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
 
@@ -98,10 +98,6 @@ log_pdf_val <- dgkw(0.5, 2, 3, 1, 0, 1, log_prob = TRUE)
 print(log_pdf_val)
 print(log(dgkw(0.5, 2, 3, 1, 0, 1))) # Should match
 
-# Vectorized parameter example
-alphas_vec <- c(0.5, 1.5, 3.0)
-# Returns 3 density values for the same x
-dgkw(0.5, alpha = alphas_vec, beta = 2, gamma = 1, delta = 0, lambda = 1)
 }
 
 }

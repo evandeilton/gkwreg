@@ -50,7 +50,7 @@ this function but can be calculated manually using the returned AIC, \eqn{p}
 (from \code{attr(logLik(object), "nobs")}).
 }
 \examples{
-\dontrun{
+\donttest{
 # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
 # and that rkw() is available and data is appropriate (0 < y < 1).
 set.seed(123)
@@ -74,7 +74,7 @@ aic1 <- AIC(kw_reg1)
 print(aic1)
 
 # Compare models using AIC (lower is better)
-model_comparison_aic <- AIC(kw_reg1, kw_reg2, kw_reg3)
+model_comparison_aic <- c(AIC(kw_reg1), AIC(kw_reg2), AIC(kw_reg3))
 print(model_comparison_aic)
 
 # Calculate AIC with a different penalty (e.g., k=4)

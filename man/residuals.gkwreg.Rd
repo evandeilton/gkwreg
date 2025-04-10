@@ -103,7 +103,7 @@ functions (potentially implemented in C++ for efficiency) to compute these based
 on the fitted parameters for each observation.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assume 'mydata' exists with response 'y' and predictors 'x1', 'x2'
 # and that rgkw() is available and data is appropriate (0 < y < 1).
 set.seed(456)
@@ -131,7 +131,6 @@ cs_res <- residuals(model, type = "cox-snell")
 
 # --- Diagnostic Plots ---
 # QQ-plot for quantile residuals (should be approx. normal)
-oldpar <- par(mfrow = c(1, 2)) # Arrange plots side-by-side
 stats::qqnorm(quant_res, main = "QQ Plot: GKw Quantile Residuals")
 stats::qqline(quant_res, col = "blue")
 
@@ -141,23 +140,19 @@ plot(stats::qexp(stats::ppoints(length(cs_res))), sort(cs_res),
   main = "Cox-Snell Residual Plot", pch = 1
 )
 abline(0, 1, col = "red")
-par(oldpar) # Reset plotting layout
 
 # --- Compare residuals using a different family assumption ---
 # Calculate quantile residuals assuming underlying Beta dist
 quant_res_beta <- residuals(model, type = "quantile", family = "beta")
 
 # Compare QQ-plots
-oldpar <- par(mfrow = c(1, 2))
 stats::qqnorm(quant_res, main = "GKw Quantile Residuals")
 stats::qqline(quant_res, col = "blue")
 stats::qqnorm(quant_res_beta, main = "Beta Quantile Residuals (from GKw Fit)")
 stats::qqline(quant_res_beta, col = "darkgreen")
-par(oldpar)
 
 # --- Partial Residuals ---
 # Examine effect of x1 on the alpha parameter's linear predictor
-# Assuming x1 is the 2nd term (after intercept) in the alpha model part: ~ x1
 if ("x1" \%in\% colnames(model$x$alpha)) { # Check if x1 is in alpha model matrix
   # Find index for 'x1' (could be 2 if intercept is first)
   x1_idx_alpha <- which(colnames(model$x$alpha) == "x1")
@@ -177,7 +172,6 @@ if ("x1" \%in\% colnames(model$x$alpha)) { # Check if x1 is in alpha model matri
 }
 
 # Examine effect of x2 on the beta parameter's linear predictor
-# Assuming x2 is the 3rd term in the beta model part: ~ x1 + x2
 if ("x2" \%in\% colnames(model$x$beta)) {
   x2_idx_beta <- which(colnames(model$x$beta) == "x2")
   if (length(x2_idx_beta) == 1) {

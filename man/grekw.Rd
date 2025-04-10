@@ -58,7 +58,7 @@ minimizing the negative log-likelihood. They correspond to the relevant componen
 of the general GKw gradient (\code{\link{grgkw}}) evaluated at \eqn{\gamma=1, \delta=0}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
 
 # Generate sample data
@@ -119,7 +119,7 @@ if (mle_result_ekw$convergence == 0 &&
 
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

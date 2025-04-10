@@ -20,6 +20,9 @@
 
 \item{...}{Other args passed to}
 }
+\value{
+An object of class \code{"anova.gkwfit"} and prints a summary.
+}
 \description{
 S3 method for class 'anova.gkwfit'
 }

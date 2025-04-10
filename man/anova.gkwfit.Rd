@@ -57,7 +57,7 @@ necessary information (log-likelihood, df, nobs).
 # Load required packages
 library(ggplot2)
 library(patchwork)
-
+library(betareg)
 # Generate data from GKw distribution
 set.seed(2203)
 n <- 1000

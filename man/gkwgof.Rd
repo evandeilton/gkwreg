@@ -131,8 +131,7 @@ compute approximate p-values for the distance-based tests, which accounts for pa
 estimation uncertainty.
 }
 \examples{
-\dontrun{
-require(gkwreg)
+\donttest{
 # Example 1: Simulate and analyze data from a Kumaraswamy (Kw) distribution
 set.seed(2203) # Set seed for reproducibility
 # Simulate 1000 observations from Kumaraswamy distribution with parameters alpha=2.5, beta=1.8
@@ -217,7 +216,7 @@ gof_beta_true <- gkwgof(fit_beta_true, print_summary = FALSE, plot = FALSE)
 gof_kw_misspec <- gkwgof(fit_kw_misspec, print_summary = FALSE, plot = FALSE)
 gof_gkw_complex <- gkwgof(fit_gkw_complex, print_summary = FALSE, plot = FALSE)
 # Comparative goodness-of-fit plot
-plot.new()
+
 plotcompare(
   list(
     "Beta (correct)" = gof_beta_true,
@@ -225,23 +224,6 @@ plotcompare(
     "GKw (overspecified)" = gof_gkw_complex
   ),
   title = "Comparison of fits for Beta data"
-)
-
-# Example 4: Real dataset
-# Load data from betareg package
-library(betareg)
-data("GasolineYield")
-y <- GasolineYield$yield
-# Fit various distributions to real data
-real_fit_beta <- gkwfit(y, family = "beta")
-real_fit_kw <- gkwfit(y, family = "kw")
-real_fit_bkw <- gkwfit(y, family = "bkw")
-real_fit_gkw <- gkwfit(y, family = "gkw")
-# Complete analysis for the best model (determined by AIC)
-gof_real <- gkwgof(real_fit_beta,
-  simulate_p_values = TRUE,
-  n_bootstrap = 500,
-  title = "Goodness-of-fit analysis for gasoline yield data"
 )
 
 # Example 5: Likelihood ratio tests for nested models

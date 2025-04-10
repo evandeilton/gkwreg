@@ -71,7 +71,7 @@ for valid inputs and handling of intermediate calculations involving potentially
 small or large numbers, often leveraging the Armadillo C++ library for efficiency.
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate sample data from a known GKw distribution
 set.seed(123)
 true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -123,7 +123,7 @@ if (requireNamespace("numDeriv", quietly = TRUE) && mle_result_gr$convergence ==
   cat("\nSkipping gradient comparison (requires 'numDeriv' package or convergence).\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

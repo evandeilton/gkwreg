@@ -57,7 +57,7 @@ appropriately before applying the formula. This is equivalent to the general
 GKw quantile function (\code{\link{qgkw}}) evaluated with \eqn{\gamma=1, \delta=0, \lambda=1}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 p_vals <- c(0.1, 0.5, 0.9)
 alpha_par <- 2.0
@@ -96,12 +96,7 @@ print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 print(qkw(c(0, 1), alpha_par, beta_par)) # Should be 0, 1
 print(qkw(c(-Inf, 0), alpha_par, beta_par, log_p = TRUE)) # Should be 0, 1
 
-# Vectorized parameters
-alphas_vec <- c(1.5, 2.0, 2.5)
-quantiles_vec <- qkw(0.5, alpha = alphas_vec, beta = 3.0)
-print(quantiles_vec) # Median for 3 different alpha values
-
-} # End of \dontrun block
+}
 
 }
 \references{

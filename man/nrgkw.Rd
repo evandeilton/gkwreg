@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{nrgkw}
 \alias{nrgkw}
-\title{Enhanced Newton-Raphson Optimization for GKw Family Distributions (nrgkw_v2)}
+\title{Enhanced Newton-Raphson Optimization for GKw Family Distributions}
 \usage{
 nrgkw(
   start = NULL,
@@ -360,13 +360,13 @@ For best results:
 }
 
 \examples{
-\dontrun{
+\donttest{
 # Generate sample data from a Beta(2,5) distribution for testing
 set.seed(123)
-sample_data <- stats::rbeta(200, shape1 = 2, shape2 = 5)
+sample_data <- rbeta_(200, 2, 5)
 
 # Automatic initialization (recommended for beginners)
-result_auto <- nrgkw_v2(NULL, sample_data, family = "beta", verbose = TRUE)
+result_auto <- nrgkw(NULL, sample_data, family = "beta", verbose = FALSE)
 print(result_auto$parameters)
 print(result_auto$loglik)
 
@@ -375,40 +375,25 @@ methods <- c("trust-region", "newton-raphson", "hybrid")
 results <- list()
 
 for (method in methods) {
-  results[[method]] <- nrgkw_v2(NULL, sample_data, family = "beta",
+  results[[method]] <- nrgkw(NULL, sample_data, family = "beta",
                                optimization_method = method)
   cat(sprintf("Method: \%s, AIC: \%.4f\n", method, results[[method]]$aic))
 }
 
 # Fit the full GKw model with diagnostic information
-gkw_result <- nrgkw_v2(NULL, sample_data, family = "gkw",
-                      verbose = TRUE, get_num_hess = TRUE)
+gkw_result <- nrgkw(NULL, sample_data, family = "gkw",
+                      verbose = FALSE, get_num_hess = TRUE)
 
 # Examine parameter identifiability through condition number
 cat(sprintf("Condition number: \%.2e\n", gkw_result$condition_number))
-
-# Evaluate parameter significance
-param_summary <- data.frame(
-  Parameter = names(gkw_result$parameters),
-  Estimate = gkw_result$parameters,
-  StdError = gkw_result$std_errors,
-  Z_value = gkw_result$z_values,
-  P_value = gkw_result$p_values
-)
-print(param_summary)
+print(gkw_result)
 
 # Compare with simpler models using information criteria
 cat("Information criteria comparison:\n")
 cat(sprintf("GKw: AIC=\%.4f, BIC=\%.4f\n", gkw_result$aic, gkw_result$bic))
 cat(sprintf("Beta: AIC=\%.4f, BIC=\%.4f\n",
            results[["trust-region"]]$aic, results[["trust-region"]]$bic))
-
-# Plot convergence history
-plot(1:length(gkw_result$loglik_history), gkw_result$loglik_history,
-     type = "l", xlab = "Iteration", ylab = "Log-likelihood",
-     main = "Convergence History")
 }
-
 }
 \references{
 Carrasco, J. M. F., Ferrari, S. L. P., & Cordeiro, G. M. (2010). A new generalized Kumaraswamy

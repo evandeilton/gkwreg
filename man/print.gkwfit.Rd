@@ -23,7 +23,7 @@ displaying the call, estimated coefficients, log-likelihood, AIC, BIC,
 number of observations, and a convergence warning if applicable.
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate a small sample from Kumaraswamy distribution
 set.seed(2203)
 y <- rkw(50, alpha = 2.5, beta = 1.5)

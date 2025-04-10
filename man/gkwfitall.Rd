@@ -82,138 +82,396 @@ and various goodness-of-fit measures. It also produces visualizations with all f
 distributions overlaid on diagnostic plots.
 }
 \examples{
-\dontrun{
-# Example 1: Basic usage - Fitting all distributions to beta-distributed data
-set.seed(2203) # Set seed for reproducibility
-# Generate 1000 observations from a Beta(2,5) distribution
-y <- rbeta(1000, shape1 = 2, shape2 = 5)
-# Fit all GKw family distributions
-all_fits <- gkwfitall(y)
-# View comparison statistics sorted by AIC
-all_fits$comparison[order(all_fits$comparison$AIC), ]
-# Plot the results
-print(all_fits$plots)
-#
-# Example 2: Fitting selected distributions to Kumaraswamy data
-set.seed(2203)
+\donttest{
+# Generate a sample dataset (n = 1000)
+set.seed(123)
+n <- 1000
 
-# Fit selected distributions for comparison
-selected_fits <- gkwfitall(y, family = c("kw", "bkw", "beta", "gkw"))
-# View comparison statistics
-selected_fits$comparison
-#
-# Example 3: Using method of moments for initial values
-# Fit all distributions with moment-based starting values
-mom_fits <- gkwfitall(y, use_moments = TRUE)
+# Create predictors
+x1 <- runif(n, -2, 2)
+x2 <- rnorm(n)
+x3 <- factor(rbinom(n, 1, 0.4))
 
-# Example 4: Using different optimization methods
-# Try BFGS optimization method
-bfgs_fits <- gkwfitall(y, method = "BFGS")
+# Simulate Kumaraswamy distributed data
+# True parameters with specific relationships to predictors
+true_alpha <- exp(0.7 + 0.3 * x1)
+true_beta <- exp(1.2 - 0.2 * x2 + 0.4 * (x3 == "1"))
 
-# Compare convergence with and without method of moments
-rbind(
-  all_fits$comparison$AIC,
-  mom_fits$comparison$AIC,
-  bfgs_fits$comparison$AIC
+# Generate random responses (assuming rkw function is available)
+# If not available, use the beta distribution as an approximation
+
+y <- rkw(n, alpha = true_alpha, beta = true_beta)
+
+# Create data frame
+df <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+
+# Split into training and test sets
+set.seed(456)
+train_idx <- sample(n, 800)
+train_data <- df[train_idx, ]
+test_data <- df[-train_idx, ]
+
+# ====================================================================
+# Example 1: Basic usage - Fit a Kumaraswamy model and make predictions
+# ====================================================================
+
+# Fit the model
+kw_model <- gkwreg(y ~ x1 | x2 + x3, data = train_data, family = "kw")
+
+# Predict mean response for test data
+pred_mean <- predict(kw_model, newdata = test_data, type = "response")
+
+# Calculate prediction error
+mse <- mean((test_data$y - pred_mean)^2)
+cat("Mean Squared Error:", mse, "\n")
+
+# ====================================================================
+# Example 2: Different prediction types
+# ====================================================================
+
+# Create a grid of values for visualization
+x1_grid <- seq(-2, 2, length.out = 100)
+grid_data <- data.frame(x1 = x1_grid, x2 = 0, x3 = 0)
+
+# Predict different quantities
+pred_mean <- predict(kw_model, newdata = grid_data, type = "response")
+pred_var <- predict(kw_model, newdata = grid_data, type = "variance")
+pred_params <- predict(kw_model, newdata = grid_data, type = "parameter")
+pred_alpha <- predict(kw_model, newdata = grid_data, type = "alpha")
+pred_beta <- predict(kw_model, newdata = grid_data, type = "beta")
+
+# Plot predicted mean and parameters against x1
+plot(x1_grid, pred_mean,
+  type = "l", col = "blue",
+  xlab = "x1", ylab = "Predicted Mean", main = "Mean Response vs x1"
+)
+plot(x1_grid, pred_var,
+  type = "l", col = "red",
+  xlab = "x1", ylab = "Predicted Variance", main = "Response Variance vs x1"
+)
+plot(x1_grid, pred_alpha,
+  type = "l", col = "purple",
+  xlab = "x1", ylab = "Alpha", main = "Alpha Parameter vs x1"
+)
+plot(x1_grid, pred_beta,
+  type = "l", col = "green",
+  xlab = "x1", ylab = "Beta", main = "Beta Parameter vs x1"
 )
 
-# Example 5: Working with real data
-# Load data from betareg package
-library(betareg)
-data("ReadingSkills")
-y <- ReadingSkills$accuracy # Already in (0,1) range
-# Fit all distributions to reading skills data
-real_fits <- gkwfitall(y)
-# View comparison metrics
-real_fits$comparison[order(real_fits$comparison$AIC), ]
-# Extract the best model based on AIC
-best_model_name <- real_fits$comparison$Family[which.min(real_fits$comparison$AIC)]
-best_model <- real_fits$fits[[best_model_name]]
-summary(best_model)
-#
-# Example 6: Generating a comprehensive report
-# Fit models and generate HTML report
-report_fits <- gkwfitall(y,
-  export_report = TRUE,
-  report_file = "reading_skills_analysis.html"
+# ====================================================================
+# Example 3: Computing densities, CDFs, and quantiles
+# ====================================================================
+
+# Select a single observation
+obs_data <- test_data[1, ]
+
+# Create a sequence of y values for plotting
+y_seq <- seq(0.01, 0.99, length.out = 100)
+
+# Compute density at each y value
+dens_values <- predict(kw_model,
+  newdata = obs_data,
+  type = "density", at = y_seq, elementwise = FALSE
 )
 
-# Example 7: Using profile likelihood
-# Fit models with profile likelihood computation
-profile_fits <- gkwfitall(data_kw,
-  profile = TRUE,
-  npoints = 30,
-  family = c("kw", "beta")
+# Compute CDF at each y value
+cdf_values <- predict(kw_model,
+  newdata = obs_data,
+  type = "probability", at = y_seq, elementwise = FALSE
 )
-# Plot profile likelihood for best model parameters
-best_profile_model <- profile_fits$fits[[which.min(profile_fits$comparison$AIC)]]
-plot(gkwgof(best_profile_model, print_summary = FALSE), title = "")
 
-# Example 8: Customizing plots with a different theme
-
-custom_fits <- gkwfitall(data_kw,
-  family = c("kw", "beta", "gkw"),
-  theme_fn = theme_classic
+# Compute quantiles for a sequence of probabilities
+prob_seq <- seq(0.1, 0.9, by = 0.1)
+quant_values <- predict(kw_model,
+  newdata = obs_data,
+  type = "quantile", at = prob_seq, elementwise = FALSE
 )
-# Display the customized plots
-print(custom_fits$plots)
 
-# Example 9: Modified optimization controls
-# Increase maximum iterations and set higher tolerance
-custom_control <- list(
-  maxit = 1000, # Maximum iterations
-  trace = 0, # No tracing
-  rel.tol = 1e-10 # Tighter tolerance
+# Plot density and CDF
+plot(y_seq, dens_values,
+  type = "l", col = "blue",
+  xlab = "y", ylab = "Density", main = "Predicted PDF"
 )
-# Fit with custom optimization controls
-control_fits <- gkwfitall(data_kw,
-  optimizer.control = custom_control,
-  method = "L-BFGS-B"
+plot(y_seq, cdf_values,
+  type = "l", col = "red",
+  xlab = "y", ylab = "Cumulative Probability", main = "Predicted CDF"
 )
-# Check if optimization improved
-print(control_fits$comparison)
 
-# Example 10: Model selection for nested models using likelihood ratio tests
-# Function to perform likelihood ratio test between nested models
-perform_lrt <- function(full_model, reduced_model, df_diff) {
-  lr_stat <- 2 * (full_model$loglik - reduced_model$loglik)
-  p_value <- 1 - pchisq(lr_stat, df = df_diff)
-  return(list(statistic = lr_stat, p_value = p_value))
+# ====================================================================
+# Example 4: Prediction under different distributional assumptions
+# ====================================================================
+
+# Fit models with different families
+beta_model <- gkwreg(y ~ x1 | x2 + x3, data = train_data, family = "beta")
+gkw_model <- gkwreg(y ~ x1 | x2 + x3 | 1 | 1 | x3, data = train_data, family = "gkw")
+
+# Predict means using different families
+pred_kw <- predict(kw_model, newdata = test_data, type = "response")
+pred_beta <- predict(beta_model, newdata = test_data, type = "response")
+pred_gkw <- predict(gkw_model, newdata = test_data, type = "response")
+
+# Calculate MSE for each family
+mse_kw <- mean((test_data$y - pred_kw)^2)
+mse_beta <- mean((test_data$y - pred_beta)^2)
+mse_gkw <- mean((test_data$y - pred_gkw)^2)
+
+cat("MSE by family:\n")
+cat("Kumaraswamy:", mse_kw, "\n")
+cat("Beta:", mse_beta, "\n")
+cat("GKw:", mse_gkw, "\n")
+
+# Compare predictions from different families visually
+plot(test_data$y, pred_kw,
+  col = "blue", pch = 16,
+  xlab = "Observed", ylab = "Predicted", main = "Predicted vs Observed"
+)
+points(test_data$y, pred_beta, col = "red", pch = 17)
+points(test_data$y, pred_gkw, col = "green", pch = 18)
+abline(0, 1, lty = 2)
+legend("topleft",
+  legend = c("Kumaraswamy", "Beta", "GKw"),
+  col = c("blue", "red", "green"), pch = c(16, 17, 18)
+)
+
+# Compare models using AIC
+# Note: AIC is applied to each model individually, not as a list
+aic_values <- c(
+  KW = AIC(kw_model),
+  Beta = AIC(beta_model),
+  GKw = AIC(gkw_model)
+)
+
+# Compare models using BIC
+bic_values <- c(
+  KW = BIC(kw_model),
+  Beta = BIC(beta_model),
+  GKw = BIC(gkw_model)
+)
+
+# Display model comparison results
+model_comparison <- data.frame(
+  Family = c("KW", "Beta", "GKw"),
+  AIC = aic_values,
+  BIC = bic_values,
+  MSE = c(mse_kw, mse_beta, mse_gkw)
+)
+print(model_comparison[order(model_comparison$AIC), ])
+
+# ====================================================================
+# Example 5: Working with linear predictors and link functions
+# ====================================================================
+
+# Extract linear predictors and parameter values
+lp <- predict(kw_model, newdata = test_data, type = "link")
+params <- predict(kw_model, newdata = test_data, type = "parameter")
+
+# Verify that inverse link transformation works correctly
+# For Kumaraswamy model, alpha and beta use log links by default
+alpha_from_lp <- exp(lp$alpha)
+beta_from_lp <- exp(lp$beta)
+
+# Compare with direct parameter predictions
+cat("Manual inverse link vs direct parameter prediction:\n")
+cat("Alpha difference:", max(abs(alpha_from_lp - params$alpha)), "\n")
+cat("Beta difference:", max(abs(beta_from_lp - params$beta)), "\n")
+
+# ====================================================================
+# Example 6: Elementwise calculations
+# ====================================================================
+
+# Generate probabilities specific to each observation
+probs <- runif(nrow(test_data), 0.1, 0.9)
+
+# Calculate quantiles for each observation at its own probability level
+quant_elementwise <- predict(kw_model,
+  newdata = test_data,
+  type = "quantile", at = probs, elementwise = TRUE
+)
+
+# Calculate probabilities at each observation's actual value
+prob_at_y <- predict(kw_model,
+  newdata = test_data,
+  type = "probability", at = test_data$y, elementwise = TRUE
+)
+
+# Create Q-Q plot
+plot(sort(prob_at_y), seq(0, 1, length.out = length(prob_at_y)),
+  xlab = "Empirical Probability", ylab = "Theoretical Probability",
+  main = "P-P Plot", type = "l"
+)
+abline(0, 1, lty = 2, col = "red")
+
+# ====================================================================
+# Example 7: Predicting for the original data
+# ====================================================================
+
+# Fit a model with original data
+full_model <- gkwreg(y ~ x1 + x2 + x3 | x1 + x2 + x3, data = df, family = "kw")
+
+# Get fitted values using predict and compare with model's fitted.values
+fitted_from_predict <- predict(full_model, type = "response")
+fitted_from_model <- full_model$fitted.values
+
+# Compare results
+cat(
+  "Max difference between predict() and fitted.values:",
+  max(abs(fitted_from_predict - fitted_from_model)), "\n"
+)
+
+# ====================================================================
+# Example 8: Handling missing data
+# ====================================================================
+
+# Create test data with some missing values
+test_missing <- test_data
+test_missing$x1[1:5] <- NA
+test_missing$x2[6:10] <- NA
+
+# Predict with different na.action options
+pred_na_pass <- try(
+  predict(kw_model, newdata = test_missing, na.action = na.pass),
+  silent = TRUE
+)
+
+if (!inherits(pred_na_pass, "try-error")) {
+  # Show which positions have NAs
+  cat("Rows with missing predictors:", which(is.na(pred_na_pass)), "\n")
+} else {
+  cat("na.pass resulted in an error. This is expected if the model requires complete cases.\n")
 }
 
-# Fit models for LR testing
-nested_fits <- gkwfitall(data_kw, family = c("gkw", "bkw", "kw"))
+# Try with na.omit
+pred_na_omit <- try(
+  predict(kw_model, newdata = test_missing, na.action = na.omit),
+  silent = TRUE
+)
 
-# Test if GKw is significantly better than BKw (testing lambda = 1)
-lrt_gkw_bkw <- perform_lrt(
-  nested_fits$fits$gkw, # Full model (unrestricted)
-  nested_fits$fits$bkw, # Reduced model (lambda = 1)
-  df_diff = 1 # Testing 1 parameter (lambda)
+if (!inherits(pred_na_omit, "try-error")) {
+  cat("Length after na.omit:", length(pred_na_omit), "\n")
+  cat("(Original data had", nrow(test_missing), "rows)\n")
+} else {
+  cat("na.omit resulted in an error. Check model implementation.\n")
+}
+
+# ====================================================================
+# Example 9: Simulating different distribution families
+# ====================================================================
+
+# Simulate data from different distributions
+# Beta data
+set.seed(123)
+gamma_param <- 2
+delta_param <- 5
+y_beta <- rbeta_(1000, gamma_param, delta_param)
+
+# Kumaraswamy data
+set.seed(123)
+alpha_param <- 1.5
+beta_param <- 3.0
+y_kw <- rkw(1000, alpha = alpha_param, beta = beta_param)
+
+# Basic GKw data (using one approach if rgkw not available)
+set.seed(123)
+y_gkw <- rgkw(1000, alpha = 1.2, beta = 2.5, gamma = 1.8, delta = 0.6, lambda = 1.2)
+
+# Create data frames with just the response
+df_beta <- data.frame(y = y_beta)
+df_kw <- data.frame(y = y_kw)
+df_gkw <- data.frame(y = y_gkw)
+
+# Fit models to each dataset
+model_beta <- gkwreg(y ~ 1, data = df_beta, family = "beta")
+model_kw <- gkwreg(y ~ 1, data = df_kw, family = "kw")
+model_gkw <- gkwreg(y ~ 1, data = df_gkw, family = "gkw")
+
+# Use predict to get densities at a grid of points
+eval_points <- seq(0.01, 0.99, length.out = 100)
+
+# Get densities
+dens_beta <- predict(model_beta, type = "density", at = eval_points)
+dens_kw <- predict(model_kw, type = "density", at = eval_points)
+dens_gkw <- predict(model_gkw, type = "density", at = eval_points)
+
+# Plot density comparisons
+plot(eval_points, as.numeric(unique(dens_beta)),
+  type = "l", col = "red",
+  xlab = "y", ylab = "Density",
+  main = "Fitted Density Functions for Different Distributions"
 )
-#
-# Test if BKw is significantly better than Kw (testing gamma = 1, delta = 1)
-lrt_bkw_kw <- perform_lrt(
-  nested_fits$fits$bkw, # Full model (unrestricted)
-  nested_fits$fits$kw, # Reduced model (gamma = delta = 1)
-  df_diff = 2 # Testing 2 parameters
+lines(eval_points, as.numeric(unique(dens_kw)), col = "blue", lty = 2)
+lines(eval_points, as.numeric(unique(dens_gkw)), col = "green", lty = 3)
+legend("topright",
+  legend = c("Beta", "Kumaraswamy", "GKw"),
+  col = c("red", "blue", "green"), lty = 1:3
 )
-#
+
+# ====================================================================
+# Example 10: Nested model comparison with different families
+# ====================================================================
+
+# Simulate data from GKw distribution
+set.seed(123)
+n <- 1000
+x1 <- runif(n, -1, 1)
+
+# First, simulate from a model with covariate effects
+alpha <- exp(0.5 + 0.2 * x1)
+beta <- exp(0.8 - 0.3 * x1)
+gamma <- rep(1, n) # fixed (for Kw and KKw)
+delta <- rep(0, n) # fixed (for Kw and EKw)
+lambda <- rep(1, n) # fixed (for Kw and BKw)
+
+# Generate Kumaraswamy data directly (since we fixed gamma=1, delta=0, lambda=1)
+y <- rkw(n, alpha = alpha, beta = beta)
+
+# Create data frame
+sim_df <- data.frame(y = y, x1 = x1)
+
+# Fit different family models
+kw_model <- gkwreg(y ~ x1 | x1, data = sim_df, family = "kw")
+beta_model <- gkwreg(y ~ x1 | x1, data = sim_df, family = "beta")
+gkw_model <- gkwreg(y ~ x1 | x1 | 1 | 1 | 1, data = sim_df, family = "gkw")
+
+# Compare AIC of the models (individually, not as a list)
+aic_kw <- AIC(kw_model)
+aic_beta <- AIC(beta_model)
+aic_gkw <- AIC(gkw_model)
+
+# Compare BIC of the models (individually, not as a list)
+bic_kw <- BIC(kw_model)
+bic_beta <- BIC(beta_model)
+bic_gkw <- BIC(gkw_model)
+
+# Create comparison table
+model_comparison <- data.frame(
+  Family = c("KW", "Beta", "GKw"),
+  LogLik = c(logLik(kw_model), logLik(beta_model), logLik(gkw_model)),
+  AIC = c(aic_kw, aic_beta, aic_gkw),
+  BIC = c(bic_kw, bic_beta, bic_gkw)
+)
+
+# Display comparison sorted by AIC
+print(model_comparison[order(model_comparison$AIC), ])
+
+# Perform likelihood ratio test for nested models
+# Function to perform LRT
+lr_test <- function(full_model, reduced_model, df_diff) {
+  lr_stat <- 2 * (as.numeric(logLik(full_model)) - as.numeric(logLik(reduced_model)))
+  p_value <- 1 - pchisq(lr_stat, df = df_diff)
+  return(c(statistic = lr_stat, p_value = p_value))
+}
+
+# Test if GKw is significantly better than Kw
+# GKw has 3 more parameters: gamma, delta, lambda
+lrt_gkw_kw <- lr_test(gkw_model, kw_model, df_diff = 3)
+
 # Display LRT results
-cat("Likelihood Ratio Tests for Nested Models:\n")
-cat("GKw vs BKw (lambda = 1):\n")
-cat("  Statistic:", round(lrt_gkw_bkw$statistic, 4), "\n")
-cat("  P-value:", format.pval(lrt_gkw_bkw$p_value), "\n")
-cat("  Decision:", ifelse(lrt_gkw_bkw$p_value < 0.05,
-  "Reject H0 - GKw is necessary",
-  "Fail to reject H0 - BKw is adequate"
-), "\n\n")
-
-cat("BKw vs Kw (gamma = delta = 1):\n")
-cat("  Statistic:", round(lrt_bkw_kw$statistic, 4), "\n")
-cat("  P-value:", format.pval(lrt_bkw_kw$p_value), "\n")
-cat("  Decision:", ifelse(lrt_bkw_kw$p_value < 0.05,
-  "Reject H0 - BKw is necessary",
-  "Fail to reject H0 - Kw is adequate"
+cat("\nLikelihood Ratio Test: GKw vs Kw\n")
+cat("LR statistic:", round(lrt_gkw_kw["statistic"], 4), "\n")
+cat("p-value:", format.pval(lrt_gkw_kw["p_value"]), "\n")
+cat("Conclusion:", ifelse(lrt_gkw_kw["p_value"] < 0.05,
+  "Reject H0: Full model (GKw) is better",
+  "Fail to reject H0: Simpler model (Kw) is adequate"
 ), "\n")
 }
 

@@ -39,23 +39,6 @@ The diagonal elements of the variance-covariance matrix correspond to the square
 standard errors of the parameter estimates, while the off-diagonal elements represent
 the covariances between pairs of parameters.
 }
-\examples{
-\dontrun{
-# Fit a Kumaraswamy regression model
-kw_reg <- gkwreg(y ~ x1 + x2 | x3, data = df, family = "kw", hessian = TRUE)
-
-# Extract variance-covariance matrix
-vcov_mat <- vcov(kw_reg)
-
-# Extract standard errors (square root of diagonal elements)
-std_errors <- sqrt(diag(vcov_mat))
-print(std_errors)
-
-# Compare with the standard errors from the summary
-summary(kw_reg)
-}
-
-}
 \seealso{
 \code{\link{gkwreg}}, \code{\link{confint}}, \code{\link{summary.gkwreg}}
 }

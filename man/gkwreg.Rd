@@ -230,14 +230,10 @@ optimization capabilities. The specific TMB template used depends on the chosen 
 }
 }
 \examples{
-\dontrun{
-# Load required packages (assuming they are installed)
-# require(gkwreg) # Assuming this package provides rgkw, rkw
-# require(stats)
-
+\donttest{
 ## Example 1: Simple Kumaraswamy regression model ----
 set.seed(123)
-n <- 100 # Reduced N for faster example execution
+n <- 1000
 x1 <- runif(n, -2, 2)
 x2 <- rnorm(n)
 
@@ -252,32 +248,19 @@ alpha_true <- exp(eta_alpha)
 beta_true <- exp(eta_beta)
 
 # Generate responses from Kumaraswamy distribution (assuming rkw is available)
-# Replace rkw with relevant function if needed (e.g., from this package)
-if (exists("rkw", mode = "function")) {
-  y <- rkw(n, alpha = alpha_true, beta = beta_true)
-} else {
-  # Placeholder if rkw is not available in the environment
-  warning("rkw function not found, generating approximate data.")
-  y <- stats::rbeta(n, shape1 = alpha_true, shape2 = beta_true) # Approximation
-}
-y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
-
+y <- rkw(n, alpha = alpha_true, beta = beta_true)
 # Create data frame
 df1 <- data.frame(y = y, x1 = x1, x2 = x2)
 
 # Fit Kumaraswamy regression model using extended formula syntax
 # Model alpha ~ x1 + x2 and beta ~ x1 + x2
-kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = FALSE)
+kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = TRUE)
 
 # Display summary
 summary(kw_reg)
 
-# Plot diagnostics (requires plot.gkwreg method)
-# plot(kw_reg)
-
 ## Example 2: Generalized Kumaraswamy regression ----
 set.seed(456)
-n <- 150 # Reduced N
 x1 <- runif(n, -1, 1)
 x2 <- rnorm(n)
 x3 <- factor(rbinom(n, 1, 0.5), labels = c("A", "B")) # Factor variable
@@ -304,36 +287,26 @@ delta <- plogis(X_delta \%*\% delta_coef) # logit link for delta
 lambda <- exp(X_lambda \%*\% lambda_coef)
 
 # Generate response from GKw distribution (assuming rgkw is available)
-if (exists("rgkw", mode = "function")) {
-  y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
-} else {
-  warning("rgkw function not found, skipping GKw data generation.")
-  y <- NULL
-}
+y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
 
-if (!is.null(y)) {
-  y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
+# Create data frame
+df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
 
-  # Create data frame
-  df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+# Fit GKw regression with parameter-specific formulas
+# alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
+gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
 
-  # Fit GKw regression with parameter-specific formulas
-  # alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
-  gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
-
-  # Compare true vs. estimated coefficients
-  print("Estimated Coefficients (GKw):")
-  print(coef(gkw_reg))
-  print("True Coefficients (approx):")
-  print(list(
-    alpha = alpha_coef, beta = beta_coef, gamma = gamma_coef,
-    delta = delta_coef, lambda = lambda_coef
-  ))
-}
+# Compare true vs. estimated coefficients
+print("Estimated Coefficients (GKw):")
+print(coef(gkw_reg))
+print("True Coefficients (approx):")
+print(list(
+  alpha = alpha_coef, beta = beta_coef, gamma = gamma_coef,
+  delta = delta_coef, lambda = lambda_coef
+))
 
 ## Example 3: Beta regression for comparison ----
 set.seed(789)
-n <- 100 # Reduced N
 x1 <- runif(n, -1, 1)
 
 # True coefficients for Beta parameters (gamma = shape1, delta = shape2)
@@ -346,37 +319,29 @@ gamma_true <- exp(X_beta_eg \%*\% gamma_coef)
 delta_true <- exp(X_beta_eg \%*\% delta_coef)
 
 # Generate response from Beta distribution
-y <- stats::rbeta(n, shape1 = gamma_true, shape2 = delta_true)
-y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure y is strictly in (0, 1)
+y <- rbeta_(n, gamma_true, delta_true)
 
 # Create data frame
 df_beta <- data.frame(y = y, x1 = x1)
 
 # Fit Beta regression model using gkwreg
-# Formula maps to gamma and delta: y ~ . | . | x1 | x1 | .
-# The "." parts for alpha, beta, lambda are ignored by family="beta"
-beta_reg <- gkwreg(y ~ . | . | x1 | x1,
+# Formula maps to gamma and delta: y ~  x1 | x1
+beta_reg <- gkwreg(y ~ x1 | x1,
   data = df_beta, family = "beta",
   link = list(gamma = "log", delta = "log")
 ) # Specify links if non-default
-
-# Display confidence intervals for coefficients
-confint(beta_reg)
 
 ## Example 4: Model comparison using AIC/BIC ----
 # Fit an alternative model, e.g., Kumaraswamy, to the same beta-generated data
 kw_reg2 <- try(gkwreg(y ~ x1 | x1, data = df_beta, family = "kw"))
 
-if (!inherits(kw_reg2, "try-error")) {
-  print("AIC Comparison (Beta vs Kw):")
-  print(stats::AIC(beta_reg, kw_reg2))
-  print("BIC Comparison (Beta vs Kw):")
-  print(stats::BIC(beta_reg, kw_reg2))
-} else {
-  print("Could not fit Kw model for comparison on beta-generated data.")
-}
+print("AIC Comparison (Beta vs Kw):")
+c(AIC(beta_reg), AIC(kw_reg2))
+print("BIC Comparison (Beta vs Kw):")
+c(BIC(beta_reg), BIC(kw_reg2))
 
-## Example 5: Predicting with a fitted model ----
+## Example 5: Predicting with a fitted model
+
 # Use the Beta regression model from Example 3
 newdata <- data.frame(x1 = seq(-1, 1, length.out = 20))
 
@@ -387,7 +352,7 @@ pred_response <- predict(beta_reg, newdata = newdata, type = "response")
 pred_link <- predict(beta_reg, newdata = newdata, type = "link")
 
 # Predict parameters on the original scale (shape1, shape2)
-pred_params <- predict(beta_reg, newdata = newdata, type = "parameters")
+pred_params <- predict(beta_reg, newdata = newdata, type = "parameter")
 
 # Plot original data and predicted mean response curve
 plot(df_beta$x1, df_beta$y,

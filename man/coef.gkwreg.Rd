@@ -28,24 +28,6 @@ coefficients from a model fitted with \code{\link{gkwreg}}. It simply
 extracts the \code{coefficients} component from the fitted model object.
 The function \code{\link[stats]{coefficients}} is an alias for this function.
 }
-\examples{
-\dontrun{
-# Assuming 'kw_reg' is a fitted object from gkwreg() as in the
-# summary.gkwreg example:
-# kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df, family = "kw")
-
-# Extract coefficients using the coef method
-model_coefficients <- coef(kw_reg)
-
-# Print the coefficients
-print(model_coefficients)
-
-# Alternatively, using the alias:
-model_coefficients_alt <- coefficients(kw_reg)
-print(model_coefficients_alt)
-}
-
-}
 \seealso{
 \code{\link{gkwreg}}, \code{\link{summary.gkwreg}},
 \code{\link[stats]{coef}}, \code{\link[stats]{confint}}

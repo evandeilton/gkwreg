@@ -48,7 +48,7 @@ variate. The implementation generates \eqn{U} using \code{\link[stats]{runif}}
 and applies the transformation above.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(2027) # for reproducibility
 
 # Generate 1000 random values from a specific EKw distribution
@@ -86,14 +86,7 @@ print(summary(x_sample_ekw))
 print("Summary stats for rgkw(gamma=1, delta=0) sample:")
 print(summary(x_sample_gkw)) # Should be similar
 
-# Vectorized parameters: generate 1 value for each lambda
-lambdas_vec <- c(0.5, 1.0, 2.0)
-n_param <- length(lambdas_vec)
-samples_vec <- rekw(n_param, alpha = alpha_par, beta = beta_par,
-                    lambda = lambdas_vec)
-print(samples_vec) # One sample for each lambda value
-
-} # End of \dontrun block
+}
 
 }
 \references{

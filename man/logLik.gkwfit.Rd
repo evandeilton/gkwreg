@@ -31,7 +31,7 @@ attributes (\code{object$df} for the number of estimated parameters and
 \code{object$nobs} for the number of observations).
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate data and fit two models
 set.seed(2203)
 y <- rgkw(50, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1.5)

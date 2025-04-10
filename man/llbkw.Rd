@@ -52,21 +52,14 @@ suitable for minimization using optimization routines like \code{\link[stats]{op
 Numerical stability is maintained similarly to \code{\link{llgkw}}.
 }
 \examples{
-\dontrun{
-# Assuming existence of rbkw, grbkw, hsbkw functions for BKw distribution
+\donttest{
 
 # Generate sample data from a known BKw distribution
-set.seed(124)
-true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.0, delta = 0.5)
-# Use rbkw if it exists, otherwise use rgkw with lambda=1
-if (exists("rbkw")) {
-  sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+set.seed(2203)
+true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.5, delta = 0.5)
+sample_data_bkw <- rbkw(1000, alpha = true_par_bkw[1], beta = true_par_bkw[2],
                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
-} else {
-  sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
-                         gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
-}
-hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.0, 0.5) Sample")
+hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.5, 0.5) Sample")
 
 # --- Maximum Likelihood Estimation using optim ---
 # Initial parameter guess
@@ -119,7 +112,7 @@ if (mle_result_bkw$convergence == 0 &&
    cat("Requires convergence, 'numDeriv' package and functions 'grbkw', 'hsbkw'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

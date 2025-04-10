@@ -41,7 +41,7 @@ and applies this transformation. This is equivalent to the general GKw
 generation method (\code{\link{rgkw}}) evaluated at \eqn{\gamma=1, \delta=0, \lambda=1}.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(2029) # for reproducibility
 
 # Generate 1000 random values from a specific Kw distribution
@@ -77,13 +77,7 @@ print(summary(x_sample_kw))
 print("Summary stats for rgkw(gamma=1, delta=0, lambda=1) sample:")
 print(summary(x_sample_gkw)) # Should be similar
 
-# Vectorized parameters: generate 1 value for each alpha
-alphas_vec <- c(1.5, 2.0, 2.5)
-n_param <- length(alphas_vec)
-samples_vec <- rkw(n_param, alpha = alphas_vec, beta = beta_par)
-print(samples_vec) # One sample for each alpha value
-
-} # End of \dontrun block
+}
 
 }
 \references{

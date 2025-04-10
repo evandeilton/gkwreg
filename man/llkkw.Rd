@@ -51,7 +51,7 @@ suitable for minimization using optimization routines like \code{\link[stats]{op
 Numerical stability is maintained similarly to \code{\link{llgkw}}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assuming existence of rkkw, grkkw, hskkw functions for kkw distribution
 
 # Generate sample data from a known kkw distribution
@@ -118,7 +118,7 @@ if (mle_result_kkw$convergence == 0 &&
    cat("Requires convergence, 'numDeriv' package and functions 'grkkw', 'hskkw'.\n")
 }
 
-} # End of \dontrun block
+}
 
 }
 \references{

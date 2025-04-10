@@ -44,50 +44,23 @@ data frame to facilitate this comparison when multiple objects are provided. A
 warning is issued if models were fitted to different numbers of observations.
 }
 \examples{
-\dontrun{
-# Assume necessary functions (rkw, rgkw, gkwfit, logLik.gkwfit) exist
+\donttest{
 
-set.seed(123)
-# Generate sample data (use rkw if available, otherwise placeholder)
-# sample_data <- rkw(100, alpha = 2.5, beta = 1.5)
-sample_data <- runif(100)^(1 / 1.5) # Placeholder if rkw not available
-sample_data <- 1 - (1 - sample_data)^(1 / 2.5) # Placeholder
-sample_data <- pmax(1e-6, pmin(1 - 1e-6, sample_data)) # Ensure (0,1)
+set.seed(2203)
+y <- rkw(1000, alpha = 2.5, beta = 1.5)
 
 # Fit different models to the same data
-fit1_kw <- tryCatch(gkwfit(sample_data, family = "kw", silent = TRUE),
-  error = function(e) NULL
-)
-fit2_bkw <- tryCatch(gkwfit(sample_data, family = "bkw", silent = TRUE),
-  error = function(e) NULL
-) # Assuming bkw fits
-fit3_gkw <- tryCatch(gkwfit(sample_data, family = "gkw", silent = TRUE),
-  error = function(e) NULL
-) # Assuming gkw fits
+fit1_kw <- gkwfit(y, family = "kw", silent = TRUE)
+fit2_bkw <- gkwfit(y, family = "bkw", silent = TRUE)
+fit3_gkw <- gkwfit(y, family = "gkw", silent = TRUE)
 
-# Ensure fits were successful before proceeding
-fit_list <- Filter(Negate(is.null), list(
-  fit1_kw = fit1_kw,
-  fit2_bkw = fit2_bkw, fit3_gkw = fit3_gkw
-))
+# Calculate BIC for a single model
+bic1 <- BIC(fit1_kw)
+print(bic1)
 
-if (length(fit_list) > 0) {
-  # Calculate BIC for a single model (if fit1_kw exists)
-  if (!is.null(fit1_kw)) {
-    bic1 <- BIC(fit1_kw)
-    print(bic1)
-  }
-
-  # Compare BIC values for multiple models (if more than one fit exists)
-  if (length(fit_list) > 1) {
-    # Pass models individually using do.call
-    bic_comparison <- do.call(BIC, fit_list)
-    # Or if saved in a list: BIC(fit_list[[1]], fit_list[[2]], ...)
-    print(bic_comparison) # Sorted by BIC
-  }
-} else {
-  print("No models fitted successfully.")
-}
+# Compare BIC values for multiple models
+bic_comparison <- c(BIC(fit1_kw), BIC(fit2_bkw), BIC(fit3_gkw))
+print(bic_comparison)
 }
 
 }

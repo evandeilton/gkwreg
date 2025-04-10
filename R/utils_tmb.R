@@ -31,21 +31,6 @@
 #' normalized path, name, and compilation status.
 #' If any step fails, an error is thrown.
 #'
-#' @examples
-#' \dontrun{
-#' # Check if "gkwreg" DLL is compiled or else compile it:
-#' .check_and_compile_TMB_code("gkwreg")
-#'
-#' # Compile a different model:
-#' .check_and_compile_TMB_code("another_model")
-#'
-#' # Force recompilation:
-#' .check_and_compile_TMB_code("gkwreg", force_recompile = TRUE)
-#'
-#' # Quiet mode:
-#' .check_and_compile_TMB_code("gkwreg", verbose = FALSE)
-#' }
-#'
 #' @importFrom TMB compile dynlib
 #' @importFrom tools file_path_sans_ext
 #' @keywords internal

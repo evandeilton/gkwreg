@@ -64,7 +64,7 @@ matching the style of other functions in the related families. Boundary
 conditions (p=0, p=1) are handled explicitly.
 }
 \examples{
-\dontrun{
+\donttest{
 # Example values
 p_vals <- c(0.1, 0.5, 0.9)
 gamma_par <- 2.0 # Corresponds to shape1
@@ -111,7 +111,7 @@ print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 print(qbeta_(c(0, 1), gamma_par, delta_par)) # Should be 0, 1
 print(qbeta_(c(-Inf, 0), gamma_par, delta_par, log_p = TRUE)) # Should be 0, 1
 
-} # End of \dontrun block
+}
 
 }
 \references{

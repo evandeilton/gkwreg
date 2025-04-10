@@ -53,7 +53,7 @@ For the BKw distribution, \eqn{\lambda=1}. Therefore, the algorithm simplifies t
 This procedure is implemented efficiently, handling parameter recycling as needed.
 }
 \examples{
-\dontrun{
+\donttest{
 set.seed(2026) # for reproducibility
 
 # Generate 1000 random values from a specific BKw distribution
@@ -94,14 +94,7 @@ print(summary(x_sample_bkw))
 print("Summary stats for rgkw(lambda=1) sample:")
 print(summary(x_sample_gkw)) # Should be similar
 
-# Vectorized parameters: generate 1 value for each gamma
-gammas_vec <- c(0.5, 1.0, 2.0)
-n_param <- length(gammas_vec)
-samples_vec <- rbkw(n_param, alpha = alpha_par, beta = beta_par,
-                    gamma = gammas_vec, delta = delta_par)
-print(samples_vec) # One sample for each gamma value
-
-} # End of \dontrun block
+}
 
 }
 \references{

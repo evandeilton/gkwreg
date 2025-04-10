@@ -50,7 +50,7 @@ and \code{nobs} from various components within the \code{object} if they are not
 directly stored as \code{npar} and \code{nobs}.
 }
 \examples{
-\dontrun{
+\donttest{
 # Assume 'df' exists with response 'y' and predictors 'x1', 'x2', 'x3'
 # and that rkw() is available and data is appropriate (0 < y < 1).
 set.seed(123)

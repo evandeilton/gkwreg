@@ -26,7 +26,7 @@ inverse of the observed Hessian matrix calculated during fitting (requires
 for the generic \code{\link[stats]{vcov}} function.
 }
 \examples{
-\dontrun{
+\donttest{
 # Generate data and fit model (ensure hessian = TRUE for vcov)
 set.seed(2203)
 y <- rbkw(50, alpha = 2, beta = 3, gamma = 1.5, delta = 0.5)

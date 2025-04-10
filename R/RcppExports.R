@@ -173,7 +173,7 @@ NULL
 #' \code{\link[stats]{dbeta}}, \code{\link[stats]{integrate}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Simple density evaluation at a point
 #' dgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
 #'
@@ -204,10 +204,6 @@ NULL
 #' print(log_pdf_val)
 #' print(log(dgkw(0.5, 2, 3, 1, 0, 1))) # Should match
 #'
-#' # Vectorized parameter example
-#' alphas_vec <- c(0.5, 1.5, 3.0)
-#' # Returns 3 density values for the same x
-#' dgkw(0.5, alpha = alphas_vec, beta = 2, gamma = 1, delta = 0, lambda = 1)
 #' }
 #'
 #' @export
@@ -282,7 +278,7 @@ dgkw <- function(x, alpha, beta, gamma, delta, lambda, log_prob = FALSE) {
 #' \code{\link[stats]{pbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Simple CDF evaluation
 #' prob <- pgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1) # Kw case
 #' print(prob)
@@ -305,7 +301,8 @@ dgkw <- function(x, alpha, beta, gamma, delta, lambda, log_prob = FALSE) {
 #' q_vals <- c(0.2, 0.5, 0.8)
 #' alphas_vec <- c(0.5, 1.0, 2.0)
 #' betas_vec <- c(1.0, 2.0, 3.0)
-#' pgkw(q_vals, alpha = alphas_vec, beta = betas_vec) # Vectorizes over q, alpha, beta
+#' # Vectorizes over q, alpha, beta
+#' pgkw(q_vals, alpha = alphas_vec, beta = betas_vec, gamma = 1, delta = 0.5, lambda = 0.5)
 #'
 #' # Plotting the CDF for special cases
 #' x_seq <- seq(0.01, 0.99, by = 0.01)
@@ -400,7 +397,7 @@ pgkw <- function(q, alpha, beta, gamma, delta, lambda, lower_tail = TRUE, log_p 
 #' \code{\link[stats]{qbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Basic quantile calculation (median)
 #' median_val <- qgkw(0.5, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 #' print(median_val)
@@ -426,7 +423,7 @@ pgkw <- function(q, alpha, beta, gamma, delta, lambda, lower_tail = TRUE, log_p 
 #' alphas_vec <- c(0.5, 1.0, 2.0)
 #' betas_vec <- c(1.0, 2.0, 3.0)
 #' # Get median for 3 different GKw distributions
-#' medians_vec <- qgkw(0.5, alpha = alphas_vec, beta = betas_vec)
+#' medians_vec <- qgkw(0.5, alpha = alphas_vec, beta = betas_vec, gamma = 1, delta = 0, lambda = 1)
 #' print(medians_vec)
 #'
 #' # Verify inverse relationship with pgkw
@@ -434,12 +431,6 @@ pgkw <- function(q, alpha, beta, gamma, delta, lambda, lower_tail = TRUE, log_p 
 #' x_val <- qgkw(p_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 #' p_check <- pgkw(x_val, alpha = 2, beta = 3, gamma = 1, delta = 0, lambda = 1)
 #' print(paste("Calculated p:", p_check, " (Expected:", p_val, ")"))
-#' # abs(p_check - p_val) < 1e-9 # Should be TRUE
-#'
-#' # Edge cases
-#' qgkw(c(0, 1), alpha = 2, beta = 3) # Should return 0, 1
-#' qgkw(c(-0.1, 1.1), alpha = 2, beta = 3) # Should return NaN, NaN
-#' qgkw(0.5, alpha = -1, beta = 3) # Should return NaN (invalid alpha)
 #'}
 #' @export
 qgkw <- function(p, alpha, beta, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
@@ -506,7 +497,7 @@ qgkw <- function(p, alpha, beta, gamma, delta, lambda, lower_tail = TRUE, log_p 
 #' \code{\link[stats]{rbeta}}, \code{\link[base]{set.seed}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(1234) # for reproducibility
 #'
 #' # Generate 1000 random values from a specific GKw distribution (Kw case)
@@ -608,7 +599,7 @@ rgkw <- function(n, alpha, beta, gamma, delta, lambda) {
 #' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}, \code{\link[base]{log1p}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate sample data from a known GKw distribution
 #' set.seed(123)
 #' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -678,7 +669,7 @@ rgkw <- function(n, alpha, beta, gamma, delta, lambda) {
 #'    cat("Requires 'numDeriv' package and functions 'grgkw', 'hsgkw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 llgkw <- function(par, data) {
@@ -766,7 +757,7 @@ llgkw <- function(par, data) {
 #' \code{\link[base]{digamma}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate sample data from a known GKw distribution
 #' set.seed(123)
 #' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -818,7 +809,7 @@ llgkw <- function(par, data) {
 #'   cat("\nSkipping gradient comparison (requires 'numDeriv' package or convergence).\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 grgkw <- function(par, data) {
@@ -896,7 +887,7 @@ grgkw <- function(par, data) {
 #' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate sample data from a known GKw distribution
 #' set.seed(123)
 #' true_par <- c(alpha = 2, beta = 3, gamma = 1.0, delta = 0.5, lambda = 0.5)
@@ -956,7 +947,7 @@ grgkw <- function(par, data) {
 #'   warning("Optimization did not converge. Hessian comparison skipped.")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 hsgkw <- function(par, data) {
@@ -1020,7 +1011,7 @@ hsgkw <- function(par, data) {
 #' \code{\link[stats]{dbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' x_vals <- c(0.2, 0.5, 0.8)
 #' alpha_par <- 2.0
@@ -1050,12 +1041,7 @@ hsgkw <- function(par, data) {
 #' plot(curve_x, curve_y, type = "l", main = "kkw Density Example",
 #'      xlab = "x", ylab = "f(x)", col = "blue")
 #'
-#' # Vectorized parameters
-#' alphas_vec <- c(1.5, 2.0, 2.5)
-#' densities_vec <- dkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
-#' print(densities_vec) # Density at x=0.5 for 3 different alpha values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 dkkw <- function(x, alpha, beta, delta, lambda, log_prob = FALSE) {
@@ -1126,7 +1112,7 @@ dkkw <- function(x, alpha, beta, delta, lambda, log_prob = FALSE) {
 #' \code{\link[stats]{pbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' q_vals <- c(0.2, 0.5, 0.8)
 #' alpha_par <- 2.0
@@ -1163,12 +1149,7 @@ dkkw <- function(x, alpha, beta, delta, lambda, log_prob = FALSE) {
 #' plot(curve_q, curve_p, type = "l", main = "kkw CDF Example",
 #'      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
 #'
-#' # Vectorized parameters
-#' alphas_vec <- c(1.5, 2.0, 2.5)
-#' probs_vec <- pkkw(0.5, alphas_vec, beta_par, delta_par, lambda_par)
-#' print(probs_vec) # CDF at q=0.5 for 3 different alpha values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 pkkw <- function(q, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
@@ -1243,7 +1224,7 @@ pkkw <- function(q, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE
 #' \code{\link[stats]{qbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' p_vals <- c(0.1, 0.5, 0.9)
 #' alpha_par <- 2.0
@@ -1287,7 +1268,7 @@ pkkw <- function(q, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE
 #' print(qkkw(c(0, 1), alpha_par, beta_par, delta_par, lambda_par)) # Should be 0, 1
 #' print(qkkw(c(-Inf, 0), alpha_par, beta_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 qkkw <- function(p, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
@@ -1357,7 +1338,7 @@ qkkw <- function(p, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE
 #' \code{\link[stats]{runif}}, \code{\link[stats]{rbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(2025) # for reproducibility
 #'
 #' # Generate 1000 random values from a specific kkw distribution
@@ -1397,15 +1378,7 @@ qkkw <- function(p, alpha, beta, delta, lambda, lower_tail = TRUE, log_p = FALSE
 #' print(summary(x_sample_kkw))
 #' print("Summary stats for rgkw(gamma=1) sample:")
 #' print(summary(x_sample_gkw)) # Should be similar
-#'
-#' # Vectorized parameters: generate 1 value for each alpha
-#' alphas_vec <- c(1.5, 2.0, 2.5)
-#' n_param <- length(alphas_vec)
-#' samples_vec <- rkkw(n_param, alpha = alphas_vec, beta = beta_par,
-#'                       delta = delta_par, lambda = lambda_par)
-#' print(samples_vec) # One sample for each alpha value
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 rkkw <- function(n, alpha, beta, delta, lambda) {
@@ -1472,7 +1445,7 @@ rkkw <- function(n, alpha, beta, delta, lambda) {
 #' \code{\link[stats]{optim}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rkkw, grkkw, hskkw functions for kkw distribution
 #'
 #' # Generate sample data from a known kkw distribution
@@ -1539,7 +1512,7 @@ rkkw <- function(n, alpha, beta, delta, lambda) {
 #'    cat("Requires convergence, 'numDeriv' package and functions 'grkkw', 'hskkw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 llkkw <- function(par, data) {
@@ -1623,7 +1596,7 @@ llkkw <- function(par, data) {
 #' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 #'
 #' # Generate sample data
@@ -1686,7 +1659,7 @@ llkkw <- function(par, data) {
 #'   print(max(abs(ana_grad_kkw - ana_grad_gkw_subset))) # Should be very small
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 grkkw <- function(par, data) {
@@ -1763,7 +1736,7 @@ grkkw <- function(par, data) {
 #' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rkkw, llkkw, grkkw, hskkw functions for kkw
 #'
 #' # Generate sample data
@@ -1824,7 +1797,7 @@ grkkw <- function(par, data) {
 #'   cat("Requires convergence, 'numDeriv' package, and function 'hskkw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 hskkw <- function(par, data) {
@@ -1888,7 +1861,7 @@ hskkw <- function(par, data) {
 #' \code{\link{pbkw}}, \code{\link{qbkw}}, \code{\link{rbkw}} (other BKw functions),
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' x_vals <- c(0.2, 0.5, 0.8)
 #' alpha_par <- 2.0
@@ -1924,13 +1897,7 @@ hskkw <- function(par, data) {
 #' lines(curve_x, curve_y3, col = "green")
 #' legend("topright", legend = c("gamma=0.5", "gamma=1.0", "gamma=2.0"),
 #'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-#'
-#' # Vectorized parameters
-#' gammas_vec <- c(0.5, 1.0, 2.0)
-#' densities_vec <- dbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
-#' print(densities_vec) # Density at x=0.5 for 3 different gamma values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 dbkw <- function(x, alpha, beta, gamma, delta, log_prob = FALSE) {
@@ -1999,7 +1966,7 @@ dbkw <- function(x, alpha, beta, gamma, delta, log_prob = FALSE) {
 #' \code{\link[stats]{pbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' q_vals <- c(0.2, 0.5, 0.8)
 #' alpha_par <- 2.0
@@ -2035,13 +2002,7 @@ dbkw <- function(x, alpha, beta, gamma, delta, log_prob = FALSE) {
 #' curve_p <- pbkw(curve_q, alpha = 2, beta = 3, gamma = 0.5, delta = 1)
 #' plot(curve_q, curve_p, type = "l", main = "BKw CDF Example",
 #'      xlab = "q", ylab = "F(q)", col = "blue", ylim = c(0, 1))
-#'
-#' # Vectorized parameters
-#' gammas_vec <- c(0.5, 1.0, 2.0)
-#' probs_vec <- pbkw(0.5, alpha = 2, beta = 3, gamma = gammas_vec, delta = 1)
-#' print(probs_vec) # CDF at q=0.5 for 3 different gamma values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 pbkw <- function(q, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
@@ -2121,7 +2082,7 @@ pbkw <- function(q, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 #' \code{\link[stats]{qbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' p_vals <- c(0.1, 0.5, 0.9)
 #' alpha_par <- 2.0
@@ -2164,7 +2125,7 @@ pbkw <- function(q, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 #' print(qbkw(c(0, 1), alpha_par, beta_par, gamma_par, delta_par)) # Should be 0, 1
 #' print(qbkw(c(-Inf, 0), alpha_par, beta_par, gamma_par, delta_par, log_p = TRUE)) # Should be 0, 1
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 qbkw <- function(p, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
@@ -2232,7 +2193,7 @@ qbkw <- function(p, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 #' \code{\link[stats]{rbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(2026) # for reproducibility
 #'
 #' # Generate 1000 random values from a specific BKw distribution
@@ -2273,14 +2234,7 @@ qbkw <- function(p, alpha, beta, gamma, delta, lower_tail = TRUE, log_p = FALSE)
 #' print("Summary stats for rgkw(lambda=1) sample:")
 #' print(summary(x_sample_gkw)) # Should be similar
 #'
-#' # Vectorized parameters: generate 1 value for each gamma
-#' gammas_vec <- c(0.5, 1.0, 2.0)
-#' n_param <- length(gammas_vec)
-#' samples_vec <- rbkw(n_param, alpha = alpha_par, beta = beta_par,
-#'                     gamma = gammas_vec, delta = delta_par)
-#' print(samples_vec) # One sample for each gamma value
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 rbkw <- function(n, alpha, beta, gamma, delta) {
@@ -2349,21 +2303,14 @@ rbkw <- function(n, alpha, beta, gamma, delta) {
 #' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
 #'
 #' @examples
-#' \dontrun{
-#' # Assuming existence of rbkw, grbkw, hsbkw functions for BKw distribution
+#' \donttest{
 #'
 #' # Generate sample data from a known BKw distribution
-#' set.seed(124)
-#' true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.0, delta = 0.5)
-#' # Use rbkw if it exists, otherwise use rgkw with lambda=1
-#' if (exists("rbkw")) {
-#'   sample_data_bkw <- rbkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
+#' set.seed(2203)
+#' true_par_bkw <- c(alpha = 2.0, beta = 1.5, gamma = 1.5, delta = 0.5)
+#' sample_data_bkw <- rbkw(1000, alpha = true_par_bkw[1], beta = true_par_bkw[2],
 #'                          gamma = true_par_bkw[3], delta = true_par_bkw[4])
-#' } else {
-#'   sample_data_bkw <- rgkw(100, alpha = true_par_bkw[1], beta = true_par_bkw[2],
-#'                          gamma = true_par_bkw[3], delta = true_par_bkw[4], lambda = 1)
-#' }
-#' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.0, 0.5) Sample")
+#' hist(sample_data_bkw, breaks = 20, main = "BKw(2, 1.5, 1.5, 0.5) Sample")
 #'
 #' # --- Maximum Likelihood Estimation using optim ---
 #' # Initial parameter guess
@@ -2416,7 +2363,7 @@ rbkw <- function(n, alpha, beta, gamma, delta) {
 #'    cat("Requires convergence, 'numDeriv' package and functions 'grbkw', 'hsbkw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 llbkw <- function(par, data) {
@@ -2503,7 +2450,7 @@ llbkw <- function(par, data) {
 #' \code{\link[base]{digamma}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 #'
 #' # Generate sample data
@@ -2567,7 +2514,7 @@ llbkw <- function(par, data) {
 #'   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 #' @title Gradient of the Negative Log-Likelihood for the BKw Distribution
@@ -2650,7 +2597,7 @@ llbkw <- function(par, data) {
 #' \code{\link[base]{digamma}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 #'
 #' # Generate sample data
@@ -2714,7 +2661,7 @@ llbkw <- function(par, data) {
 #'   print(max(abs(ana_grad_bkw - ana_grad_gkw_subset))) # Should be very small
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 grbkw <- function(par, data) {
@@ -2793,7 +2740,7 @@ grbkw <- function(par, data) {
 #' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rbkw, llbkw, grbkw, hsbkw functions for BKw
 #'
 #' # Generate sample data
@@ -2855,7 +2802,7 @@ grbkw <- function(par, data) {
 #'   cat("Requires convergence, 'numDeriv' package, and function 'hsbkw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 hsbkw <- function(par, data) {
@@ -2922,7 +2869,7 @@ hsbkw <- function(par, data) {
 #' \code{\link{pekw}}, \code{\link{qekw}}, \code{\link{rekw}} (other EKw functions),
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' x_vals <- c(0.2, 0.5, 0.8)
 #' alpha_par <- 2.0
@@ -2956,13 +2903,7 @@ hsbkw <- function(par, data) {
 #' lines(curve_x, curve_y3, col = "green")
 #' legend("topright", legend = c("lambda=0.5", "lambda=1.0 (Kw)", "lambda=2.0"),
 #'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-#'
-#' # Vectorized parameters
-#' lambdas_vec <- c(0.5, 1.0, 2.0)
-#' densities_vec <- dekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
-#' print(densities_vec) # Density at x=0.5 for 3 different lambda values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 dekw <- function(x, alpha, beta, lambda, log_prob = FALSE) {
@@ -3035,7 +2976,7 @@ dekw <- function(x, alpha, beta, lambda, log_prob = FALSE) {
 #' \code{\link{dekw}}, \code{\link{qekw}}, \code{\link{rekw}} (other EKw functions),
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' q_vals <- c(0.2, 0.5, 0.8)
 #' alpha_par <- 2.0
@@ -3076,13 +3017,7 @@ dekw <- function(x, alpha, beta, lambda, log_prob = FALSE) {
 #' lines(curve_q, curve_p3, col = "green")
 #' legend("bottomright", legend = c("lambda=0.5", "lambda=1.0 (Kw)", "lambda=2.0"),
 #'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-#'
-#' # Vectorized parameters
-#' lambdas_vec <- c(0.5, 1.0, 2.0)
-#' probs_vec <- pekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
-#' print(probs_vec) # CDF at q=0.5 for 3 different lambda values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 pekw <- function(q, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
@@ -3159,7 +3094,7 @@ pekw <- function(q, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' \code{\link[stats]{qunif}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' p_vals <- c(0.1, 0.5, 0.9)
 #' alpha_par <- 2.0
@@ -3200,13 +3135,7 @@ pekw <- function(q, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' # Boundary conditions
 #' print(qekw(c(0, 1), alpha_par, beta_par, lambda_par)) # Should be 0, 1
 #' print(qekw(c(-Inf, 0), alpha_par, beta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
-#'
-#' # Vectorized parameters
-#' lambdas_vec <- c(0.5, 1.0, 2.0)
-#' quantiles_vec <- qekw(0.5, alpha = 2, beta = 3, lambda = lambdas_vec)
-#' print(quantiles_vec) # Median for 3 different lambda values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 qekw <- function(p, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
@@ -3274,7 +3203,7 @@ qekw <- function(p, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' \code{\link[stats]{runif}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(2027) # for reproducibility
 #'
 #' # Generate 1000 random values from a specific EKw distribution
@@ -3312,14 +3241,7 @@ qekw <- function(p, alpha, beta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' print("Summary stats for rgkw(gamma=1, delta=0) sample:")
 #' print(summary(x_sample_gkw)) # Should be similar
 #'
-#' # Vectorized parameters: generate 1 value for each lambda
-#' lambdas_vec <- c(0.5, 1.0, 2.0)
-#' n_param <- length(lambdas_vec)
-#' samples_vec <- rekw(n_param, alpha = alpha_par, beta = beta_par,
-#'                     lambda = lambdas_vec)
-#' print(samples_vec) # One sample for each lambda value
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 rekw <- function(n, alpha, beta, lambda) {
@@ -3392,7 +3314,7 @@ rekw <- function(n, alpha, beta, lambda) {
 #' \code{\link[stats]{optim}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rekw, grekw, hsekw functions for EKw distribution
 #'
 #' # Generate sample data from a known EKw distribution
@@ -3460,7 +3382,7 @@ rekw <- function(n, alpha, beta, lambda) {
 #'    cat("Requires convergence, 'numDeriv' package and functions 'grekw', 'hsekw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 llekw <- function(par, data) {
@@ -3542,7 +3464,7 @@ llekw <- function(par, data) {
 #' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
 #'
 #' # Generate sample data
@@ -3603,7 +3525,7 @@ llekw <- function(par, data) {
 #'
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 grekw <- function(par, data) {
@@ -3686,7 +3608,7 @@ grekw <- function(par, data) {
 #' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rekw, llekw, grekw, hsekw functions for EKw
 #'
 #' # Generate sample data
@@ -3748,7 +3670,7 @@ grekw <- function(par, data) {
 #'   cat("Requires convergence, 'numDeriv' package, and function 'hsekw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 hsekw <- function(par, data) {
@@ -3818,7 +3740,7 @@ hsekw <- function(par, data) {
 #' \code{\link[stats]{dbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' x_vals <- c(0.2, 0.5, 0.8)
 #' gamma_par <- 2.0
@@ -3852,13 +3774,7 @@ hsekw <- function(par, data) {
 #' lines(curve_x, curve_y3, col = "green")
 #' legend("topright", legend = c("lambda=0.5", "lambda=1.0 (Beta)", "lambda=2.0"),
 #'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-#'
-#' # Vectorized parameters
-#' lambdas_vec <- c(0.5, 1.0, 2.0)
-#' densities_vec <- dmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-#' print(densities_vec) # Density at x=0.5 for 3 different lambda values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 dmc <- function(x, gamma, delta, lambda, log_prob = FALSE) {
@@ -3931,7 +3847,7 @@ dmc <- function(x, gamma, delta, lambda, log_prob = FALSE) {
 #' \code{\link[stats]{pbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' q_vals <- c(0.2, 0.5, 0.8)
 #' gamma_par <- 2.0
@@ -3974,13 +3890,7 @@ dmc <- function(x, gamma, delta, lambda, log_prob = FALSE) {
 #' lines(curve_q, curve_p3, col = "green")
 #' legend("bottomright", legend = c("lambda=0.5", "lambda=1.0 (Beta)", "lambda=2.0"),
 #'        col = c("blue", "red", "green"), lty = 1, bty = "n")
-#'
-#' # Vectorized parameters
-#' lambdas_vec <- c(0.5, 1.0, 2.0)
-#' probs_vec <- pmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-#' print(probs_vec) # CDF at q=0.5 for 3 different lambda values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 pmc <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
@@ -4061,7 +3971,7 @@ pmc <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' \code{\link[stats]{qbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' p_vals <- c(0.1, 0.5, 0.9)
 #' gamma_par <- 2.0
@@ -4095,8 +4005,8 @@ pmc <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #'
 #' # Verify inverse relationship with pmc
 #' p_check <- 0.75
-#' q_calc <- qmc(p_check, gamma_par, delta_par, lambda_par = 1.5) # Use lambda != 1
-#' p_recalc <- pmc(q_calc, gamma_par, delta_par, lambda_par = 1.5)
+#' q_calc <- qmc(p_check, gamma_par, delta_par, lambda_par) # Use lambda != 1
+#' p_recalc <- pmc(q_calc, gamma_par, delta_par, lambda_par)
 #' print(paste("Original p:", p_check, " Recalculated p:", p_recalc))
 #' # abs(p_check - p_recalc) < 1e-9 # Should be TRUE
 #'
@@ -4104,12 +4014,7 @@ pmc <- function(q, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' print(qmc(c(0, 1), gamma_par, delta_par, lambda_par)) # Should be 0, 1
 #' print(qmc(c(-Inf, 0), gamma_par, delta_par, lambda_par, log_p = TRUE)) # Should be 0, 1
 #'
-#' # Vectorized parameters
-#' lambdas_vec <- c(0.5, 1.0, 2.0)
-#' quantiles_vec <- qmc(0.5, gamma = 2, delta = 3, lambda = lambdas_vec)
-#' print(quantiles_vec) # Median for 3 different lambda values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 qmc <- function(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
@@ -4179,7 +4084,7 @@ qmc <- function(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' \code{\link[stats]{rbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(2028) # for reproducibility
 #'
 #' # Generate 1000 random values from a specific Mc distribution
@@ -4223,14 +4128,7 @@ qmc <- function(p, gamma, delta, lambda, lower_tail = TRUE, log_p = FALSE) {
 #' print("Summary stats for rgkw(alpha=1, beta=1) sample:")
 #' print(summary(x_sample_gkw)) # Should be similar
 #'
-#' # Vectorized parameters: generate 1 value for each lambda
-#' lambdas_vec <- c(0.5, 1.0, 2.0)
-#' n_param <- length(lambdas_vec)
-#' samples_vec <- rmc(n_param, gamma = gamma_par, delta = delta_par,
-#'                    lambda = lambdas_vec)
-#' print(samples_vec) # One sample for each lambda value
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 rmc <- function(n, gamma, delta, lambda) {
@@ -4299,7 +4197,7 @@ rmc <- function(n, gamma, delta, lambda) {
 #' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rmc, grmc, hsmc functions for Mc distribution
 #'
 #' # Generate sample data from a known Mc distribution
@@ -4361,7 +4259,7 @@ rmc <- function(n, gamma, delta, lambda) {
 #'    cat("Requires convergence, 'numDeriv' package and functions 'grmc', 'hsmc'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 llmc <- function(par, data) {
@@ -4436,7 +4334,7 @@ llmc <- function(par, data) {
 #' \code{\link[base]{digamma}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
 #'
 #' # Generate sample data
@@ -4492,7 +4390,7 @@ llmc <- function(par, data) {
 #'
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 grmc <- function(par, data) {
@@ -4583,7 +4481,7 @@ grmc <- function(par, data) {
 #' \code{\link[base]{trigamma}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rmc, llmc, grmc, hsmc functions for Mc distribution
 #'
 #' # Generate sample data
@@ -4640,7 +4538,7 @@ grmc <- function(par, data) {
 #'   cat("Requires convergence, 'numDeriv' package, and function 'hsmc'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 hsmc <- function(par, data) {
@@ -4702,7 +4600,7 @@ hsmc <- function(par, data) {
 #' \code{\link[stats]{dbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' x_vals <- c(0.2, 0.5, 0.8)
 #' alpha_par <- 2.0
@@ -4734,13 +4632,7 @@ hsmc <- function(par, data) {
 #' lines(curve_x, dkw(curve_x, alpha = 1, beta = 3), col = "orange") # J-shaped (reversed)
 #' legend("top", legend = c("a=2, b=3", "a=3, b=2", "a=0.5, b=0.5", "a=5, b=1", "a=1, b=3"),
 #'        col = c("blue", "red", "green", "purple", "orange"), lty = 1, bty = "n", ncol = 2)
-#'
-#' # Vectorized parameters
-#' alphas_vec <- c(1.5, 2.0, 2.5)
-#' densities_vec <- dkw(0.5, alpha = alphas_vec, beta = 3.0)
-#' print(densities_vec) # Density at x=0.5 for 3 different alpha values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 dkw <- function(x, alpha, beta, log_prob = FALSE) {
@@ -4806,7 +4698,7 @@ dkw <- function(x, alpha, beta, log_prob = FALSE) {
 #' \code{\link[stats]{pbeta}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' q_vals <- c(0.2, 0.5, 0.8)
 #' alpha_par <- 2.0
@@ -4845,12 +4737,7 @@ dkw <- function(x, alpha, beta, log_prob = FALSE) {
 #' legend("bottomright", legend = c("a=2, b=3", "a=3, b=2", "a=0.5, b=0.5", "a=5, b=1", "a=1, b=3"),
 #'        col = c("blue", "red", "green", "purple", "orange"), lty = 1, bty = "n", ncol = 2)
 #'
-#' # Vectorized parameters
-#' alphas_vec <- c(1.5, 2.0, 2.5)
-#' probs_vec <- pkw(0.5, alpha = alphas_vec, beta = 3.0)
-#' print(probs_vec) # CDF at q=0.5 for 3 different alpha values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 pkw <- function(q, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
@@ -4920,7 +4807,7 @@ pkw <- function(q, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
 #' \code{\link[stats]{qbeta}}, \code{\link[stats]{qunif}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' p_vals <- c(0.1, 0.5, 0.9)
 #' alpha_par <- 2.0
@@ -4959,12 +4846,7 @@ pkw <- function(q, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
 #' print(qkw(c(0, 1), alpha_par, beta_par)) # Should be 0, 1
 #' print(qkw(c(-Inf, 0), alpha_par, beta_par, log_p = TRUE)) # Should be 0, 1
 #'
-#' # Vectorized parameters
-#' alphas_vec <- c(1.5, 2.0, 2.5)
-#' quantiles_vec <- qkw(0.5, alpha = alphas_vec, beta = 3.0)
-#' print(quantiles_vec) # Median for 3 different alpha values
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 qkw <- function(p, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
@@ -5023,7 +4905,7 @@ qkw <- function(p, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
 #' \code{\link[stats]{runif}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(2029) # for reproducibility
 #'
 #' # Generate 1000 random values from a specific Kw distribution
@@ -5059,13 +4941,7 @@ qkw <- function(p, alpha, beta, lower_tail = TRUE, log_p = FALSE) {
 #' print("Summary stats for rgkw(gamma=1, delta=0, lambda=1) sample:")
 #' print(summary(x_sample_gkw)) # Should be similar
 #'
-#' # Vectorized parameters: generate 1 value for each alpha
-#' alphas_vec <- c(1.5, 2.0, 2.5)
-#' n_param <- length(alphas_vec)
-#' samples_vec <- rkw(n_param, alpha = alphas_vec, beta = beta_par)
-#' print(samples_vec) # One sample for each alpha value
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 rkw <- function(n, alpha, beta) {
@@ -5128,7 +5004,7 @@ rkw <- function(n, alpha, beta) {
 #' \code{\link[stats]{optim}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rkw, grkw, hskw functions for Kw distribution
 #'
 #' # Generate sample data from a known Kw distribution
@@ -5190,7 +5066,7 @@ rkw <- function(n, alpha, beta) {
 #'    cat("Requires convergence, 'numDeriv' package and functions 'grkw', 'hskw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 llkw <- function(par, data) {
@@ -5256,7 +5132,7 @@ llkw <- function(par, data) {
 #' \code{\link[numDeriv]{grad}} (for numerical gradient comparison).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rkw, llkw, grkw, hskw functions for Kw
 #'
 #' # Generate sample data
@@ -5312,7 +5188,7 @@ llkw <- function(par, data) {
 #'
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 grkw <- function(par, data) {
@@ -5392,7 +5268,7 @@ grkw <- function(par, data) {
 #' \code{\link[numDeriv]{hessian}} (for numerical Hessian comparison).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rkw, llkw, grkw, hskw functions for Kw
 #'
 #' # Generate sample data
@@ -5449,7 +5325,7 @@ grkw <- function(par, data) {
 #'   cat("Requires convergence, 'numDeriv' package, and function 'hskw'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 hskw <- function(par, data) {
@@ -5518,7 +5394,7 @@ hskw <- function(par, data) {
 #' \code{pbeta_}, \code{qbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' x_vals <- c(0.2, 0.5, 0.8)
 #' gamma_par <- 2.0 # Corresponds to shape1
@@ -5557,7 +5433,7 @@ hskw <- function(par, data) {
 #' legend("topright", legend=c("dbeta_(gamma=2, delta=3)", "stats::dbeta(shape1=2, shape2=4)"),
 #'        col=c("blue", "red"), lty=c(1,2), bty="n")
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 dbeta_ <- function(x, gamma, delta, log_prob = FALSE) {
@@ -5626,7 +5502,7 @@ dbeta_ <- function(x, gamma, delta, log_prob = FALSE) {
 #' \code{dbeta_}, \code{qbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' q_vals <- c(0.2, 0.5, 0.8)
 #' gamma_par <- 2.0 # Corresponds to shape1
@@ -5670,7 +5546,7 @@ dbeta_ <- function(x, gamma, delta, log_prob = FALSE) {
 #' legend("bottomright", legend=c("pbeta_(gamma=2, delta=3)", "stats::pbeta(shape1=2, shape2=4)"),
 #'        col=c("blue", "red"), lty=c(1,2), bty="n")
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 pbeta_ <- function(q, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
@@ -5747,7 +5623,7 @@ pbeta_ <- function(q, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
 #' \code{dbeta_}, \code{pbeta_}, \code{rbeta_} (other functions for this parameterization, if they exist).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Example values
 #' p_vals <- c(0.1, 0.5, 0.9)
 #' gamma_par <- 2.0 # Corresponds to shape1
@@ -5794,7 +5670,7 @@ pbeta_ <- function(q, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
 #' print(qbeta_(c(0, 1), gamma_par, delta_par)) # Should be 0, 1
 #' print(qbeta_(c(-Inf, 0), gamma_par, delta_par, log_p = TRUE)) # Should be 0, 1
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 qbeta_ <- function(p, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
@@ -5860,7 +5736,7 @@ qbeta_ <- function(p, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
 #' \code{dbeta_}, \code{pbeta_}, \code{qbeta_} (other functions for this parameterization, if they exist).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' set.seed(2030) # for reproducibility
 #'
 #' # Generate 1000 samples using rbeta_
@@ -5875,12 +5751,10 @@ qbeta_ <- function(p, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
 #' # Compare with stats::rbeta
 #' x_sample_stats <- stats::rbeta(1000, shape1 = shape1, shape2 = shape2)
 #' # Visually compare histograms or QQ-plots
-#' par(mfrow=c(1,2))
 #' hist(x_sample, main="rbeta_ Sample", freq=FALSE, breaks=30)
 #' curve(dbeta_(x, gamma_par, delta_par), add=TRUE, col="red", lwd=2)
 #' hist(x_sample_stats, main="stats::rbeta Sample", freq=FALSE, breaks=30)
 #' curve(stats::dbeta(x, shape1, shape2), add=TRUE, col="blue", lwd=2)
-#' par(mfrow=c(1,1))
 #' # Compare summary stats (should be similar due to randomness)
 #' print(summary(x_sample))
 #' print(summary(x_sample_stats))
@@ -5896,13 +5770,7 @@ qbeta_ <- function(p, gamma, delta, lower_tail = TRUE, log_p = FALSE) {
 #' print("Summary stats for rmc(l=1) sample:")
 #' print(summary(x_sample_mc))
 #'
-#' # Vectorized parameters (e.g., generating from Beta(g, 4) for different g)
-#' gammas_vec <- c(1.0, 2.0, 3.0)
-#' n_param <- length(gammas_vec)
-#' samples_vec <- rbeta_(n_param, gamma = gammas_vec, delta = 3.0)
-#' print(samples_vec) # One sample for each gamma value
-#'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 rbeta_ <- function(n, gamma, delta) {
@@ -5969,7 +5837,7 @@ rbeta_ <- function(n, gamma, delta) {
 #' \code{\link[stats]{optim}}, \code{\link[base]{lbeta}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 #'
 #' # Generate sample data from a Beta(2, 4) distribution
@@ -6035,7 +5903,7 @@ rbeta_ <- function(n, gamma, delta) {
 #'    cat("Requires convergence, 'numDeriv' pkg & functions 'grbeta', 'hsbeta'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 llbeta <- function(par, data) {
@@ -6107,7 +5975,7 @@ llbeta <- function(par, data) {
 #' \code{\link[base]{digamma}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 #'
 #' # Generate sample data from a Beta(2, 4) distribution
@@ -6164,7 +6032,7 @@ llbeta <- function(par, data) {
 #'
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 grbeta <- function(par, data) {
@@ -6241,7 +6109,7 @@ grbeta <- function(par, data) {
 #' \code{\link[base]{trigamma}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Assuming existence of rbeta_, llbeta, grbeta, hsbeta functions
 #'
 #' # Generate sample data from a Beta(2, 4) distribution
@@ -6299,14 +6167,14 @@ grbeta <- function(par, data) {
 #'   cat("Requires convergence, 'numDeriv' package, and function 'hsbeta'.\n")
 #' }
 #'
-#' } # End of \dontrun block
+#' }
 #'
 #' @export
 hsbeta <- function(par, data) {
     .Call(`_gkwreg_hsbeta`, par, data)
 }
 
-#' @title Enhanced Newton-Raphson Optimization for GKw Family Distributions (nrgkw_v2)
+#' @title Enhanced Newton-Raphson Optimization for GKw Family Distributions
 #' @author Enhanced by Lopes, J. E.
 #' @keywords distribution optimization likelihood mle newton-raphson kumaraswamy mcdonald beta
 #'
@@ -6637,13 +6505,13 @@ hsbeta <- function(par, data) {
 #' random processes. Journal of Hydrology, 46(1-2), 79-88.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Generate sample data from a Beta(2,5) distribution for testing
 #' set.seed(123)
-#' sample_data <- stats::rbeta(200, shape1 = 2, shape2 = 5)
+#' sample_data <- rbeta_(200, 2, 5)
 #'
 #' # Automatic initialization (recommended for beginners)
-#' result_auto <- nrgkw_v2(NULL, sample_data, family = "beta", verbose = TRUE)
+#' result_auto <- nrgkw(NULL, sample_data, family = "beta", verbose = FALSE)
 #' print(result_auto$parameters)
 #' print(result_auto$loglik)
 #'
@@ -6652,40 +6520,25 @@ hsbeta <- function(par, data) {
 #' results <- list()
 #'
 #' for (method in methods) {
-#'   results[[method]] <- nrgkw_v2(NULL, sample_data, family = "beta",
+#'   results[[method]] <- nrgkw(NULL, sample_data, family = "beta",
 #'                                optimization_method = method)
 #'   cat(sprintf("Method: %s, AIC: %.4f\n", method, results[[method]]$aic))
 #' }
 #'
 #' # Fit the full GKw model with diagnostic information
-#' gkw_result <- nrgkw_v2(NULL, sample_data, family = "gkw",
-#'                       verbose = TRUE, get_num_hess = TRUE)
+#' gkw_result <- nrgkw(NULL, sample_data, family = "gkw",
+#'                       verbose = FALSE, get_num_hess = TRUE)
 #'
 #' # Examine parameter identifiability through condition number
 #' cat(sprintf("Condition number: %.2e\n", gkw_result$condition_number))
-#'
-#' # Evaluate parameter significance
-#' param_summary <- data.frame(
-#'   Parameter = names(gkw_result$parameters),
-#'   Estimate = gkw_result$parameters,
-#'   StdError = gkw_result$std_errors,
-#'   Z_value = gkw_result$z_values,
-#'   P_value = gkw_result$p_values
-#' )
-#' print(param_summary)
+#' print(gkw_result)
 #'
 #' # Compare with simpler models using information criteria
 #' cat("Information criteria comparison:\n")
 #' cat(sprintf("GKw: AIC=%.4f, BIC=%.4f\n", gkw_result$aic, gkw_result$bic))
 #' cat(sprintf("Beta: AIC=%.4f, BIC=%.4f\n",
 #'            results[["trust-region"]]$aic, results[["trust-region"]]$bic))
-#'
-#' # Plot convergence history
-#' plot(1:length(gkw_result$loglik_history), gkw_result$loglik_history,
-#'      type = "l", xlab = "Iteration", ylab = "Log-likelihood",
-#'      main = "Convergence History")
-#' }
-#'
+#'}
 #' @export
 nrgkw <- function(start = NULL, data = as.numeric( c()), family = "gkw", tol = 1e-6, max_iter = 100L, verbose = FALSE, optimization_method = "trust-region", enforce_bounds = TRUE, min_param_val = 1e-5, max_param_val = 1e5, adaptive_scaling = TRUE, use_stochastic_perturbation = TRUE, get_num_hess = FALSE, multi_start_attempts = 3L, eigenvalue_hessian_reg = TRUE, max_backtrack = 20L, initial_trust_radius = 1.0) {
     .Call(`_gkwreg_nrgkw`, start, data, family, tol, max_iter, verbose, optimization_method, enforce_bounds, min_param_val, max_param_val, adaptive_scaling, use_stochastic_perturbation, get_num_hess, multi_start_attempts, eigenvalue_hessian_reg, max_backtrack, initial_trust_radius)
