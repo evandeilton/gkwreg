@@ -46,11 +46,12 @@
   if (verbose) log_msg("Checking TMB model status for ", dll_name, "...\n")
 
   # Ensure .gkwreg_env exists
-  if (!exists(".gkwreg_env", envir = globalenv())) {
-    assign(".gkwreg_env", new.env(parent = emptyenv()), envir = globalenv())
+  if (!exists(".gkwreg_env")) {
+    .gkwreg_env <- new.env(parent = emptyenv())
   }
 
   # 1. Create a persistent cache directory for TMB compilation
+  # Use rappdirs if available, otherwise create directory in user's home folder
   if (requireNamespace("rappdirs", quietly = TRUE)) {
     cache_dir <- file.path(rappdirs::user_cache_dir(pkg_name), "tmb_cache")
   } else {
@@ -59,32 +60,35 @@
   }
 
   if (!dir.exists(cache_dir)) {
-    dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+    dir.create(cache_dir, recursive = TRUE)
     if (verbose) log_msg("Created persistent cache directory: ", cache_dir, "\n")
   }
 
   # 2. Create a subdirectory for this specific R version and package version
+  # This ensures recompilation when R or the package is updated
   r_version <- paste0("R", getRversion()[1, 1:2])
   pkg_version <- tryCatch(
-    as.character(packageVersion(pkg_name)),
-    error = function(e) "dev" # Use "dev" for package development mode
+    {
+      as.character(packageVersion(pkg_name))
+    },
+    error = function(e) {
+      "dev" # Use "dev" for package development mode
+    }
   )
 
   version_dir <- file.path(cache_dir, r_version, pkg_version)
   if (!dir.exists(version_dir)) {
-    dir.create(version_dir, recursive = TRUE, showWarnings = FALSE)
+    dir.create(version_dir, recursive = TRUE)
     if (verbose) log_msg("Created version-specific cache directory: ", version_dir, "\n")
   }
 
   # 3. Define the full path for the shared object based on platform
-  dll_ext <- .Platform$dynlib.ext
+  dll_ext <- .Platform$dynlib.ext # ".so" on Linux/Mac, ".dll" on Windows
   compiled_name <- paste0(dll_name, dll_ext)
   cached_dll_path <- file.path(version_dir, compiled_name)
 
-  # Normalize the path to avoid issues with tilde (~) and short paths
-  if (file.exists(dirname(cached_dll_path))) {
-    cached_dll_path <- normalizePath(cached_dll_path, mustWork = FALSE)
-  }
+  # Normalizar o caminho para evitar problemas com o til (~)
+  cached_dll_path <- normalizePath(cached_dll_path, mustWork = FALSE)
 
   # 4. Locate the original C++ source file - try multiple standard locations
   cpp_file <- system.file("tmb", paste0(dll_name, ".cpp"), package = pkg_name)
@@ -102,14 +106,14 @@
   # If still not found, check standard paths for package development
   if (cpp_file == "") {
     potential_paths <- c(
-      file.path("inst/tmb", paste0(dll_name, ".cpp")),
-      file.path("src/tmb", paste0(dll_name, ".cpp")),
-      file.path("src", paste0(dll_name, ".cpp"))
+      file.path("inst/tmb", paste0(dll_name, ".cpp"))
+      # file.path("src/tmb", paste0(dll_name, ".cpp")),
+      # file.path("src", paste0(dll_name, ".cpp"))
     )
 
     for (path in potential_paths) {
       if (file.exists(path)) {
-        cpp_file <- normalizePath(path, mustWork = TRUE)
+        cpp_file <- normalizePath(path)
         break
       }
     }
@@ -138,7 +142,7 @@
       # Try to load the existing library
       load_result <- try(
         {
-          # Use absolute normalized path to avoid issues with tilde (~)
+          # Usar o caminho absoluto normalizado para evitar problemas com o til (~)
           norm_path <- normalizePath(cached_dll_path, mustWork = TRUE)
 
           # Check if this DLL is already loaded
@@ -156,15 +160,20 @@
             dyn.load(norm_path)
           }
 
-          # Store the path and DLL name in an environment variable for future reference
-          assign(paste0("TMB_", dll_name, "_PATH"), norm_path, envir = globalenv()$.gkwreg_env)
-          TRUE
+          # Armazenar o caminho e nome da DLL em uma variável no ambiente para referência futura
+          assign(paste0("TMB_", dll_name, "_PATH"), norm_path, envir = .gkwreg_env)
         },
         silent = TRUE
       )
 
       if (!inherits(load_result, "try-error")) {
         if (verbose) log_msg("Successfully loaded cached TMB model.\n")
+
+        if (verbose) {
+          # List registered symbols only in verbose mode
+          symbols <- getDLLRegisteredRoutines(cached_dll_path)
+          if (verbose) log_msg("Symbols registered: ", paste(names(symbols$.C), collapse = ", "), "\n")
+        }
 
         # Create dll_info to return
         dll_info <- list(
@@ -175,7 +184,7 @@
         )
 
         # Store in the environment
-        assign(paste0("TMB_", dll_name, "_INFO"), dll_info, envir = globalenv()$.gkwreg_env)
+        assign(paste0("TMB_", dll_name, "_INFO"), dll_info, envir = .gkwreg_env)
 
         return(invisible(dll_info))
       } else {
@@ -189,41 +198,13 @@
     need_compile <- TRUE
   }
 
-  # 6. Compile if needed - Windows-specific fixes here
+  # 6. Compile if needed
   if (need_compile) {
-    # IMPORTANT FIX 1: Create a simpler, shorter temporary path without special characters
-    # This helps avoid Windows path issues with ~1 short names
-    is_windows <- .Platform$OS.type == "windows"
-
-    if (is_windows) {
-      # Create a temporary directory with simple name, avoiding temp paths with spaces
-      temp_base <- "C:/RTMP"
-      if (!dir.exists(temp_base)) {
-        dir.create(temp_base, recursive = TRUE, showWarnings = FALSE)
-      }
-      temp_compile_dir <- file.path(
-        temp_base,
-        paste0(
-          dll_name, "_",
-          format(Sys.time(), "%Y%m%d%H%M%S")
-        )
-      )
-    } else {
-      # For non-Windows, use standard temp directory
-      temp_compile_dir <- file.path(
-        tempdir(),
-        paste0(
-          dll_name, "_compile_",
-          format(Sys.time(), "%Y%m%d%H%M%S")
-        )
-      )
-    }
-
+    # Copy the C++ file to a temporary location for compilation
+    temp_compile_dir <- file.path(tempdir(), paste0(dll_name, "_compile_", format(Sys.time(), "%Y%m%d%H%M%S")))
     dir.create(temp_compile_dir, recursive = TRUE, showWarnings = FALSE)
 
-    # IMPORTANT FIX 2: Use the base filename only, not full path for temporary file
-    cpp_basename <- basename(cpp_file)
-    temp_cpp_file <- file.path(temp_compile_dir, cpp_basename)
+    temp_cpp_file <- file.path(temp_compile_dir, basename(cpp_file))
     file.copy(cpp_file, temp_cpp_file, overwrite = TRUE)
 
     # Set current directory to temp compilation location
@@ -233,113 +214,26 @@
 
     if (verbose) log_msg("Compiling TMB model from ", temp_cpp_file, "...\n")
 
-    # IMPORTANT FIX 3: For Windows, use filename only when in the current directory
-    if (is_windows) {
-      # Copy all TMB-related DLLs to ensure linking works
-      tmb_dlls <- list.files(system.file("libs", package = "TMB"),
-        pattern = "\\.dll$", full.names = TRUE
-      )
-      if (length(tmb_dlls) > 0) {
-        for (dll in tmb_dlls) {
-          file.copy(dll, temp_compile_dir, overwrite = TRUE)
-        }
-      }
-
-      # Copy RcppEigen include files if needed
-      if (requireNamespace("RcppEigen", quietly = TRUE)) {
-        eigen_includes <- system.file("include", package = "RcppEigen")
-        if (dir.exists(eigen_includes)) {
-          eigen_target <- file.path(temp_compile_dir, "eigen_includes")
-          dir.create(eigen_target, showWarnings = FALSE)
-          eigen_files <- list.files(eigen_includes, recursive = TRUE, full.names = TRUE)
-          for (f in eigen_files) {
-            target_dir <- dirname(file.path(
-              eigen_target,
-              sub(eigen_includes, "", f, fixed = TRUE)
-            ))
-            if (!dir.exists(target_dir)) {
-              dir.create(target_dir, recursive = TRUE, showWarnings = FALSE)
-            }
-            file.copy(f, target_dir, overwrite = TRUE)
-          }
-        }
-      }
-
-      # For Windows, use the base filename only for compilation
-      compile_result <- try(
-        {
-          TMB::compile(cpp_basename, # Use only the filename
-            safebounds = FALSE,
-            safeunload = FALSE,
-            verbose = verbose
-          )
-        },
-        silent = !verbose
-      )
-    } else {
-      # For non-Windows, use the full path as before
-      compile_result <- try(
-        {
-          TMB::compile(temp_cpp_file,
-            safebounds = FALSE,
-            safeunload = FALSE,
-            verbose = verbose
-          )
-        },
-        silent = !verbose
-      )
-    }
+    # O TMB::compile requer o caminho completo ou o nome do arquivo no diretório atual
+    # Vamos garantir que estamos usando o arquivo corretamente
+    compile_result <- try(
+      {
+        # Use o arquivo com caminho completo para garantir que o TMB possa encontrá-lo
+        TMB::compile(temp_cpp_file,
+          safebounds = FALSE,
+          safeunload = FALSE,
+          verbose = verbose
+        )
+      },
+      silent = !verbose
+    )
 
     if (inherits(compile_result, "try-error")) {
-      # IMPORTANT FIX 4: Enhanced error handling for Windows path issues
-      error_msg <- attr(compile_result, "condition")$message
-      if (is_windows && grepl("No such file or directory", error_msg)) {
-        # Try POSIX path handling as a fallback on Windows
-        try_posix <- try(
-          {
-            cpp_code <- readLines(temp_cpp_file, warn = FALSE)
-            writeLines(cpp_code, "tmb_file.cpp") # Simple filename
-            TMB::compile("tmb_file.cpp",
-              safebounds = FALSE,
-              safeunload = FALSE,
-              verbose = verbose
-            )
-          },
-          silent = !verbose
-        )
-
-        if (!inherits(try_posix, "try-error")) {
-          compile_result <- try_posix
-        } else {
-          stop(
-            "TMB model compilation failed with Windows path handling issues. ",
-            "Error: ", error_msg
-          )
-        }
-      } else {
-        stop("TMB model compilation failed. Error: ", error_msg)
-      }
+      stop("TMB model compilation failed. Check the C++ code and dependencies.")
     }
 
     # Check if compilation was successful
-    temp_dll_name <- TMB::dynlib(dll_name)
-    temp_dll_path <- file.path(temp_compile_dir, temp_dll_name)
-
-    # IMPORTANT FIX 5: If first attempt failed, look for alternative filenames
-    if (!file.exists(temp_dll_path) && is_windows) {
-      # Check for "tmb_file" if we used the fallback
-      alt_dll_path <- file.path(temp_compile_dir, TMB::dynlib("tmb_file"))
-      if (file.exists(alt_dll_path)) {
-        temp_dll_path <- alt_dll_path
-      } else {
-        # Look for any DLL that might have been created
-        dll_files <- list.files(temp_compile_dir, pattern = "\\.dll$")
-        if (length(dll_files) > 0) {
-          temp_dll_path <- file.path(temp_compile_dir, dll_files[1])
-        }
-      }
-    }
-
+    temp_dll_path <- file.path(temp_compile_dir, TMB::dynlib(dll_name))
     if (!file.exists(temp_dll_path)) {
       stop("Compiled file was not generated. Check permissions and file paths.")
     }
@@ -348,47 +242,38 @@
     file.copy(temp_dll_path, cached_dll_path, overwrite = TRUE)
     if (verbose) log_msg("Copied compiled model to cache: ", cached_dll_path, "\n")
 
-    # Clean up temporary files - important for Windows to release file handles
-    if (is_windows) {
-      # Unload any loaded DLLs first to avoid "file in use" errors
-      for (dll_file in list.files(temp_compile_dir, pattern = "\\.dll$", full.names = TRUE)) {
-        try(dyn.unload(dll_file), silent = TRUE)
-      }
-
-      # On Windows, use shell.exec to delete the directory in a separate process
-      # This avoids file locking issues
-      try(unlink(temp_compile_dir, recursive = TRUE, force = TRUE), silent = TRUE)
-    } else {
-      unlink(temp_compile_dir, recursive = TRUE)
-    }
+    # Clean up temporary files
+    unlink(temp_compile_dir, recursive = TRUE)
 
     # Load the newly compiled model
     load_result <- try(
       {
         norm_path <- normalizePath(cached_dll_path, mustWork = TRUE)
-
-        # Unload first if already loaded
-        try(dyn.unload(norm_path), silent = TRUE)
-
-        # Now load
         dyn.load(norm_path)
 
-        # Store the path in environment variable
-        assign(paste0("TMB_", dll_name, "_PATH"), norm_path, envir = globalenv()$.gkwreg_env)
-        TRUE
+        # Armazenar o caminho em variável no ambiente
+        assign(paste0("TMB_", dll_name, "_PATH"), norm_path, envir = .gkwreg_env)
       },
       silent = !verbose
     )
 
     if (inherits(load_result, "try-error")) {
-      error_msg <- attr(load_result, "condition")$message
-      stop("Failed to load compiled model. Error: ", error_msg)
+      stop(
+        "Failed to load compiled model. Error: ",
+        attr(load_result, "condition")$message
+      )
     }
 
     if (verbose) log_msg("Successfully compiled and loaded TMB model.\n")
+
+    if (verbose) {
+      # List the registered symbols
+      symbols <- getDLLRegisteredRoutines(cached_dll_path)
+      if (verbose) log_msg("Symbols registered: ", paste(names(symbols$.C), collapse = ", "), "\n")
+    }
   }
 
-  # Return the DLL path and other relevant information
+  # Return o caminho da DLL e outras informações relevantes
   dll_info <- list(
     path = cached_dll_path,
     normalized_path = normalizePath(cached_dll_path, mustWork = FALSE),
@@ -396,18 +281,11 @@
     compiled = need_compile
   )
 
-  # Associate this information with the R environment for future reference
-  assign(paste0("TMB_", dll_name, "_INFO"), dll_info, envir = globalenv()$.gkwreg_env)
+  # Associar estas informações ao ambiente R para referência futura
+  assign(paste0("TMB_", dll_name, "_INFO"), dll_info, envir = .gkwreg_env)
 
   invisible(dll_info)
 }
-
-
-
-
-
-
-
 
 
 #' #' Check and Compile TMB Model Code with Persistent Cache
@@ -458,12 +336,11 @@
 #'   if (verbose) log_msg("Checking TMB model status for ", dll_name, "...\n")
 #'
 #'   # Ensure .gkwreg_env exists
-#'   if (!exists(".gkwreg_env")) {
-#'     .gkwreg_env <- new.env(parent = emptyenv())
+#'   if (!exists(".gkwreg_env", envir = globalenv())) {
+#'     assign(".gkwreg_env", new.env(parent = emptyenv()), envir = globalenv())
 #'   }
 #'
 #'   # 1. Create a persistent cache directory for TMB compilation
-#'   # Use rappdirs if available, otherwise create directory in user's home folder
 #'   if (requireNamespace("rappdirs", quietly = TRUE)) {
 #'     cache_dir <- file.path(rappdirs::user_cache_dir(pkg_name), "tmb_cache")
 #'   } else {
@@ -472,35 +349,32 @@
 #'   }
 #'
 #'   if (!dir.exists(cache_dir)) {
-#'     dir.create(cache_dir, recursive = TRUE)
+#'     dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
 #'     if (verbose) log_msg("Created persistent cache directory: ", cache_dir, "\n")
 #'   }
 #'
 #'   # 2. Create a subdirectory for this specific R version and package version
-#'   # This ensures recompilation when R or the package is updated
 #'   r_version <- paste0("R", getRversion()[1, 1:2])
 #'   pkg_version <- tryCatch(
-#'     {
-#'       as.character(packageVersion(pkg_name))
-#'     },
-#'     error = function(e) {
-#'       "dev" # Use "dev" for package development mode
-#'     }
+#'     as.character(packageVersion(pkg_name)),
+#'     error = function(e) "dev" # Use "dev" for package development mode
 #'   )
 #'
 #'   version_dir <- file.path(cache_dir, r_version, pkg_version)
 #'   if (!dir.exists(version_dir)) {
-#'     dir.create(version_dir, recursive = TRUE)
+#'     dir.create(version_dir, recursive = TRUE, showWarnings = FALSE)
 #'     if (verbose) log_msg("Created version-specific cache directory: ", version_dir, "\n")
 #'   }
 #'
 #'   # 3. Define the full path for the shared object based on platform
-#'   dll_ext <- .Platform$dynlib.ext # ".so" on Linux/Mac, ".dll" on Windows
+#'   dll_ext <- .Platform$dynlib.ext
 #'   compiled_name <- paste0(dll_name, dll_ext)
 #'   cached_dll_path <- file.path(version_dir, compiled_name)
 #'
-#'   # Normalizar o caminho para evitar problemas com o til (~)
-#'   cached_dll_path <- normalizePath(cached_dll_path, mustWork = FALSE)
+#'   # Normalize the path to avoid issues with tilde (~) and short paths
+#'   if (file.exists(dirname(cached_dll_path))) {
+#'     cached_dll_path <- normalizePath(cached_dll_path, mustWork = FALSE)
+#'   }
 #'
 #'   # 4. Locate the original C++ source file - try multiple standard locations
 #'   cpp_file <- system.file("tmb", paste0(dll_name, ".cpp"), package = pkg_name)
@@ -518,14 +392,14 @@
 #'   # If still not found, check standard paths for package development
 #'   if (cpp_file == "") {
 #'     potential_paths <- c(
-#'       file.path("inst/tmb", paste0(dll_name, ".cpp"))
-#'       # file.path("src/tmb", paste0(dll_name, ".cpp")),
-#'       # file.path("src", paste0(dll_name, ".cpp"))
+#'       file.path("inst/tmb", paste0(dll_name, ".cpp")),
+#'       file.path("src/tmb", paste0(dll_name, ".cpp")),
+#'       file.path("src", paste0(dll_name, ".cpp"))
 #'     )
 #'
 #'     for (path in potential_paths) {
 #'       if (file.exists(path)) {
-#'         cpp_file <- normalizePath(path)
+#'         cpp_file <- normalizePath(path, mustWork = TRUE)
 #'         break
 #'       }
 #'     }
@@ -554,7 +428,7 @@
 #'       # Try to load the existing library
 #'       load_result <- try(
 #'         {
-#'           # Usar o caminho absoluto normalizado para evitar problemas com o til (~)
+#'           # Use absolute normalized path to avoid issues with tilde (~)
 #'           norm_path <- normalizePath(cached_dll_path, mustWork = TRUE)
 #'
 #'           # Check if this DLL is already loaded
@@ -572,20 +446,15 @@
 #'             dyn.load(norm_path)
 #'           }
 #'
-#'           # Armazenar o caminho e nome da DLL em uma variável no ambiente para referência futura
-#'           assign(paste0("TMB_", dll_name, "_PATH"), norm_path, envir = .gkwreg_env)
+#'           # Store the path and DLL name in an environment variable for future reference
+#'           assign(paste0("TMB_", dll_name, "_PATH"), norm_path, envir = globalenv()$.gkwreg_env)
+#'           TRUE
 #'         },
 #'         silent = TRUE
 #'       )
 #'
 #'       if (!inherits(load_result, "try-error")) {
 #'         if (verbose) log_msg("Successfully loaded cached TMB model.\n")
-#'
-#'         if (verbose) {
-#'           # List registered symbols only in verbose mode
-#'           symbols <- getDLLRegisteredRoutines(cached_dll_path)
-#'           if (verbose) log_msg("Symbols registered: ", paste(names(symbols$.C), collapse = ", "), "\n")
-#'         }
 #'
 #'         # Create dll_info to return
 #'         dll_info <- list(
@@ -596,7 +465,7 @@
 #'         )
 #'
 #'         # Store in the environment
-#'         assign(paste0("TMB_", dll_name, "_INFO"), dll_info, envir = .gkwreg_env)
+#'         assign(paste0("TMB_", dll_name, "_INFO"), dll_info, envir = globalenv()$.gkwreg_env)
 #'
 #'         return(invisible(dll_info))
 #'       } else {
@@ -610,13 +479,41 @@
 #'     need_compile <- TRUE
 #'   }
 #'
-#'   # 6. Compile if needed
+#'   # 6. Compile if needed - Windows-specific fixes here
 #'   if (need_compile) {
-#'     # Copy the C++ file to a temporary location for compilation
-#'     temp_compile_dir <- file.path(tempdir(), paste0(dll_name, "_compile_", format(Sys.time(), "%Y%m%d%H%M%S")))
+#'     # IMPORTANT FIX 1: Create a simpler, shorter temporary path without special characters
+#'     # This helps avoid Windows path issues with ~1 short names
+#'     is_windows <- .Platform$OS.type == "windows"
+#'
+#'     if (is_windows) {
+#'       # Create a temporary directory with simple name, avoiding temp paths with spaces
+#'       temp_base <- "C:/RTMP"
+#'       if (!dir.exists(temp_base)) {
+#'         dir.create(temp_base, recursive = TRUE, showWarnings = FALSE)
+#'       }
+#'       temp_compile_dir <- file.path(
+#'         temp_base,
+#'         paste0(
+#'           dll_name, "_",
+#'           format(Sys.time(), "%Y%m%d%H%M%S")
+#'         )
+#'       )
+#'     } else {
+#'       # For non-Windows, use standard temp directory
+#'       temp_compile_dir <- file.path(
+#'         tempdir(),
+#'         paste0(
+#'           dll_name, "_compile_",
+#'           format(Sys.time(), "%Y%m%d%H%M%S")
+#'         )
+#'       )
+#'     }
+#'
 #'     dir.create(temp_compile_dir, recursive = TRUE, showWarnings = FALSE)
 #'
-#'     temp_cpp_file <- file.path(temp_compile_dir, basename(cpp_file))
+#'     # IMPORTANT FIX 2: Use the base filename only, not full path for temporary file
+#'     cpp_basename <- basename(cpp_file)
+#'     temp_cpp_file <- file.path(temp_compile_dir, cpp_basename)
 #'     file.copy(cpp_file, temp_cpp_file, overwrite = TRUE)
 #'
 #'     # Set current directory to temp compilation location
@@ -626,26 +523,113 @@
 #'
 #'     if (verbose) log_msg("Compiling TMB model from ", temp_cpp_file, "...\n")
 #'
-#'     # O TMB::compile requer o caminho completo ou o nome do arquivo no diretório atual
-#'     # Vamos garantir que estamos usando o arquivo corretamente
-#'     compile_result <- try(
-#'       {
-#'         # Use o arquivo com caminho completo para garantir que o TMB possa encontrá-lo
-#'         TMB::compile(temp_cpp_file,
-#'           safebounds = FALSE,
-#'           safeunload = FALSE,
-#'           verbose = verbose
-#'         )
-#'       },
-#'       silent = !verbose
-#'     )
+#'     # IMPORTANT FIX 3: For Windows, use filename only when in the current directory
+#'     if (is_windows) {
+#'       # Copy all TMB-related DLLs to ensure linking works
+#'       tmb_dlls <- list.files(system.file("libs", package = "TMB"),
+#'                              pattern = "\\.dll$", full.names = TRUE
+#'       )
+#'       if (length(tmb_dlls) > 0) {
+#'         for (dll in tmb_dlls) {
+#'           file.copy(dll, temp_compile_dir, overwrite = TRUE)
+#'         }
+#'       }
+#'
+#'       # Copy RcppEigen include files if needed
+#'       if (requireNamespace("RcppEigen", quietly = TRUE)) {
+#'         eigen_includes <- system.file("include", package = "RcppEigen")
+#'         if (dir.exists(eigen_includes)) {
+#'           eigen_target <- file.path(temp_compile_dir, "eigen_includes")
+#'           dir.create(eigen_target, showWarnings = FALSE)
+#'           eigen_files <- list.files(eigen_includes, recursive = TRUE, full.names = TRUE)
+#'           for (f in eigen_files) {
+#'             target_dir <- dirname(file.path(
+#'               eigen_target,
+#'               sub(eigen_includes, "", f, fixed = TRUE)
+#'             ))
+#'             if (!dir.exists(target_dir)) {
+#'               dir.create(target_dir, recursive = TRUE, showWarnings = FALSE)
+#'             }
+#'             file.copy(f, target_dir, overwrite = TRUE)
+#'           }
+#'         }
+#'       }
+#'
+#'       # For Windows, use the base filename only for compilation
+#'       compile_result <- try(
+#'         {
+#'           TMB::compile(cpp_basename, # Use only the filename
+#'                        safebounds = FALSE,
+#'                        safeunload = FALSE,
+#'                        verbose = verbose
+#'           )
+#'         },
+#'         silent = !verbose
+#'       )
+#'     } else {
+#'       # For non-Windows, use the full path as before
+#'       compile_result <- try(
+#'         {
+#'           TMB::compile(temp_cpp_file,
+#'                        safebounds = FALSE,
+#'                        safeunload = FALSE,
+#'                        verbose = verbose
+#'           )
+#'         },
+#'         silent = !verbose
+#'       )
+#'     }
 #'
 #'     if (inherits(compile_result, "try-error")) {
-#'       stop("TMB model compilation failed. Check the C++ code and dependencies.")
+#'       # IMPORTANT FIX 4: Enhanced error handling for Windows path issues
+#'       error_msg <- attr(compile_result, "condition")$message
+#'       if (is_windows && grepl("No such file or directory", error_msg)) {
+#'         # Try POSIX path handling as a fallback on Windows
+#'         try_posix <- try(
+#'           {
+#'             cpp_code <- readLines(temp_cpp_file, warn = FALSE)
+#'             writeLines(cpp_code, "tmb_file.cpp") # Simple filename
+#'             TMB::compile("tmb_file.cpp",
+#'                          safebounds = FALSE,
+#'                          safeunload = FALSE,
+#'                          verbose = verbose
+#'             )
+#'           },
+#'           silent = !verbose
+#'         )
+#'
+#'         if (!inherits(try_posix, "try-error")) {
+#'           compile_result <- try_posix
+#'         } else {
+#'           stop(
+#'             "TMB model compilation failed with Windows path handling issues. ",
+#'             "Error: ", error_msg
+#'           )
+#'         }
+#'       } else {
+#'         stop("TMB model compilation failed. Error: ", error_msg)
+#'       }
 #'     }
 #'
 #'     # Check if compilation was successful
-#'     temp_dll_path <- file.path(temp_compile_dir, TMB::dynlib(dll_name))
+#'     temp_dll_name <- TMB::dynlib(dll_name)
+#'     temp_dll_path <- file.path(temp_compile_dir, temp_dll_name)
+#'
+#'     # IMPORTANT FIX 5: If first attempt failed, look for alternative filenames
+#'     if (!file.exists(temp_dll_path) && is_windows) {
+#'       # Check for "tmb_file" if we used the fallback
+#'       alt_dll_path <- file.path(temp_compile_dir, TMB::dynlib("tmb_file"))
+#'       if (file.exists(alt_dll_path)) {
+#'         temp_dll_path <- alt_dll_path
+#'       } else {
+#'         # Look for any DLL that might have been created
+#'         dll_files <- list.files(temp_compile_dir, pattern = "\\.dll$")
+#'         if (length(dll_files) > 0) {
+#'           temp_dll_path <- file.path(temp_compile_dir, dll_files[1])
+#'         }
+#'       }
+#'     }
+#'
 #'     if (!file.exists(temp_dll_path)) {
 #'       stop("Compiled file was not generated. Check permissions and file paths.")
 #'     }
@@ -654,38 +638,47 @@
 #'     file.copy(temp_dll_path, cached_dll_path, overwrite = TRUE)
 #'     if (verbose) log_msg("Copied compiled model to cache: ", cached_dll_path, "\n")
 #'
-#'     # Clean up temporary files
-#'     unlink(temp_compile_dir, recursive = TRUE)
+#'     # Clean up temporary files - important for Windows to release file handles
+#'     if (is_windows) {
+#'       # Unload any loaded DLLs first to avoid "file in use" errors
+#'       for (dll_file in list.files(temp_compile_dir, pattern = "\\.dll$", full.names = TRUE)) {
+#'         try(dyn.unload(dll_file), silent = TRUE)
+#'       }
+#'
+#'       # On Windows, use shell.exec to delete the directory in a separate process
+#'       # This avoids file locking issues
+#'       try(unlink(temp_compile_dir, recursive = TRUE, force = TRUE), silent = TRUE)
+#'     } else {
+#'       unlink(temp_compile_dir, recursive = TRUE)
+#'     }
 #'
 #'     # Load the newly compiled model
 #'     load_result <- try(
 #'       {
 #'         norm_path <- normalizePath(cached_dll_path, mustWork = TRUE)
+#'
+#'         # Unload first if already loaded
+#'         try(dyn.unload(norm_path), silent = TRUE)
+#'
+#'         # Now load
 #'         dyn.load(norm_path)
 #'
-#'         # Armazenar o caminho em variável no ambiente
-#'         assign(paste0("TMB_", dll_name, "_PATH"), norm_path, envir = .gkwreg_env)
+#'         # Store the path in environment variable
+#'         assign(paste0("TMB_", dll_name, "_PATH"), norm_path, envir = globalenv()$.gkwreg_env)
+#'         TRUE
 #'       },
 #'       silent = !verbose
 #'     )
 #'
 #'     if (inherits(load_result, "try-error")) {
-#'       stop(
-#'         "Failed to load compiled model. Error: ",
-#'         attr(load_result, "condition")$message
-#'       )
+#'       error_msg <- attr(load_result, "condition")$message
+#'       stop("Failed to load compiled model. Error: ", error_msg)
 #'     }
 #'
 #'     if (verbose) log_msg("Successfully compiled and loaded TMB model.\n")
-#'
-#'     if (verbose) {
-#'       # List the registered symbols
-#'       symbols <- getDLLRegisteredRoutines(cached_dll_path)
-#'       if (verbose) log_msg("Symbols registered: ", paste(names(symbols$.C), collapse = ", "), "\n")
-#'     }
 #'   }
 #'
-#'   # Return o caminho da DLL e outras informações relevantes
+#'   # Return the DLL path and other relevant information
 #'   dll_info <- list(
 #'     path = cached_dll_path,
 #'     normalized_path = normalizePath(cached_dll_path, mustWork = FALSE),
@@ -693,8 +686,9 @@
 #'     compiled = need_compile
 #'   )
 #'
-#'   # Associar estas informações ao ambiente R para referência futura
-#'   assign(paste0("TMB_", dll_name, "_INFO"), dll_info, envir = .gkwreg_env)
+#'   # Associate this information with the R environment for future reference
+#'   assign(paste0("TMB_", dll_name, "_INFO"), dll_info, envir = globalenv()$.gkwreg_env)
 #'
 #'   invisible(dll_info)
 #' }
+
