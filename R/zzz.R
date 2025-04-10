@@ -32,8 +32,3 @@ NULL
 
 #' @useDynLib gkwreg, .registration = TRUE
 NULL
-
-## usethis namespace: start
-#' @importFrom numDeriv grad hessian
-## usethis namespace: end
-NULL

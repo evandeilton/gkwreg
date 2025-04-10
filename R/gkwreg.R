@@ -5915,3 +5915,9 @@ vcov.gkwreg <- function(object, complete = TRUE, ...) {
   # Return the variance-covariance matrix
   object$vcov
 }
+
+
+## usethis namespace: start
+#' @importFrom numDeriv grad hessian
+## usethis namespace: end
+NULL
