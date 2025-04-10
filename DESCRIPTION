@@ -15,6 +15,7 @@ Imports:
     TMB,
     Rcpp,
     RcppArmadillo,
+    RcppEigen,
     magrittr,
     ggplot2,
     ggpubr,
