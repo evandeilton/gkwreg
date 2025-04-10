@@ -28,7 +28,8 @@ Imports:
     numDeriv
 LinkingTo: 
     Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    RcppEigen
 Suggests: 
     knitr,
     rmarkdown,
