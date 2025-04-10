@@ -883,7 +883,7 @@
     ) +
     ggplot2::geom_line(
       data = plot_data, ggplot2::aes(x = x, y = density),
-      color = "red", size = 1
+      color = "red", linewidth = 1
     ) +
     ggplot2::labs(
       title = paste("Fitted", toupper(family), "Distribution"),
