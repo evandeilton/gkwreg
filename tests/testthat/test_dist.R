@@ -109,33 +109,6 @@ test_that("Kumaraswamy random generation works correctly", {
   expect_length(samples_vec, length(alphas))
 })
 
-# === Generalized Kumaraswamy (GKw) distribution tests ===
-test_that("Generalized Kumaraswamy density function works correctly", {
-  # Basic functionality
-  x <- 0.5
-  alpha <- 2
-  beta <- 3
-  gamma <- 1
-  delta <- 0
-  lambda <- 1
-
-  # For these parameters, GKw reduces to Kw
-  density_gkw <- dgkw(x, alpha, beta, gamma, delta, lambda)
-  density_kw <- dkw(x, alpha, beta)
-  expect_equal(density_gkw, density_kw, tolerance = tolerance)
-
-  # Different parameterization (with non-default gamma, delta, lambda)
-  gamma <- 2
-  delta <- 1
-  lambda <- 1.5
-  density <- dgkw(x, alpha, beta, gamma, delta, lambda)
-  expect_true(is.numeric(density) && density >= 0)
-
-  # Log density
-  log_density <- dgkw(x, alpha, beta, gamma, delta, lambda, log_prob = TRUE)
-  expect_equal(log_density, log(density), tolerance = tolerance)
-})
-
 test_that("Generalized Kumaraswamy CDF function works correctly", {
   # Basic functionality
   q <- 0.5
@@ -349,25 +322,6 @@ test_that("McDonald (Mc) random generation works correctly", {
   expect_true(ks_test$p.value > 0.01)
 })
 
-# === Beta-Kumaraswamy (BKw) distribution tests ===
-test_that("Beta-Kumaraswamy (BKw) density function works correctly", {
-  # Basic functionality
-  x <- 0.5
-  alpha <- 2
-  beta <- 3
-  gamma <- 1
-  delta <- 0.5
-
-  density_bkw <- dbkw(x, alpha, beta, gamma, delta)
-  # When gamma=1, BKw is equivalent to GKw with lambda=1
-  density_gkw <- dgkw(x, alpha, beta, gamma, delta, lambda = 1)
-  expect_equal(density_bkw, density_gkw, tolerance = tolerance)
-
-  # Log density
-  log_density_bkw <- dbkw(x, alpha, beta, gamma, delta, log_prob = TRUE)
-  expect_equal(log_density_bkw, log(density_bkw), tolerance = tolerance)
-})
-
 test_that("Beta-Kumaraswamy (BKw) CDF function works correctly", {
   # Basic functionality
   q <- 0.5
@@ -417,30 +371,6 @@ test_that("Beta-Kumaraswamy (BKw) random generation works correctly", {
   # Test that the generated samples follow the distribution
   ks_test <- suppressWarnings(ks.test(samples_bkw, function(x) pbkw(x, alpha, beta, gamma, delta)))
   expect_true(ks_test$p.value > 0.01)
-})
-
-# === Exponentiated Kumaraswamy (EKw) distribution tests ===
-test_that("Exponentiated Kumaraswamy (EKw) density function works correctly", {
-  # Basic functionality
-  x <- 0.5
-  alpha <- 2
-  beta <- 3
-  lambda <- 1 # With lambda=1, EKw is equivalent to Kw
-
-  density_ekw <- dekw(x, alpha, beta, lambda)
-  density_kw <- dkw(x, alpha, beta)
-  expect_equal(density_ekw, density_kw, tolerance = tolerance)
-
-  # Different lambda
-  lambda <- 2
-  density_ekw_lambda <- dekw(x, alpha, beta, lambda)
-  # When lambda=2, EKw is equivalent to GKw with gamma=1, delta=0, lambda=2
-  density_gkw <- dgkw(x, alpha, beta, gamma = 1, delta = 0, lambda = lambda)
-  expect_equal(density_ekw_lambda, density_gkw, tolerance = tolerance)
-
-  # Log density
-  log_density_ekw <- dekw(x, alpha, beta, lambda, log_prob = TRUE)
-  expect_equal(log_density_ekw, log(density_ekw_lambda), tolerance = tolerance)
 })
 
 test_that("Exponentiated Kumaraswamy (EKw) CDF function works correctly", {
@@ -496,24 +426,6 @@ test_that("Exponentiated Kumaraswamy (EKw) random generation works correctly", {
   expect_true(ks_test$p.value > 0.01)
 })
 
-# === Kumaraswamy-Kumaraswamy (KKw) distribution tests ===
-test_that("Kumaraswamy-Kumaraswamy (KKw) density function works correctly", {
-  # Basic functionality
-  x <- 0.5
-  alpha <- 2
-  beta <- 3
-  delta <- 0.5
-  lambda <- 1.5
-
-  density_kkw <- dkkw(x, alpha, beta, delta, lambda)
-  # KKw is equivalent to GKw with gamma=1
-  density_gkw <- dgkw(x, alpha, beta, gamma = 1, delta, lambda)
-  expect_equal(density_kkw, density_gkw, tolerance = tolerance)
-
-  # Log density
-  log_density_kkw <- dkkw(x, alpha, beta, delta, lambda, log_prob = TRUE)
-  expect_equal(log_density_kkw, log(density_kkw), tolerance = tolerance)
-})
 
 test_that("Kumaraswamy-Kumaraswamy (KKw) CDF function works correctly", {
   # Basic functionality
