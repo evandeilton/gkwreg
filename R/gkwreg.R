@@ -5917,6 +5917,225 @@ vcov.gkwreg <- function(object, complete = TRUE, ...) {
 }
 
 
+#' Access datasets from bounded response regression packages
+#'
+#' This function provides direct access to datasets from the 'betareg' and 'simplexreg'
+#' packages without copying them to your project files. It dynamically loads
+#' the requested dataset from the respective package's namespace.
+#'
+#' @param dataset_name A character string. The name of the dataset to retrieve.
+#' @param package A character string. The package containing the dataset. Must be one of
+#'   "betareg" or "simplexreg". If NULL (default), the function searches both packages.
+#' @param attach_to_namespace Logical. If TRUE, the dataset will be attached to
+#'   the calling environment. Default is FALSE.
+#'
+#' @examples
+#' \dontrun{
+#'
+#' # Example 1: Beta regression on ReadingSkills data
+#' # ------------------------------------------------
+#'
+#' # This example analyzes factors affecting reading accuracy in children with dyslexia.
+#'
+#' # Load ReadingSkills data
+#' reading_data <- get_bounded_datasets("ReadingSkills")
+#'
+#' # Fit beta regression model
+#' reading_model <- gkwreg(
+#'   accuracy ~ dyslexia + iq,
+#'   data = reading_data,
+#'   family = "beta",
+#'   link = list(gamma = "log", delta = "logit")
+#' )
+#'
+#' summary(reading_model)
+#'
+#' # Example 2: Kumaraswamy regression on FoodExpenditure data
+#' # --------------------------------------------------------
+#' # This example models the proportion of income spent on food.
+#'
+#' # Load FoodExpenditure data
+#' food_data <- get_bounded_datasets("FoodExpenditure")
+#' food_data$y <- food_data$food / food_data$income
+#'
+#' # Fit Kumaraswamy regression model
+#' food_model <- gkwreg(
+#'   y ~ persons,
+#'   data = food_data,
+#'   family = "kw",
+#'   link = list(alpha = "log", beta = "log")
+#' )
+#'
+#' summary(food_model)
+#'
+#' # Example 3: Exponential Kumaraswamy regression on retinal data
+#' # ------------------------------------------------------------
+#' # This example analyzes the decay of intraocular gas in retinal surgeries.
+#'
+#' # Load retinal data
+#' retinal_data <- get_bounded_datasets("retinal", package = "simplexreg")
+#'
+#' # Fit a Kumaraswamy - Kumaraswamy model
+#' retinal_model <- gkwreg(
+#'   Gas ~ LogT2 | Level | Time,
+#'   data = retinal_data,
+#'   family = "ekw"
+#' )
+#'
+#' summary(retinal_model)
+#' }
+#'
+#' @return A data frame containing the requested dataset.
+#' @seealso \code{\link{list_bounded_datasets}}
+#' @export
+get_bounded_datasets <- function(dataset_name, package = NULL, attach_to_namespace = FALSE) {
+  # List of available datasets by package
+  datasets <- list(
+    betareg = c(
+      "CarTask", "FoodExpenditure", "GasolineYield",
+      "ImpreciseTask", "LossAversion", "MockJurors",
+      "ReadingSkills", "StressAnxiety", "WeatherTask"
+    ),
+    simplexreg = c("retinal", "sdac")
+  )
+
+  # If package is NULL, search in both packages
+  if (is.null(package)) {
+    # Find which package contains the dataset
+    if (dataset_name %in% datasets$betareg) {
+      package <- "betareg"
+    } else if (dataset_name %in% datasets$simplexreg) {
+      package <- "simplexreg"
+    } else {
+      stop(paste0(
+        "Dataset '", dataset_name, "' not found in betareg or simplexreg packages. ",
+        "Available datasets are: ",
+        paste(c(datasets$betareg, datasets$simplexreg), collapse = ", ")
+      ))
+    }
+  } else {
+    # Validate specified package
+    if (!package %in% c("betareg", "simplexreg")) {
+      stop("Package must be one of 'betareg' or 'simplexreg'")
+    }
+
+    # Check if requested dataset exists in the specified package
+    if (!dataset_name %in% datasets[[package]]) {
+      stop(paste0(
+        "Dataset '", dataset_name, "' not found in ", package, " package. ",
+        "Available datasets are: ",
+        paste(datasets[[package]], collapse = ", ")
+      ))
+    }
+  }
+
+  # Check if the required package is installed
+  if (!requireNamespace(package, quietly = TRUE)) {
+    stop(
+      "The ", package, " package is needed for this function to work. ",
+      "Please install it with install.packages('", package, "')"
+    )
+  }
+
+  # Create temporary environment to load the data
+  temp_env <- new.env()
+
+  # Load the dataset into the temporary environment
+  utils::data(list = dataset_name, package = package, envir = temp_env)
+
+  # Get the dataset from the environment
+  dataset <- get(dataset_name, envir = temp_env)
+
+  # Optionally attach the dataset to the calling environment
+  if (attach_to_namespace) {
+    assign(dataset_name, dataset, envir = parent.frame())
+  }
+
+  # Return the dataset
+  return(dataset)
+}
+
+#' List all available datasets for bounded response regression
+#'
+#' @param package A character string. If specified, list only datasets from the given package.
+#'   Must be one of "betareg" or "simplexreg". If NULL (default), lists datasets from both packages.
+#'
+#' @return A data frame with names and descriptions of available datasets
+#'
+#' @examples
+#' \dontrun{
+#' # List all available datasets
+#' list_bounded_datasets()
+#'
+#' # List only betareg datasets
+#' list_bounded_datasets("betareg")
+#' }
+#'
+#' @seealso \code{\link{get_bounded_datasets}}
+#' @export
+list_bounded_datasets <- function(package = NULL) {
+  # Define datasets and descriptions
+  datasets <- list(
+    betareg = c(
+      "CarTask", "FoodExpenditure", "GasolineYield",
+      "ImpreciseTask", "LossAversion", "MockJurors",
+      "ReadingSkills", "StressAnxiety", "WeatherTask"
+    ),
+    simplexreg = c("retinal", "sdac")
+  )
+
+  descriptions <- list(
+    betareg = c(
+      "Partition-Primed Probability Judgement Task for Car Dealership",
+      "Proportion of Household Income Spent on Food",
+      "Estimation of Gasoline Yields from Crude Oil",
+      "Imprecise Probabilities for Sunday Weather and Boeing Stock Task",
+      "(No) Myopic Loss Aversion in Adolescents",
+      "Confidence of Mock Jurors in Their Verdicts",
+      "Dyslexia and IQ Predicting Reading Accuracy",
+      "Dependency of Anxiety on Stress",
+      "Weather Task with Priming and Precise and Imprecise Probabilities"
+    ),
+    simplexreg = c(
+      "Data on recorded decay of intraocular gas in complex retinal surgeries",
+      "Data on Autologous Peripheral Blood Stem Cell Transplants in Alberta Health Service"
+    )
+  )
+
+  # Filter by package if specified
+  if (!is.null(package)) {
+    if (!package %in% c("betareg", "simplexreg")) {
+      stop("Package must be one of 'betareg' or 'simplexreg'")
+    }
+
+    result <- data.frame(
+      Package = rep(package, length(datasets[[package]])),
+      Dataset = datasets[[package]],
+      Description = descriptions[[package]],
+      stringsAsFactors = FALSE
+    )
+  } else {
+    # Combine all datasets
+    result <- rbind(
+      data.frame(
+        Package = rep("betareg", length(datasets$betareg)),
+        Dataset = datasets$betareg,
+        Description = descriptions$betareg,
+        stringsAsFactors = FALSE
+      ),
+      data.frame(
+        Package = rep("simplexreg", length(datasets$simplexreg)),
+        Dataset = datasets$simplexreg,
+        Description = descriptions$simplexreg,
+        stringsAsFactors = FALSE
+      )
+    )
+  }
+  return(result)
+}
+
+
+
 ## usethis namespace: start
 #' @importFrom numDeriv grad hessian
 ## usethis namespace: end
