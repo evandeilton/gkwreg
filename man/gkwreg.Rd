@@ -9,6 +9,7 @@ gkwreg(
   data,
   family = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"),
   link = NULL,
+  link_scale = NULL,
   start = NULL,
   fixed = NULL,
   method = c("nlminb", "BFGS", "Nelder-Mead", "CG", "SANN", "L-BFGS-B"),
@@ -59,14 +60,24 @@ Defaults are \code{"log"} for \eqn{\alpha, \beta, \gamma, \lambda} (parameters >
 and \code{"logit"} for \eqn{\delta} (parameter in (0, 1)).
 Supported link functions are:
 \itemize{
-\item \code{"log"}
-\item \code{"logit"}
-\item \code{"identity"}
-\item \code{"inverse"} (i.e., 1/mu)
-\item \code{"sqrt"}
-\item \code{"probit"}
-\item \code{"cloglog"} (complementary log-log)
+\item \code{"log"}: logarithmic link, maps \eqn{(0, \infty)} to \eqn{(-\infty, \infty)}
+\item \code{"identity"}: identity link, no transformation
+\item \code{"inverse"}: inverse link, maps \eqn{x} to \eqn{1/x}
+\item \code{"sqrt"}: square root link, maps \eqn{x} to \eqn{\sqrt{x}}
+\item \code{"inverse-square"}: inverse squared link, maps \eqn{x} to \eqn{1/x^2}
+\item \code{"logit"}: logistic link, maps \eqn{(0, 1)} to \eqn{(-\infty, \infty)}
+\item \code{"probit"}: probit link, using normal CDF
+\item \code{"cloglog"}: complementary log-log
+\item \code{"cauchy"}: Cauchy link, using Cauchy CDF
 }}
+
+\item{link_scale}{Either a single numeric value specifying the same scale for all
+link functions, or a named list specifying the scale for each parameter's link
+function (e.g., \code{list(alpha = 10, beta = 5, delta = 1)}). The scale affects
+how the link function transforms the linear predictor. Default is 10 for most
+parameters and 1 for parameters using probability-type links (such as \code{delta}).
+For probability-type links (logit, probit, cloglog, cauchy), smaller values
+produce more extreme transformations.}
 
 \item{start}{An optional named list providing initial values for the regression
 coefficients. Parameter names should match the distribution parameters (alpha,
@@ -202,6 +213,13 @@ while \eqn{\delta} is constrained to the interval (0, 1). The default link funct
 constraints during estimation. Users can specify alternative link functions suitable
 for the parameter's domain via the \code{link} argument.
 
+\strong{Link Scales:}
+The \code{link_scale} parameter allows users to control how aggressively the link
+function transforms the linear predictor. For probability-type links (logit, probit,
+cloglog, cauchy), smaller values (e.g., 1) produce more extreme transformations,
+while larger values (e.g., 10) produce more gradual transformations. For continuous
+parameters, scale values control the sensitivity of the transformation.
+
 \strong{Families and Parameters:}
 The function automatically handles parameter fixing based on the chosen \code{family}:
 \itemize{
@@ -256,10 +274,16 @@ df1 <- data.frame(y = y, x1 = x1, x2 = x2)
 # Model alpha ~ x1 + x2 and beta ~ x1 + x2
 kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = TRUE)
 
+# Specify custom link scales
+kw_reg2 <- gkwreg(y ~ x1 + x2 | x1 + x2,
+  data = df1, family = "kw",
+  link_scale = list(alpha = 5, beta = 8), silent = TRUE
+)
+
 # Display summary
 summary(kw_reg)
 
-## Example 2: Generalized Kumaraswamy regression ----
+## Example 2: Generalized Kumaraswamy regression
 set.seed(456)
 x1 <- runif(n, -1, 1)
 x2 <- rnorm(n)
@@ -296,6 +320,15 @@ df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
 # alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
 gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
 
+# With custom link scales
+gkw_reg2 <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2,
+  data = df2, family = "gkw",
+  link_scale = list(
+    alpha = 12, beta = 12, gamma = 12,
+    delta = 0.8, lambda = 12
+  )
+)
+
 # Compare true vs. estimated coefficients
 print("Estimated Coefficients (GKw):")
 print(coef(gkw_reg))
@@ -305,7 +338,7 @@ print(list(
   delta = delta_coef, lambda = lambda_coef
 ))
 
-## Example 3: Beta regression for comparison ----
+## Example 3: Beta regression for comparison
 set.seed(789)
 x1 <- runif(n, -1, 1)
 
@@ -331,7 +364,7 @@ beta_reg <- gkwreg(y ~ x1 | x1,
   link = list(gamma = "log", delta = "log")
 ) # Specify links if non-default
 
-## Example 4: Model comparison using AIC/BIC ----
+## Example 4: Model comparison using AIC/BIC
 # Fit an alternative model, e.g., Kumaraswamy, to the same beta-generated data
 kw_reg2 <- try(gkwreg(y ~ x1 | x1, data = df_beta, family = "kw"))
 

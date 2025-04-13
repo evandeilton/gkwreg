@@ -10,6 +10,7 @@
   param_names,
   fixed,
   link_ints,
+  link_scale_list,
   y,
   param_positions
 )
@@ -24,6 +25,8 @@
 \item{fixed}{List of fixed parameters and coefficients.}
 
 \item{link_ints}{List of link function integers.}
+
+\item{link_scale_list}{List of link scale values.}
 
 \item{y}{Response variable.}
 

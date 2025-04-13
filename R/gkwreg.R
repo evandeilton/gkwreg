@@ -35,14 +35,23 @@
 #'   and \code{"logit"} for \eqn{\delta} (parameter in (0, 1)).
 #'   Supported link functions are:
 #'   \itemize{
-#'     \item \code{"log"}
-#'     \item \code{"logit"}
-#'     \item \code{"identity"}
-#'     \item \code{"inverse"} (i.e., 1/mu)
-#'     \item \code{"sqrt"}
-#'     \item \code{"probit"}
-#'     \item \code{"cloglog"} (complementary log-log)
+#'     \item \code{"log"}: logarithmic link, maps \eqn{(0, \infty)} to \eqn{(-\infty, \infty)}
+#'     \item \code{"identity"}: identity link, no transformation
+#'     \item \code{"inverse"}: inverse link, maps \eqn{x} to \eqn{1/x}
+#'     \item \code{"sqrt"}: square root link, maps \eqn{x} to \eqn{\sqrt{x}}
+#'     \item \code{"inverse-square"}: inverse squared link, maps \eqn{x} to \eqn{1/x^2}
+#'     \item \code{"logit"}: logistic link, maps \eqn{(0, 1)} to \eqn{(-\infty, \infty)}
+#'     \item \code{"probit"}: probit link, using normal CDF
+#'     \item \code{"cloglog"}: complementary log-log
+#'     \item \code{"cauchy"}: Cauchy link, using Cauchy CDF
 #'   }
+#' @param link_scale Either a single numeric value specifying the same scale for all
+#'   link functions, or a named list specifying the scale for each parameter's link
+#'   function (e.g., \code{list(alpha = 10, beta = 5, delta = 1)}). The scale affects
+#'   how the link function transforms the linear predictor. Default is 10 for most
+#'   parameters and 1 for parameters using probability-type links (such as \code{delta}).
+#'   For probability-type links (logit, probit, cloglog, cauchy), smaller values
+#'   produce more extreme transformations.
 #' @param start An optional named list providing initial values for the regression
 #'   coefficients. Parameter names should match the distribution parameters (alpha,
 #'   beta, etc.), and values should be vectors corresponding to the coefficients
@@ -152,6 +161,13 @@
 #' constraints during estimation. Users can specify alternative link functions suitable
 #' for the parameter's domain via the \code{link} argument.
 #'
+#' \strong{Link Scales:}
+#' The \code{link_scale} parameter allows users to control how aggressively the link
+#' function transforms the linear predictor. For probability-type links (logit, probit,
+#' cloglog, cauchy), smaller values (e.g., 1) produce more extreme transformations,
+#' while larger values (e.g., 10) produce more gradual transformations. For continuous
+#' parameters, scale values control the sensitivity of the transformation.
+#'
 #' \strong{Families and Parameters:}
 #' The function automatically handles parameter fixing based on the chosen \code{family}:
 #' \itemize{
@@ -206,10 +222,16 @@
 #' # Model alpha ~ x1 + x2 and beta ~ x1 + x2
 #' kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = TRUE)
 #'
+#' # Specify custom link scales
+#' kw_reg2 <- gkwreg(y ~ x1 + x2 | x1 + x2,
+#'   data = df1, family = "kw",
+#'   link_scale = list(alpha = 5, beta = 8), silent = TRUE
+#' )
+#'
 #' # Display summary
 #' summary(kw_reg)
 #'
-#' ## Example 2: Generalized Kumaraswamy regression ----
+#' ## Example 2: Generalized Kumaraswamy regression
 #' set.seed(456)
 #' x1 <- runif(n, -1, 1)
 #' x2 <- rnorm(n)
@@ -246,6 +268,15 @@
 #' # alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
 #' gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
 #'
+#' # With custom link scales
+#' gkw_reg2 <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2,
+#'   data = df2, family = "gkw",
+#'   link_scale = list(
+#'     alpha = 12, beta = 12, gamma = 12,
+#'     delta = 0.8, lambda = 12
+#'   )
+#' )
+#'
 #' # Compare true vs. estimated coefficients
 #' print("Estimated Coefficients (GKw):")
 #' print(coef(gkw_reg))
@@ -255,7 +286,7 @@
 #'   delta = delta_coef, lambda = lambda_coef
 #' ))
 #'
-#' ## Example 3: Beta regression for comparison ----
+#' ## Example 3: Beta regression for comparison
 #' set.seed(789)
 #' x1 <- runif(n, -1, 1)
 #'
@@ -281,7 +312,7 @@
 #'   link = list(gamma = "log", delta = "log")
 #' ) # Specify links if non-default
 #'
-#' ## Example 4: Model comparison using AIC/BIC ----
+#' ## Example 4: Model comparison using AIC/BIC
 #' # Fit an alternative model, e.g., Kumaraswamy, to the same beta-generated data
 #' kw_reg2 <- try(gkwreg(y ~ x1 | x1, data = df_beta, family = "kw"))
 #'
@@ -351,6 +382,7 @@ gkwreg <- function(formula,
                    data,
                    family = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"),
                    link = NULL,
+                   link_scale = NULL,
                    start = NULL,
                    fixed = NULL,
                    method = c("nlminb", "BFGS", "Nelder-Mead", "CG", "SANN", "L-BFGS-B"),
@@ -402,6 +434,9 @@ gkwreg <- function(formula,
   # Process link functions
   link_list <- .process_link(link, param_names, fixed_params)
 
+  # Process link scales
+  link_scale_list <- .process_link_scale(link_scale, link_list, param_names, fixed_params)
+
   # Convert link strings to integers for TMB
   link_ints <- .convert_links_to_int(link_list)
 
@@ -419,7 +454,7 @@ gkwreg <- function(formula,
 
   # Validate response variable is in (0, 1)
   y_var <- model_data$y
-  .validate_data(y_var, length(param_names))
+  invisible(.validate_data(y_var, length(param_names)))
 
   # Initialize result list
   result <- list(
@@ -427,6 +462,7 @@ gkwreg <- function(formula,
     family = family,
     formula = formula,
     link = link_list,
+    link_scale = link_scale_list,
     param_names = param_names,
     fixed_params = fixed_params
   )
@@ -437,7 +473,7 @@ gkwreg <- function(formula,
   # Prepare TMB data with correct matrices based on family
   tmb_data <- .prepare_tmb_data(
     model_data, family, param_names, fixed_processed,
-    link_ints, y_var, param_positions
+    link_ints, link_scale_list, y_var, param_positions
   )
 
   # Prepare TMB parameters in the correct structure required by each family
@@ -447,7 +483,11 @@ gkwreg <- function(formula,
   )
 
   # Compile and load the appropriate TMB model based on the family
-  dll_name <- paste0(family, "reg")
+  if (family == "beta") {
+    dll_name <- "gkwbetareg"
+  } else {
+    dll_name <- paste0(family, "reg")
+  }
 
   if (!silent) {
     message("Using TMB model: ", dll_name)
@@ -615,6 +655,7 @@ gkwreg <- function(formula,
       lambdaVec = lambdaVec
     ),
     link = link_list,
+    link_scale = link_scale_list,
     param_names = param_names,
     fixed_params = fixed_params,
     loglik = fit_result$loglik,
@@ -649,8 +690,6 @@ gkwreg <- function(formula,
   # Return the final result
   return(result)
 }
-
-
 
 
 #' Prepare TMB Parameters for GKw Regression
@@ -764,6 +803,10 @@ gkwreg <- function(formula,
   return(formula_list)
 }
 
+
+
+
+
 #' Convert Link Function Names to TMB Integers
 #'
 #' @param link_list List of link function names
@@ -793,6 +836,33 @@ gkwreg <- function(formula,
 
   return(result)
 }
+
+
+
+# .convert_links_to_int <- function(link_list) {
+#   link_map <- c(
+#     "log" = 1,
+#     "logit" = 2,
+#     "probit" = 3,
+#     "cauchy" = 4,
+#     "cloglog" = 5,
+#     "identity" = 6,
+#     "sqrt" = 7,
+#     "inverse" = 8,
+#     "inverse-square" = 9
+#   )
+#
+#   result <- lapply(link_list, function(link) {
+#     if (link %in% names(link_map)) {
+#       return(link_map[link])
+#     } else {
+#       warning("Unsupported link function: ", link, ". Using log link instead.")
+#       return(1) # Default to log
+#     }
+#   })
+#
+#   return(result)
+# }
 
 
 #' Format Coefficient Names Based on Family and Model Matrices
@@ -962,6 +1032,88 @@ gkwreg <- function(formula,
 }
 
 
+#' Process Link Scales for GKw Regression
+#'
+#' @param link_scale A numeric value or list specifying scales for link functions.
+#' @param link_list List of link functions for each parameter.
+#' @param param_names Names of the parameters for the specified family.
+#' @param fixed_params List of fixed parameters.
+#' @return A list of link scales.
+#' @keywords internal
+.process_link_scale <- function(link_scale, link_list, param_names, fixed_params) {
+  # Default scale values based on link type
+  probability_link_types <- c("logit", "probit", "cloglog", "cauchy")
+
+  # Initialize default scales list
+  default_scales <- list()
+
+  # Set default scales based on parameter and link type
+  for (param in names(link_list)) {
+    if (link_list[[param]] %in% probability_link_types) {
+      default_scales[[param]] <- 10.0 # Default for probability-type links
+    } else {
+      default_scales[[param]] <- 1.0 # Default for other links
+    }
+  }
+
+  # If link_scale is NULL, use default scales
+  if (is.null(link_scale)) {
+    # Get default scales for non-fixed parameters with links
+    non_fixed_params <- intersect(names(link_list), setdiff(param_names, names(fixed_params)))
+    return(default_scales[non_fixed_params])
+  }
+
+  # If link_scale is a single numeric value, apply to all parameters
+  if (is.numeric(link_scale) && length(link_scale) == 1) {
+    # Validate scale value
+    if (link_scale <= 0) {
+      stop("link_scale must be positive")
+    }
+
+    # Apply the same scale to all non-fixed parameters with links
+    non_fixed_params <- intersect(names(link_list), setdiff(param_names, names(fixed_params)))
+    scale_list <- replicate(length(non_fixed_params), link_scale, simplify = FALSE)
+    names(scale_list) <- non_fixed_params
+    return(scale_list)
+  }
+
+  # If link_scale is a list, validate and return
+  if (is.list(link_scale) || is.numeric(link_scale) && length(link_scale) > 1) {
+    if (is.numeric(link_scale)) {
+      link_scale <- as.list(link_scale)
+      names(link_scale) <- intersect(names(link_list), setdiff(param_names, names(fixed_params)))
+    }
+
+    # Check if names of list match parameter names
+    scale_names <- names(link_scale)
+    if (is.null(scale_names) || !all(scale_names %in% param_names)) {
+      stop("Names of link_scale list must match parameter names for the chosen family")
+    }
+
+    # Check if all scales are positive
+    non_positive <- !unlist(lapply(link_scale, function(x) is.numeric(x) && x > 0))
+    if (any(non_positive)) {
+      stop("All link_scale values must be positive numbers")
+    }
+
+    # Remove scales for fixed parameters
+    fixed_param_names <- names(fixed_params)
+    link_scale <- link_scale[setdiff(scale_names, fixed_param_names)]
+
+    # For parameters that have a link but no specified scale, use defaults
+    missing_scales <- setdiff(names(link_list), names(link_scale))
+    if (length(missing_scales) > 0) {
+      link_scale <- c(link_scale, default_scales[missing_scales])
+    }
+
+    return(link_scale)
+  }
+
+  stop("link_scale must be either a numeric value or a list of numeric values")
+}
+
+
+
 #' Extract Model Data for GKw Regression
 #'
 #' @param formula_list List of formulas for each parameter.
@@ -1084,6 +1236,9 @@ gkwreg <- function(formula,
   return(fixed_combined)
 }
 
+
+
+
 #' Prepare TMB Data for GKw Regression
 #'
 #' @param model_data List of model data.
@@ -1091,11 +1246,12 @@ gkwreg <- function(formula,
 #' @param param_names Names of parameters.
 #' @param fixed List of fixed parameters and coefficients.
 #' @param link_ints List of link function integers.
+#' @param link_scale_list List of link scale values.
 #' @param y Response variable.
 #' @param param_positions Parameter position mapping for the family.
 #' @return A list with TMB data.
 #' @keywords internal
-.prepare_tmb_data <- function(model_data, family, param_names, fixed, link_ints, y, param_positions) {
+.prepare_tmb_data <- function(model_data, family, param_names, fixed, link_ints, link_scale_list, y, param_positions) {
   # Initialize TMB data
   tmb_data <- list(
     y = y,
@@ -1154,17 +1310,87 @@ gkwreg <- function(formula,
         tmb_data[[link_name]] <- link_ints[[param]]
       }
 
-      # Set appropriate scale for the parameter
-      if (param == "delta") {
-        tmb_data[[scale_name]] <- 1.0 # For delta, which uses logit link
-      } else {
-        tmb_data[[scale_name]] <- 10.0 # For other parameters, which typically use log link
+      # If link_scale exists for this parameter, use it
+      if (param %in% names(link_scale_list)) {
+        tmb_data[[scale_name]] <- link_scale_list[[param]]
       }
     }
   }
 
   return(tmb_data)
 }
+
+
+# .prepare_tmb_data <- function(model_data, family, param_names, fixed, link_ints, y, param_positions) {
+#   # Initialize TMB data
+#   tmb_data <- list(
+#     y = y,
+#     useMeanCache = 1, # Enable mean caching
+#     calcFitted = 1, # Calculate fitted values
+#     userChunkSize = 100 # Reasonable chunk size
+#   )
+#
+#   # All families need matrices and link types
+#   # The number of X matrices and link types needed depends on the family
+#   num_params <- switch(family,
+#     "gkw" = 5,
+#     "bkw" = 4,
+#     "kkw" = 4,
+#     "ekw" = 3,
+#     "mc" = 3,
+#     "kw" = 2,
+#     "beta" = 2
+#   )
+#
+#   # Initialize default matrices and links for all required parameters
+#   for (i in 1:num_params) {
+#     matrix_name <- paste0("X", i)
+#     link_name <- paste0("link_type", i)
+#     scale_name <- paste0("scale", i)
+#
+#     # Default empty matrix with 1 column (intercept only)
+#     tmb_data[[matrix_name]] <- matrix(0, nrow = length(y), ncol = 1)
+#
+#     # Default link is log (1) and scale is 10
+#     tmb_data[[link_name]] <- 1
+#     tmb_data[[scale_name]] <- 10.0
+#   }
+#
+#   # Fill in actual matrices and links for non-fixed parameters
+#   non_fixed_params <- setdiff(param_names, names(fixed))
+#
+#   for (param in non_fixed_params) {
+#     # Get TMB parameter position based on family
+#     tmb_pos <- param_positions[[param]]
+#
+#     # Skip if not mapped
+#     if (is.null(tmb_pos) || is.na(tmb_pos)) next
+#
+#     # Update matrix, link type and scale
+#     matrix_name <- paste0("X", tmb_pos)
+#     link_name <- paste0("link_type", tmb_pos)
+#     scale_name <- paste0("scale", tmb_pos)
+#
+#     # If parameter exists in model_data, use it
+#     if (param %in% names(model_data$matrices)) {
+#       tmb_data[[matrix_name]] <- model_data$matrices[[param]]
+#
+#       # If link exists, use it
+#       if (param %in% names(link_ints)) {
+#         tmb_data[[link_name]] <- link_ints[[param]]
+#       }
+#
+#       # Set appropriate scale for the parameter
+#       if (param == "delta") {
+#         tmb_data[[scale_name]] <- 1.0 # For delta, which uses logit link
+#       } else {
+#         tmb_data[[scale_name]] <- 10.0 # For other parameters, which typically use log link
+#       }
+#     }
+#   }
+#
+#   return(tmb_data)
+# }
 
 
 #' @title Extract Coefficients from a Fitted GKw Regression Model

@@ -414,7 +414,7 @@ utils::globalVariables(c(
 
 .onLoad <- function(libname, pkgname) {
   # Pre-compile all TMB models
-  all_models <- c("betareg", "bkwreg", "ekwreg", "gkwmletmb", "gkwreg", "kkwreg", "kwreg", "mcreg")
+  all_models <- c("gkwbetareg", "bkwreg", "ekwreg", "gkwmletmb", "gkwreg", "kkwreg", "kwreg", "mcreg")
   for (model in all_models) {
     tryCatch(
       {
