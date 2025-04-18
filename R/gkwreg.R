@@ -1721,7 +1721,7 @@ print.summary.gkwreg <- function(x, digits = max(3, getOption("digits") - 3),
   }
 
   # Display convergence information
-  cat("\nConvergence status:", ifelse(x$convergence == 0, "Successful", "Failed"), "\n")
+  cat("\nConvergence status:", ifelse(as.numeric(x$convergence) == 1, "Successful", "Failed"), "\n")
   if (!is.null(x$iterations)) {
     cat("Iterations:", x$iterations, "\n")
   }
