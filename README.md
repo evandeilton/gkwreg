@@ -1,5 +1,5 @@
 
-# gkwreg: Generalized Kumaraswamy Regression Models <img src="inst/figures/gkwreg.png" align="right" height="138" />
+# gkwreg: Generalized Kumaraswamy Regression Models <img src="man/figures/gkwreg.png" align="right" height="138" />
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/gkwreg)](https://CRAN.R-project.org/package=gkwreg)

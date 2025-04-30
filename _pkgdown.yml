@@ -1,0 +1,5 @@
+url: https://CRAN.R-project.org/package=gkwreg
+template:
+  bootstrap: 5
+  bslib:
+    danger: "#A6081A"

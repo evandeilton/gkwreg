@@ -249,78 +249,204 @@ optimization capabilities. The specific TMB template used depends on the chosen 
 }
 \examples{
 \donttest{
-## Example 1: Simple Kumaraswamy regression model ----
+## -------------------------------------------------------------------------
+## 1. Real-world Case Studies
+## -------------------------------------------------------------------------
+
+## Example 1: Food Expenditure Data
+# Load required package
+require(gkwreg)
+
+# Get FoodExpenditure data and create response variable 'y' as proportion of income spent on food
+food_data <- get_bounded_datasets("FoodExpenditure")
+food_data <- within(food_data, {
+  y <- food / income
+})
+
+# Define formula: y depends on 'persons' with 'income' as predictor for second parameter
+formu_fe <- y ~ persons | income
+
+# Fit Kumaraswamy model with log link for both parameters
+kw_model <- gkwreg(formu_fe, food_data,
+  family = "kw",
+  link = rep("log", 2), method = "nlminb"
+)
+
+# Display model summary and diagnostics
+summary(kw_model)
+plot(kw_model, use_ggplot = TRUE, arrange_plots = TRUE, sub.caption = "")
+
+## Example 2: Gasoline Yield Data
+# Load GasolineYield dataset
+gasoline_data <- get_bounded_datasets("GasolineYield")
+
+# Formula: yield depends on batch and temperature
+# First part (for alpha/gamma) includes batch and temp
+# Second part (for beta/delta/phi) includes only temp
+formu_gy <- yield ~ batch + temp | temp
+
+# Fit Kumaraswamy model with log link and BFGS optimization
+kw_model_gas <- gkwreg(formu_gy, gasoline_data,
+  family = "kw",
+  link = rep("log", 2), method = "BFGS"
+)
+
+# Display results
+summary(kw_model_gas)
+plot(kw_model_gas, use_ggplot = TRUE, arrange_plots = TRUE, sub.caption = "")
+
+## Example 3: SDAC Cancer Data
+# Load cancer survival dataset
+sdac_data <- get_bounded_datasets("sdac")
+
+# Formula: relative cumulative density ~ age adjustment + chemotherapy
+formu_sd <- rcd ~ ageadj + chemo
+
+# Fit Extended Kumaraswamy model
+ekw_model_gas <- gkwreg(formu_sd, sdac_data, family = "ekw", method = "BFGS")
+summary(ekw_model_gas)
+plot(ekw_model_gas, use_ggplot = TRUE, arrange_plots = TRUE, sub.caption = "")
+
+## Example 4: Retinal Data
+# Load retinal dataset
+retinal_data <- get_bounded_datasets("retinal")
+
+# Formula for three parameters with different predictors
+# alpha ~ LogT + LogT2 + Level
+# beta  ~ LogT + Level
+# gamma ~ Time
+formu_rt <- Gas ~ LogT + LogT2 + Level | LogT + Level | Time
+
+# Fit Extended Kumaraswamy model
+ekw_model_ret <- gkwreg(formu_rt, retinal_data, family = "ekw", method = "nlminb")
+summary(ekw_model_ret)
+plot(ekw_model_ret, use_ggplot = TRUE, arrange_plots = TRUE, sub.caption = "")
+
+## Example 5: Weather Task Agreement Data
+# Load the WeatherTask dataset
+df_weather <- get_bounded_datasets("WeatherTask")
+
+# Fit all seven distribution families to the 'agreement' variable
+fitall_weather <- gkwfitall(df_weather$agreement, method = "BFGS")
+
+# Compare model performance
+summary(fitall_weather) # Displays the comparison table
+
+# Identify the best family based on AIC
+best_family_code <- fitall_weather$comparison$Family[1]
+
+# Refit the best model for detailed analysis
+fit_best_weather <- gkwfit(
+  df_weather$agreement,
+  family = best_family_code,
+  method = "BFGS", profile = TRUE, plot = TRUE, silent = TRUE
+)
+
+# Generate Goodness-of-Fit report
+gof_report <- gkwgof(
+  fit_best_weather,
+  theme = ggplot2::theme_classic(),
+  plot = TRUE, print_summary = FALSE, verbose = FALSE
+)
+summary(gof_report) # Display GoF statistics
+
+# Extract fit statistics for all families
+results_weathertask_df <- do.call(rbind, lapply(fitall_weather$fits, function(f) {
+  extract_gof_stats(gkwgof(f,
+    plot = FALSE,
+    print_summary = FALSE, verbose = FALSE
+  ))
+}))
+results_weathertask_df <- results_weathertask_df[order(results_weathertask_df$AIC), ]
+row.names(results_weathertask_df) <- NULL
+
+# Generate diagnostic plots for best model
+plot(gkwgof(fit_best_weather, theme = ggplot2::theme_classic()), title = "")
+
+# Display formatted comparison table
+results_weathertask_df[
+  ,
+  c(
+    "family", "n_params", "logLik", "AIC", "BIC",
+    "KS", "AD", "RMSE", "pseudo_R2"
+  )
+]
+
+## -------------------------------------------------------------------------
+## 2. Simulation Studies
+## -------------------------------------------------------------------------
+
+## Example 1: Simple Kumaraswamy Regression Model
+# Set seed for reproducibility
 set.seed(123)
 n <- 1000
 x1 <- runif(n, -2, 2)
 x2 <- rnorm(n)
 
-# True regression coefficients
+# Define true regression coefficients
 alpha_coef <- c(0.8, 0.3, -0.2) # Intercept, x1, x2
 beta_coef <- c(1.2, -0.4, 0.1) # Intercept, x1, x2
 
-# Generate linear predictors and transform to parameters using inverse link (exp)
+# Generate linear predictors and transform using exponential link
 eta_alpha <- alpha_coef[1] + alpha_coef[2] * x1 + alpha_coef[3] * x2
 eta_beta <- beta_coef[1] + beta_coef[2] * x1 + beta_coef[3] * x2
 alpha_true <- exp(eta_alpha)
 beta_true <- exp(eta_beta)
 
-# Generate responses from Kumaraswamy distribution (assuming rkw is available)
+# Generate responses from Kumaraswamy distribution
 y <- rkw(n, alpha = alpha_true, beta = beta_true)
-# Create data frame
 df1 <- data.frame(y = y, x1 = x1, x2 = x2)
 
-# Fit Kumaraswamy regression model using extended formula syntax
-# Model alpha ~ x1 + x2 and beta ~ x1 + x2
+# Fit Kumaraswamy regression model with formula notation
+# Model: alpha ~ x1 + x2 and beta ~ x1 + x2
 kw_reg <- gkwreg(y ~ x1 + x2 | x1 + x2, data = df1, family = "kw", silent = TRUE)
 
-# Specify custom link scales
+# Alternative model with custom link scales
 kw_reg2 <- gkwreg(y ~ x1 + x2 | x1 + x2,
   data = df1, family = "kw",
   link_scale = list(alpha = 5, beta = 8), silent = TRUE
 )
 
-# Display summary
+# Display model summary
 summary(kw_reg)
 
-## Example 2: Generalized Kumaraswamy regression
+## Example 2: Generalized Kumaraswamy Regression
+# Set seed for reproducibility
 set.seed(456)
+n <- 1000
 x1 <- runif(n, -1, 1)
 x2 <- rnorm(n)
 x3 <- factor(rbinom(n, 1, 0.5), labels = c("A", "B")) # Factor variable
 
-# True regression coefficients
+# Define true regression coefficients for all parameters
 alpha_coef <- c(0.5, 0.2) # Intercept, x1
 beta_coef <- c(0.8, -0.3, 0.1) # Intercept, x1, x2
 gamma_coef <- c(0.6, 0.4) # Intercept, x3B
 delta_coef <- c(0.0, 0.2) # Intercept, x3B (logit scale)
 lambda_coef <- c(-0.2, 0.1) # Intercept, x2
 
-# Design matrices
+# Create design matrices
 X_alpha <- model.matrix(~x1, data = data.frame(x1 = x1))
 X_beta <- model.matrix(~ x1 + x2, data = data.frame(x1 = x1, x2 = x2))
 X_gamma <- model.matrix(~x3, data = data.frame(x3 = x3))
 X_delta <- model.matrix(~x3, data = data.frame(x3 = x3))
 X_lambda <- model.matrix(~x2, data = data.frame(x2 = x2))
 
-# Generate linear predictors and transform to parameters
+# Generate parameters through linear predictors and appropriate link functions
 alpha <- exp(X_alpha \%*\% alpha_coef)
 beta <- exp(X_beta \%*\% beta_coef)
 gamma <- exp(X_gamma \%*\% gamma_coef)
 delta <- plogis(X_delta \%*\% delta_coef) # logit link for delta
 lambda <- exp(X_lambda \%*\% lambda_coef)
 
-# Generate response from GKw distribution (assuming rgkw is available)
+# Generate response from Generalized Kumaraswamy distribution
 y <- rgkw(n, alpha = alpha, beta = beta, gamma = gamma, delta = delta, lambda = lambda)
-
-# Create data frame
 df2 <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
 
 # Fit GKw regression with parameter-specific formulas
-# alpha ~ x1, beta ~ x1 + x2, gamma ~ x3, delta ~ x3, lambda ~ x2
 gkw_reg <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2, data = df2, family = "gkw")
 
-# With custom link scales
+# Alternative model with custom link scales
 gkw_reg2 <- gkwreg(y ~ x1 | x1 + x2 | x3 | x3 | x2,
   data = df2, family = "gkw",
   link_scale = list(
@@ -338,56 +464,55 @@ print(list(
   delta = delta_coef, lambda = lambda_coef
 ))
 
-## Example 3: Beta regression for comparison
+## Example 3: Beta Regression for Comparison
+# Set seed for reproducibility
 set.seed(789)
+n <- 1000
 x1 <- runif(n, -1, 1)
 
 # True coefficients for Beta parameters (gamma = shape1, delta = shape2)
-gamma_coef <- c(1.0, 0.5) # Intercept, x1 (log scale for shape1)
-delta_coef <- c(1.5, -0.7) # Intercept, x1 (log scale for shape2)
+gamma_coef <- c(1.0, 0.5) # Intercept, x1 (log scale)
+delta_coef <- c(1.5, -0.7) # Intercept, x1 (log scale)
 
-# Generate linear predictors and transform (default link is log for Beta params here)
+# Generate parameters through linear predictors and log link
 X_beta_eg <- model.matrix(~x1, data.frame(x1 = x1))
 gamma_true <- exp(X_beta_eg \%*\% gamma_coef)
 delta_true <- exp(X_beta_eg \%*\% delta_coef)
 
 # Generate response from Beta distribution
 y <- rbeta_(n, gamma_true, delta_true)
-
-# Create data frame
 df_beta <- data.frame(y = y, x1 = x1)
 
 # Fit Beta regression model using gkwreg
-# Formula maps to gamma and delta: y ~  x1 | x1
 beta_reg <- gkwreg(y ~ x1 | x1,
   data = df_beta, family = "beta",
   link = list(gamma = "log", delta = "log")
-) # Specify links if non-default
+)
 
-## Example 4: Model comparison using AIC/BIC
-# Fit an alternative model, e.g., Kumaraswamy, to the same beta-generated data
+## Example 4: Model Comparison using AIC/BIC
+# Fit an alternative model (Kumaraswamy) to the same beta-generated data
 kw_reg2 <- try(gkwreg(y ~ x1 | x1, data = df_beta, family = "kw"))
 
+# Compare models using information criteria
 print("AIC Comparison (Beta vs Kw):")
 c(AIC(beta_reg), AIC(kw_reg2))
 print("BIC Comparison (Beta vs Kw):")
 c(BIC(beta_reg), BIC(kw_reg2))
 
-## Example 5: Predicting with a fitted model
-
-# Use the Beta regression model from Example 3
+## Example 5: Prediction with Fitted Models
+# Create new data for predictions
 newdata <- data.frame(x1 = seq(-1, 1, length.out = 20))
 
 # Predict expected response (mean of the Beta distribution)
 pred_response <- predict(beta_reg, newdata = newdata, type = "response")
 
-# Predict parameters (gamma and delta) on the scale of the link function
+# Predict parameters on the scale of the link function
 pred_link <- predict(beta_reg, newdata = newdata, type = "link")
 
-# Predict parameters on the original scale (shape1, shape2)
+# Predict parameters on the original scale
 pred_params <- predict(beta_reg, newdata = newdata, type = "parameter")
 
-# Plot original data and predicted mean response curve
+# Visualize fitted model and data
 plot(df_beta$x1, df_beta$y,
   pch = 20, col = "grey", xlab = "x1", ylab = "y",
   main = "Beta Regression Fit (using gkwreg)"
