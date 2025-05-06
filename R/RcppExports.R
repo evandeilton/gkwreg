@@ -8,7 +8,6 @@
 #' @param n_starts Number of starting points for optimization
 #' @return Vector of estimated parameters \eqn{\alpha, \beta, \gamma, \delta, \lambda}
 #'
-#' @export
 gkwgetstartvalues <- function(x, n_starts = 5L) {
     .Call(`_gkwreg_gkwgetstartvalues`, x, n_starts)
 }
@@ -6544,216 +6543,54 @@ nrgkw <- function(start = NULL, data = as.numeric( c()), family = "gkw", tol = 1
     .Call(`_gkwreg_nrgkw`, start, data, family, tol, max_iter, verbose, optimization_method, enforce_bounds, min_param_val, max_param_val, adaptive_scaling, use_stochastic_perturbation, get_num_hess, multi_start_attempts, eigenvalue_hessian_reg, max_backtrack, initial_trust_radius)
 }
 
-#' @title Calculate Parameters for the Generalized Kumaraswamy Distribution
-#'
-#' @description
-#' Computes the parameters (alpha, beta, gamma, delta, lambda) for each observation based on design matrices and regression coefficients,
-#' applying a positive link function as specified by link types and scale factors.
-#'
-#' @param X1 NumericMatrix design matrix for alpha.
-#' @param X2 NumericMatrix design matrix for beta.
-#' @param X3 NumericMatrix design matrix for gamma.
-#' @param X4 NumericMatrix design matrix for delta.
-#' @param X5 NumericMatrix design matrix for lambda.
-#' @param beta1 NumericVector regression coefficients for X1.
-#' @param beta2 NumericVector regression coefficients for X2.
-#' @param beta3 NumericVector regression coefficients for X3.
-#' @param beta4 NumericVector regression coefficients for X4.
-#' @param beta5 NumericVector regression coefficients for X5.
-#' @param link_types IntegerVector containing the link function type for each parameter.
-#' @param scale_factors NumericVector with scale factors for each parameter.
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericMatrix with n rows and 5 columns corresponding to the calculated parameters.
-#' @export
 calculateParameters <- function(X1, X2, X3, X4, X5, beta1, beta2, beta3, beta4, beta5, link_types, scale_factors, family = "gkw") {
     .Call(`_gkwreg_calculateParameters`, X1, X2, X3, X4, X5, beta1, beta2, beta3, beta4, beta5, link_types, scale_factors, family)
 }
 
-#' @title Calculate Means for Distribution
-#'
-#' @description
-#' Computes the mean of the distribution for each observation using numerical integration
-#' (quadrature) with caching to avoid redundant calculations.
-#'
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector containing the calculated means for each observation.
-#' @export
 calculateMeans <- function(params, family = "gkw") {
     .Call(`_gkwreg_calculateMeans`, params, family)
 }
 
-#' @title Calculate Densities for Distribution
-#'
-#' @description
-#' Evaluates the density (or its logarithm) for each observation given the parameters.
-#'
-#' @param y NumericVector of observations.
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#' @param log Logical indicating whether to return the log-density (default FALSE).
-#'
-#' @return NumericVector containing the evaluated densities.
-#' @export
 calculateDensities <- function(y, params, family = "gkw", log = FALSE) {
     .Call(`_gkwreg_calculateDensities`, y, params, family, log)
 }
 
-#' @title Calculate Cumulative Probabilities for Distribution
-#'
-#' @description
-#' Computes the cumulative probabilities (CDF) for each observation given the parameters.
-#'
-#' @param y NumericVector of observations.
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector containing the evaluated cumulative probabilities.
-#' @export
 calculateProbabilities <- function(y, params, family = "gkw") {
     .Call(`_gkwreg_calculateProbabilities`, y, params, family)
 }
 
-#' @title Calculate Quantiles for Distribution
-#'
-#' @description
-#' Computes quantiles for the given probability levels using a bisection method for the first set
-#' of parameters in the matrix.
-#'
-#' @param probs NumericVector of probabilities (values in (0,1)).
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector containing the calculated quantiles.
-#' @export
 calculateQuantiles <- function(probs, params, family = "gkw") {
     .Call(`_gkwreg_calculateQuantiles`, probs, params, family)
 }
 
-#' @title Calculate Response Residuals
-#'
-#' @description
-#' Computes the raw response residuals as the difference between the observed and fitted values.
-#'
-#' @param y NumericVector of observations.
-#' @param fitted NumericVector of fitted values.
-#'
-#' @return NumericVector of response residuals.
-#' @export
 calculateResponseResiduals <- function(y, fitted) {
     .Call(`_gkwreg_calculateResponseResiduals`, y, fitted)
 }
 
-#' @title Calculate Pearson Residuals
-#'
-#' @description
-#' Computes the Pearson residuals based on the observed values, fitted means, and the approximate variance of the distribution.
-#'
-#' @param y NumericVector of observations.
-#' @param fitted NumericVector of fitted values (means).
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector of Pearson residuals.
-#' @export
 calculatePearsonResiduals <- function(y, fitted, params, family = "gkw") {
     .Call(`_gkwreg_calculatePearsonResiduals`, y, fitted, params, family)
 }
 
-#' @title Calculate Deviance Residuals
-#'
-#' @description
-#' Computes deviance residuals based on the log-likelihood of the observations.
-#'
-#' @param y NumericVector of observations.
-#' @param fitted NumericVector of fitted values (means).
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector of deviance residuals.
-#' @export
 calculateDevianceResiduals <- function(y, fitted, params, family = "gkw") {
     .Call(`_gkwreg_calculateDevianceResiduals`, y, fitted, params, family)
 }
 
-#' @title Calculate Quantile Residuals
-#'
-#' @description
-#' Computes quantile residuals by transforming the cumulative distribution function (CDF) values to the standard normal quantiles.
-#'
-#' @param y NumericVector of observations.
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector of quantile residuals.
-#' @export
 calculateQuantileResiduals <- function(y, params, family = "gkw") {
     .Call(`_gkwreg_calculateQuantileResiduals`, y, params, family)
 }
 
-#' @title Calculate Cox-Snell Residuals
-#'
-#' @description
-#' Computes Cox-Snell residuals defined as -log(1 - F(y)), where F is the cumulative distribution function.
-#'
-#' @param y NumericVector of observations.
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector of Cox-Snell residuals.
-#' @export
 calculateCoxSnellResiduals <- function(y, params, family = "gkw") {
     .Call(`_gkwreg_calculateCoxSnellResiduals`, y, params, family)
 }
 
-#' @title Calculate Score Residuals
-#'
-#' @description
-#' Computes score residuals based on the numerical derivative (score) of the log-likelihood with respect to the observation.
-#'
-#' @param y NumericVector of observations.
-#' @param fitted NumericVector of fitted values (means).
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector of score residuals.
-#' @export
 calculateScoreResiduals <- function(y, fitted, params, family = "gkw") {
     .Call(`_gkwreg_calculateScoreResiduals`, y, fitted, params, family)
 }
 
-#' @title Calculate Modified Deviance Residuals
-#'
-#' @description
-#' Adjusts deviance residuals to have a distribution closer to N(0,1) by standardizing them.
-#'
-#' @param y NumericVector of observations.
-#' @param fitted NumericVector of fitted values (means).
-#' @param params NumericMatrix with parameters (columns: alpha, beta, gamma, delta, lambda).
-#' @param family String specifying the distribution family (default: "gkw").
-#'
-#' @return NumericVector of modified deviance residuals.
-#' @export
 calculateModifiedDevianceResiduals <- function(y, fitted, params, family = "gkw") {
     .Call(`_gkwreg_calculateModifiedDevianceResiduals`, y, fitted, params, family)
 }
 
-#' @title Calculate Partial Residuals
-#'
-#' @description
-#' Computes partial residuals for a selected covariate by adding the product of the regression coefficient and
-#' the corresponding design matrix value to the raw residual.
-#'
-#' @param y NumericVector of observations.
-#' @param fitted NumericVector of fitted values.
-#' @param X NumericMatrix of design matrix values.
-#' @param beta NumericVector of regression coefficients.
-#' @param covariate_idx Integer index for the selected covariate (0-indexed).
-#'
-#' @return NumericVector of partial residuals.
-#' @export
 calculatePartialResiduals <- function(y, fitted, X, beta, covariate_idx) {
     .Call(`_gkwreg_calculatePartialResiduals`, y, fitted, X, beta, covariate_idx)
 }
