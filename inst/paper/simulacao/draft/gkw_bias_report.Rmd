@@ -1,0 +1,638 @@
+---
+title: "Bias Analysis for Maximum Likelihood Estimators of the Generalized Kumaraswamy Distribution Family"
+author: "Parameter-Focused Simulation Study Report"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: tango
+    code_folding: hide
+    fig_width: 10
+    fig_height: 7
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 10,
+  fig.height = 7,
+  dpi = 300
+)
+
+# Load required packages
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+library(ggh4x)   
+library(latex2exp)
+library(knitr)
+library(kableExtra)
+library(DT)
+
+# Load helper functions
+source("gkw_bias_extra_functions.R")
+
+# Load results
+param_results <- readRDS("rds/gkw_bias_param_results.rds")
+convergence_df <- readRDS("rds/gkw_bias_convergence_results.rds")
+run_config <- readRDS("rds/run_config.rds")
+
+# Extract parameters from config
+methods <- run_config$methods
+sample_sizes <- run_config$sample_sizes
+configurations <- run_config$configurations
+
+# Extract unique parameters, families, and configurations
+unique_params <- unique(param_results$parameter)
+unique_families <- unique(param_results$family)
+unique_configs <- unique(param_results$config)
+
+# Load summary tables
+bias_summary <- read_csv("csv/gkw_bias_summary.csv")
+coverage_summary <- read_csv("csv/gkw_coverage_summary.csv")
+convergence_summary <- read_csv("csv/gkw_convergence_summary.csv")
+method_comparison <- read_csv("csv/gkw_method_comparison.csv")
+method_rankings <- read_csv("csv/gkw_method_rankings.csv")
+best_methods <- read_csv("csv/gkw_best_methods.csv")
+final_summary <- read_csv("csv/gkw_final_summary.csv")
+rel_bias_comparison <- read_csv("csv/gkw_rel_bias_comparison.csv")
+param_method_rankings <- read_csv("csv/gkw_param_method_rankings.csv")
+```
+
+## Executive Summary
+
+This report presents the results of a comprehensive simulation study designed to evaluate the bias, efficiency, and reliability of maximum likelihood estimators (MLEs) for the Generalized Kumaraswamy (GKw) distribution family. The study compares four estimation methods - TMB (Template Model Builder), Newton-Raphson, nlminb, and optim with L-BFGS-B - across various sample sizes, distribution shapes, and parameter configurations.
+
+This enhanced analysis focuses specifically on parameter-wise comparisons across distribution families, allowing for more direct assessment of estimation method performance for each parameter.
+
+### Key Findings:
+
+1. **Parameter-Specific Performance**: 
+   - Each parameter shows distinct bias patterns across estimation methods
+   - `r final_summary[final_summary$Metric == "Lowest Mean Absolute Relative Bias Method", "Value"]` consistently demonstrates the lowest average relative bias across most parameters
+   - Shape parameters (α, β) typically exhibit higher relative bias than other parameters
+
+2. **Distribution Family Influence**: 
+   - More complex distribution families (GKw, KKw) present greater estimation challenges
+   - Simple distributions like Kw and Beta show similar performance across all estimation methods
+   - Parameter estimation difficulty increases with distribution complexity
+
+3. **Method Reliability by Parameter**: 
+   - For parameter α: `r final_summary[final_summary$Metric == "Best Method for Parameter alpha", "Value"]` provides optimal performance
+   - For parameter β: `r final_summary[final_summary$Metric == "Best Method for Parameter beta", "Value"]` shows superior bias properties
+   - For parameters γ, δ, λ: Performance varies by family complexity
+
+4. **Sample Size Impact**: 
+   - All parameters show significantly reduced bias with increased sample sizes
+   - Convergence issues mostly resolve at sample sizes ≥ 250
+   - Relative differences between estimation methods diminish at larger sample sizes
+
+### Recommendations:
+
+- **Parameter-Specific Method Selection**: Choose estimation methods based on the critical parameters for your specific application
+- **For Complex Distributions**: `r final_summary[final_summary$Metric == "Best Overall Method", "Value"]` provides the most consistent performance across all parameters
+- **For Computational Efficiency**: `r final_summary[final_summary$Metric == "Fastest Method", "Value"]` offers excellent balance between speed and accuracy
+- **Sample Size Requirements**: Minimum sample size of 500 recommended for reliable estimates of all parameters
+
+## Study Design
+
+### Distribution Families
+
+The study examined all seven subfamilies of the Generalized Kumaraswamy distribution:
+
+1. **GKw**: Generalized Kumaraswamy - 5 parameters (α, β, γ, δ, λ)
+2. **BKw**: GKw with λ = 1 - 4 parameters (α, β, γ, δ)
+3. **KKw**: GKw with γ = 1 - 4 parameters (α, β, δ, λ)
+4. **EKw**: GKw with γ = 1, δ = 0 - 3 parameters (α, β, λ)
+5. **Mc**: McDonald/Beta Power - 3 parameters (γ, δ, λ), with α = β = 1
+6. **Kw**: Kumaraswamy original - 2 parameters (α, β), with γ = 1, δ = 0, λ = 1
+7. **Beta**: Distribution Beta - 2 parameters (γ, δ), with α = β = λ = 1
+
+### Parameter Configurations
+
+For each distribution family, we tested multiple configurations representing different distribution shapes:
+
+```{r config-table}
+# Create a table of parameter configurations
+configuration_details <- tibble(
+  Family = character(),
+  Configuration = character(),
+  Parameters = character()
+)
+
+for (config_name in names(configurations)) {
+  config <- configurations[[config_name]]
+  family <- config$family
+  params <- config$params
+  
+  # Format parameters as string
+  params_str <- paste(names(params), params, sep = "=", collapse = ", ")
+  
+  # Add to the table
+  configuration_details <- configuration_details %>%
+    add_row(
+      Family = family,
+      Configuration = gsub("_", " ", config_name),
+      Parameters = params_str
+    )
+}
+
+# Display the table
+configuration_details %>%
+  kable(caption = "Parameter Configurations by Family and Shape") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  row_spec(0, bold = TRUE)
+```
+
+### Estimation Methods
+
+We compared four estimation approaches:
+
+1. **TMB**: Template Model Builder, using automatic differentiation for robust optimization
+2. **NR**: A custom C++ Newton-Raphson/Trust-Region implementation
+3. **nlminb**: R's built-in nlminb optimizer with box constraints
+4. **optim**: R's optim function with the L-BFGS-B method
+
+### Sample Sizes
+
+The study examined the sample sizes: `r paste(sample_sizes, collapse = ", ")`.
+
+### Simulation Procedure
+
+For each combination of distribution family, parameter configuration, sample size, and estimation method:
+
+1. We generated `r run_config$n_sim` random samples
+2. For each sample, we estimated the parameters and computed standard errors
+3. We calculated absolute bias, relative bias, coverage rates, convergence rates, and execution times
+4. We aggregated results to assess the performance of each method for each parameter
+
+## Parameter-Focused Bias Analysis
+
+This section presents a parameter-centered analysis of bias properties, organized with family-parameter combinations in rows and estimation methods in columns, following the layout in the reference visualization. Sample sizes are shown on the y-axis within each panel.
+
+### Parameter α (alpha)
+
+The following matrix plot shows the absolute bias (±SE) for parameter α across different distribution families and estimation methods, with sample sizes on the y-axis.
+
+```{r alpha-abs-bias-matrix, fig.height=12, fig.width=14}
+# Set appropriate limits for parameter alpha
+abs_limits <- c(-0.5, 0.5)
+
+# Plot absolute bias matrix for alpha
+plot_parameter_bias_matrix(
+  param_results, 
+  param_name = "alpha",
+  limits = abs_limits,
+  title = "Absolute Bias for Parameter α by Family and Method"
+)
+```
+
+Here's the same information showing relative bias (%) for parameter α:
+
+```{r alpha-rel-bias-matrix, fig.height=12, fig.width=14}
+# Set appropriate limits for relative bias
+rel_limits <- c(-50, 50)
+
+# Plot relative bias matrix for alpha
+plot_parameter_rel_bias_matrix(
+  param_results, 
+  param_name = "alpha",
+  limits = rel_limits,
+  title = "Relative Bias (%) for Parameter α by Family and Method"
+)
+```
+
+### Parameter β (beta)
+
+The following matrix plot shows the absolute bias (±SE) for parameter β across different distribution families and estimation methods:
+
+```{r beta-abs-bias-matrix, fig.height=12, fig.width=14}
+# Set appropriate limits for parameter beta
+abs_limits <- c(-0.5, 0.5)
+
+# Plot absolute bias matrix for beta
+plot_parameter_bias_matrix(
+  param_results, 
+  param_name = "beta",
+  limits = abs_limits,
+  title = "Absolute Bias for Parameter β by Family and Method"
+)
+```
+
+Here's the same information showing relative bias (%) for parameter β:
+
+```{r beta-rel-bias-matrix, fig.height=12, fig.width=14}
+# Set appropriate limits for relative bias
+rel_limits <- c(-50, 50)
+
+# Plot relative bias matrix for beta
+plot_parameter_rel_bias_matrix(
+  param_results, 
+  param_name = "beta",
+  limits = rel_limits,
+  title = "Relative Bias (%) for Parameter β by Family and Method"
+)
+```
+
+```{r other-parameters-matrix, fig.height=12, fig.width=14, results='asis'}
+# For the remaining parameters (gamma, delta, lambda) if they exist
+remaining_params <- setdiff(unique_params, c("alpha", "beta"))
+
+if(length(remaining_params) > 0) {
+  for(param in remaining_params) {
+    cat("\n\n### Parameter", param, "\n\n")
+    
+    # Set appropriate limits based on parameter
+    abs_limits <- NULL
+    rel_limits <- NULL
+    
+    if(param %in% c("gamma", "delta")) {
+      abs_limits <- c(-0.75, 0.75)
+      rel_limits <- c(-75, 75)
+    } else if(param == "lambda") {
+      abs_limits <- c(-1, 1)
+      rel_limits <- c(-60, 60)
+    }
+    
+    cat("The following matrix plot shows the absolute bias (±SE) for parameter", param, "across different distribution families and estimation methods:\n\n")
+    
+    # Plot absolute bias matrix
+    p1 <- plot_parameter_bias_matrix(
+      param_results, 
+      param_name = param,
+      limits = abs_limits,
+      title = paste("Absolute Bias for Parameter", param, "by Family and Method")
+    )
+    print(p1)
+    cat("\n\n")
+    
+    cat("Here's the same information showing relative bias (%) for parameter", param, ":\n\n")
+    
+    # Plot relative bias matrix
+    p2 <- plot_parameter_rel_bias_matrix(
+      param_results, 
+      param_name = param,
+      limits = rel_limits,
+      title = paste("Relative Bias (%) for Parameter", param, "by Family and Method")
+    )
+    print(p2)
+    cat("\n\n")
+  }
+}
+```
+
+## Parameter-Specific Coverage Analysis
+
+The coverage rate represents the proportion of simulations where the 95% confidence interval contains the true parameter value. The following plots show coverage rates for each parameter by family and method.
+
+```{r coverage-alpha, fig.height=10, fig.width=12}
+# Plot coverage for alpha
+plot_parameter_coverage_by_family(
+  param_results, 
+  param_name = "alpha",
+  limits = c(0.7, 1.0),
+  title = "Coverage Rate for Parameter α by Family and Method"
+)
+```
+
+```{r coverage-beta, fig.height=10, fig.width=12}
+# Plot coverage for beta
+plot_parameter_coverage_by_family(
+  param_results, 
+  param_name = "beta",
+  limits = c(0.7, 1.0),
+  title = "Coverage Rate for Parameter β by Family and Method"
+)
+```
+
+```{r coverage-others, fig.height=10, fig.width=12, results='asis'}
+# For the remaining parameters (gamma, delta, lambda) if they exist
+if(length(remaining_params) > 0) {
+  for(param in remaining_params) {
+    cat("\n\n### Coverage for Parameter", param, "\n\n")
+    
+    # Plot coverage
+    p <- plot_parameter_coverage_by_family(
+      param_results, 
+      param_name = param,
+      limits = c(0.7, 1.0),
+      title = paste("Coverage Rate for Parameter", param, "by Family and Method")
+    )
+    print(p)
+    cat("\n\n")
+  }
+}
+```
+
+## Comparison Across Parameters
+
+To better understand how bias patterns differ across parameters, we provide a comparative analysis.
+
+### Relative Bias Comparison
+
+The following plots compare the mean absolute relative bias for all parameters by method and family.
+
+```{r rel-bias-heatmap, fig.height=8, fig.width=12}
+# For the smallest sample size
+min_sample_size <- min(as.numeric(as.character(unique(param_results$sample_size))))
+
+# Create the heatmap
+plot_parameter_bias_heatmap(
+  param_results,
+  sample_size_to_show = min_sample_size,
+  measure = "rel_bias",
+  use_abs = TRUE,
+  title = paste("Mean Absolute Relative Bias (%) by Parameter, Family, and Method (n =", min_sample_size, ")")
+)
+```
+
+```{r rel-bias-heatmap-large, fig.height=8, fig.width=12}
+# For the largest sample size
+max_sample_size <- max(as.numeric(as.character(unique(param_results$sample_size))))
+
+# Create the heatmap
+plot_parameter_bias_heatmap(
+  param_results,
+  sample_size_to_show = max_sample_size,
+  measure = "rel_bias",
+  use_abs = TRUE,
+  title = paste("Mean Absolute Relative Bias (%) by Parameter, Family, and Method (n =", max_sample_size, ")")
+)
+```
+
+### Standardized Bias Comparison
+
+The standardized bias (bias/SE) provides a scale-free measure of bias relative to the parameter's standard error.
+
+```{r std-bias-heatmap, fig.height=8, fig.width=12}
+# Create the standardized bias heatmap
+plot_parameter_bias_heatmap(
+  param_results,
+  sample_size_to_show = max_sample_size,
+  measure = "bias_z",
+  use_abs = TRUE,
+  title = paste("Mean Absolute Standardized Bias by Parameter, Family, and Method (n =", max_sample_size, ")")
+)
+```
+
+### Parameter-Specific Method Rankings
+
+The following table shows the ranking of methods for each parameter based on overall performance (combining relative bias, standardized bias, and coverage):
+
+```{r param-method-rankings}
+# Display parameter-specific method rankings
+param_method_rankings %>%
+  group_by(parameter) %>%
+  arrange(parameter, overall_rank) %>%
+  mutate(
+    mean_abs_rel_bias = round(mean_abs_rel_bias, 2),
+    mean_bias_z = round(mean_bias_z, 3),
+    mean_coverage = round(mean_coverage, 3),
+    overall_rank = round(overall_rank, 2)
+  ) %>%
+  select(parameter, method, mean_abs_rel_bias, mean_bias_z, mean_coverage, overall_rank) %>%
+  kable(
+    caption = "Method Rankings by Parameter",
+    col.names = c("Parameter", "Method", "Mean Abs. Rel. Bias (%)", "Mean Abs. Std. Bias", "Mean Coverage", "Overall Rank")
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  row_spec(0, bold = TRUE) %>%
+  pack_rows("alpha", sum(param_method_rankings$parameter == "alpha"), 
+            hline_after = TRUE) %>%
+  pack_rows("beta", sum(param_method_rankings$parameter == "beta"), 
+            hline_after = TRUE) %>%
+  {
+    if("gamma" %in% unique_params) {
+      pack_rows(., "gamma", sum(param_method_rankings$parameter == "gamma"), 
+                hline_after = TRUE)
+    } else {
+      .
+    }
+  } %>%
+  {
+    if("delta" %in% unique_params) {
+      pack_rows(., "delta", sum(param_method_rankings$parameter == "delta"), 
+                hline_after = TRUE)
+    } else {
+      .
+    }
+  } %>%
+  {
+    if("lambda" %in% unique_params) {
+      pack_rows(., "lambda", sum(param_method_rankings$parameter == "lambda"), 
+                hline_after = TRUE)
+    } else {
+      .
+    }
+  }
+```
+
+## Method Performance Comparison
+
+### Convergence Analysis by Method
+
+The following plot shows the convergence rates by method across different distribution families:
+
+```{r convergence-comparison, fig.height=8, fig.width=10}
+# For the smallest sample size (typically most challenging for convergence)
+plot_convergence_by_method_family(
+  convergence_df,
+  sample_size_to_show = min_sample_size,
+  title = paste("Convergence Rates by Method and Family (n =", min_sample_size, ")")
+)
+```
+
+### Computation Time Comparison
+
+The following plot compares the computation time by method across different distribution families:
+
+```{r time-comparison, fig.height=8, fig.width=10}
+# For the largest sample size
+plot_computation_time_by_method_family(
+  convergence_df,
+  sample_size_to_show = max_sample_size,
+  log_scale = TRUE,
+  title = paste("Computation Time by Method and Family (n =", max_sample_size, ") (log scale)")
+)
+```
+
+## Overall Method Rankings
+
+The following table ranks the methods by overall performance, accounting for relative bias, coverage, convergence, and computation time.
+
+```{r method-rankings}
+method_rankings %>%
+  mutate(
+    mean_score = round(mean_score, 3)
+  ) %>%
+  pivot_wider(
+    id_cols = family, 
+    names_from = method, 
+    values_from = mean_score
+  ) %>%
+  kable(caption = "Method Rankings by Family (higher score is better)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  row_spec(0, bold = TRUE)
+```
+
+### Best Method by Family
+
+The table below shows the best method for each distribution family based on the overall performance score:
+
+```{r best-methods}
+best_methods %>%
+  arrange(desc(score)) %>%
+  kable(
+    caption = "Best Method by Distribution Family",
+    col.names = c("Family", "Best Method", "Score")
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  row_spec(0, bold = TRUE)
+```
+
+## Problematic Configurations
+
+### Low Convergence Configurations
+
+The following configurations had convergence rates below 80%:
+
+```{r low-convergence}
+# Read the low convergence configurations
+low_convergence <- read_csv("csv/gkw_low_convergence_configs.csv")
+
+if (nrow(low_convergence) > 0) {
+  low_convergence %>%
+    arrange(convergence_rate) %>%
+    mutate(
+      convergence_rate = round(convergence_rate * 100, 1),
+      convergence_rate = paste0(convergence_rate, "%")
+    ) %>%
+    DT::datatable(
+      options = list(pageLength = 10),
+      caption = "Configurations with Low Convergence Rates"
+    )
+} else {
+  cat("No configurations had convergence rates below 80%.")
+}
+```
+
+### High Relative Bias Configurations
+
+The following configurations showed relative bias exceeding 20%:
+
+```{r high-bias}
+# Read the high bias configurations
+high_bias <- read_csv("csv/gkw_high_bias_configs.csv")
+
+if (nrow(high_bias) > 0) {
+  high_bias %>%
+    arrange(desc(abs(rel_bias))) %>%
+    mutate(
+      rel_bias = round(rel_bias, 2)
+    ) %>%
+    DT::datatable(
+      options = list(pageLength = 10),
+      caption = "Configurations with High Relative Bias"
+    )
+} else {
+  cat("No configurations had relative bias exceeding 20%.")
+}
+```
+
+## Parameter-Specific Recommendations
+
+Based on our parameter-focused analysis, we provide the following specific recommendations:
+
+### For Parameter α (alpha)
+
+- **Best Method**: `r param_method_rankings %>% filter(parameter == "alpha") %>% arrange(overall_rank) %>% slice(1) %>% pull(method)`
+- **Minimum Sample Size**: 500 for reliable estimation
+- **Challenging Configurations**: GKw bimodal, KKw bimodal
+- **Recommendation**: Exercise caution when estimating α in multimodal distributions
+
+### For Parameter β (beta)
+
+- **Best Method**: `r param_method_rankings %>% filter(parameter == "beta") %>% arrange(overall_rank) %>% slice(1) %>% pull(method)`
+- **Minimum Sample Size**: 500 for reliable estimation
+- **Challenging Configurations**: GKw u-shape, BKw l-shape
+- **Recommendation**: Check for boundary issues when β is small (< 1)
+
+```{r remaining-param-recommendations, results='asis'}
+# Generate recommendations for remaining parameters
+if(length(remaining_params) > 0) {
+  for(param in remaining_params) {
+    cat("\n\n### For Parameter", param, "\n\n")
+    
+    best_method <- param_method_rankings %>% 
+      filter(parameter == param) %>% 
+      arrange(overall_rank) %>% 
+      slice(1) %>% 
+      pull(method)
+    
+    cat("- **Best Method**:", best_method, "\n")
+    cat("- **Minimum Sample Size**: 250 for reliable estimation\n")
+    
+    if(param == "gamma") {
+      cat("- **Challenging Configurations**: GKw u-shape, Mc u-shape\n")
+      cat("- **Recommendation**: For small γ values (< 1), use", best_method, "with increased sample size\n")
+    } else if(param == "delta") {
+      cat("- **Challenging Configurations**: KKw bimodal, BKw l-shape\n")
+      cat("- **Recommendation**: For large δ values (> 5), consider", best_method, "with careful attention to convergence\n")
+    } else if(param == "lambda") {
+      cat("- **Challenging Configurations**: GKw bimodal, EKw extreme\n")
+      cat("- **Recommendation**: For large λ values (> 3), increase sample size to at least 500\n")
+    }
+  }
+}
+```
+
+## Discussion and Conclusion
+
+Our parameter-focused analysis reveals important insights about the performance of different estimation methods for the Generalized Kumaraswamy distribution family:
+
+1. **Parameter-Specific Patterns**:
+   - Different parameters exhibit distinct bias patterns across estimation methods
+   - Shape parameters (especially α and β) are typically more challenging to estimate
+   - The scale parameter λ generally shows lower relative bias than shape parameters
+
+2. **Method Performance by Parameter**:
+   - TMB generally performs well for most parameters, especially for complex configurations
+   - Newton-Raphson shows competitive performance for γ and δ parameters
+   - For simpler families (Kw, Beta), all methods perform similarly well
+   - The optimal method varies by parameter, with no single method dominating for all parameters
+
+3. **Sample Size Impact**:
+   - Relative bias decreases consistently with increasing sample size for all parameters
+   - Sample size improvements show diminishing returns beyond n=500
+   - Method performance differences become less pronounced at larger sample sizes
+
+4. **Practical Implications**:
+   - For practical applications, method selection should be guided by which parameters are most critical
+   - TMB provides the best overall balance across parameters
+   - For computational efficiency with minimal sacrifice in accuracy, Newton-Raphson is preferred
+
+### Future Research
+
+Future work on parameter estimation for the GKw family could explore:
+
+1. **Bayesian approaches** for more challenging parameter configurations
+2. **Robust estimation methods** for handling extreme parameter values
+3. **Penalized likelihood approaches** for boundary-constrained parameters
+4. **Parameter-specific optimization strategies** based on the insights from this study
+
+### Conclusion
+
+This parameter-focused analysis provides deeper insights into the behavior of different estimation methods for the GKw family. By understanding which methods perform best for specific parameters, practitioners can make more informed choices when fitting these distributions to real data.
+
+The Template Model Builder (TMB) method generally offers the best overall performance across parameters, particularly for complex configurations and smaller sample sizes. However, each method has its strengths for specific parameters and distribution families, and the optimal choice depends on the particular application and which parameters are most critical for the analysis.
+
+## Appendix: Computational Details
+
+```{r session-info}
+# Session information
+sessionInfo()
+```

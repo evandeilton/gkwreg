@@ -7,13 +7,4 @@ inst/doc
 .DS_Store
 .quarto
 docs
-paper.pdf
-paper.md
-paper.Rmd
-plot_fit_weather.pdf
-plot_fit.pdf
-apa.cls
-paper.bib
-gkwreg-examples.R
-paper_files
-simulacao
+
