@@ -243,34 +243,7 @@
 #' summary(kw_model_gas)
 #' plot(kw_model_gas, use_ggplot = TRUE, arrange_plots = TRUE, sub.caption = "")
 #'
-#' ## Example 3: SDAC Cancer Data
-#' # Load cancer survival dataset
-#' sdac_data <- get_bounded_datasets("sdac")
-#'
-#' # Formula: relative cumulative density ~ age adjustment + chemotherapy
-#' formu_sd <- rcd ~ ageadj + chemo
-#'
-#' # Fit Extended Kumaraswamy model
-#' ekw_model_gas <- gkwreg(formu_sd, sdac_data, family = "ekw", method = "BFGS")
-#' summary(ekw_model_gas)
-#' plot(ekw_model_gas, use_ggplot = TRUE, arrange_plots = TRUE, sub.caption = "")
-#'
-#' ## Example 4: Retinal Data
-#' # Load retinal dataset
-#' retinal_data <- get_bounded_datasets("retinal")
-#'
-#' # Formula for three parameters with different predictors
-#' # alpha ~ LogT + LogT2 + Level
-#' # beta  ~ LogT + Level
-#' # gamma ~ Time
-#' formu_rt <- Gas ~ LogT + LogT2 + Level | LogT + Level | Time
-#'
-#' # Fit Extended Kumaraswamy model
-#' ekw_model_ret <- gkwreg(formu_rt, retinal_data, family = "ekw", method = "nlminb")
-#' summary(ekw_model_ret)
-#' plot(ekw_model_ret, use_ggplot = TRUE, arrange_plots = TRUE, sub.caption = "")
-#'
-#' ## Example 5: Weather Task Agreement Data
+#' ## Example 3: Weather Task Agreement Data
 #' # Load the WeatherTask dataset
 #' df_weather <- get_bounded_datasets("WeatherTask")
 #'
@@ -6318,22 +6291,6 @@ vcov.gkwreg <- function(object, complete = TRUE, ...) {
 #' )
 #'
 #' summary(food_model)
-#'
-#' # Example 3: Exponential Kumaraswamy regression on retinal data
-#' # ------------------------------------------------------------
-#' # This example analyzes the decay of intraocular gas in retinal surgeries.
-#'
-#' # Load retinal data
-#' retinal_data <- get_bounded_datasets("retinal", package = "simplexreg")
-#'
-#' # Fit a Kumaraswamy - Kumaraswamy model
-#' retinal_model <- gkwreg(
-#'   Gas ~ LogT2 | Level | Time,
-#'   data = retinal_data,
-#'   family = "ekw"
-#' )
-#'
-#' summary(retinal_model)
 #' }
 #'
 #' @return A data frame containing the requested dataset.

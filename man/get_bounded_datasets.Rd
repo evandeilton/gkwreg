@@ -61,22 +61,6 @@ food_model <- gkwreg(
 )
 
 summary(food_model)
-
-# Example 3: Exponential Kumaraswamy regression on retinal data
-# ------------------------------------------------------------
-# This example analyzes the decay of intraocular gas in retinal surgeries.
-
-# Load retinal data
-retinal_data <- get_bounded_datasets("retinal", package = "simplexreg")
-
-# Fit a Kumaraswamy - Kumaraswamy model
-retinal_model <- gkwreg(
-  Gas ~ LogT2 | Level | Time,
-  data = retinal_data,
-  family = "ekw"
-)
-
-summary(retinal_model)
 }
 
 }
