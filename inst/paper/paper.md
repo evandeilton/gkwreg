@@ -21,7 +21,7 @@ affiliations:
    index: 1
  # - name: Universidade Federal do Paraná (UFPR)
  #   index: 2
-citation_author: Lopes, J.E et. al.
+citation_author: Lopes, JE & Bonat, WH
 date: '10 julho 2025'
 year: '2025'
 bibliography: paper.bib
