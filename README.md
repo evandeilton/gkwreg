@@ -1,8 +1,7 @@
 
 # gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data <img src="man/figures/gkwreg.png" align="right" height="138" />
 
-[![CRAN
-status](https://www.r-pkg.org/badges/version/gkwreg)](https://CRAN.R-project.org/package=gkwreg)
+[![CRAN status](https://www.r-pkg.org/badges/version/gkwreg)](https://CRAN.R-project.org/package=gkwreg)
 [![R-CMD-check](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gkwreg)](https://cran.r-project.org/package=gkwreg)
 [![License:MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
