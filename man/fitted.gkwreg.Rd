@@ -4,7 +4,7 @@
 \alias{fitted.gkwreg}
 \title{Extract Fitted Values from a Generalized Kumaraswamy Regression Model}
 \usage{
-fitted.gkwreg(object, family = NULL, ...)
+\method{fitted}{gkwreg}(object, family = NULL, ...)
 }
 \arguments{
 \item{object}{An object of class \code{"gkwreg"}, typically the result of a
