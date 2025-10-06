@@ -66,3 +66,4 @@ $$r_i^Q = \Phi^{-1}\bigl(F(y_i; \hat{\boldsymbol{\theta}}_i)\bigr)$$
 where $F(y_i; \hat{\boldsymbol{\theta}}_i)$ is the fitted CDF evaluated at observation $y_i$ with estimated parameters $\hat{\boldsymbol{\theta}}_i$, and $\Phi^{-1}(\cdot)$ is the quantile function of the standard normal distribution. If the model is correctly specified, these residuals should follow a standard normal distribution.
 
 # References
+
