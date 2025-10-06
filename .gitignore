@@ -7,4 +7,7 @@ inst/doc
 .DS_Store
 .quarto
 docs
+src/*.o
+src/*.so
+
 

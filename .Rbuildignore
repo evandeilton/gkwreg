@@ -5,3 +5,6 @@
 ^\.github$
 ^docs$
 ^_pkgdown.yml$
+^.o$
+^.so$
+
