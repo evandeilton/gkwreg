@@ -1,9 +1,14 @@
 utils::globalVariables(c(
-  "packageVersion", "dev.interactive", "calculateMean", "index", "theoretical", "observed", "lower",
-  "upper", "log", "log_scale", "calculateResponseResiduals", "::", ":::", ".gkwreg_env", "get_tmb_info",
-  "x", "Theoretical", "Empirical", "value", "loglik", "cook_dist", "fitted", "abs_resid", "leverage", "y_obs",
-  "linpred", "resid", "model_label", "metric", "y", "Type", "Deviation", "object", "p_empirical", "p_theoretical",
-  "statistic", "type", "Residual", "Family", "Value", "Criterion", "Parameter"
+  "packageVersion", "dev.interactive", "calculateMean", "index", "theoretical",
+  "observed", "lower", "upper", "log", "log_scale", "calculateResponseResiduals",
+  "::", ":::", ".gkwreg_env", "get_tmb_info", "x", "Theoretical", "Empirical",
+  "value", "loglik", "cook_dist", "fitted", "abs_resid", "leverage", "y_obs",
+  "linpred", "resid", "model_label", "metric", "y", "Type", "Deviation", "object",
+  "p_empirical", "p_theoretical", "statistic", "type", "Residual", "Family",
+  "Value", "Criterion", "Parameter", "dbeta_", "dbkw", "dekw", "dgkw", "dkkw",
+  "dkw dmc", "pbeta_", "pbkw", "pekw", "pgkw", "pkkw", "pkw", "pmc", "qbeta_",
+  "qbkw", "qekw", "qgkw", "qkkw", "qkw", "qmc", "rbeta_", "rbkw", "rekw", "rgkw",
+  "rkkw", "rkw", "rmc", "modifyList", "quantile", "rnorm", "setNames"
 ))
 
 # Tem Env for TMB compile
@@ -417,8 +422,9 @@ utils::globalVariables(c(
 
 
 .onLoad <- function(libname, pkgname) {
+  # require("gkwdist", quietly = TRUE)
   # Pre-compile all TMB models
-  all_models <- c("gkwbetareg", "bkwreg", "ekwreg", "gkwmletmb", "gkwreg", "kkwreg", "kwreg", "mcreg")
+  all_models <- c("gkwbetareg", "bkwreg", "ekwreg", "gkwreg", "kkwreg", "kwreg", "mcreg")
   for (model in all_models) {
     tryCatch(
       {
@@ -430,9 +436,6 @@ utils::globalVariables(c(
     )
   }
 }
-
-
-
 
 
 #' Pipe operator
@@ -459,4 +462,9 @@ NULL
 NULL
 
 #' @useDynLib gkwreg, .registration = TRUE
+NULL
+
+## usethis namespace: start
+#' @importFrom numDeriv grad hessian
+## usethis namespace: end
 NULL

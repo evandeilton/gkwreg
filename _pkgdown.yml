@@ -1,0 +1,20 @@
+url: https://evandeilton.github.io/gkwreg/
+
+template:
+  bootstrap: 5
+  bootswatch: minty
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+  components:
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/evandeilton/gkwreg
+      aria-label: GitHub
+
+logo:
+  src: man/figures/gkwreg.png
+  alt: "gkwreg logo"
+  width: 120px

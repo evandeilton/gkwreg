@@ -9,5 +9,6 @@ inst/doc
 docs
 src/*.o
 src/*.so
+.pdf
 
 
