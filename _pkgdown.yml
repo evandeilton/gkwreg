@@ -2,7 +2,7 @@ url: https://evandeilton.github.io/gkwreg/
 
 template:
   bootstrap: 5
-  bootswatch: minty
+  bootswatch: flatly #slate #minty
 
 navbar:
   structure:
