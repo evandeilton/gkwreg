@@ -26,8 +26,9 @@ Imports:
     ggpubr,
     gridExtra,
     rappdirs,
-    numDeriv,
-    gkwdist
+    numDeriv
+Remotes: 
+    evandeilton/gkwdist    
 LinkingTo: Rcpp, RcppArmadillo, RcppEigen
 Suggests: betareg, knitr, rmarkdown, testthat (>= 3.0.0)
 Config/testthat/edition: 3
