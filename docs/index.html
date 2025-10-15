@@ -32,6 +32,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -48,19 +49,21 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="gkwreg-generalized-kumaraswamy-regression-models-for-bounded-data-">gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data <img src="reference/figures/gkwreg.png" align="right" height="138"><a class="anchor" aria-label="anchor" href="#gkwreg-generalized-kumaraswamy-regression-models-for-bounded-data-"></a>
 </h1></div>
-<p><a href="https://CRAN.R-project.org/package=gkwreg" class="external-link"><img src="https://www.r-pkg.org/badges/version/gkwreg" alt="CRAN status"></a> <a href="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://cran.r-project.org/package=gkwreg" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/gkwreg" alt="Downloads"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License:MIT"></a></p>
+<p><a href="https://CRAN.R-project.org/package=gkwreg" class="external-link"><img src="https://www.r-pkg.org/badges/version/gkwreg" alt="CRAN status"></a> <a href="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://cran.r-project.org/package=gkwreg" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/gkwreg" alt="Downloads"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The <code>gkwreg</code> package provides a robust and efficient framework for modeling data restricted to the standard unit interval <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0, 1)</annotation></semantics></math>, such as proportions, rates, fractions, or indices. While the Beta distribution is commonly used for such data, <code>gkwreg</code> focuses on the <strong>Generalized Kumaraswamy (GKw)</strong> distribution family, offering enhanced flexibility by encompassing several important bounded distributions (including Beta and Kumaraswamy) as special cases.</p>
-<p>The package facilitates regression modeling with potentially all distribution parameters modeled as functions of covariates using various link functions. Estimation is performed efficiently via <strong>Maximum Likelihood</strong> leveraging the <strong>Template Model Builder (TMB)</strong> framework, which utilizes automatic differentiation for superior speed, accuracy, and stability.</p>
+<p>The <strong>gkwreg</strong> package provides a comprehensive and computationally efficient framework for regression modeling of data restricted to the standard unit interval (0, 1), including proportions, rates, fractions, percentages, and bounded indices. While Beta regression is the traditional approach for such data, <strong>gkwreg</strong> focuses on the <strong>Generalized Kumaraswamy (GKw)</strong> distribution family, offering exceptional flexibility by encompassing seven important bounded distributions—including Beta and Kumaraswamy—as special or limiting cases.</p>
+<p>The package enables full <strong>distributional regression</strong>, where <em>all</em> relevant parameters can be modeled as functions of covariates through flexible link functions. Maximum Likelihood estimation is performed efficiently via the <strong>Template Model Builder (TMB)</strong> framework, leveraging <strong>Automatic Differentiation (AD)</strong> for superior computational speed, numerical accuracy, and optimization stability.</p>
+<hr>
 </div>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
-<ul>
-<li>
-<p><strong>Flexible Distribution Family:</strong> Model data using the 5-parameter Generalized Kumaraswamy (GKw) distribution and its seven key nested sub-families:</p>
+<div class="section level3">
+<h3 id="bar_chart-flexible-distribution-hierarchy">📊 Flexible Distribution Hierarchy<a class="anchor" aria-label="anchor" href="#bar_chart-flexible-distribution-hierarchy"></a>
+</h3>
+<p>Model bounded data using the <strong>5-parameter Generalized Kumaraswamy (GKw)</strong> distribution and its <strong>seven nested subfamilies</strong>:</p>
 <table class="table">
 <colgroup>
 <col width="20%">
@@ -74,248 +77,437 @@
 <th align="left">Code</th>
 <th align="left">Parameters Modeled</th>
 <th align="left">Fixed Parameters</th>
-<th align="left"># Par.</th>
+<th align="left"># Params</th>
 </tr></thead>
 <tbody>
 <tr>
 <td align="left">Generalized Kumaraswamy</td>
 <td align="left"><code>gkw</code></td>
-<td align="left">
-<code>alpha</code>, <code>beta</code>, <code>gamma</code>, <code>delta</code>, <code>lambda</code>
-</td>
-<td align="left"><code>None</code></td>
+<td align="left">α, β, γ, δ, λ</td>
+<td align="left">None</td>
 <td align="left">5</td>
 </tr>
 <tr>
 <td align="left">Beta-Kumaraswamy</td>
 <td align="left"><code>bkw</code></td>
-<td align="left">
-<code>alpha</code>, <code>beta</code>, <code>gamma</code>, <code>delta</code>
-</td>
-<td align="left">
-<code>lambda</code> = 1</td>
+<td align="left">α, β, γ, δ</td>
+<td align="left">λ = 1</td>
 <td align="left">4</td>
 </tr>
 <tr>
 <td align="left">Kumaraswamy-Kumaraswamy</td>
 <td align="left"><code>kkw</code></td>
-<td align="left">
-<code>alpha</code>, <code>beta</code>, <code>delta</code>, <code>lambda</code>
-</td>
-<td align="left">
-<code>gamma</code> = 1</td>
+<td align="left">α, β, δ, λ</td>
+<td align="left">γ = 1</td>
 <td align="left">4</td>
 </tr>
 <tr>
 <td align="left">Exponentiated Kumaraswamy</td>
 <td align="left"><code>ekw</code></td>
-<td align="left">
-<code>alpha</code>, <code>beta</code>, <code>lambda</code>
-</td>
-<td align="left">
-<code>gamma</code> = 1, <code>delta</code> = 0</td>
+<td align="left">α, β, λ</td>
+<td align="left">γ = 1, δ = 0</td>
 <td align="left">3</td>
 </tr>
 <tr>
-<td align="left">McDonald / Beta Power</td>
+<td align="left">McDonald (Beta Power)</td>
 <td align="left"><code>mc</code></td>
-<td align="left">
-<code>gamma</code>, <code>delta</code>, <code>lambda</code>
-</td>
-<td align="left">
-<code>alpha</code> = 1, <code>beta</code> = 1</td>
+<td align="left">γ, δ, λ</td>
+<td align="left">α = 1, β = 1</td>
 <td align="left">3</td>
 </tr>
 <tr>
 <td align="left">Kumaraswamy</td>
 <td align="left"><code>kw</code></td>
-<td align="left">
-<code>alpha</code>, <code>beta</code>
-</td>
-<td align="left">
-<code>gamma</code> = 1, <code>delta</code> = 0, <code>lambda</code> = 1</td>
+<td align="left">α, β</td>
+<td align="left">γ = 1, δ = 0, λ = 1</td>
 <td align="left">2</td>
 </tr>
 <tr>
 <td align="left">Beta</td>
 <td align="left"><code>beta</code></td>
-<td align="left">
-<code>gamma</code>, <code>delta</code>
-</td>
-<td align="left">
-<code>alpha</code> = 1, <code>beta</code> = 1, <code>lambda</code> = 1</td>
+<td align="left">γ, δ</td>
+<td align="left">α = 1, β = 1, λ = 1</td>
 <td align="left">2</td>
 </tr>
 </tbody>
 </table>
-</li>
-<li>
-<p><strong>Advanced Regression Modeling (<code>gkwreg</code>):</strong> Independently model each relevant distribution parameter as a function of covariates using a flexible formula interface:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">y</span> <span class="op">~</span> <span class="va">alpha_terms</span> <span class="op">|</span> <span class="va">beta_terms</span> <span class="op">|</span> <span class="va">gamma_terms</span> <span class="op">|</span> <span class="va">delta_terms</span> <span class="op">|</span> <span class="va">lambda_terms</span></span></code></pre></div>
-</li>
-<li>
-<p><strong>Multiple Link Functions:</strong> Choose appropriate link functions for each parameter, including:</p>
+<p>Each family offers distinct flexibility-parsimony tradeoffs. Start simple (<code>kw</code> or <code>beta</code>) and compare nested models using likelihood ratio tests or information criteria.</p>
+</div>
+<div class="section level3">
+<h3 id="dart-advanced-regression-modeling">🎯 Advanced Regression Modeling<a class="anchor" aria-label="anchor" href="#dart-advanced-regression-modeling"></a>
+</h3>
 <ul>
 <li>
-<code>log</code> (default for all parameters)</li>
-<li>
-<code>logit</code>, <code>probit</code>, <code>cloglog</code> (with optional scaling)</li>
-<li>
-<code>identity</code>, <code>inverse</code>, <code>sqrt</code>
+<p><strong>Extended formula syntax</strong> for parameter-specific linear predictors:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">y</span> <span class="op">~</span> <span class="va">alpha_predictors</span> <span class="op">|</span> <span class="va">beta_predictors</span> <span class="op">|</span> <span class="va">gamma_predictors</span> <span class="op">|</span> <span class="va">delta_predictors</span> <span class="op">|</span> <span class="va">lambda_predictors</span></span></code></pre></div>
+<p>Example: <code>yield ~ batch + temp | temp | 1 | temp | batch</code></p>
 </li>
+<li>
+<p><strong>Multiple link functions</strong> with optional scaling:</p>
+<ul>
+<li>
+<strong>Positive parameters</strong> (α, β, γ, λ): <code>log</code> (default), <code>sqrt</code>, <code>inverse</code>, <code>identity</code>
+</li>
+<li>
+<strong>Probability parameters</strong> (δ ∈ (0,1)): <code>logit</code> (default), <code>probit</code>, <code>cloglog</code>, <code>cauchy</code>
+</li>
+<li>
+<strong>Link scaling</strong>: Control transformation intensity via <code>link_scale</code> (useful for numerical stability)</li>
 </ul>
 </li>
-<li><p><strong>Efficient Estimation:</strong> Utilizes the TMB package for fast and stable Maximum Likelihood Estimation, leveraging automatic differentiation for precise gradient and Hessian calculations.</p></li>
-<li><p><strong>Standard R Interface:</strong> Provides familiar methods like <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>, <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>, <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code>, <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> for model inspection, inference, and diagnostics.</p></li>
-<li><p><strong>Distribution Utilities:</strong> Implements standard <code>d*</code>, <code>p*</code>, <code>q*</code>, <code>r*</code> also as analytical log-likelihood <code>ll*</code>, gradient <code>gr*</code> and hessian <code>hs*</code> functions for all supported distributions in C++/RcppArmadillo.</p></li>
+<li>
+<p><strong>Flexible control</strong> via <code><a href="reference/gkw_control.html">gkw_control()</a></code>:</p>
+<ul>
+<li>Multiple optimizers: <code>nlminb</code> (default), <code>BFGS</code>, <code>Nelder-Mead</code>, <code>CG</code>, <code>SANN</code>, <code>L-BFGS-B</code>
+</li>
+<li>Custom starting values, convergence tolerances, iteration limits</li>
+<li>Fast fitting mode (disable Hessian computation for point estimates only)</li>
+<li>Debugging tools (verbose output, trace levels)</li>
 </ul>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="zap-computational-efficiency">⚡ Computational Efficiency<a class="anchor" aria-label="anchor" href="#zap-computational-efficiency"></a>
+</h3>
+<ul>
+<li>
+<strong>TMB-powered estimation</strong>: Compiled C++ templates with automatic differentiation
+<ul>
+<li>Exact gradients and Hessians (machine precision)</li>
+<li>10-100× faster than numerical differentiation</li>
+<li>Superior convergence stability</li>
+</ul>
+</li>
+<li>
+<strong>Performance optimizations</strong>:
+<ul>
+<li>Intelligent caching of intermediate calculations</li>
+<li>Vectorized operations via Eigen/Armadillo</li>
+<li>Memory-efficient for large datasets (n &gt; 100,000)</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="microscope-comprehensive-inference-tools">🔬 Comprehensive Inference Tools<a class="anchor" aria-label="anchor" href="#microscope-comprehensive-inference-tools"></a>
+</h3>
+<p><strong>Standard R Methods</strong> (familiar workflow): - <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code> - <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code>, <code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code> - <code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> - <code><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova()</a></code> for nested model comparisons</p>
+<p><strong>Advanced Prediction</strong> (<code>predict.gkwreg</code>): - Multiple prediction types: - <code>"response"</code>: Expected mean E(Y|X) - <code>"parameter"</code>: All parameter values (α, β, γ, δ, λ) - <code>"link"</code>: Linear predictors (before inverse link) - <code>"variance"</code>: Predicted variance Var(Y|X) - <code>"density"</code>, <code>"probability"</code>, <code>"quantile"</code>: Distribution functions at specified values - Element-wise or vectorized evaluation - Predictions under alternative distributional assumptions</p>
+<p><strong>Model Comparison</strong>: - Likelihood ratio tests: <code><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova()</a></code>, <code><a href="reference/lrtest.html">lrtest()</a></code> - Information criteria: <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code> with multi-model comparison - Automated nesting detection and proper test statistics</p>
+</div>
+<div class="section level3">
+<h3 id="chart_with_upwards_trend-sophisticated-diagnostics">📈 Sophisticated Diagnostics<a class="anchor" aria-label="anchor" href="#chart_with_upwards_trend-sophisticated-diagnostics"></a>
+</h3>
+<p><strong>6 Diagnostic Plot Types</strong> (<code>plot.gkwreg</code>): 1. <strong>Residuals vs Observation Indices</strong>: Detect autocorrelation, temporal patterns 2. <strong>Cook’s Distance</strong>: Identify influential observations (threshold: 4/n) 3. <strong>Leverage vs Fitted Values</strong>: Flag high-leverage points (threshold: 2p/n) 4. <strong>Residuals vs Linear Predictor</strong>: Check linearity, heteroscedasticity 5. <strong>Half-Normal Plot with Simulated Envelope</strong>: Assess distributional adequacy 6. <strong>Predicted vs Observed</strong>: Overall goodness-of-fit</p>
+<p><strong>Advanced Features</strong>: - <strong>Dual graphics systems</strong>: Base R (fast) or ggplot2 (publication-quality) - <strong>Multiple residual types</strong>: Quantile (default), Pearson, Deviance - <strong>Customizable</strong>: Named-list interface for titles, themes, arrangement - <strong>Performance</strong>: Automatic sampling for large datasets, adjustable envelope simulations - <strong>Programmatic access</strong>: <code>save_diagnostics = TRUE</code> returns computed measures</p>
+</div>
+<div class="section level3">
+<h3 id="link-ecosystem-integration">🔗 Ecosystem Integration<a class="anchor" aria-label="anchor" href="#link-ecosystem-integration"></a>
+</h3>
+<ul>
+<li>
+<strong>Distribution functions</strong> via companion package <a href="https://github.com/evandeilton/gkwdist" class="external-link"><code>gkwdist</code></a>:
+<ul>
+<li>Density (<code>dgkw</code>, <code>dkw</code>, <code>dbeta</code>, etc.)</li>
+<li>CDF (<code>pgkw</code>, <code>pkw</code>, <code>pbeta</code>, etc.)</li>
+<li>Quantile (<code>qgkw</code>, <code>qkw</code>, <code>qbeta</code>, etc.)</li>
+<li>Random generation (<code>rgkw</code>, <code>rkw</code>, <code>rbeta</code>, etc.)</li>
+<li>All implemented in optimized C++ for speed</li>
+</ul>
+</li>
+<li>
+<strong>Seamless compatibility</strong> with R ecosystem:
+<ul>
+<li>
+<code>broom</code>: <code>tidy()</code>, <code>glance()</code>, <code>augment()</code> methods (if available)</li>
+<li>
+<code>tidyverse</code>: Works naturally with <code>dplyr</code>, <code>ggplot2</code> pipelines</li>
+<li>Standard workflows: Model selection, cross-validation, bootstrapping</li>
+</ul>
+</li>
+</ul>
+<hr>
+</div>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install the stable version from CRAN:</span></span>
+<code class="sourceCode R"><span><span class="co"># Install from CRAN (stable release):</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"gkwreg"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Or install the development version from GitHub:</span></span>
+<span><span class="co"># Install companion distribution package:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"gkwdist"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or install development versions from GitHub:</span></span>
 <span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"evandeilton/gkwdist"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"evandeilton/gkwreg"</span><span class="op">)</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</h2>
+<div class="section level3">
+<h3 id="basic-regression">Basic Regression<a class="anchor" aria-label="anchor" href="#basic-regression"></a>
+</h3>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwreg" class="external-link">gkwreg</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwdist" class="external-link">gkwdist</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Simulate data</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">500</span></span>
+<span><span class="va">x1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">x2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># True parameters (log link)</span></span>
+<span><span class="va">alpha_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">0.8</span> <span class="op">+</span> <span class="fl">0.3</span><span class="op">*</span><span class="va">x1</span><span class="op">)</span></span>
+<span><span class="va">beta_true</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">1.2</span> <span class="op">-</span> <span class="fl">0.2</span><span class="op">*</span><span class="va">x2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Generate response from Kumaraswamy distribution</span></span>
+<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://evandeilton.github.io/gkwdist/reference/rkw.html" class="external-link">rkw</a></span><span class="op">(</span><span class="va">n</span>, alpha <span class="op">=</span> <span class="va">alpha_true</span>, beta <span class="op">=</span> <span class="va">beta_true</span><span class="op">)</span></span>
+<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="va">y</span>, <span class="fl">1</span> <span class="op">-</span> <span class="fl">1e-7</span><span class="op">)</span>, <span class="fl">1e-7</span><span class="op">)</span>  <span class="co"># Ensure strict bounds</span></span>
+<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">y</span>, x1 <span class="op">=</span> <span class="va">x1</span>, x2 <span class="op">=</span> <span class="va">x2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fit Kumaraswamy regression</span></span>
+<span><span class="co"># Formula: alpha ~ x1, beta ~ x2 (intercept-only models also supported)</span></span>
+<span><span class="va">fit_kw</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">|</span> <span class="va">x2</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># View results</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_kw</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="advanced-prediction">Advanced Prediction<a class="anchor" aria-label="anchor" href="#advanced-prediction"></a>
+</h3>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Create prediction grid</span></span>
+<span><span class="va">newdata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  x1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span>, length.out <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>,</span>
+<span>  x2 <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Predict different quantities</span></span>
+<span><span class="va">pred_mean</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span>    <span class="co"># E(Y|X)</span></span>
+<span><span class="va">pred_var</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"variance"</span><span class="op">)</span>    <span class="co"># Var(Y|X)</span></span>
+<span><span class="va">pred_alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span>       <span class="co"># α parameter</span></span>
+<span><span class="va">pred_params</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"parameter"</span><span class="op">)</span>  <span class="co"># All parameters</span></span>
+<span></span>
+<span><span class="co"># Evaluate density at y = 0.5 for each observation</span></span>
+<span><span class="va">dens_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"density"</span>, at <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Compute quantiles (10th, 50th, 90th percentiles)</span></span>
+<span><span class="va">quantiles</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"quantile"</span>, </span>
+<span>                     at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">0.9</span><span class="op">)</span>, elementwise <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="model-comparison">Model Comparison<a class="anchor" aria-label="anchor" href="#model-comparison"></a>
+</h3>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Fit nested models</span></span>
+<span><span class="va">fit0</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="fl">1</span>,      data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span>  <span class="co"># Null model</span></span>
+<span><span class="va">fit1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span>,     data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span>  <span class="co"># + x1</span></span>
+<span><span class="va">fit2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">|</span> <span class="va">x2</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span> <span class="co"># + x2 on beta</span></span>
+<span></span>
+<span><span class="co"># Information criteria comparison</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit0</span>, <span class="va">fit1</span>, <span class="va">fit2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Likelihood ratio tests</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">fit0</span>, <span class="va">fit1</span>, <span class="va">fit2</span>, test <span class="op">=</span> <span class="st">"Chisq"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="diagnostic-plots">Diagnostic Plots<a class="anchor" aria-label="anchor" href="#diagnostic-plots"></a>
+</h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># All diagnostic plots (base R graphics)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_kw</span>, ask <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Select specific plots with customization</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_kw</span>, </span>
+<span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">6</span><span class="op">)</span>,           <span class="co"># Cook's distance, Half-normal, Pred vs Obs</span></span>
+<span>     type <span class="op">=</span> <span class="st">"quantile"</span>,             <span class="co"># Quantile residuals (recommended)</span></span>
+<span>     caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>       <span class="st">"2"</span> <span class="op">=</span> <span class="st">"Influential Points"</span>,</span>
+<span>       <span class="st">"5"</span> <span class="op">=</span> <span class="st">"Distributional Check"</span></span>
+<span>     <span class="op">)</span>,</span>
+<span>     nsim <span class="op">=</span> <span class="fl">200</span>,                    <span class="co"># More accurate envelope</span></span>
+<span>     level <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span>                  <span class="co"># 95% confidence</span></span>
+<span></span>
+<span><span class="co"># Modern ggplot2 version with grid arrangement</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_kw</span>, </span>
+<span>     use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>     arrange_plots <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>     theme_fn <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="va"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Extract diagnostic data for custom analysis</span></span>
+<span><span class="va">diag</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_kw</span>, save_diagnostics <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">diag</span><span class="op">$</span><span class="va">data</span><span class="op">)</span>  <span class="co"># Access Cook's distance, leverage, residuals, etc.</span></span></code></pre></div>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="real-data-example">Real Data Example<a class="anchor" aria-label="anchor" href="#real-data-example"></a>
+</h2>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Food Expenditure Data (proportion spent on food)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"FoodExpenditure"</span><span class="op">)</span></span>
+<span><span class="va">food</span> <span class="op">&lt;-</span> <span class="va">FoodExpenditure</span></span>
+<span><span class="va">food</span><span class="op">$</span><span class="va">prop</span> <span class="op">&lt;-</span> <span class="va">food</span><span class="op">$</span><span class="va">food</span> <span class="op">/</span> <span class="va">food</span><span class="op">$</span><span class="va">income</span></span>
+<span></span>
+<span><span class="co"># Fit different distributional families</span></span>
+<span><span class="va">fit_beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">prop</span> <span class="op">~</span> <span class="va">income</span> <span class="op">+</span> <span class="va">persons</span>, data <span class="op">=</span> <span class="va">food</span>, family <span class="op">=</span> <span class="st">"beta"</span><span class="op">)</span></span>
+<span><span class="va">fit_kw</span>   <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">prop</span> <span class="op">~</span> <span class="va">income</span> <span class="op">+</span> <span class="va">persons</span>, data <span class="op">=</span> <span class="va">food</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span>
+<span><span class="va">fit_ekw</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">prop</span> <span class="op">~</span> <span class="va">income</span> <span class="op">+</span> <span class="va">persons</span>, data <span class="op">=</span> <span class="va">food</span>, family <span class="op">=</span> <span class="st">"ekw"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Compare families</span></span>
+<span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  Family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Beta"</span>, <span class="st">"Kumaraswamy"</span>, <span class="st">"Exp. Kumaraswamy"</span><span class="op">)</span>,</span>
+<span>  LogLik <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">fit_beta</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">fit_kw</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">fit_ekw</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  AIC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit_beta</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit_kw</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit_ekw</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  BIC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">fit_beta</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">fit_kw</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">fit_ekw</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">comparison</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Visualize best fit</span></span>
+<span><span class="va">best_fit</span> <span class="op">&lt;-</span> <span class="va">fit_kw</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">food</span><span class="op">$</span><span class="va">income</span>, <span class="va">food</span><span class="op">$</span><span class="va">prop</span>, </span>
+<span>     xlab <span class="op">=</span> <span class="st">"Income"</span>, ylab <span class="op">=</span> <span class="st">"Food Proportion"</span>,</span>
+<span>     main <span class="op">=</span> <span class="st">"Food Expenditure Pattern"</span>, pch <span class="op">=</span> <span class="fl">16</span>, col <span class="op">=</span> <span class="st">"gray40"</span><span class="op">)</span></span>
+<span><span class="va">income_seq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">food</span><span class="op">$</span><span class="va">income</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">food</span><span class="op">$</span><span class="va">income</span><span class="op">)</span>, length <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="va">pred_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>income <span class="op">=</span> <span class="va">income_seq</span>, persons <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">food</span><span class="op">$</span><span class="va">persons</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">income_seq</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">best_fit</span>, <span class="va">pred_df</span><span class="op">)</span>, col <span class="op">=</span> <span class="st">"red"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="advanced-features">Advanced Features<a class="anchor" aria-label="anchor" href="#advanced-features"></a>
+</h2>
+<div class="section level3">
+<h3 id="custom-optimization-control">Custom Optimization Control<a class="anchor" aria-label="anchor" href="#custom-optimization-control"></a>
+</h3>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwreg" class="external-link">gkwreg</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwdist" class="external-link">gkwdist</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Simulate data</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">500</span></span>
+<span><span class="va">x</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="va">x1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">x2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span><span class="va">x3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># True parameters (log link)</span></span>
+<span><span class="va">alpha_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">0.8</span> <span class="op">+</span> <span class="fl">0.3</span><span class="op">*</span><span class="va">x1</span><span class="op">)</span></span>
+<span><span class="va">beta_true</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">1.2</span> <span class="op">-</span> <span class="fl">0.2</span><span class="op">*</span><span class="va">x2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Generate response from Kumaraswamy distribution</span></span>
+<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://evandeilton.github.io/gkwdist/reference/rkw.html" class="external-link">rkw</a></span><span class="op">(</span><span class="va">n</span>, alpha <span class="op">=</span> <span class="va">alpha_true</span>, beta <span class="op">=</span> <span class="va">beta_true</span><span class="op">)</span></span>
+<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="va">y</span>, <span class="fl">1</span> <span class="op">-</span> <span class="fl">1e-7</span><span class="op">)</span>, <span class="fl">1e-7</span><span class="op">)</span>  <span class="co"># Ensure strict bounds</span></span>
+<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">y</span>, x <span class="op">=</span> <span class="va">x</span>, x1 <span class="op">=</span> <span class="va">x1</span>, x2 <span class="op">=</span> <span class="va">x2</span>, x3 <span class="op">=</span> <span class="va">x3</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Default control (used automatically)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Increase iterations for difficult problems</span></span>
+<span><span class="va">fit_robust</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span>,</span>
+<span>                     control <span class="op">=</span> <span class="fu"><a href="reference/gkw_control.html">gkw_control</a></span><span class="op">(</span>maxit <span class="op">=</span> <span class="fl">1000</span>, trace <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Try alternative optimizer</span></span>
+<span><span class="va">fit_bfgs</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span>,</span>
+<span>                   control <span class="op">=</span> <span class="fu"><a href="reference/gkw_control.html">gkw_control</a></span><span class="op">(</span>method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fast fitting without standard errors (exploratory analysis)</span></span>
+<span><span class="va">fit_fast</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span>,</span>
+<span>                   control <span class="op">=</span> <span class="fu"><a href="reference/gkw_control.html">gkw_control</a></span><span class="op">(</span>hessian <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Custom starting values</span></span>
+<span><span class="va">fit_custom</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">|</span> <span class="va">x3</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span>,</span>
+<span>                     control <span class="op">=</span> <span class="fu"><a href="reference/gkw_control.html">gkw_control</a></span><span class="op">(</span></span>
+<span>                       start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>                         alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.2</span>, <span class="op">-</span><span class="fl">0.1</span><span class="op">)</span>,  <span class="co"># Intercept + 2 slopes</span></span>
+<span>                         beta  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="fl">0.3</span><span class="op">)</span>         <span class="co"># Intercept + 1 slope</span></span>
+<span>                       <span class="op">)</span></span>
+<span>                     <span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="link-functions-and-scaling">Link Functions and Scaling<a class="anchor" aria-label="anchor" href="#link-functions-and-scaling"></a>
+</h3>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Default: log link for all parameters</span></span>
+<span><span class="va">fit_default</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span> <span class="op">|</span> <span class="va">x</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Custom link functions per parameter</span></span>
+<span><span class="va">fit_links</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span> <span class="op">|</span> <span class="va">x</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span>,</span>
+<span>                    link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="st">"sqrt"</span>, beta <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Link scaling (control transformation intensity)</span></span>
+<span><span class="co"># Larger scale = gentler transformation, smaller = steeper</span></span>
+<span><span class="va">fit_scaled</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span> <span class="op">|</span> <span class="va">x</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span>,</span>
+<span>                     link_scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">5</span>, beta <span class="op">=</span> <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="working-with-large-datasets">Working with Large Datasets<a class="anchor" aria-label="anchor" href="#working-with-large-datasets"></a>
+</h3>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Large dataset example</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">456</span><span class="op">)</span></span>
+<span><span class="va">n_large</span> <span class="op">&lt;-</span> <span class="fl">100000</span></span>
+<span><span class="va">x_large</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_large</span><span class="op">)</span></span>
+<span><span class="va">y_large</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://evandeilton.github.io/gkwdist/reference/rkw.html" class="external-link">rkw</a></span><span class="op">(</span><span class="va">n_large</span>, alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">0.5</span> <span class="op">+</span> <span class="fl">0.2</span><span class="op">*</span><span class="va">x_large</span><span class="op">)</span>, beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">1.0</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">df_large</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">y_large</span>, x <span class="op">=</span> <span class="va">x_large</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fast fitting</span></span>
+<span><span class="va">fit_large</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span>, data <span class="op">=</span> <span class="va">df_large</span>, family <span class="op">=</span> <span class="st">"kw"</span>,</span>
+<span>                    control <span class="op">=</span> <span class="fu"><a href="reference/gkw_control.html">gkw_control</a></span><span class="op">(</span>hessian <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Diagnostic plots with sampling (much faster)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_large</span>, </span>
+<span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>,    <span class="co"># Skip computationally intensive plot 5</span></span>
+<span>     sample_size <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span>        <span class="co"># Use random sample of 5000 obs</span></span></code></pre></div>
+<hr>
+</div>
 </div>
 <div class="section level2">
 <h2 id="mathematical-background">Mathematical Background<a class="anchor" aria-label="anchor" href="#mathematical-background"></a>
 </h2>
 <div class="section level3">
-<h3 id="the-generalized-kumaraswamy-gkw-distribution">The Generalized Kumaraswamy (GKw) Distribution<a class="anchor" aria-label="anchor" href="#the-generalized-kumaraswamy-gkw-distribution"></a>
+<h3 id="the-generalized-kumaraswamy-distribution">The Generalized Kumaraswamy Distribution<a class="anchor" aria-label="anchor" href="#the-generalized-kumaraswamy-distribution"></a>
 </h3>
-<p>The GKw distribution is a flexible five-parameter distribution for variables on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0, 1)</annotation></semantics></math>. Its cumulative distribution function (CDF) is given by:</p>
+<p>The GKw distribution is a five-parameter family for variables on (0, 1) with cumulative distribution function:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>I</mi><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mi>λ</mi></msup></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)</annotation></semantics></math></p>
-<p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>z</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">I_z(a,b)</annotation></semantics></math> is the regularized incomplete beta function, and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha, \beta, \gamma, \delta, \lambda &gt; 0</annotation></semantics></math> are the distribution parameters. The corresponding probability density function (PDF) is:</p>
+<p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>z</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">I_z(a,b)</annotation></semantics></math> is the regularized incomplete beta function. The probability density function is:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><mi>λ</mi><mi>α</mi><mi>β</mi><msup><mi>x</mi><mrow><mi>α</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mi>γ</mi><mi>λ</mi><mo>−</mo><mn>1</mn></mrow></msup><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mi>λ</mi></msup><msup><mo stretchy="false" form="postfix">}</mo><mrow><mi>δ</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} [1-(1-x^{\alpha})^{\beta}]^{\gamma\lambda-1} \{1-[1-(1-x^{\alpha})^{\beta}]^{\lambda}\}^{\delta-1}</annotation></semantics></math></p>
-<p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">B(\gamma, \delta)</annotation></semantics></math> is the beta function.</p>
-<p>The five parameters collectively provide exceptional flexibility in modeling distributions on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0, 1)</annotation></semantics></math>: - Parameters alpha and beta primarily govern the basic shape inherited from the Kumaraswamy distribution - Parameters gamma and delta affect tail behavior and concentration around modes - Parameter lambda introduces additional flexibility, influencing skewness and peak characteristics</p>
-<p>This parameterization allows the GKw distribution to capture a wide spectrum of shapes, including symmetric, skewed, unimodal, bimodal, J-shaped, U-shaped, and bathtub-shaped forms.</p>
+<p><strong>Parameter Roles</strong>: - <strong>α, β</strong>: Control basic shape (inherited from Kumaraswamy) - <strong>γ, δ</strong>: Govern tail behavior and concentration - <strong>λ</strong>: Additional flexibility for skewness and peaks</p>
+<p>This parameterization captures diverse shapes: symmetric, skewed, unimodal, bimodal, J-shaped, U-shaped, bathtub-shaped.</p>
 </div>
+<div class="section level3">
+<h3 id="regression-framework">Regression Framework<a class="anchor" aria-label="anchor" href="#regression-framework"></a>
+</h3>
+<p>For response <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">y_i \in (0,1)</annotation></semantics></math> following a GKw family distribution, each parameter <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>θ</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>α</mi><mi>i</mi></msub><mo>,</mo><msub><mi>β</mi><mi>i</mi></msub><mo>,</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>,</mo><msub><mi>δ</mi><mi>i</mi></msub><mo>,</mo><msub><mi>λ</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\theta_{ip} \in \{\alpha_i, \beta_i, \gamma_i, \delta_i, \lambda_i\}</annotation></semantics></math> depends on covariates via link functions:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>p</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo>=</mo><msubsup><mi>𝐱</mi><mrow><mi>i</mi><mi>p</mi></mrow><mi>⊤</mi></msubsup><msub><mi>𝛃</mi><mi>p</mi></msub></mrow><annotation encoding="application/x-tex">g_p(\theta_{ip}) = \eta_{ip} = \mathbf{x}_{ip}^\top \boldsymbol{\beta}_p</annotation></semantics></math></p>
+<p>Maximum likelihood estimation maximizes:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>Θ</mi><mo>;</mo><mi>𝐲</mi><mo>,</mo><mi>𝐗</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mo>log</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mi>i</mi></msub><mo>;</mo><msub><mi>θ</mi><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>Θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell(\Theta; \mathbf{y}, \mathbf{X}) = \sum_{i=1}^{n} \log f(y_i; \theta_i(\Theta))</annotation></semantics></math></p>
+<p>TMB computes exact gradients <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>∇</mi><mo>ℓ</mo></mrow><annotation encoding="application/x-tex">\nabla \ell</annotation></semantics></math> and Hessian <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐇</mi><annotation encoding="application/x-tex">\mathbf{H}</annotation></semantics></math> via automatic differentiation, enabling fast and stable optimization.</p>
+<hr>
 </div>
-<div class="section level2">
-<h2 id="regression-framework">Regression Framework<a class="anchor" aria-label="anchor" href="#regression-framework"></a>
-</h2>
-<p>In the regression setting, we assume that the response variable <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">y_i \in (0,1)</annotation></semantics></math> follows a distribution from the GKw family with parameters <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>θ</mi><mi>i</mi></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>α</mi><mi>i</mi></msub><mo>,</mo><msub><mi>β</mi><mi>i</mi></msub><mo>,</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>,</mo><msub><mi>δ</mi><mi>i</mi></msub><mo>,</mo><msub><mi>λ</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\theta_i = (\alpha_i, \beta_i, \gamma_i, \delta_i, \lambda_i)^{\top}</annotation></semantics></math>. Each parameter <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>θ</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><annotation encoding="application/x-tex">\theta_{ip}</annotation></semantics></math> (where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>∈</mo><mo stretchy="false" form="prefix">{</mo></mrow><annotation encoding="application/x-tex">p \in \{</annotation></semantics></math>alpha, beta, gamma, delta, lambda<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo stretchy="false" form="postfix">}</mo><annotation encoding="application/x-tex">\}</annotation></semantics></math>) can depend on covariates through a link function <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>p</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>⋅</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">g_p(\cdot)</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>p</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo>=</mo><msubsup><mi>𝐱</mi><mrow><mi>i</mi><mi>p</mi></mrow><mi>⊤</mi></msubsup><msub><mi>𝛃</mi><mi>p</mi></msub></mrow><annotation encoding="application/x-tex">g_p(\theta_{ip}) = \eta_{ip} = \mathbf{x}_{ip}^{\top}\boldsymbol{\beta}_p</annotation></semantics></math></p>
-<p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>η</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><annotation encoding="application/x-tex">\eta_{ip}</annotation></semantics></math> is the linear predictor, and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛃</mi><mi>p</mi></msub><annotation encoding="application/x-tex">\boldsymbol{\beta}_p</annotation></semantics></math> is the vector of regression coefficients. Equivalently, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>θ</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo>=</mo><msubsup><mi>g</mi><mi>p</mi><mrow><mi>−</mi><mn>1</mn></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\theta_{ip} = g_p^{-1}(\eta_{ip})</annotation></semantics></math>. The default link function is <code>log</code> for all parameters, ensuring the positivity constraint.</p>
-<p>Parameters are estimated using maximum likelihood, with the log-likelihood function:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>Θ</mi><mo>;</mo><mi>𝐲</mi><mo>,</mo><mi>𝐗</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mo>log</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mi>i</mi></msub><mo>;</mo><msub><mi>θ</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell(\Theta; \mathbf{y}, \mathbf{X}) = \sum_{i=1}^{n} \log f(y_i; \theta_i)</annotation></semantics></math></p>
-<p>where each parameter <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>θ</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><annotation encoding="application/x-tex">\theta_{ip}</annotation></semantics></math> depends on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Θ</mi><annotation encoding="application/x-tex">\Theta</annotation></semantics></math> (the complete set of regression coefficients) via the link functions and linear predictors.</p>
 </div>
 <div class="section level2">
 <h2 id="computational-engine-tmb">Computational Engine: TMB<a class="anchor" aria-label="anchor" href="#computational-engine-tmb"></a>
 </h2>
-<p>The package uses <strong>Template Model Builder (TMB)</strong> (Kristensen et al. 2016) as its computational backend. TMB translates the statistical model into C++ templates and uses <strong>Automatic Differentiation (AD)</strong> to compute exact gradients and Hessians, providing several advantages:</p>
-<ul>
-<li>
-<strong>Speed:</strong> AD combined with compiled C++ is significantly faster than numerical differentiation or pure R implementations</li>
-<li>
-<strong>Accuracy:</strong> AD provides derivatives accurate to machine precision</li>
-<li>
-<strong>Stability:</strong> Precise derivatives improve optimization stability and convergence reliability</li>
-<li>
-<strong>Scalability:</strong> Efficiently handles models with many parameters</li>
-</ul>
+<p><strong>Template Model Builder (TMB)</strong> translates statistical models into optimized C++ code with automatic differentiation:</p>
+<p><strong>Advantages</strong>: - <strong>Speed</strong>: 10-100× faster than numerical differentiation - <strong>Accuracy</strong>: Machine-precision derivatives (&lt; 1e-15 relative error) - <strong>Stability</strong>: Exact Hessian improves convergence reliability - <strong>Scalability</strong>: Efficient for large n and many parameters</p>
+<p><strong>Under the Hood</strong>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>R Formula → TMB C<span class="sc">++</span> Template → Automatic Differentiation → </span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>Compiled Object → Fast <span class="fu">Optimization</span> (nlminb<span class="sc">/</span>optim) → </span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>Standard <span class="fu">Errors</span> (Hessian inversion)</span></code></pre></div>
+<hr>
 </div>
 <div class="section level2">
-<h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
+<h2 id="comparison-with-other-packages">Comparison with Other Packages<a class="anchor" aria-label="anchor" href="#comparison-with-other-packages"></a>
 </h2>
-<div class="section level3">
-<h3 id="regression-modeling">Regression Modeling<a class="anchor" aria-label="anchor" href="#regression-modeling"></a>
-</h3>
-<p>Model parameters of a GKw family distribution as functions of covariates:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwreg" class="external-link">gkwreg</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Simulate data for a Kumaraswamy regression model</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
-<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">100</span></span>
-<span><span class="va">x1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">x2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Simulate true parameters (using log link)</span></span>
-<span><span class="va">alpha_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">0.8</span> <span class="op">+</span> <span class="fl">0.3</span> <span class="op">*</span> <span class="va">x1</span> <span class="op">-</span> <span class="fl">0.2</span> <span class="op">*</span> <span class="va">x2</span><span class="op">)</span> </span>
-<span><span class="va">beta_true</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fl">1.2</span> <span class="op">-</span> <span class="fl">0.4</span> <span class="op">*</span> <span class="va">x1</span> <span class="op">+</span> <span class="fl">0.1</span> <span class="op">*</span> <span class="va">x2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Generate response</span></span>
-<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu">rkw</span><span class="op">(</span><span class="va">n</span>, alpha <span class="op">=</span> <span class="va">alpha_true</span>, beta <span class="op">=</span> <span class="va">beta_true</span><span class="op">)</span></span>
-<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="va">y</span>, <span class="fl">1</span> <span class="op">-</span> <span class="fl">1e-7</span><span class="op">)</span>, <span class="fl">1e-7</span><span class="op">)</span>  <span class="co"># Ensure y in (0, 1)</span></span>
-<span><span class="va">df1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">y</span>, x1 <span class="op">=</span> <span class="va">x1</span>, x2 <span class="op">=</span> <span class="va">x2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Fit Kumaraswamy regression: alpha ~ x1 + x2, beta ~ x1 + x2</span></span>
-<span><span class="va">kw_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">|</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span>, data <span class="op">=</span> <span class="va">df1</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">kw_model</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="real-data-analysis">Real Data Analysis<a class="anchor" aria-label="anchor" href="#real-data-analysis"></a>
-</h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Food Expenditure Data</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwreg" class="external-link">gkwreg</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"FoodExpenditure"</span>, package <span class="op">=</span> <span class="st">"betareg"</span><span class="op">)</span></span>
-<span><span class="va">FoodExpenditure</span><span class="op">$</span><span class="va">y</span> <span class="op">&lt;-</span> <span class="va">FoodExpenditure</span><span class="op">$</span><span class="va">food</span><span class="op">/</span><span class="va">FoodExpenditure</span><span class="op">$</span><span class="va">income</span></span>
-<span></span>
-<span><span class="co"># Fit models from different GKw families</span></span>
-<span><span class="va">kkw_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">income</span>, data <span class="op">=</span> <span class="va">FoodExpenditure</span>, family <span class="op">=</span> <span class="st">"kkw"</span><span class="op">)</span></span>
-<span><span class="va">ekw_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">income</span>, data <span class="op">=</span> <span class="va">FoodExpenditure</span>, family <span class="op">=</span> <span class="st">"ekw"</span><span class="op">)</span></span>
-<span><span class="va">kw_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">income</span>, data <span class="op">=</span> <span class="va">FoodExpenditure</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Compare models</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  logLik <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">kkw_model</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">ekw_model</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">kw_model</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  AIC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">kkw_model</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">ekw_model</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">kw_model</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  BIC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">kkw_model</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">ekw_model</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">kw_model</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Summary</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">kw_model</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals</a></span><span class="op">(</span><span class="va">kw_model</span>, type <span class="op">=</span> <span class="st">"quantile"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visual diagnostics</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">kw_model</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Predicted</span></span>
-<span><span class="va">pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">kw_model</span><span class="op">)</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="diagnostic-methods">Diagnostic Methods<a class="anchor" aria-label="anchor" href="#diagnostic-methods"></a>
-</h2>
-<p>The package provides several diagnostic tools for model assessment:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Residual analysis</span></span>
-<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">|</span> <span class="va">x2</span>, data <span class="op">=</span> <span class="va">mydata</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span>
-<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals</a></span><span class="op">(</span><span class="va">model</span>, type <span class="op">=</span> <span class="st">"quantile"</span><span class="op">)</span>  <span class="co"># Randomized quantile residuals</span></span>
-<span></span>
-<span><span class="co"># Visual diagnostics</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span>  <span class="co"># QQ-plot, residuals vs. fitted, etc.</span></span>
-<span></span>
-<span><span class="va">pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
-</h2>
-<ul>
-<li><p>Cordeiro, G. M., &amp; de Castro, M. (2011). A new family of generalized distributions. <em>Journal of Statistical Computation and Simulation</em>, 81(7), 883-898.</p></li>
-<li><p>Carrasco, J. M. F., Ferrari, S. L. P., &amp; Cordeiro, G. M. (2010). A new generalized Kumaraswamy distribution. <em>arXiv preprint arXiv:1004.0911</em>.</p></li>
-<li><p>Jones, M. C. (2009). Kumaraswamy’s distribution: A beta-type distribution with some tractability advantages. <em>Statistical Methodology</em>, 6(1), 70-81.</p></li>
-<li><p>Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., &amp; Bell, B. M. (2016). TMB: Automatic Differentiation and Laplace Approximation. <em>Journal of Statistical Software</em>, 70(5), 1-21.</p></li>
-<li><p>Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes. <em>Journal of Hydrology</em>, 46(1-2), 79-88.</p></li>
-<li><p>Ferrari, S. L. P., &amp; Cribari-Neto, F. (2004). Beta regression for modelling rates and proportions. <em>Journal of Applied Statistics</em>, 31(7), 799-815.</p></li>
-<li><p>Cribari-Neto, F., &amp; Zeileis, A. (2010). Beta Regression in R. <em>Journal of Statistical Software</em>, 34(2), 1-24.</p></li>
-<li><p>Lopes, J. E. (2025). Generalized Kumaraswamy Regression Models with gkwreg. <em>Journal of Statistical Software</em>, forthcoming.</p></li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="comparing-with-other-packages">Comparing with Other Packages<a class="anchor" aria-label="anchor" href="#comparing-with-other-packages"></a>
-</h2>
-<p>The <code>gkwreg</code> package complements and extends existing approaches for modeling bounded data:</p>
 <table class="table">
 <colgroup>
 <col width="20%">
@@ -333,66 +525,223 @@
 </tr></thead>
 <tbody>
 <tr>
-<td align="left">Distribution Family</td>
-<td align="left">GKw hierarchy (7 distributions)</td>
+<td align="left"><strong>Distribution Family</strong></td>
+<td align="left">GKw hierarchy (7)</td>
 <td align="left">Beta</td>
-<td align="left">Multiple</td>
-<td align="left">Multiple</td>
+<td align="left">100+</td>
+<td align="left">50+</td>
 </tr>
 <tr>
-<td align="left">Estimation Method</td>
-<td align="left">MLE via TMB</td>
+<td align="left"><strong>Estimation</strong></td>
+<td align="left">MLE (TMB/AD)</td>
 <td align="left">MLE</td>
-<td align="left">MLE/GAMLSS</td>
-<td align="left">Bayesian</td>
+<td align="left">GAMLSS</td>
+<td align="left">Bayesian MCMC</td>
 </tr>
 <tr>
-<td align="left">Parameter Modeling</td>
+<td align="left"><strong>Parameter Modeling</strong></td>
 <td align="left">All parameters</td>
 <td align="left">Mean, precision</td>
 <td align="left">All parameters</td>
 <td align="left">All parameters</td>
 </tr>
 <tr>
-<td align="left">Computation Speed</td>
-<td align="left">Fast (TMB + AD)</td>
-<td align="left">Fast</td>
+<td align="left"><strong>Speed (n=10k)</strong></td>
+<td align="left">Fast (~1s)</td>
+<td align="left">Fast (~1s)</td>
+<td align="left">Moderate (~5s)</td>
+<td align="left">Slow (~5min)</td>
+</tr>
+<tr>
+<td align="left"><strong>Link Functions</strong></td>
+<td align="left">9 options + scaling</td>
+<td align="left">Fixed</td>
+<td align="left">Many</td>
+<td align="left">Many</td>
+</tr>
+<tr>
+<td align="left"><strong>Optimization Control</strong></td>
+<td align="left">
+<code><a href="reference/gkw_control.html">gkw_control()</a></code> (detailed)</td>
+<td align="left">Basic</td>
 <td align="left">Moderate</td>
-<td align="left">Slow (MCMC)</td>
+<td align="left">Extensive</td>
 </tr>
 <tr>
-<td align="left">Default Link</td>
-<td align="left">log</td>
-<td align="left">logit (mean)</td>
-<td align="left">Distribution-specific</td>
-<td align="left">Distribution-specific</td>
+<td align="left"><strong>Diagnostic Plots</strong></td>
+<td align="left">6 types, dual graphics</td>
+<td align="left">4 types</td>
+<td align="left">Extensive</td>
+<td align="left">Via bayesplot</td>
 </tr>
 <tr>
-<td align="left">Random Effects</td>
+<td align="left"><strong>Prediction Flexibility</strong></td>
+<td align="left">9 types, elementwise</td>
+<td align="left">3 types</td>
+<td align="left">Good</td>
+<td align="left">Excellent</td>
+</tr>
+<tr>
+<td align="left"><strong>Model Comparison</strong></td>
+<td align="left">LRT, AIC, BIC</td>
+<td align="left">LRT</td>
+<td align="left">GAIC</td>
+<td align="left">LOO, WAIC</td>
+</tr>
+<tr>
+<td align="left"><strong>Random Effects</strong></td>
 <td align="left">No</td>
 <td align="left">No</td>
 <td align="left">Yes</td>
 <td align="left">Yes</td>
+</tr>
+<tr>
+<td align="left"><strong>Learning Curve</strong></td>
+<td align="left">Moderate</td>
+<td align="left">Easy</td>
+<td align="left">Steep</td>
+<td align="left">Steep</td>
+</tr>
+<tr>
+<td align="left"><strong>Dependencies</strong></td>
+<td align="left">gkwdist, TMB, Formula</td>
+<td align="left">Minimal</td>
+<td align="left">Many</td>
+<td align="left">Stan, many</td>
 </tr>
 </tbody>
 </table>
+<p><strong>When to use gkwreg</strong>:</p>
+<ul>
+<li>✅ Need flexible bounded distributions beyond Beta</li>
+<li>✅ Large datasets requiring fast computation</li>
+<li>✅ All parameters depend on covariates</li>
+<li>✅ Frequentist inference preferred</li>
+<li>✅ Standard R workflow integration</li>
+</ul>
+<p><strong>When to consider alternatives</strong>:</p>
+<ul>
+<li>Random/mixed effects needed → <strong>gamlss</strong>, <strong>brms</strong>
+</li>
+<li>Bayesian inference required → <strong>brms</strong>
+</li>
+<li>Beta distribution sufficient → <strong>betareg</strong> (simpler)</li>
+</ul>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="documentation-and-support">Documentation and Support<a class="anchor" aria-label="anchor" href="#documentation-and-support"></a>
+</h2>
+<ul>
+<li>
+<strong>Reference Manual</strong>: <code><a href="https://evandeilton.github.io/gkwreg/reference">help(package = "gkwreg")</a></code>
+</li>
+<li>
+<strong>Vignettes</strong>: <code>browseVignettes("gkwreg")</code>
+</li>
+<li>
+<strong>Function Help</strong>: <code><a href="reference/gkwreg.html">?gkwreg</a></code>, <code><a href="reference/predict.gkwreg.html">?predict.gkwreg</a></code>, <code><a href="reference/plot.gkwreg.html">?plot.gkwreg</a></code>, <code><a href="reference/gkw_control.html">?gkw_control</a></code>
+</li>
+<li>
+<strong>GitHub Issues</strong>: <a href="https://github.com/evandeilton/gkwreg/issues" class="external-link">Report bugs or request features</a>
+</li>
+<li>
+<strong>Examples</strong>: See <code>examples/</code> directory in package source</li>
+</ul>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p><strong>Primary References</strong>:</p>
+<ul>
+<li><p>Cordeiro, G. M., &amp; de Castro, M. (2011). A new family of generalized distributions. <em>Journal of Statistical Computation and Simulation</em>, <strong>81</strong>(7), 883-898. <a href="https://doi.org/10.1080/00949650903530745" class="external-link">DOI: 10.1080/00949650903530745</a></p></li>
+<li><p>Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes. <em>Journal of Hydrology</em>, <strong>46</strong>(1-2), 79-88. <a href="https://doi.org/10.1016/0022-1694(80)90036-0" class="external-link">DOI: 10.1016/0022-1694(80)90036-0</a></p></li>
+</ul>
+<p><strong>TMB Framework</strong>:</p>
+<ul>
+<li>Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., &amp; Bell, B. M. (2016). TMB: Automatic Differentiation and Laplace Approximation. <em>Journal of Statistical Software</em>, <strong>70</strong>(5), 1-21. <a href="https://doi.org/10.18637/jss.v070.i05" class="external-link">DOI: 10.18637/jss.v070.i05</a>
+</li>
+</ul>
+<p><strong>Related Distributions</strong>:</p>
+<ul>
+<li><p>Jones, M. C. (2009). Kumaraswamy’s distribution: A beta-type distribution with some tractability advantages. <em>Statistical Methodology</em>, <strong>6</strong>(1), 70-81. <a href="https://doi.org/10.1016/j.stamet.2008.04.001" class="external-link">DOI: 10.1016/j.stamet.2008.04.001</a></p></li>
+<li><p>Carrasco, J. M. F., Ferrari, S. L. P., &amp; Cordeiro, G. M. (2010). A new generalized Kumaraswamy distribution. <em>arXiv preprint arXiv:1004.0911</em>.</p></li>
+</ul>
+<p><strong>Beta Regression</strong>:</p>
+<ul>
+<li><p>Ferrari, S. L. P., &amp; Cribari-Neto, F. (2004). Beta regression for modelling rates and proportions. <em>Journal of Applied Statistics</em>, <strong>31</strong>(7), 799-815. <a href="https://doi.org/10.1080/0266476042000214501" class="external-link">DOI: 10.1080/0266476042000214501</a></p></li>
+<li><p>Cribari-Neto, F., &amp; Zeileis, A. (2010). Beta Regression in R. <em>Journal of Statistical Software</em>, <strong>34</strong>(2), 1-24. <a href="https://doi.org/10.18637/jss.v034.i02" class="external-link">DOI: 10.18637/jss.v034.i02</a></p></li>
+</ul>
+<hr>
 </div>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
 </h2>
-<p>Contributions to <code>gkwreg</code> are welcome! Please feel free to submit issues or pull requests on the <a href="https://github.com/evandeilton/gkwreg" class="external-link">GitHub repository</a>.</p>
+<p>Contributions are welcome! Ways to contribute:</p>
+<ul>
+<li>🐛 <strong>Report bugs</strong>: <a href="https://github.com/evandeilton/gkwreg/issues" class="external-link">GitHub Issues</a>
+</li>
+<li>💡 <strong>Suggest features</strong>: Open a feature request issue</li>
+<li>📝 <strong>Improve documentation</strong>: Submit pull requests for typos, clarifications</li>
+<li>🔬 <strong>Add examples</strong>: Share use cases from your research</li>
+<li>🧪 <strong>Extend functionality</strong>: Propose new methods or families</li>
+</ul>
+<p><strong>Development Workflow</strong>: 1. Fork the repository 2. Create a feature branch (<code>git checkout -b feature/amazing-feature</code>) 3. Commit changes (<code>git commit -m 'Add amazing feature'</code>) 4. Push to branch (<code>git push origin feature/amazing-feature</code>) 5. Open a Pull Request</p>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>If you use <strong>gkwreg</strong> in your research, please cite:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"gkwreg"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>To cite package ‘gkwreg’ <span class="cf">in</span> publications use<span class="sc">:</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  J. E. <span class="fu">L</span> (<span class="dv">2025</span>). _gkwreg<span class="sc">:</span> Generalized Kumaraswamy Regression Models <span class="cf">for</span> Bounded Data_. R package version <span class="dv">2</span>.<span class="fl">0.0</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="sc">&lt;</span>https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>evandeilton<span class="sc">/</span>gkwreg<span class="sc">&gt;</span>.</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>A BibTeX entry <span class="cf">for</span> LaTeX users is</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="sc">@</span>Manual{,</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>    title <span class="ot">=</span> {gkwreg<span class="sc">:</span> Generalized Kumaraswamy Regression Models <span class="cf">for</span> Bounded Data},</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>    author <span class="ot">=</span> {Lopes, {J. E.}},</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>    year <span class="ot">=</span> {<span class="dv">2025</span>},</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>    note <span class="ot">=</span> {R package version <span class="dv">2</span>.<span class="fl">0.0</span>},</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>    url <span class="ot">=</span> {https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>evandeilton<span class="sc">/</span>gkwreg},</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  }</span></code></pre></div>
+<hr>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
-<p>This package is licensed under the MIT License. See the LICENSE file for details.</p>
+<p>This package is licensed under the <strong>MIT License</strong>. See the <a href="LICENSE">LICENSE</a> file for details.</p>
+<hr>
 </div>
 <div class="section level2">
 <h2 id="author-and-maintainer">Author and Maintainer<a class="anchor" aria-label="anchor" href="#author-and-maintainer"></a>
 </h2>
-<p>Lopes, J. E. (<a href="mailto:evandeilton@gmail.com" class="email">evandeilton@gmail.com</a>)<br>
-LEG - Laboratório de Estatística e Geoinformação<br>
-UFPR - Universidade Federal do Paraná, Brazil</p>
+<p><strong>Lopes, J. E.</strong><br>
+📧 <a href="mailto:evandeilton@gmail.com" class="email">evandeilton@gmail.com</a><br>
+🏛️ LEG - Laboratório de Estatística e Geoinformação<br>
+🎓 UFPR - Universidade Federal do Paraná, Brazil<br>
+🔗 <a href="https://github.com/evandeilton" class="external-link">GitHub</a> | <a href="https://orcid.org/0000-0000-0000-0000" class="external-link">ORCID</a></p>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="acknowledgments">Acknowledgments<a class="anchor" aria-label="anchor" href="#acknowledgments"></a>
+</h2>
+<ul>
+<li>
+<strong>TMB Development Team</strong> for the outstanding computational framework</li>
+<li>
+<strong>betareg</strong> and <strong>gamlss</strong> authors for inspiration and design patterns</li>
+<li>
+<strong>R Core Team</strong> for the R language and ecosystem</li>
+<li>Contributors and users providing feedback and bug reports</li>
+</ul>
+<hr>
+<p><strong>Happy Modeling! 📊✨</strong></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

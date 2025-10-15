@@ -177,12 +177,12 @@ x1 <- runif(n, -2, 2)
 x2 <- rnorm(n)
 
 # True parameters (log link)
-alpha_true <- exp(0.8 + 0.3*x1)
-beta_true  <- exp(1.2 - 0.2*x2)
+alpha_true <- exp(0.8 + 0.3 * x1)
+beta_true <- exp(1.2 - 0.2 * x2)
 
 # Generate response from Kumaraswamy distribution
 y <- rkw(n, alpha = alpha_true, beta = beta_true)
-y <- pmax(pmin(y, 1 - 1e-7), 1e-7)  # Ensure strict bounds
+y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure strict bounds
 df <- data.frame(y = y, x1 = x1, x2 = x2)
 
 # Fit Kumaraswamy regression
@@ -203,25 +203,27 @@ newdata <- data.frame(
 )
 
 # Predict different quantities
-pred_mean  <- predict(fit_kw, newdata, type = "response")    # E(Y|X)
-pred_var   <- predict(fit_kw, newdata, type = "variance")    # Var(Y|X)
-pred_alpha <- predict(fit_kw, newdata, type = "alpha")       # α parameter
-pred_params <- predict(fit_kw, newdata, type = "parameter")  # All parameters
+pred_mean <- predict(fit_kw, newdata, type = "response") # E(Y|X)
+pred_var <- predict(fit_kw, newdata, type = "variance") # Var(Y|X)
+pred_alpha <- predict(fit_kw, newdata, type = "alpha") # α parameter
+pred_params <- predict(fit_kw, newdata, type = "parameter") # All parameters
 
 # Evaluate density at y = 0.5 for each observation
 dens_values <- predict(fit_kw, newdata, type = "density", at = 0.5)
 
 # Compute quantiles (10th, 50th, 90th percentiles)
-quantiles <- predict(fit_kw, newdata, type = "quantile", 
-                     at = c(0.1, 0.5, 0.9), elementwise = FALSE)
+quantiles <- predict(fit_kw, newdata,
+  type = "quantile",
+  at = c(0.1, 0.5, 0.9), elementwise = FALSE
+)
 ```
 
 ### Model Comparison
 
 ``` r
 # Fit nested models
-fit0 <- gkwreg(y ~ 1,      data = df, family = "kw")  # Null model
-fit1 <- gkwreg(y ~ x1,     data = df, family = "kw")  # + x1
+fit0 <- gkwreg(y ~ 1, data = df, family = "kw") # Null model
+fit1 <- gkwreg(y ~ x1, data = df, family = "kw") # + x1
 fit2 <- gkwreg(y ~ x1 | x2, data = df, family = "kw") # + x2 on beta
 
 # Information criteria comparison
@@ -239,25 +241,27 @@ par(mfrow = c(3, 2))
 plot(fit_kw, ask = FALSE)
 
 # Select specific plots with customization
-plot(fit_kw, 
-     which = c(2, 5, 6),           # Cook's distance, Half-normal, Pred vs Obs
-     type = "quantile",             # Quantile residuals (recommended)
-     caption = list(
-       "2" = "Influential Points",
-       "5" = "Distributional Check"
-     ),
-     nsim = 200,                    # More accurate envelope
-     level = 0.95)                  # 95% confidence
+plot(fit_kw,
+  which = c(2, 5, 6), # Cook's distance, Half-normal, Pred vs Obs
+  type = "quantile", # Quantile residuals (recommended)
+  caption = list(
+    "2" = "Influential Points",
+    "5" = "Distributional Check"
+  ),
+  nsim = 200, # More accurate envelope
+  level = 0.95
+) # 95% confidence
 
 # Modern ggplot2 version with grid arrangement
-plot(fit_kw, 
-     use_ggplot = TRUE, 
-     arrange_plots = TRUE,
-     theme_fn = ggplot2::theme_bw)
+plot(fit_kw,
+  use_ggplot = TRUE,
+  arrange_plots = TRUE,
+  theme_fn = ggplot2::theme_bw
+)
 
 # Extract diagnostic data for custom analysis
 diag <- plot(fit_kw, save_diagnostics = TRUE)
-head(diag$data)  # Access Cook's distance, leverage, residuals, etc.
+head(diag$data) # Access Cook's distance, leverage, residuals, etc.
 ```
 
 ------------------------------------------------------------------------
@@ -272,8 +276,8 @@ food$prop <- food$food / food$income
 
 # Fit different distributional families
 fit_beta <- gkwreg(prop ~ income + persons, data = food, family = "beta")
-fit_kw   <- gkwreg(prop ~ income + persons, data = food, family = "kw")
-fit_ekw  <- gkwreg(prop ~ income + persons, data = food, family = "ekw")
+fit_kw <- gkwreg(prop ~ income + persons, data = food, family = "kw")
+fit_ekw <- gkwreg(prop ~ income + persons, data = food, family = "ekw")
 
 # Compare families
 comparison <- data.frame(
@@ -286,9 +290,10 @@ print(comparison)
 
 # Visualize best fit
 best_fit <- fit_kw
-plot(food$income, food$prop, 
-     xlab = "Income", ylab = "Food Proportion",
-     main = "Food Expenditure Pattern", pch = 16, col = "gray40")
+plot(food$income, food$prop,
+  xlab = "Income", ylab = "Food Proportion",
+  main = "Food Expenditure Pattern", pch = 16, col = "gray40"
+)
 income_seq <- seq(min(food$income), max(food$income), length = 100)
 pred_df <- data.frame(income = income_seq, persons = median(food$persons))
 lines(income_seq, predict(best_fit, pred_df), col = "red", lwd = 2)
@@ -307,43 +312,51 @@ library(gkwdist)
 # Simulate data
 set.seed(123)
 n <- 500
-x  <- runif(n, 1, 5)
+x <- runif(n, 1, 5)
 x1 <- runif(n, -2, 2)
 x2 <- rnorm(n)
 x3 <- rnorm(n, 1, 4)
 
 # True parameters (log link)
-alpha_true <- exp(0.8 + 0.3*x1)
-beta_true  <- exp(1.2 - 0.2*x2)
+alpha_true <- exp(0.8 + 0.3 * x1)
+beta_true <- exp(1.2 - 0.2 * x2)
 
 # Generate response from Kumaraswamy distribution
 y <- rkw(n, alpha = alpha_true, beta = beta_true)
-y <- pmax(pmin(y, 1 - 1e-7), 1e-7)  # Ensure strict bounds
+y <- pmax(pmin(y, 1 - 1e-7), 1e-7) # Ensure strict bounds
 df <- data.frame(y = y, x = x, x1 = x1, x2 = x2, x3 = x3)
 
 # Default control (used automatically)
 fit <- gkwreg(y ~ x1, data = df, family = "kw")
 
 # Increase iterations for difficult problems
-fit_robust <- gkwreg(y ~ x1, data = df, family = "kw",
-                     control = gkw_control(maxit = 1000, trace = 1))
+fit_robust <- gkwreg(y ~ x1,
+  data = df, family = "kw",
+  control = gkw_control(maxit = 1000, trace = 1)
+)
 
 # Try alternative optimizer
-fit_bfgs <- gkwreg(y ~ x1, data = df, family = "kw",
-                   control = gkw_control(method = "BFGS"))
+fit_bfgs <- gkwreg(y ~ x1,
+  data = df, family = "kw",
+  control = gkw_control(method = "BFGS")
+)
 
 # Fast fitting without standard errors (exploratory analysis)
-fit_fast <- gkwreg(y ~ x1, data = df, family = "kw",
-                   control = gkw_control(hessian = FALSE))
+fit_fast <- gkwreg(y ~ x1,
+  data = df, family = "kw",
+  control = gkw_control(hessian = FALSE)
+)
 
 # Custom starting values
-fit_custom <- gkwreg(y ~ x1 + x2 | x3, data = df, family = "kw",
-                     control = gkw_control(
-                       start = list(
-                         alpha = c(0.5, 0.2, -0.1),  # Intercept + 2 slopes
-                         beta  = c(1.0, 0.3)         # Intercept + 1 slope
-                       )
-                     ))
+fit_custom <- gkwreg(y ~ x1 + x2 | x3,
+  data = df, family = "kw",
+  control = gkw_control(
+    start = list(
+      alpha = c(0.5, 0.2, -0.1), # Intercept + 2 slopes
+      beta  = c(1.0, 0.3) # Intercept + 1 slope
+    )
+  )
+)
 ```
 
 ### Link Functions and Scaling
@@ -353,13 +366,17 @@ fit_custom <- gkwreg(y ~ x1 + x2 | x3, data = df, family = "kw",
 fit_default <- gkwreg(y ~ x | x, data = df, family = "kw")
 
 # Custom link functions per parameter
-fit_links <- gkwreg(y ~ x | x, data = df, family = "kw",
-                    link = list(alpha = "sqrt", beta = "log"))
+fit_links <- gkwreg(y ~ x | x,
+  data = df, family = "kw",
+  link = list(alpha = "sqrt", beta = "log")
+)
 
 # Link scaling (control transformation intensity)
 # Larger scale = gentler transformation, smaller = steeper
-fit_scaled <- gkwreg(y ~ x | x, data = df, family = "kw",
-                     link_scale = list(alpha = 5, beta = 15))
+fit_scaled <- gkwreg(y ~ x | x,
+  data = df, family = "kw",
+  link_scale = list(alpha = 5, beta = 15)
+)
 ```
 
 ### Working with Large Datasets
@@ -369,17 +386,20 @@ fit_scaled <- gkwreg(y ~ x | x, data = df, family = "kw",
 set.seed(456)
 n_large <- 100000
 x_large <- rnorm(n_large)
-y_large <- rkw(n_large, alpha = exp(0.5 + 0.2*x_large), beta = exp(1.0))
+y_large <- rkw(n_large, alpha = exp(0.5 + 0.2 * x_large), beta = exp(1.0))
 df_large <- data.frame(y = y_large, x = x_large)
 
 # Fast fitting
-fit_large <- gkwreg(y ~ x, data = df_large, family = "kw",
-                    control = gkw_control(hessian = FALSE))
+fit_large <- gkwreg(y ~ x,
+  data = df_large, family = "kw",
+  control = gkw_control(hessian = FALSE)
+)
 
 # Diagnostic plots with sampling (much faster)
-plot(fit_large, 
-     which = c(1, 2, 4, 6),    # Skip computationally intensive plot 5
-     sample_size = 5000)        # Use random sample of 5000 obs
+plot(fit_large,
+  which = c(1, 2, 4, 6), # Skip computationally intensive plot 5
+  sample_size = 5000
+) # Use random sample of 5000 obs
 ```
 
 ------------------------------------------------------------------------
