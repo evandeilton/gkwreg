@@ -16,10 +16,9 @@ Kumaraswamy (GKw)** distribution family, offering enhanced flexibility
 by encompassing several important bounded distributions (including Beta
 and Kumaraswamy) as special cases.
 
-The package facilitates both distribution fitting and regression
-modeling with potentially all distribution parameters modeled as
-functions of covariates using various link functions. Estimation is
-performed efficiently via **Maximum Likelihood** leveraging the
+The package facilitates regression modeling with potentially all distribution
+parameters modeled as functions of covariates using various link functions.
+Estimation is performed efficiently via **Maximum Likelihood** leveraging the
 **Template Model Builder (TMB)** framework, which utilizes automatic
 differentiation for superior speed, accuracy, and stability.
 
@@ -207,26 +206,6 @@ plot(kw_model)
 
 # Predicted
 pred <- predict(kw_model)
-```
-
-### Distribution Fitting
-
-Fit a GKw family distribution to univariate data (no covariates):
-
-``` r
-# Simulate data from Beta(2, 3)
-set.seed(2203)
-y_beta <- rbeta_(1000, gamma = 2, delta = 3)
-
-# Fit Beta and Kumaraswamy distributions
-fit_beta <- gkwfit(data = y_beta, family = "beta")
-fit_kw <- gkwfit(data = y_beta, family = "kw")
-
-# Compare models
-summary(fit_beta)
-summary(fit_kw)
-AIC(fit_beta)
-AIC(fit_kw)
 ```
 
 ## Diagnostic Methods
