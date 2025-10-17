@@ -1137,10 +1137,7 @@ gkwreg <- function(formula,
     )
   }
 
-
   # VALIDATION & SETUP
-
-
   # Store the call for the result
   call <- match.call()
 
@@ -1178,10 +1175,8 @@ gkwreg <- function(formula,
   use_nlminb <- (method == "nlminb")
   silent <- control$silent
 
-
   # PARAMETER & FORMULA PROCESSING
   # Using existing internal functions
-
 
   # Get parameter information for the specified family
   param_info <- .get_family_param_info(family)
@@ -1210,10 +1205,8 @@ gkwreg <- function(formula,
   # Convert link strings to integers for TMB
   link_ints <- .convert_links_to_int(link_list)
 
-
   # DATA EXTRACTION & VALIDATION
   # Using existing internal functions
-
 
   # Extract model frames, responses, and model matrices
   model_data <- .extract_model_data(
@@ -1233,18 +1226,14 @@ gkwreg <- function(formula,
   # Validate response is in (0, 1)
   invisible(.validate_data(y_var, length(param_names)))
 
-
   # FIXED PARAMETERS PROCESSING
   # Using existing internal function
-
 
   # Process fixed parameters (from control or family definition)
   fixed_processed <- .process_fixed(control$fixed, param_names, fixed_params)
 
-
   # TMB PREPARATION
   # Using existing internal functions
-
 
   # Prepare TMB data with correct matrices based on family
   tmb_data <- .prepare_tmb_data(
@@ -1282,10 +1271,8 @@ gkwreg <- function(formula,
     }
   }
 
-
   # TMB MODEL COMPILATION
   # Using existing internal function
-
 
   # Determine TMB model name based on family
   if (family == "beta") {
@@ -1309,9 +1296,7 @@ gkwreg <- function(formula,
     silent = silent
   )
 
-
   # OPTIMIZATION
-
 
   if (use_nlminb) {
     # Use nlminb optimizer
@@ -1373,15 +1358,12 @@ gkwreg <- function(formula,
     )
   }
 
-
   # COEFFICIENT NAMING
   # Using existing internal function
-
 
   # Format coefficient names with parameter mappings
   coef_names <- .format_coefficient_names(param_names, model_data, param_positions)
   names(fit_result$coefficients) <- coef_names
-
 
   # HESSIAN & STANDARD ERRORS
 

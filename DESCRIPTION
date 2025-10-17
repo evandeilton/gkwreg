@@ -1,7 +1,7 @@
 Package: gkwreg
 Title: Generalized Kumaraswamy Regression Models for Bounded Data
 Version: 2.0.0
-Authors@R: person(given = "Lopes,",
+Authors@R: person(given = "Lopes",
                   family = "J. E.",
                   role = c("aut", "cre"),
                   email = "evandeilton@gmail.com",
@@ -27,16 +27,19 @@ Imports:
     gridExtra,
     rappdirs,
     numDeriv,
-    gkwdist
-Remotes: 
-    evandeilton/gkwdist    
-LinkingTo: Rcpp, RcppArmadillo, RcppEigen
-Suggests: betareg, knitr, rmarkdown, testthat (>= 3.0.0)
+    gkwdist (>= 0.1.0)
+LinkingTo: 
+    TMB,
+    Rcpp, 
+    RcppArmadillo, 
+    RcppEigen
+Suggests: 
+    betareg, 
+    knitr, 
+    rmarkdown, 
+    testthat (>= 3.0.0)
 Config/testthat/edition: 3
 NeedsCompilation: yes
-Packaged: 2025-07-08 23:44:58 UTC; jlopes
-Author: Lopes J. E. [aut, cre]
-Maintainer: Lopes J. E. <evandeilton@gmail.com>
 Depends: 
     R (>= 3.5)
 LazyData: true

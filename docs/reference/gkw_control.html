@@ -67,6 +67,20 @@ the same design pattern as <code><a href="https://rdrr.io/r/stats/glm.control.ht
 <span>  step.max <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  x.tol <span class="op">=</span> <span class="fl">1.5e-08</span>,</span>
 <span>  rel.tol <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">.Machine</span><span class="op">$</span><span class="va">double.eps</span><span class="op">)</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  beta <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  gamma <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  warn.1d.NelderMead <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  type <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  temp <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  tmax <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  lmm <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  factr <span class="op">=</span> <span class="fl">1e+07</span>,</span>
+<span>  pgtol <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  REPORT <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fnscale <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  parscale <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ndeps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -105,13 +119,15 @@ matrix. Set to <code>FALSE</code> for faster fitting when standard errors are no
 
 <dt id="arg-maxit">maxit<a class="anchor" aria-label="anchor" href="#arg-maxit"></a></dt>
 <dd><p>Integer. Maximum number of iterations for the optimizer.
-Default 500. Increase for difficult optimization problems.</p></dd>
+Default 500 for derivative-based methods, 10000 for SANN.
+Increase for difficult optimization problems.</p></dd>
 
 
 <dt id="arg-reltol">reltol<a class="anchor" aria-label="anchor" href="#arg-reltol"></a></dt>
 <dd><p>Numeric. Relative convergence tolerance for the optimizer.
 Default <code>sqrt(.Machine$double.eps)</code> approx. 1.5e-8. Smaller values require
-tighter convergence but may increase computation time.</p></dd>
+tighter convergence but may increase computation time. Used by Nelder-Mead,
+BFGS, and CG methods.</p></dd>
 
 
 <dt id="arg-abstol">abstol<a class="anchor" aria-label="anchor" href="#arg-abstol"></a></dt>
@@ -122,7 +138,7 @@ Used by some optimization methods as an additional stopping criterion.</p></dd>
 <dt id="arg-trace">trace<a class="anchor" aria-label="anchor" href="#arg-trace"></a></dt>
 <dd><p>Integer. Controls verbosity of the optimizer.</p><ul><li><p>0: Silent (default)</p></li>
 <li><p>1: Print iteration progress</p></li>
-<li><p>2+: Print detailed diagnostic information</p></li>
+<li><p>2+: Print detailed diagnostic information (up to 6 for L-BFGS-B)</p></li>
 </ul><p>Ignored if <code>silent = TRUE</code>.</p></dd>
 
 
@@ -163,6 +179,81 @@ Default <code>sqrt(.Machine$double.eps)</code>. Alternative specification of
 relative tolerance.</p></dd>
 
 
+<dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
+<dd><p>Numeric. Reflection factor for Nelder-Mead method. Default 1.0.
+Only used when <code>method = "Nelder-Mead"</code>.</p></dd>
+
+
+<dt id="arg-beta">beta<a class="anchor" aria-label="anchor" href="#arg-beta"></a></dt>
+<dd><p>Numeric. Contraction factor for Nelder-Mead method. Default 0.5.
+Only used when <code>method = "Nelder-Mead"</code>.</p></dd>
+
+
+<dt id="arg-gamma">gamma<a class="anchor" aria-label="anchor" href="#arg-gamma"></a></dt>
+<dd><p>Numeric. Expansion factor for Nelder-Mead method. Default 2.0.
+Only used when <code>method = "Nelder-Mead"</code>.</p></dd>
+
+
+<dt id="arg-warn-d-neldermead">warn.1d.NelderMead<a class="anchor" aria-label="anchor" href="#arg-warn-d-neldermead"></a></dt>
+<dd><p>Logical. Whether to warn when Nelder-Mead is used
+for one-dimensional optimization. Default <code>TRUE</code>.</p></dd>
+
+
+<dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
+<dd><p>Integer. Update formula for CG method. Options:</p><ul><li><p>1: Fletcher-Reeves update</p></li>
+<li><p>2: Polak-Ribiere update</p></li>
+<li><p>3: Beale-Sorenson update</p></li>
+</ul><p>Default 1. Only used when <code>method = "CG"</code>.</p></dd>
+
+
+<dt id="arg-temp">temp<a class="anchor" aria-label="anchor" href="#arg-temp"></a></dt>
+<dd><p>Numeric. Starting temperature for SANN method. Default 10.
+Only used when <code>method = "SANN"</code>.</p></dd>
+
+
+<dt id="arg-tmax">tmax<a class="anchor" aria-label="anchor" href="#arg-tmax"></a></dt>
+<dd><p>Integer. Number of function evaluations at each temperature
+for SANN method. Default 10. Only used when <code>method = "SANN"</code>.</p></dd>
+
+
+<dt id="arg-lmm">lmm<a class="anchor" aria-label="anchor" href="#arg-lmm"></a></dt>
+<dd><p>Integer. Number of BFGS updates retained in L-BFGS-B method.
+Default 5. Only used when <code>method = "L-BFGS-B"</code>.</p></dd>
+
+
+<dt id="arg-factr">factr<a class="anchor" aria-label="anchor" href="#arg-factr"></a></dt>
+<dd><p>Numeric. Convergence tolerance factor for L-BFGS-B method.
+Convergence occurs when the reduction in the objective is within this
+factor of the machine tolerance. Default 1e7 (tolerance ~1e-8).
+Only used when <code>method = "L-BFGS-B"</code>.</p></dd>
+
+
+<dt id="arg-pgtol">pgtol<a class="anchor" aria-label="anchor" href="#arg-pgtol"></a></dt>
+<dd><p>Numeric. Tolerance on the projected gradient for L-BFGS-B method.
+Default 0 (check suppressed). Only used when <code>method = "L-BFGS-B"</code>.</p></dd>
+
+
+<dt id="arg-report">REPORT<a class="anchor" aria-label="anchor" href="#arg-report"></a></dt>
+<dd><p>Integer. Frequency of progress reports for BFGS, L-BFGS-B and SANN
+methods when <code>trace &gt; 0</code>. Default 10 for BFGS/L-BFGS-B, 100 for SANN.</p></dd>
+
+
+<dt id="arg-fnscale">fnscale<a class="anchor" aria-label="anchor" href="#arg-fnscale"></a></dt>
+<dd><p>Numeric. Overall scaling to be applied to the function value
+and gradient during optimization. Default 1. If negative, turns the problem
+into a maximization problem.</p></dd>
+
+
+<dt id="arg-parscale">parscale<a class="anchor" aria-label="anchor" href="#arg-parscale"></a></dt>
+<dd><p>Numeric vector. Scaling values for parameters. Optimization
+is performed on par/parscale. Default <code>rep(1, n_params)</code>.</p></dd>
+
+
+<dt id="arg-ndeps">ndeps<a class="anchor" aria-label="anchor" href="#arg-ndeps"></a></dt>
+<dd><p>Numeric vector. Step sizes for finite-difference approximation
+to the gradient. Default 1e-3.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to the optimizer. Allows fine-grained
 control without formally adding parameters. Advanced users only.</p></dd>
@@ -186,6 +277,13 @@ for model fitting. It serves several purposes:</p><ul><li><p><strong>Clean inter
 <li><p><strong>Input validation</strong>: Parameters validated before fitting</p></li>
 <li><p><strong>Extensibility</strong>: New options can be added without changing <code><a href="gkwreg.html">gkwreg()</a></code></p></li>
 <li><p><strong>Backward compatibility</strong>: Old code continues working</p></li>
+</ul><p><strong>Method-specific parameters:</strong></p>
+<p>Each optimization method accepts different control parameters:</p><ul><li><p><strong>Nelder-Mead</strong>: <code>alpha</code>, <code>beta</code>, <code>gamma</code>, <code>maxit</code>,
+<code>reltol</code>, <code>abstol</code>, <code>trace</code>, <code>REPORT</code>, <code>warn.1d.NelderMead</code></p></li>
+<li><p><strong>BFGS</strong>: <code>maxit</code>, <code>reltol</code>, <code>abstol</code>, <code>trace</code>, <code>REPORT</code></p></li>
+<li><p><strong>CG</strong>: <code>type</code>, <code>maxit</code>, <code>reltol</code>, <code>abstol</code>, <code>trace</code></p></li>
+<li><p><strong>SANN</strong>: <code>temp</code>, <code>tmax</code>, <code>maxit</code>, <code>trace</code>, <code>REPORT</code></p></li>
+<li><p><strong>L-BFGS-B</strong>: <code>lmm</code>, <code>factr</code>, <code>pgtol</code>, <code>trace</code>, <code>REPORT</code></p></li>
 </ul><p><strong>When to use gkw_control():</strong></p>
 <p>Most users never need to adjust these settings. Use <code>gkw_control()</code> when:</p><ul><li><p>Optimization fails to converge (increase <code>maxit</code>, adjust tolerances)</p></li>
 <li><p>Debugging fit problems (set <code>silent = FALSE</code>, <code>trace = 1</code>)</p></li>
@@ -197,11 +295,17 @@ for model fitting. It serves several purposes:</p><ul><li><p><strong>Clean inter
 <li><p>Use <code>trace = 1</code> to diagnose convergence issues</p></li>
 <li><p>Disable <code>hessian</code> for speed if only point estimates needed</p></li>
 <li><p>Try different <code>method</code>s if one fails (BFGS often more robust)</p></li>
+<li><p>For L-BFGS-B with bounds, adjust <code>factr</code> and <code>pgtol</code> if needed</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Nocedal, J., &amp; Wright, S. J. (2006). <em>Numerical Optimization</em> (2nd ed.).
 Springer.</p>
+<p>Belisle, C. J. P. (1992). Convergence theorems for a class of simulated
+annealing algorithms on R^d. <em>Journal of Applied Probability</em>, 29, 885-895.</p>
+<p>Byrd, R. H., Lu, P., Nocedal, J. and Zhu, C. (1995). A limited memory
+algorithm for bound constrained optimization.
+<em>SIAM Journal on Scientific Computing</em>, 16, 1190-1208.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -225,7 +329,8 @@ Springer.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Optimization:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Method:             nlminb </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Max iterations:     500 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Max evaluations:    500 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Max iterations:     300 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Relative tolerance: 1.490116e-08 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Absolute tolerance: 0e+00 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -252,6 +357,28 @@ Springer.</p>
 <span class="r-in"><span>    beta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="op">-</span><span class="fl">0.3</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Configure Nelder-Mead with custom reflection/contraction</span></span></span>
+<span class="r-in"><span><span class="va">ctrl_nm</span> <span class="op">&lt;-</span> <span class="fu">gkw_control</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  method <span class="op">=</span> <span class="st">"Nelder-Mead"</span>,</span></span>
+<span class="r-in"><span>  alpha <span class="op">=</span> <span class="fl">1.5</span>,</span></span>
+<span class="r-in"><span>  beta <span class="op">=</span> <span class="fl">0.75</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Configure L-BFGS-B for bounded optimization</span></span></span>
+<span class="r-in"><span><span class="va">ctrl_lbfgsb</span> <span class="op">&lt;-</span> <span class="fu">gkw_control</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  method <span class="op">=</span> <span class="st">"L-BFGS-B"</span>,</span></span>
+<span class="r-in"><span>  factr <span class="op">=</span> <span class="fl">1e6</span>,</span></span>
+<span class="r-in"><span>  lmm <span class="op">=</span> <span class="fl">10</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Configure SANN for rough surfaces</span></span></span>
+<span class="r-in"><span><span class="va">ctrl_sann</span> <span class="op">&lt;-</span> <span class="fu">gkw_control</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  method <span class="op">=</span> <span class="st">"SANN"</span>,</span></span>
+<span class="r-in"><span>  temp <span class="op">=</span> <span class="fl">20</span>,</span></span>
+<span class="r-in"><span>  tmax <span class="op">=</span> <span class="fl">20</span>,</span></span>
+<span class="r-in"><span>  maxit <span class="op">=</span> <span class="fl">20000</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
@@ -261,7 +388,7 @@ Springer.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Lopes, J. E..</p>
+  <p>Developed by Lopes J. E..</p>
 </div>
 
 <div class="pkgdown-footer-right">

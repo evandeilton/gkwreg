@@ -21,6 +21,20 @@ gkw_control(
   step.max = 1,
   x.tol = 1.5e-08,
   rel.tol = sqrt(.Machine$double.eps),
+  alpha = 1,
+  beta = 0.5,
+  gamma = 2,
+  warn.1d.NelderMead = TRUE,
+  type = 1,
+  temp = 10,
+  tmax = 10,
+  lmm = 5,
+  factr = 1e+07,
+  pgtol = 0,
+  REPORT = NULL,
+  fnscale = 1,
+  parscale = NULL,
+  ndeps = NULL,
   ...
 )
 
@@ -45,11 +59,13 @@ via \code{\link[TMB]{sdreport}} to obtain standard errors and variance-covarianc
 matrix. Set to \code{FALSE} for faster fitting when standard errors are not needed.}
 
 \item{maxit}{Integer. Maximum number of iterations for the optimizer.
-Default 500. Increase for difficult optimization problems.}
+Default 500 for derivative-based methods, 10000 for SANN.
+Increase for difficult optimization problems.}
 
 \item{reltol}{Numeric. Relative convergence tolerance for the optimizer.
 Default \code{sqrt(.Machine$double.eps)} approx. 1.5e-8. Smaller values require
-tighter convergence but may increase computation time.}
+tighter convergence but may increase computation time. Used by Nelder-Mead,
+BFGS, and CG methods.}
 
 \item{abstol}{Numeric. Absolute convergence tolerance. Default 0.
 Used by some optimization methods as an additional stopping criterion.}
@@ -58,7 +74,7 @@ Used by some optimization methods as an additional stopping criterion.}
 \itemize{
 \item 0: Silent (default)
 \item 1: Print iteration progress
-\item 2+: Print detailed diagnostic information
+\item 2+: Print detailed diagnostic information (up to 6 for L-BFGS-B)
 }
 Ignored if \code{silent = TRUE}.}
 
@@ -84,6 +100,56 @@ Default 1.5e-8. Optimizer stops if parameter changes are smaller than this.}
 \item{rel.tol}{Numeric. Relative tolerance for function value (nlminb only).
 Default \code{sqrt(.Machine$double.eps)}. Alternative specification of
 relative tolerance.}
+
+\item{alpha}{Numeric. Reflection factor for Nelder-Mead method. Default 1.0.
+Only used when \code{method = "Nelder-Mead"}.}
+
+\item{beta}{Numeric. Contraction factor for Nelder-Mead method. Default 0.5.
+Only used when \code{method = "Nelder-Mead"}.}
+
+\item{gamma}{Numeric. Expansion factor for Nelder-Mead method. Default 2.0.
+Only used when \code{method = "Nelder-Mead"}.}
+
+\item{warn.1d.NelderMead}{Logical. Whether to warn when Nelder-Mead is used
+for one-dimensional optimization. Default \code{TRUE}.}
+
+\item{type}{Integer. Update formula for CG method. Options:
+\itemize{
+\item 1: Fletcher-Reeves update
+\item 2: Polak-Ribiere update
+\item 3: Beale-Sorenson update
+}
+Default 1. Only used when \code{method = "CG"}.}
+
+\item{temp}{Numeric. Starting temperature for SANN method. Default 10.
+Only used when \code{method = "SANN"}.}
+
+\item{tmax}{Integer. Number of function evaluations at each temperature
+for SANN method. Default 10. Only used when \code{method = "SANN"}.}
+
+\item{lmm}{Integer. Number of BFGS updates retained in L-BFGS-B method.
+Default 5. Only used when \code{method = "L-BFGS-B"}.}
+
+\item{factr}{Numeric. Convergence tolerance factor for L-BFGS-B method.
+Convergence occurs when the reduction in the objective is within this
+factor of the machine tolerance. Default 1e7 (tolerance ~1e-8).
+Only used when \code{method = "L-BFGS-B"}.}
+
+\item{pgtol}{Numeric. Tolerance on the projected gradient for L-BFGS-B method.
+Default 0 (check suppressed). Only used when \code{method = "L-BFGS-B"}.}
+
+\item{REPORT}{Integer. Frequency of progress reports for BFGS, L-BFGS-B and SANN
+methods when \code{trace > 0}. Default 10 for BFGS/L-BFGS-B, 100 for SANN.}
+
+\item{fnscale}{Numeric. Overall scaling to be applied to the function value
+and gradient during optimization. Default 1. If negative, turns the problem
+into a maximization problem.}
+
+\item{parscale}{Numeric vector. Scaling values for parameters. Optimization
+is performed on par/parscale. Default \code{rep(1, n_params)}.}
+
+\item{ndeps}{Numeric vector. Step sizes for finite-difference approximation
+to the gradient. Default 1e-3.}
 
 \item{...}{Additional arguments passed to the optimizer. Allows fine-grained
 control without formally adding parameters. Advanced users only.}
@@ -113,6 +179,18 @@ for model fitting. It serves several purposes:
 \item \strong{Backward compatibility}: Old code continues working
 }
 
+\strong{Method-specific parameters:}
+
+Each optimization method accepts different control parameters:
+\itemize{
+\item \strong{Nelder-Mead}: \code{alpha}, \code{beta}, \code{gamma}, \code{maxit},
+\code{reltol}, \code{abstol}, \code{trace}, \code{REPORT}, \code{warn.1d.NelderMead}
+\item \strong{BFGS}: \code{maxit}, \code{reltol}, \code{abstol}, \code{trace}, \code{REPORT}
+\item \strong{CG}: \code{type}, \code{maxit}, \code{reltol}, \code{abstol}, \code{trace}
+\item \strong{SANN}: \code{temp}, \code{tmax}, \code{maxit}, \code{trace}, \code{REPORT}
+\item \strong{L-BFGS-B}: \code{lmm}, \code{factr}, \code{pgtol}, \code{trace}, \code{REPORT}
+}
+
 \strong{When to use gkw_control():}
 
 Most users never need to adjust these settings. Use \code{gkw_control()} when:
@@ -131,6 +209,7 @@ Most users never need to adjust these settings. Use \code{gkw_control()} when:
 \item Use \code{trace = 1} to diagnose convergence issues
 \item Disable \code{hessian} for speed if only point estimates needed
 \item Try different \code{method}s if one fails (BFGS often more robust)
+\item For L-BFGS-B with bounds, adjust \code{factr} and \code{pgtol} if needed
 }
 }
 \examples{
@@ -158,12 +237,41 @@ ctrl_start <- gkw_control(
     beta = c(1.0, -0.3)
   )
 )
+
+# Configure Nelder-Mead with custom reflection/contraction
+ctrl_nm <- gkw_control(
+  method = "Nelder-Mead",
+  alpha = 1.5,
+  beta = 0.75
+)
+
+# Configure L-BFGS-B for bounded optimization
+ctrl_lbfgsb <- gkw_control(
+  method = "L-BFGS-B",
+  factr = 1e6,
+  lmm = 10
+)
+
+# Configure SANN for rough surfaces
+ctrl_sann <- gkw_control(
+  method = "SANN",
+  temp = 20,
+  tmax = 20,
+  maxit = 20000
+)
 }
 
 }
 \references{
 Nocedal, J., & Wright, S. J. (2006). \emph{Numerical Optimization} (2nd ed.).
 Springer.
+
+Belisle, C. J. P. (1992). Convergence theorems for a class of simulated
+annealing algorithms on R^d. \emph{Journal of Applied Probability}, 29, 885-895.
+
+Byrd, R. H., Lu, P., Nocedal, J. and Zhu, C. (1995). A limited memory
+algorithm for bound constrained optimization.
+\emph{SIAM Journal on Scientific Computing}, 16, 1190-1208.
 }
 \seealso{
 \code{\link{gkwreg}} for the main fitting function,
