@@ -469,6 +469,8 @@ values and heavy tails</p></li>
 Four-parameter alternatives when three parameters insufficient</p></li>
 <li><p><strong>McDonald (mc)</strong>: Beta generalization via power parameter, useful
 for J-shaped distributions</p></li>
+<li><p><strong>Kumaraswamy-Kumaraswamy (kkw)</strong>: Most flexible, use only when
+simpler families inadequate. It extends kw</p></li>
 <li><p><strong>Generalized Kumaraswamy (gkw)</strong>: Most flexible, use only when
 simpler families inadequate</p></li>
 </ul><p><strong>4. Avoid Overfitting:</strong> More different parameters better model. Use cross-validation
@@ -1912,7 +1914,7 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Much smaller object</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/object.size.html" class="external-link">object.size</a></span><span class="op">(</span><span class="va">fit_minimal</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 745864 bytes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 745256 bytes</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Trade-off: Limited post-fitting capabilities</span></span></span>
 <span class="r-in"><span><span class="co"># Can still use: coef(), logLik(), AIC(), BIC()</span></span></span>
@@ -2108,7 +2110,7 @@ for the GKw distribution family functions</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Lopes, J. E..</p>
+  <p>Developed by Lopes J. E..</p>
 </div>
 
 <div class="pkgdown-footer-right">
