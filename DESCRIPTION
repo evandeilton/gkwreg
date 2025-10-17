@@ -38,6 +38,8 @@ Suggests:
     knitr, 
     rmarkdown, 
     testthat (>= 3.0.0)
+Remotes:
+  evandeilton/gkwdist
 Config/testthat/edition: 3
 NeedsCompilation: yes
 Depends: 

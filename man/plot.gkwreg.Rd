@@ -404,114 +404,125 @@ df <- data.frame(y = y, x1 = x1, x2 = x2)
 model <- gkwreg(y ~ x1 | x2, data = df, family = "kw")
 
 # Generate all diagnostic plots with defaults
-plot(model)
+par(mfrow = c(3,2))
+plot(model, ask = FALSE)
 
 # EXAMPLE 2: Selective Plots with Custom Residual Type
 
 # Focus on key diagnostic plots only
+par(mfrow = c(3,1))
 plot(model,
-  which = c(2, 4, 5), # Cook's distance, Resid vs LinPred, Half-normal
-  type = "pearson"
+     which = c(2, 4, 5), # Cook's distance, Resid vs LinPred, Half-normal
+     type = "pearson"
 ) # Use Pearson residuals
 
 # Check for influential points (plot 2) and non-linearity (plot 4)
+par(mfrow = c(2,1))
 plot(model,
-  which = c(2, 4),
-  type = "deviance"
+     which = c(2, 4),
+     type = "deviance"
 )
 
 # EXAMPLE 3: Caption Customization - New Named List Interface
 
 # Customize only specific plot titles (RECOMMENDED NEW WAY)
+par(mfrow = c(3,1))
 plot(model,
-  which = c(1, 4, 6),
-  caption = list(
-    "1" = "Time Pattern Check",
-    "4" = "Linearity Assessment",
-    "6" = "Predictive Accuracy"
-  )
+     which = c(1, 4, 6),
+     caption = list(
+       "1" = "Time Pattern Check",
+       "4" = "Linearity Assessment",
+       "6" = "Predictive Accuracy"
+     )
 )
 
 # Customize subtitle and main title
+par(mfrow = c(2,1))
 plot(model,
-  which = c(1, 5),
-  main = "Model Diagnostics",
-  sub.caption = "Kumaraswamy Regression - Training Data",
-  caption = list("5" = "Normality Check with 95\% Envelope")
+     which = c(1, 5),
+     main = "Model Diagnostics",
+     sub.caption = "Kumaraswamy Regression - Training Data",
+     caption = list("5" = "Normality Check with 95\% Envelope")
 )
 
 # Suppress subtitle entirely
+par(mfrow = c(3,2))
 plot(model, sub.caption = "")
 
 # EXAMPLE 4: Backward Compatible Caption (Vector Interface)
 
 # OLD WAY - still fully supported
+par(mfrow = c(3,2))
 plot(model,
-  which = 1:6,
-  caption = c(
-    "Residual Pattern Analysis",
-    "Influence Diagnostics",
-    "Leverage Assessment",
-    "Linearity Check",
-    "Distributional Fit",
-    "Prediction Quality"
-  )
+     which = 1:6,
+     caption = c(
+       "Residual Pattern Analysis",
+       "Influence Diagnostics",
+       "Leverage Assessment",
+       "Linearity Check",
+       "Distributional Fit",
+       "Prediction Quality"
+     )
 )
 
 # EXAMPLE 5: ggplot2 Graphics with Theming
 
 # Modern publication-quality plots
 plot(model,
-  use_ggplot = TRUE
+     use_ggplot = TRUE,
+     arrange_plots = TRUE
 )
 
 # With custom theme
 plot(model,
-  use_ggplot = TRUE,
-  theme_fn = ggplot2::theme_bw
+     use_ggplot = TRUE,
+     theme_fn = ggplot2::theme_bw,
+     arrange_plots = TRUE
 )
 
 # With classic theme and custom colors (via ...)
 plot(model,
-  use_ggplot = TRUE,
-  theme_fn = ggplot2::theme_classic
+     use_ggplot = TRUE,
+     theme_fn = ggplot2::theme_classic,
+     arrange_plots = TRUE
 )
 
 # EXAMPLE 6: Arranged Multi-Panel ggplot2 Display
 
 # Requires gridExtra or ggpubr package
 plot(model,
-  which = 1:4,
-  use_ggplot = TRUE,
-  arrange_plots = TRUE, # Arrange in grid
-  theme_fn = ggplot2::theme_minimal
+     which = 1:4,
+     use_ggplot = TRUE,
+     arrange_plots = TRUE, # Arrange in grid
+     theme_fn = ggplot2::theme_minimal
 )
 
 # Focus plots in 2x2 grid
 plot(model,
-  which = c(2, 3, 4, 6),
-  use_ggplot = TRUE,
-  arrange_plots = TRUE,
-  caption = list(
-    "2" = "Influential Cases",
-    "3" = "High Leverage Points"
-  )
+     which = c(2, 3, 4, 6),
+     use_ggplot = TRUE,
+     arrange_plots = TRUE,
+     caption = list(
+       "2" = "Influential Cases",
+       "3" = "High Leverage Points"
+     )
 )
 
 # EXAMPLE 7: Half-Normal Plot Customization
 
 # Higher precision envelope (more simulations)
+par(mfrow = c(1,2))
 plot(model,
-  which = 5,
-  nsim = 500, # More accurate envelope
-  level = 0.95
+     which = 5,
+     nsim = 500, # More accurate envelope
+     level = 0.95
 ) # 95\% confidence level
 
 # Quick envelope for large datasets
 plot(model,
-  which = 5,
-  nsim = 500, # Faster computation
-  level = 0.90
+     which = 5,
+     nsim = 500, # Faster computation
+     level = 0.90
 )
 
 # EXAMPLE 8: Different Residual Types Comparison
@@ -530,17 +541,19 @@ plot(model, which = 5, type = "quantile")
 
 # Compare diagnostics under different distributional assumptions
 # Helps assess if alternative family would fit better
+par(mfrow = c(2,2))
 plot(model,
-  which = c(5, 6),
-  family = "kw", # Original family
-  main = "Kumaraswamy"
+     which = c(5, 6),
+     family = "kw", # Original family
+     main = "Kumaraswamy"
 )
 
 plot(model,
-  which = c(5, 6),
-  family = "beta", # Alternative family
-  main = "Beta"
+     which = c(5, 6),
+     family = "beta", # Alternative family
+     main = "Beta"
 )
+par(mfrow = c(1,1))
 
 # EXAMPLE 10: Large Dataset - Performance Optimization
 
@@ -559,24 +572,26 @@ model_large <- gkwreg(y ~ x1 | x2, data = df_large, family = "kw")
 # Optimized plotting for large dataset
 par(mfrow = c(2, 2), mar = c(3, 3, 2, 2))
 plot(model_large,
-  which = c(1, 2, 4, 6), # Skip computationally intensive plot 5
-  sample_size = 2000, # Use random sample of 2000 observations
-  ask = FALSE
+     which = c(1, 2, 4, 6), # Skip computationally intensive plot 5
+     sample_size = 2000, # Use random sample of 2000 observations
+     ask = FALSE
 ) # Don't prompt
 
 # If half-normal plot needed, reduce simulations
+par(mfrow = c(1,1))
 plot(model_large,
-  which = 5,
-  sample_size = 1000, # Smaller sample
-  nsim = 50
+     which = 5,
+     sample_size = 1000, # Smaller sample
+     nsim = 50
 ) # Fewer simulations
 
 # EXAMPLE 11: Saving Diagnostic Data for Custom Analysis
 
 # Extract diagnostic measures without plotting
+par(mfrow = c(1,1))
 diag_data <- plot(model_large,
-  which = 1:6,
-  save_diagnostics = TRUE
+                  which = 1:6,
+                  save_diagnostics = TRUE
 )
 
 # Examine structure
@@ -587,62 +602,52 @@ head(diag_data$data) # Residuals, Cook's distance, leverage, etc.
 
 # Identify influential observations
 influential <- which(diag_data$data$cook_dist > diag_data$model_info$cook_threshold)
-cat("Influential observations:", influential, "\n")
+cat("Influential observations:", head(influential), "\n")
 
 # High leverage points
 high_lev <- which(diag_data$data$leverage > diag_data$model_info$leverage_threshold)
-cat("High leverage points:", high_lev, "\n")
+cat("High leverage points:", head(high_lev), "\n")
 
 # Custom diagnostic plot using saved data
 plot(diag_data$data$fitted, diag_data$data$resid,
-  xlab = "Fitted Values", ylab = "Residuals",
-  main = "Custom Diagnostic Plot",
-  col = ifelse(diag_data$data$cook_dist >
-    diag_data$model_info$cook_threshold, "red", "black"),
-  pch = 16
+     xlab = "Fitted Values", ylab = "Residuals",
+     main = "Custom Diagnostic Plot",
+     col = ifelse(diag_data$data$cook_dist >
+                    diag_data$model_info$cook_threshold, "red", "black"),
+     pch = 16
 )
 abline(h = 0, col = "gray", lty = 2)
 legend("topright", legend = "Influential", col = "red", pch = 16)
 
 # EXAMPLE 12: Interactive Plotting Control
 
-# Force prompting between plots (useful for presentations)
-plot(model,
-  which = 1:6,
-  ask = TRUE
-) # Will prompt even if plots fit on screen
-
+# ask = TRUE Force prompting between plots (useful for presentations)
 # Disable prompting (batch processing)
+par(mfrow = c(3,2))
 plot(model,
-  which = 1:6,
-  ask = FALSE
+     which = 1:6,
+     ask = FALSE
 ) # Never prompts
-
-# Let function decide (default behavior)
-plot(model,
-  which = 1:6,
-  ask = NULL
-) # Auto: prompts only if needed
-
 
 # EXAMPLE 13: Base R Graphics Customization via ...
 
 # Customize point appearance
+par(mfrow = c(2,2))
 plot(model,
-  which = c(1, 4, 6),
-  pch = 16, # Filled circles
-  col = "steelblue", # Blue points
-  cex = 0.8
+     which = c(1, 4, 6),
+     pch = 16, # Filled circles
+     col = "steelblue", # Blue points
+     cex = 0.8
 ) # Smaller points
 
 # Multiple customizations
 plot(model,
-  which = 2,
-  pch = 21, # Circles with border
-  col = "black", # Border color
-  bg = "lightblue", # Fill color
-  cex = 1.2, # Larger points
-  lwd = 2
+     which = 2,
+     pch = 21, # Circles with border
+     col = "black", # Border color
+     bg = "lightblue", # Fill color
+     cex = 1.2, # Larger points
+     lwd = 2
 ) # Thicker lines
 
 # EXAMPLE 14: Comparing Models

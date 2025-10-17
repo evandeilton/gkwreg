@@ -339,6 +339,8 @@ values and heavy tails
 Four-parameter alternatives when three parameters insufficient
 \item \strong{McDonald (mc)}: Beta generalization via power parameter, useful
 for J-shaped distributions
+\item \strong{Kumaraswamy-Kumaraswamy (kkw)}: Most flexible, use only when
+simpler families inadequate. It extends kw
 \item \strong{Generalized Kumaraswamy (gkw)}: Most flexible, use only when
 simpler families inadequate
 }

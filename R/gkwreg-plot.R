@@ -407,17 +407,20 @@
 #' model <- gkwreg(y ~ x1 | x2, data = df, family = "kw")
 #'
 #' # Generate all diagnostic plots with defaults
-#' plot(model)
+#' par(mfrow = c(3, 2))
+#' plot(model, ask = FALSE)
 #'
 #' # EXAMPLE 2: Selective Plots with Custom Residual Type
 #'
 #' # Focus on key diagnostic plots only
+#' par(mfrow = c(3, 1))
 #' plot(model,
 #'   which = c(2, 4, 5), # Cook's distance, Resid vs LinPred, Half-normal
 #'   type = "pearson"
 #' ) # Use Pearson residuals
 #'
 #' # Check for influential points (plot 2) and non-linearity (plot 4)
+#' par(mfrow = c(2, 1))
 #' plot(model,
 #'   which = c(2, 4),
 #'   type = "deviance"
@@ -426,6 +429,7 @@
 #' # EXAMPLE 3: Caption Customization - New Named List Interface
 #'
 #' # Customize only specific plot titles (RECOMMENDED NEW WAY)
+#' par(mfrow = c(3, 1))
 #' plot(model,
 #'   which = c(1, 4, 6),
 #'   caption = list(
@@ -436,6 +440,7 @@
 #' )
 #'
 #' # Customize subtitle and main title
+#' par(mfrow = c(2, 1))
 #' plot(model,
 #'   which = c(1, 5),
 #'   main = "Model Diagnostics",
@@ -444,11 +449,13 @@
 #' )
 #'
 #' # Suppress subtitle entirely
+#' par(mfrow = c(3, 2))
 #' plot(model, sub.caption = "")
 #'
 #' # EXAMPLE 4: Backward Compatible Caption (Vector Interface)
 #'
 #' # OLD WAY - still fully supported
+#' par(mfrow = c(3, 2))
 #' plot(model,
 #'   which = 1:6,
 #'   caption = c(
@@ -465,19 +472,22 @@
 #'
 #' # Modern publication-quality plots
 #' plot(model,
-#'   use_ggplot = TRUE
+#'   use_ggplot = TRUE,
+#'   arrange_plots = TRUE
 #' )
 #'
 #' # With custom theme
 #' plot(model,
 #'   use_ggplot = TRUE,
-#'   theme_fn = ggplot2::theme_bw
+#'   theme_fn = ggplot2::theme_bw,
+#'   arrange_plots = TRUE
 #' )
 #'
 #' # With classic theme and custom colors (via ...)
 #' plot(model,
 #'   use_ggplot = TRUE,
-#'   theme_fn = ggplot2::theme_classic
+#'   theme_fn = ggplot2::theme_classic,
+#'   arrange_plots = TRUE
 #' )
 #'
 #' # EXAMPLE 6: Arranged Multi-Panel ggplot2 Display
@@ -504,6 +514,7 @@
 #' # EXAMPLE 7: Half-Normal Plot Customization
 #'
 #' # Higher precision envelope (more simulations)
+#' par(mfrow = c(1, 2))
 #' plot(model,
 #'   which = 5,
 #'   nsim = 500, # More accurate envelope
@@ -533,6 +544,7 @@
 #'
 #' # Compare diagnostics under different distributional assumptions
 #' # Helps assess if alternative family would fit better
+#' par(mfrow = c(2, 2))
 #' plot(model,
 #'   which = c(5, 6),
 #'   family = "kw", # Original family
@@ -544,6 +556,7 @@
 #'   family = "beta", # Alternative family
 #'   main = "Beta"
 #' )
+#' par(mfrow = c(1, 1))
 #'
 #' # EXAMPLE 10: Large Dataset - Performance Optimization
 #'
@@ -568,6 +581,7 @@
 #' ) # Don't prompt
 #'
 #' # If half-normal plot needed, reduce simulations
+#' par(mfrow = c(1, 1))
 #' plot(model_large,
 #'   which = 5,
 #'   sample_size = 1000, # Smaller sample
@@ -577,6 +591,7 @@
 #' # EXAMPLE 11: Saving Diagnostic Data for Custom Analysis
 #'
 #' # Extract diagnostic measures without plotting
+#' par(mfrow = c(1, 1))
 #' diag_data <- plot(model_large,
 #'   which = 1:6,
 #'   save_diagnostics = TRUE
@@ -590,11 +605,11 @@
 #'
 #' # Identify influential observations
 #' influential <- which(diag_data$data$cook_dist > diag_data$model_info$cook_threshold)
-#' cat("Influential observations:", influential, "\n")
+#' cat("Influential observations:", head(influential), "\n")
 #'
 #' # High leverage points
 #' high_lev <- which(diag_data$data$leverage > diag_data$model_info$leverage_threshold)
-#' cat("High leverage points:", high_lev, "\n")
+#' cat("High leverage points:", head(high_lev), "\n")
 #'
 #' # Custom diagnostic plot using saved data
 #' plot(diag_data$data$fitted, diag_data$data$resid,
@@ -609,28 +624,18 @@
 #'
 #' # EXAMPLE 12: Interactive Plotting Control
 #'
-#' # Force prompting between plots (useful for presentations)
-#' plot(model,
-#'   which = 1:6,
-#'   ask = TRUE
-#' ) # Will prompt even if plots fit on screen
-#'
+#' # ask = TRUE Force prompting between plots (useful for presentations)
 #' # Disable prompting (batch processing)
+#' par(mfrow = c(3, 2))
 #' plot(model,
 #'   which = 1:6,
 #'   ask = FALSE
 #' ) # Never prompts
 #'
-#' # Let function decide (default behavior)
-#' plot(model,
-#'   which = 1:6,
-#'   ask = NULL
-#' ) # Auto: prompts only if needed
-#'
-#'
 #' # EXAMPLE 13: Base R Graphics Customization via ...
 #'
 #' # Customize point appearance
+#' par(mfrow = c(2, 2))
 #' plot(model,
 #'   which = c(1, 4, 6),
 #'   pch = 16, # Filled circles
