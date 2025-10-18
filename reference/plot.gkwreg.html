@@ -462,7 +462,7 @@ Oxford University Press.</p>
 <span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">|</span> <span class="va">x2</span>, data <span class="op">=</span> <span class="va">df</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Generate all diagnostic plots with defaults</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>, ask <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-1.png" alt="" width="700" height="433"></span>
@@ -470,49 +470,49 @@ Oxford University Press.</p>
 <span class="r-in"><span><span class="co"># EXAMPLE 2: Selective Plots with Custom Residual Type</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Focus on key diagnostic plots only</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">5</span><span class="op">)</span>, <span class="co"># Cook's distance, Resid vs LinPred, Half-normal</span></span></span>
-<span class="r-in"><span>     type <span class="op">=</span> <span class="st">"pearson"</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">5</span><span class="op">)</span>, <span class="co"># Cook's distance, Resid vs LinPred, Half-normal</span></span></span>
+<span class="r-in"><span>  type <span class="op">=</span> <span class="st">"pearson"</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="co"># Use Pearson residuals</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Check for influential points (plot 2) and non-linearity (plot 4)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>     type <span class="op">=</span> <span class="st">"deviance"</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  type <span class="op">=</span> <span class="st">"deviance"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plot.gkwreg-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># EXAMPLE 3: Caption Customization - New Named List Interface</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Customize only specific plot titles (RECOMMENDED NEW WAY)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>     caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>       <span class="st">"1"</span> <span class="op">=</span> <span class="st">"Time Pattern Check"</span>,</span></span>
-<span class="r-in"><span>       <span class="st">"4"</span> <span class="op">=</span> <span class="st">"Linearity Assessment"</span>,</span></span>
-<span class="r-in"><span>       <span class="st">"6"</span> <span class="op">=</span> <span class="st">"Predictive Accuracy"</span></span></span>
-<span class="r-in"><span>     <span class="op">)</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="st">"1"</span> <span class="op">=</span> <span class="st">"Time Pattern Check"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"4"</span> <span class="op">=</span> <span class="st">"Linearity Assessment"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"6"</span> <span class="op">=</span> <span class="st">"Predictive Accuracy"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plot.gkwreg-4.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Customize subtitle and main title</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>     main <span class="op">=</span> <span class="st">"Model Diagnostics"</span>,</span></span>
-<span class="r-in"><span>     sub.caption <span class="op">=</span> <span class="st">"Kumaraswamy Regression - Training Data"</span>,</span></span>
-<span class="r-in"><span>     caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"5"</span> <span class="op">=</span> <span class="st">"Normality Check with 95% Envelope"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  main <span class="op">=</span> <span class="st">"Model Diagnostics"</span>,</span></span>
+<span class="r-in"><span>  sub.caption <span class="op">=</span> <span class="st">"Kumaraswamy Regression - Training Data"</span>,</span></span>
+<span class="r-in"><span>  caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"5"</span> <span class="op">=</span> <span class="st">"Normality Check with 95% Envelope"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-5.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Suppress subtitle entirely</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>, sub.caption <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-6.png" alt="" width="700" height="433"></span>
@@ -520,17 +520,17 @@ Oxford University Press.</p>
 <span class="r-in"><span><span class="co"># EXAMPLE 4: Backward Compatible Caption (Vector Interface)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># OLD WAY - still fully supported</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
-<span class="r-in"><span>     caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>       <span class="st">"Residual Pattern Analysis"</span>,</span></span>
-<span class="r-in"><span>       <span class="st">"Influence Diagnostics"</span>,</span></span>
-<span class="r-in"><span>       <span class="st">"Leverage Assessment"</span>,</span></span>
-<span class="r-in"><span>       <span class="st">"Linearity Check"</span>,</span></span>
-<span class="r-in"><span>       <span class="st">"Distributional Fit"</span>,</span></span>
-<span class="r-in"><span>       <span class="st">"Prediction Quality"</span></span></span>
-<span class="r-in"><span>     <span class="op">)</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
+<span class="r-in"><span>  caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="st">"Residual Pattern Analysis"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"Influence Diagnostics"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"Leverage Assessment"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"Linearity Check"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"Distributional Fit"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"Prediction Quality"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-7.png" alt="" width="700" height="433"></span>
@@ -539,26 +539,26 @@ Oxford University Press.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Modern publication-quality plots</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>     arrange_plots <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  arrange_plots <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-8.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># With custom theme</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>     theme_fn <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="va"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span>,</span></span>
-<span class="r-in"><span>     arrange_plots <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  theme_fn <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="va"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span>,</span></span>
+<span class="r-in"><span>  arrange_plots <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-9.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># With classic theme and custom colors (via ...)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>     theme_fn <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="va"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span>,</span></span>
-<span class="r-in"><span>     arrange_plots <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  theme_fn <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="va"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span>,</span></span>
+<span class="r-in"><span>  arrange_plots <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-10.png" alt="" width="700" height="433"></span>
@@ -567,41 +567,41 @@ Oxford University Press.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Requires gridExtra or ggpubr package</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>,</span></span>
-<span class="r-in"><span>     use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>     arrange_plots <span class="op">=</span> <span class="cn">TRUE</span>, <span class="co"># Arrange in grid</span></span></span>
-<span class="r-in"><span>     theme_fn <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="va"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>,</span></span>
+<span class="r-in"><span>  use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  arrange_plots <span class="op">=</span> <span class="cn">TRUE</span>, <span class="co"># Arrange in grid</span></span></span>
+<span class="r-in"><span>  theme_fn <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="va"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plot.gkwreg-11.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Focus plots in 2x2 grid</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>     use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>     arrange_plots <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>     caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>       <span class="st">"2"</span> <span class="op">=</span> <span class="st">"Influential Cases"</span>,</span></span>
-<span class="r-in"><span>       <span class="st">"3"</span> <span class="op">=</span> <span class="st">"High Leverage Points"</span></span></span>
-<span class="r-in"><span>     <span class="op">)</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  arrange_plots <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="st">"2"</span> <span class="op">=</span> <span class="st">"Influential Cases"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"3"</span> <span class="op">=</span> <span class="st">"High Leverage Points"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plot.gkwreg-12.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># EXAMPLE 7: Half-Normal Plot Customization</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Higher precision envelope (more simulations)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fl">5</span>,</span></span>
-<span class="r-in"><span>     nsim <span class="op">=</span> <span class="fl">500</span>, <span class="co"># More accurate envelope</span></span></span>
-<span class="r-in"><span>     level <span class="op">=</span> <span class="fl">0.95</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fl">5</span>,</span></span>
+<span class="r-in"><span>  nsim <span class="op">=</span> <span class="fl">500</span>, <span class="co"># More accurate envelope</span></span></span>
+<span class="r-in"><span>  level <span class="op">=</span> <span class="fl">0.95</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="co"># 95% confidence level</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 500 iterations): .......... Done!</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Quick envelope for large datasets</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fl">5</span>,</span></span>
-<span class="r-in"><span>     nsim <span class="op">=</span> <span class="fl">500</span>, <span class="co"># Faster computation</span></span></span>
-<span class="r-in"><span>     level <span class="op">=</span> <span class="fl">0.90</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fl">5</span>,</span></span>
+<span class="r-in"><span>  nsim <span class="op">=</span> <span class="fl">500</span>, <span class="co"># Faster computation</span></span></span>
+<span class="r-in"><span>  level <span class="op">=</span> <span class="fl">0.90</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 500 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-13.png" alt="" width="700" height="433"></span>
@@ -625,24 +625,24 @@ Oxford University Press.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare diagnostics under different distributional assumptions</span></span></span>
 <span class="r-in"><span><span class="co"># Helps assess if alternative family would fit better</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>     family <span class="op">=</span> <span class="st">"kw"</span>, <span class="co"># Original family</span></span></span>
-<span class="r-in"><span>     main <span class="op">=</span> <span class="st">"Kumaraswamy"</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="st">"kw"</span>, <span class="co"># Original family</span></span></span>
+<span class="r-in"><span>  main <span class="op">=</span> <span class="st">"Kumaraswamy"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>     family <span class="op">=</span> <span class="st">"beta"</span>, <span class="co"># Alternative family</span></span></span>
-<span class="r-in"><span>     main <span class="op">=</span> <span class="st">"Beta"</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="st">"beta"</span>, <span class="co"># Alternative family</span></span></span>
+<span class="r-in"><span>  main <span class="op">=</span> <span class="st">"Beta"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Using different family (beta) than what was used to fit the model (kw) for diagnostics.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Using different family (beta) than what was used to fit the model (kw). Recalculating fitted values...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-16.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># EXAMPLE 10: Large Dataset - Performance Optimization</span></span></span>
 <span class="r-in"><span></span></span>
@@ -661,18 +661,18 @@ Oxford University Press.</p>
 <span class="r-in"><span><span class="co"># Optimized plotting for large dataset</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model_large</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>, <span class="co"># Skip computationally intensive plot 5</span></span></span>
-<span class="r-in"><span>     sample_size <span class="op">=</span> <span class="fl">2000</span>, <span class="co"># Use random sample of 2000 observations</span></span></span>
-<span class="r-in"><span>     ask <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>, <span class="co"># Skip computationally intensive plot 5</span></span></span>
+<span class="r-in"><span>  sample_size <span class="op">=</span> <span class="fl">2000</span>, <span class="co"># Use random sample of 2000 observations</span></span></span>
+<span class="r-in"><span>  ask <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="co"># Don't prompt</span></span></span>
 <span class="r-plt img"><img src="plot.gkwreg-17.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># If half-normal plot needed, reduce simulations</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model_large</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fl">5</span>,</span></span>
-<span class="r-in"><span>     sample_size <span class="op">=</span> <span class="fl">1000</span>, <span class="co"># Smaller sample</span></span></span>
-<span class="r-in"><span>     nsim <span class="op">=</span> <span class="fl">50</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fl">5</span>,</span></span>
+<span class="r-in"><span>  sample_size <span class="op">=</span> <span class="fl">1000</span>, <span class="co"># Smaller sample</span></span></span>
+<span class="r-in"><span>  nsim <span class="op">=</span> <span class="fl">50</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="co"># Fewer simulations</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 50 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-18.png" alt="" width="700" height="433"></span>
@@ -680,10 +680,10 @@ Oxford University Press.</p>
 <span class="r-in"><span><span class="co"># EXAMPLE 11: Saving Diagnostic Data for Custom Analysis</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Extract diagnostic measures without plotting</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">diag_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model_large</span>,</span></span>
-<span class="r-in"><span>                  which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
-<span class="r-in"><span>                  save_diagnostics <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
+<span class="r-in"><span>  save_diagnostics <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-in"><span></span></span>
@@ -753,11 +753,11 @@ Oxford University Press.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Custom diagnostic plot using saved data</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">diag_data</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">fitted</span>, <span class="va">diag_data</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">resid</span>,</span></span>
-<span class="r-in"><span>     xlab <span class="op">=</span> <span class="st">"Fitted Values"</span>, ylab <span class="op">=</span> <span class="st">"Residuals"</span>,</span></span>
-<span class="r-in"><span>     main <span class="op">=</span> <span class="st">"Custom Diagnostic Plot"</span>,</span></span>
-<span class="r-in"><span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">diag_data</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">cook_dist</span> <span class="op">&gt;</span></span></span>
-<span class="r-in"><span>                    <span class="va">diag_data</span><span class="op">$</span><span class="va">model_info</span><span class="op">$</span><span class="va">cook_threshold</span>, <span class="st">"red"</span>, <span class="st">"black"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>     pch <span class="op">=</span> <span class="fl">16</span></span></span>
+<span class="r-in"><span>  xlab <span class="op">=</span> <span class="st">"Fitted Values"</span>, ylab <span class="op">=</span> <span class="st">"Residuals"</span>,</span></span>
+<span class="r-in"><span>  main <span class="op">=</span> <span class="st">"Custom Diagnostic Plot"</span>,</span></span>
+<span class="r-in"><span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">diag_data</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">cook_dist</span> <span class="op">&gt;</span></span></span>
+<span class="r-in"><span>    <span class="va">diag_data</span><span class="op">$</span><span class="va">model_info</span><span class="op">$</span><span class="va">cook_threshold</span>, <span class="st">"red"</span>, <span class="st">"black"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  pch <span class="op">=</span> <span class="fl">16</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>h <span class="op">=</span> <span class="fl">0</span>, col <span class="op">=</span> <span class="st">"gray"</span>, lty <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, legend <span class="op">=</span> <span class="st">"Influential"</span>, col <span class="op">=</span> <span class="st">"red"</span>, pch <span class="op">=</span> <span class="fl">16</span><span class="op">)</span></span></span>
@@ -767,10 +767,10 @@ Oxford University Press.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ask = TRUE Force prompting between plots (useful for presentations)</span></span></span>
 <span class="r-in"><span><span class="co"># Disable prompting (batch processing)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
-<span class="r-in"><span>     ask <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
+<span class="r-in"><span>  ask <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="co"># Never prompts</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-plt img"><img src="plot.gkwreg-20.png" alt="" width="700" height="433"></span>
@@ -778,22 +778,22 @@ Oxford University Press.</p>
 <span class="r-in"><span><span class="co"># EXAMPLE 13: Base R Graphics Customization via ...</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Customize point appearance</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>     pch <span class="op">=</span> <span class="fl">16</span>, <span class="co"># Filled circles</span></span></span>
-<span class="r-in"><span>     col <span class="op">=</span> <span class="st">"steelblue"</span>, <span class="co"># Blue points</span></span></span>
-<span class="r-in"><span>     cex <span class="op">=</span> <span class="fl">0.8</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  pch <span class="op">=</span> <span class="fl">16</span>, <span class="co"># Filled circles</span></span></span>
+<span class="r-in"><span>  col <span class="op">=</span> <span class="st">"steelblue"</span>, <span class="co"># Blue points</span></span></span>
+<span class="r-in"><span>  cex <span class="op">=</span> <span class="fl">0.8</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="co"># Smaller points</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Multiple customizations</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">model</span>,</span></span>
-<span class="r-in"><span>     which <span class="op">=</span> <span class="fl">2</span>,</span></span>
-<span class="r-in"><span>     pch <span class="op">=</span> <span class="fl">21</span>, <span class="co"># Circles with border</span></span></span>
-<span class="r-in"><span>     col <span class="op">=</span> <span class="st">"black"</span>, <span class="co"># Border color</span></span></span>
-<span class="r-in"><span>     bg <span class="op">=</span> <span class="st">"lightblue"</span>, <span class="co"># Fill color</span></span></span>
-<span class="r-in"><span>     cex <span class="op">=</span> <span class="fl">1.2</span>, <span class="co"># Larger points</span></span></span>
-<span class="r-in"><span>     lwd <span class="op">=</span> <span class="fl">2</span></span></span>
+<span class="r-in"><span>  which <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>  pch <span class="op">=</span> <span class="fl">21</span>, <span class="co"># Circles with border</span></span></span>
+<span class="r-in"><span>  col <span class="op">=</span> <span class="st">"black"</span>, <span class="co"># Border color</span></span></span>
+<span class="r-in"><span>  bg <span class="op">=</span> <span class="st">"lightblue"</span>, <span class="co"># Fill color</span></span></span>
+<span class="r-in"><span>  cex <span class="op">=</span> <span class="fl">1.2</span>, <span class="co"># Larger points</span></span></span>
+<span class="r-in"><span>  lwd <span class="op">=</span> <span class="fl">2</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="co"># Thicker lines</span></span></span>
 <span class="r-plt img"><img src="plot.gkwreg-21.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
