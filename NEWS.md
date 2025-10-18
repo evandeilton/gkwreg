@@ -1,3 +1,5 @@
+# gkwreg 2.1.0
+
 # gkwreg 2.0.0
 
 ## Major Changes
@@ -66,6 +68,42 @@
 * **Updated README.md** with comprehensive feature overview, quick start guide, advanced examples, and ecosystem comparison table.
 
 * **NULL default intelligent behavior**: Several arguments default to `NULL` triggering smart auto-configuration (e.g., `sub.caption`, `ask`, `theme_fn` in `plot.gkwreg()`).
+
+
+## Testing Framework
+
+### Comprehensive Test Suite Added
+
+The package now includes a robust testing framework with **1000+ unit tests** covering all major functionalities:
+
+#### Core Function Testing
+- **`gkwreg()`**: 20 tests for model fitting, parameter estimation, formula handling, all distribution families, link functions, and convergence
+- **`predict.gkwreg()`**: 10 tests for predictions, including response means, densities, CDFs, quantiles, and parameter extraction
+- **`residuals.gkwreg()`**: 10 tests for all residual types (response, Pearson, deviance, quantile, standardized, working, partial)
+- **`fitted.gkwreg()`**: 10 tests for fitted value extraction and validation
+
+#### S3 Methods Testing
+- **`anova.gkwreg()`**: 45 tests for model comparisons, likelihood ratio tests, and nested model hierarchies
+- **Print methods**: Tests for `print.gkwreg()` and `print.summary.gkwreg()`
+- **Accessor methods**: Tests for `coef()`, `vcov()`, `nobs()`, `confint()`
+- **Summary method**: Tests for `summary.gkwreg()` including coefficient tables, confidence intervals, and fit statistics
+
+#### Test Coverage Includes
+- ll 7 distribution families (GKw, BKw, KKw, EKw, MC, Kw, Beta)
+- Different link functions and scales
+- Edge cases and boundary conditions
+- Missing data handling (NA)
+- Subset and weight specifications
+- Large dataset performance
+- Error handling and input validation
+- Statistical correctness verification
+- Numerical accuracy checks
+
+#### Testing Framework
+- Built with `testthat` package
+- Uses simulated data from `gkwdist` package
+- Tests with real datasets (GasolineYield, FoodExpenditure)
+- Reproducible with fixed random seeds
 
 ## Minor Improvements
 
