@@ -1144,7 +1144,7 @@ gkwreg <- function(formula,
   call <- match.call()
 
   # Match family argument
-  family <- match.arg(family)
+  family <- match.arg(family, choices = c("gkw", "bkw", "kkw", "ekw", "mc", "kw", "beta"))
 
   # Validate control object
   if (!inherits(control, "gkw_control")) {
