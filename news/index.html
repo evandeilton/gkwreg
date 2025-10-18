@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,9 @@
       <small>Source: <a href="https://github.com/evandeilton/gkwreg/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.1.0" id="gkwreg-210">gkwreg 2.1.0<a class="anchor" aria-label="anchor" href="#gkwreg-210"></a></h2>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.0.0" id="gkwreg-200">gkwreg 2.0.0<a class="anchor" aria-label="anchor" href="#gkwreg-200"></a></h2>
 <div class="section level3">
@@ -117,6 +120,56 @@
 <li><p><strong>Updated README.md</strong> with comprehensive feature overview, quick start guide, advanced examples, and ecosystem comparison table.</p></li>
 <li><p><strong>NULL default intelligent behavior</strong>: Several arguments default to <code>NULL</code> triggering smart auto-configuration (e.g., <code>sub.caption</code>, <code>ask</code>, <code>theme_fn</code> in <code><a href="../reference/plot.gkwreg.html">plot.gkwreg()</a></code>).</p></li>
 </ul></div>
+</div>
+<div class="section level3">
+<h3 id="testing-framework-2-0-0">Testing Framework<a class="anchor" aria-label="anchor" href="#testing-framework-2-0-0"></a></h3>
+<div class="section level4">
+<h4 id="comprehensive-test-suite-added-2-0-0">Comprehensive Test Suite Added<a class="anchor" aria-label="anchor" href="#comprehensive-test-suite-added-2-0-0"></a></h4>
+<p>The package now includes a robust testing framework with <strong>1000+ unit tests</strong> covering all major functionalities:</p>
+<div class="section level5">
+<h5 id="core-function-testing-2-0-0">Core Function Testing<a class="anchor" aria-label="anchor" href="#core-function-testing-2-0-0"></a></h5>
+<ul><li>
+<strong><code><a href="../reference/gkwreg.html">gkwreg()</a></code></strong>: 20 tests for model fitting, parameter estimation, formula handling, all distribution families, link functions, and convergence</li>
+<li>
+<strong><code><a href="../reference/predict.gkwreg.html">predict.gkwreg()</a></code></strong>: 10 tests for predictions, including response means, densities, CDFs, quantiles, and parameter extraction</li>
+<li>
+<strong><code><a href="../reference/residuals.gkwreg.html">residuals.gkwreg()</a></code></strong>: 10 tests for all residual types (response, Pearson, deviance, quantile, standardized, working, partial)</li>
+<li>
+<strong><code><a href="../reference/fitted.gkwreg.html">fitted.gkwreg()</a></code></strong>: 10 tests for fitted value extraction and validation</li>
+</ul></div>
+<div class="section level5">
+<h5 id="s3-methods-testing-2-0-0">S3 Methods Testing<a class="anchor" aria-label="anchor" href="#s3-methods-testing-2-0-0"></a></h5>
+<ul><li>
+<strong><code><a href="../reference/anova.gkwreg.html">anova.gkwreg()</a></code></strong>: 45 tests for model comparisons, likelihood ratio tests, and nested model hierarchies</li>
+<li>
+<strong>Print methods</strong>: Tests for <code><a href="../reference/print.gkwreg.html">print.gkwreg()</a></code> and <code><a href="../reference/print.summary.gkwreg.html">print.summary.gkwreg()</a></code>
+</li>
+<li>
+<strong>Accessor methods</strong>: Tests for <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, <code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code>, <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code>
+</li>
+<li>
+<strong>Summary method</strong>: Tests for <code><a href="../reference/summary.gkwreg.html">summary.gkwreg()</a></code> including coefficient tables, confidence intervals, and fit statistics</li>
+</ul></div>
+<div class="section level5">
+<h5 id="test-coverage-includes-2-0-0">Test Coverage Includes<a class="anchor" aria-label="anchor" href="#test-coverage-includes-2-0-0"></a></h5>
+<ul><li>ll 7 distribution families (GKw, BKw, KKw, EKw, MC, Kw, Beta)</li>
+<li>Different link functions and scales</li>
+<li>Edge cases and boundary conditions</li>
+<li>Missing data handling (NA)</li>
+<li>Subset and weight specifications</li>
+<li>Large dataset performance</li>
+<li>Error handling and input validation</li>
+<li>Statistical correctness verification</li>
+<li>Numerical accuracy checks</li>
+</ul></div>
+<div class="section level5">
+<h5 id="testing-framework-2-0-0-1">Testing Framework<a class="anchor" aria-label="anchor" href="#testing-framework-2-0-0-1"></a></h5>
+<ul><li>Built with <code>testthat</code> package</li>
+<li>Uses simulated data from <code>gkwdist</code> package</li>
+<li>Tests with real datasets (GasolineYield, FoodExpenditure)</li>
+<li>Reproducible with fixed random seeds</li>
+</ul></div>
+</div>
 </div>
 <div class="section level3">
 <h3 id="minor-improvements-2-0-0">Minor Improvements<a class="anchor" aria-label="anchor" href="#minor-improvements-2-0-0"></a></h3>
