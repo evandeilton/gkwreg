@@ -11,7 +11,7 @@ probabilities under different framing conditions."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,10 @@ probabilities under different framing conditions."></head><body>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Generalized Kumaraswamy vs. Beta Regression - Simulation Study</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -263,31 +267,31 @@ Imprecise Probabilities. <em>Journal of Statistical Theory and Practice</em>,
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.2674 -0.1036  0.0326  0.0386  0.1326  0.6592 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.2679 -0.1040  0.0321  0.0382  0.1321  0.6589 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                 Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)               -6.11953   16.28072  -0.376   0.7070    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson           -3.69629   21.40997  -0.173   0.8629    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:NFCCscale                  0.21924    0.09579   2.289   0.0221 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson:NFCCscale -0.31526    0.15320  -2.058   0.0396 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                 0.87495    0.09650   9.067   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:taskSalesperson            -0.13511    0.13533  -0.998   0.3181    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)              12.70155   38.45294   0.330   0.7412    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:taskSalesperson           8.13862   48.25161   0.169   0.8661    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)               -8.05880   36.69755  -0.220   0.8262    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson           -5.67320   36.73465  -0.154   0.8773    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:NFCCscale                  0.21932    0.09656   2.271   0.0231 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson:NFCCscale -0.31493    0.15593  -2.020   0.0434 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                 0.86425    0.10030   8.617   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:taskSalesperson            -0.12891    0.14160  -0.910   0.3626    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)              17.16540   86.25090   0.199   0.8422    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:taskSalesperson          11.74932   86.29877   0.136   0.8917    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                       3%      98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)               -38.0292  25.7901</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson           -45.6591  38.2665</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:NFCCscale                   0.0315   0.4070</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson:NFCCscale  -0.6155  -0.0150</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.6858   1.0641</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:taskSalesperson             -0.4004   0.1301</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)              -62.6648  88.0679</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:taskSalesperson          -86.4328 102.7100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                        3%      98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                -79.9847  63.8671</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson            -77.6718  66.3254</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:NFCCscale                    0.0301   0.4086</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson:NFCCscale   -0.6205  -0.0093</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                   0.6677   1.0608</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:taskSalesperson              -0.4064   0.1486</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)              -151.8833 186.2141</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:taskSalesperson          -157.3932 180.8918</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
@@ -295,11 +299,11 @@ Imprecise Probabilities. <em>Journal of Statistical Theory and Practice</em>,
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.002335</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 2.248</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.0003335</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 2.231</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 5.58e+08</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1.792e+12</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 155 </span>
@@ -308,12 +312,12 @@ Imprecise Probabilities. <em>Journal of Statistical Theory and Practice</em>,
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 55.63 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -95.26 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -70.91 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.1844 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: -0.03833 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.1843 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: -0.0374 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.1508 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 59 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 67 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Interpretation:</span></span></span>

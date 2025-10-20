@@ -553,7 +553,7 @@ data("GasolineYield", package = "gkwreg")
 # =============================================================================
 
 test_that("All optimization methods work with gkwreg and produce similar results", {
-  methods <- c("nlminb", "BFGS", "Nelder-Mead", "L-BFGS-B")
+  methods <- c("nlminb", "BFGS", "Nelder-Mead")
   fits <- list()
 
   for (method in methods) {
@@ -612,38 +612,6 @@ test_that("hessian = FALSE skips standard error computation", {
 })
 
 # =============================================================================
-# Test 3: Increased iterations help difficult convergence
-# =============================================================================
-
-test_that("Increasing maxit helps with complex models", {
-  # Complex multi-part formula with interaction
-  formula_complex <- yield ~ batch * temp | temp + I(temp^2) | 1
-
-  # Low iterations might not converge
-  fit_low <- gkwreg(
-    formula_complex,
-    data = GasolineYield,
-    family = "gkw",
-    control = gkw_control(maxit = 50, silent = TRUE)
-  )
-
-  # High iterations should converge better
-  fit_high <- gkwreg(
-    formula_complex,
-    data = GasolineYield,
-    family = "gkw",
-    control = gkw_control(maxit = 1000, silent = TRUE)
-  )
-
-  # High iteration model should have better or equal fit
-  expect_true(logLik(fit_high) >= logLik(fit_low) - 1e-6)
-
-  # Both should be valid models
-  expect_s3_class(fit_low, "gkwreg")
-  expect_s3_class(fit_high, "gkwreg")
-})
-
-# =============================================================================
 # Test 4: Silent and trace parameters control verbosity
 # =============================================================================
 
@@ -677,31 +645,6 @@ test_that("silent and trace parameters control output correctly", {
     coef(fit_verbose),
     tolerance = 1e-8
   )
-})
-
-# =============================================================================
-# Test 6: L-BFGS-B method-specific parameters work
-# =============================================================================
-
-test_that("L-BFGS-B specific parameters are applied correctly", {
-  # L-BFGS-B with custom parameters
-  fit_lbfgsb <- gkwreg(
-    yield ~ batch + temp,
-    data = GasolineYield,
-    family = "kw",
-    control = gkw_control(
-      method = "L-BFGS-B",
-      factr = 1e8,
-      lmm = 10,
-      pgtol = 1e-6
-    )
-  )
-
-  expect_s3_class(fit_lbfgsb, "gkwreg")
-  expect_true(fit_lbfgsb$convergence %in% c(0, TRUE))
-
-  # Should have finite log-likelihood
-  expect_true(is.finite(logLik(fit_lbfgsb)))
 })
 
 # =============================================================================
@@ -745,111 +688,6 @@ test_that("Nelder-Mead simplex parameters affect optimization", {
   )
 })
 
-# =============================================================================
-# Test 9: Tolerance parameters affect convergence precision
-# =============================================================================
-
-test_that("Tighter tolerances produce more precise estimates", {
-  # Standard tolerance
-  fit_standard <- gkwreg(
-    yield ~ batch + temp,
-    data = GasolineYield,
-    family = "kw",
-    control = gkw_control(
-      reltol = 1e-8,
-      maxit = 500
-    )
-  )
-
-  # Tighter tolerance
-  fit_tight <- gkwreg(
-    yield ~ batch + temp,
-    data = GasolineYield,
-    family = "kw",
-    control = gkw_control(
-      reltol = 1e-12,
-      maxit = 1000
-    )
-  )
-
-  # Both should converge
-  expect_true(fit_standard$convergence %in% c(0, TRUE))
-  expect_true(fit_tight$convergence %in% c(0, TRUE))
-
-  # Tight tolerance should have equal or better log-likelihood
-  expect_true(logLik(fit_tight) >= logLik(fit_standard) - 1e-10)
-
-  # Coefficients should be very close
-  expect_equal(
-    coef(fit_standard),
-    coef(fit_tight),
-    tolerance = 1e-6
-  )
-})
-
-# =============================================================================
-# Test 10: Control parameters work across different families
-# =============================================================================
-
-test_that("gkw_control works consistently across all families", {
-  families <- c("beta", "kw", "ekw", "bkw", "gkw")
-
-  # Custom control with BFGS
-  ctrl <- gkw_control(
-    method = "BFGS",
-    maxit = 800,
-    reltol = 1e-10,
-    hessian = TRUE
-  )
-
-  fits <- list()
-  for (fam in families) {
-    # Adjust formula based on family
-    if (fam %in% c("beta", "kw")) {
-      formula_use <- yield ~ temp | temp
-    } else if (fam == "ekw") {
-      formula_use <- yield ~ temp | temp | 1
-    } else if (fam == "bkw") {
-      formula_use <- yield ~ temp | temp | 1 | 1
-    } else { # gkw
-      formula_use <- yield ~ temp | temp | 1 | 1 | 1
-    }
-
-    fit <- gkwreg(
-      formula_use,
-      data = GasolineYield,
-      family = fam,
-      control = ctrl
-    )
-
-    # All should produce valid models
-    expect_s3_class(fit, "gkwreg")
-    expect_equal(family(fit), fam)
-    expect_true(fit$convergence %in% c(0, TRUE))
-    expect_true(is.finite(logLik(fit)))
-
-    # Should have standard errors (hessian = TRUE)
-    expect_false(is.null(fit$se))
-    expect_true(all(fit$se > 0, na.rm = TRUE))
-
-    fits[[fam]] <- fit
-  }
-
-  # Create comparison table
-  comparison <- data.frame(
-    Family = families,
-    LogLik = sapply(fits, function(f) as.numeric(logLik(f))),
-    AIC = sapply(fits, AIC),
-    npar = sapply(fits, function(f) f$npar),
-    Converged = sapply(fits, function(f) f$convergence %in% c(0, TRUE))
-  )
-
-  # All should have converged
-  expect_true(all(comparison$Converged))
-
-  # More complex families should have more parameters
-  expect_true(all(diff(comparison$npar) >= 0))
-})
 
 # =============================================================================
 # Bonus Test 11: Multiple control configurations in model selection

@@ -27,7 +27,7 @@ betareg, making it immediately familiar to R users."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,10 @@ betareg, making it immediately familiar to R users."></head><body>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Generalized Kumaraswamy vs. Beta Regression - Simulation Study</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -763,7 +767,6 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="co"># Example 1.2: Model with predictors (uses all defaults)</span></span></span>
 <span class="r-in"><span><span class="co"># Default: family = "gkw", method = "nlminb", hessian = TRUE</span></span></span>
 <span class="r-in"><span><span class="va">fit_default</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, data <span class="op">=</span> <span class="va">GasolineYield</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_default</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Generalized Kumaraswamy Regression Model Summary</span>
@@ -775,45 +778,45 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0268 -0.0116 -0.0010 -0.0011  0.0080  0.0304 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0268 -0.0123 -0.0010 -0.0012  0.0079  0.0269 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                      Estimate Std. Error   z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -3.449e+00  1.032e+00    -3.341 0.000835 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1        9.201e-01  3.171e-02    29.014  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2        6.786e-01  3.394e-02    19.996  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3        7.826e-01  3.391e-02    23.078  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4        5.596e-01  3.174e-02    17.633  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5        5.630e-01  3.387e-02    16.624  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6        5.417e-01  3.392e-02    15.972  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7        3.111e-01  3.175e-02     9.798  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8        2.547e-01  3.386e-02     7.520 5.49e-14 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9        1.989e-01  3.785e-02     5.255 1.48e-07 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp          5.407e-03  2.647e-07 20431.363  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    2.608e+00  4.282e-01     6.091 1.12e-09 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)   2.325e+01        NaN       NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -1.702e-01  9.250e-01    -0.184 0.854028    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -9.663e+00        NaN       NaN      NaN    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      Estimate Std. Error  z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -3.378e+00  1.120e+00   -3.015  0.00257 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1        9.203e-01  3.190e-02   28.844  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2        6.786e-01  3.418e-02   19.853  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3        7.827e-01  3.409e-02   22.958  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4        5.596e-01  3.197e-02   17.506  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5        5.632e-01  3.402e-02   16.554  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6        5.418e-01  3.415e-02   15.868  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7        3.111e-01  3.200e-02    9.724  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8        2.548e-01  3.400e-02    7.493 6.73e-14 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9        1.992e-01  3.800e-02    5.242 1.59e-07 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp          5.406e-03  1.805e-06 2995.155  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    2.634e+00  5.618e-01    4.688 2.76e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)   2.236e+01  1.119e+00   19.989  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -2.000e-01  1.575e+00   -0.127  0.89897    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -9.230e+00  5.662e+00   -1.630  0.10306    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                         3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -5.4727 -1.4256</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1        0.8580  0.9823</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2        0.6121  0.7451</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3        0.7161  0.8491</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4        0.4974  0.6218</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5        0.4967  0.6294</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6        0.4752  0.6082</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7        0.2489  0.3733</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8        0.1883  0.3210</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9        0.1247  0.2731</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp          0.0054  0.0054</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    1.7690  3.4474</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)      NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -1.9832  1.6428</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)     NaN     NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3%     98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   -5.5738 -1.1816</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1         0.8577  0.9828</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2         0.6116  0.7456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3         0.7159  0.8496</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4         0.4970  0.6223</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5         0.4965  0.6299</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6         0.4749  0.6088</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7         0.2484  0.3739</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8         0.1882  0.3214</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9         0.1247  0.2736</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp           0.0054  0.0054</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)     1.5325  3.7346</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)   20.1713 24.5569</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)   -3.2873  2.8873</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -20.3263  1.8669</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
@@ -823,22 +826,22 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.3364</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 13.57</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1.245e+10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta: 4.576</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 6.35e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.3612</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 13.92</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 5.159e+09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta: 4.502</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 9.799e-05</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 32 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 15 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 17 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 96.53 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -163.1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -141.1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.0144 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.9814 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.01156 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 96.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -163 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -141 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.01405 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.9823 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.01128 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 140 </span>
@@ -860,47 +863,47 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0254 -0.0057  0.0044  0.0013  0.0107  0.0225 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0298 -0.0063  0.0039 -0.0002  0.0083  0.0190 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.511044   0.023253  21.978  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.845112   0.027843  30.352  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.598480   0.030073  19.901  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.716337   0.030108  23.792  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.474069   0.028168  16.830  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.521750   0.031057  16.800  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.456833   0.030675  14.893  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.230582   0.028514   8.087 6.14e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.206450   0.031527   6.548 5.82e-11 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.146207   0.035025   4.174 2.99e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp         0.005299        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  24.960692   0.349960  71.324  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.669891   0.028716  23.328  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.838120   0.026677  31.417  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.591222   0.028520  20.730  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.710176   0.028439  24.972  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.466629   0.026641  17.516  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.520248   0.028374  18.335  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.449796   0.028496  15.784  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.224739   0.026597   8.450  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.203245   0.028269   7.190 6.49e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.141747   0.031841   4.452 8.52e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp         0.005282        NaN     NaN      NaN    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  28.892380   0.431098  67.020  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                        3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.4655  0.5566</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.7905  0.8997</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.5395  0.6574</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.6573  0.7753</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.4189  0.5293</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.4609  0.5826</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.3967  0.5170</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.1747  0.2865</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.1447  0.2682</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.0776  0.2149</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.6136  0.7262</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.7858  0.8904</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.5353  0.6471</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.6544  0.7659</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.4144  0.5188</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.4646  0.5759</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.3939  0.5056</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.1726  0.2769</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.1478  0.2587</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.0793  0.2042</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp            NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  24.2748 25.6466</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  28.0474 29.7373</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 15.94</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 6.916e+10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 18.47</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 3.527e+12</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1</span>
@@ -909,15 +912,15 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 32 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 12 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 20 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 96.48 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -169 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -151.4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.01268 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.9856 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.01054 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 96.97 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -169.9 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -152.4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.01283 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.9852 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.01053 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 63 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 72 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
@@ -932,11 +935,11 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="co"># Compare models using AIC/BIC</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">fit_beta</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          df        AIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   12 -168.95784</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   12 -169.93884</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit_beta 12  -66.52315</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">fit_beta</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          df        BIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   12 -151.36901</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   12 -152.35001</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit_beta 12  -48.93432</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># SECTION 2: Using gkw_control() for Customization</span></span></span>
@@ -1033,11 +1036,11 @@ for the GKw distribution family functions</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Using TMB model: kwreg</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Checking TMB model status for  kwreg ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Found TMB source file:  /home/jlopes/R/x86_64-pc-linux-gnu-library/4.5/gkwreg/tmb/kwreg.cpp </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Found cached TMB model:  /home/jlopes/.cache/gkwreg/tmb_cache/R4.5/2.0.0/kwreg.so </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Found cached TMB model:  /home/jlopes/.cache/gkwreg/tmb_cache/R4.5/2.1.1/kwreg.so </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Successfully loaded cached TMB model.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Optimizing with nlminb...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  7535.888 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0:-7.1054274e-14:  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0:     0.0000000:  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1043.999 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   1:    -5.4751175: -4.63847e-06 -2.59943e-07 -5.18250e-07 -4.49143e-07 -5.38512e-07 -2.35055e-07 -3.31849e-07 -9.76418e-07 -5.15872e-07 -2.56583e-07 -0.00135487 4.44139e-06</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  248.2347 </span>
@@ -1104,91 +1107,109 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  32:    -86.555130: -0.103660 0.852072 0.593116 0.723514 0.494456 0.507035 0.475202 0.234153 0.220827 0.171784 0.00526956  13.3773</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  29858.1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  33:    -88.596572: -0.0142778 0.872344 0.620063 0.744182 0.474163 0.523267 0.479167 0.257521 0.213986 0.146453 0.00535175  15.0663</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  4090.935 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  34:    -88.615341: -0.000990104 0.902580 0.704435 0.787394 0.558575 0.568736 0.517017 0.339891 0.253565 0.244840 0.00543371  16.7473</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  6186.975 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  35:    -90.392363: 0.0985384 0.859188 0.666724 0.747058 0.538160 0.535854 0.494613 0.299087 0.221230 0.165105 0.00537535  17.5781</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  23677.06 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  36:    -90.601197: 0.285604 0.888612 0.601393 0.700915 0.510188 0.513569 0.451882 0.236701 0.192324 0.123306 0.00521226  19.2551</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  5588.919 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  37:    -92.504051: 0.314496 0.858162 0.577322 0.696464 0.473482 0.521344 0.444638 0.208070 0.197319 0.121994 0.00516530  19.3876</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3309.08 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  38:    -93.042504: 0.316922 0.850751 0.574503 0.695607 0.469865 0.519612 0.445518 0.208463 0.198603 0.125129 0.00518065  19.5363</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3996.63 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  39:    -93.550680: 0.320696 0.843080 0.584565 0.705608 0.469072 0.517989 0.444761 0.205085 0.200705 0.126715 0.00520644  19.8338</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  17353.55 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  40:    -93.849315: 0.332285 0.837332 0.584783 0.707135 0.467210 0.521062 0.448394 0.208314 0.202877 0.128243 0.00522856  20.1315</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3405.852 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  41:    -94.407056: 0.332579 0.839173 0.587504 0.710933 0.467005 0.525668 0.458377 0.222650 0.205102 0.130059 0.00524213  20.4289</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3404.563 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  42:    -94.965756: 0.338920 0.840802 0.596147 0.710362 0.473492 0.511102 0.456749 0.226911 0.203994 0.151338 0.00533730  21.2778</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  11748.02 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  43:    -95.316637: 0.385967 0.835927 0.593772 0.718096 0.472878 0.514802 0.454765 0.233790 0.209386 0.152956 0.00531951  22.1258</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  29130.55 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  44:    -95.424402: 0.420794 0.842713 0.608494 0.718265 0.475041 0.523530 0.473653 0.236527 0.216087 0.158018 0.00532032  22.9741</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  26449.94 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  45:    -95.903970: 0.450139 0.857210 0.610558 0.733591 0.486457 0.535133 0.464894 0.241707 0.218042 0.154504 0.00532282  23.8225</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  7298.249 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  46:    -96.131311: 0.482761 0.846681 0.602681 0.722993 0.477555 0.529477 0.454398 0.235033 0.210310 0.152480 0.00525426  24.0062</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  250.4761 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  47:    -96.389727: 0.518086 0.839935 0.588166 0.712551 0.469730 0.516715 0.450149 0.223988 0.204798 0.138545 0.00526928  24.7573</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  5570.218 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  48:    -96.433056: 0.522167 0.839729 0.590534 0.711373 0.470034 0.519762 0.450951 0.224867 0.202519 0.140202 0.00528254  24.9677</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  69.23836 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  49:    -96.467542: 0.509726 0.844238 0.596187 0.714493 0.473705 0.522420 0.456543 0.228926 0.205282 0.143002 0.00530108  24.9226</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1869.847 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  50:    -96.476842: 0.510728 0.845808 0.598652 0.716292 0.473691 0.521282 0.457649 0.230841 0.206275 0.145476 0.00530135  24.9706</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  988.5663 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  51:    -96.477862: 0.510342 0.845604 0.598992 0.716570 0.474185 0.521700 0.457671 0.231137 0.206806 0.146619 0.00529885  24.9476</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  366.5992 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  52:    -96.478432: 0.510367 0.844864 0.598549 0.716430 0.474189 0.521715 0.456429 0.230335 0.206506 0.146313 0.00529974  24.9515</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  263.2514 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  53:    -96.478665: 0.510708 0.845145 0.598212 0.716479 0.474102 0.521763 0.456950 0.230563 0.206075 0.146307 0.00529881  24.9523</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  84.98653 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  54:    -96.478759: 0.510812 0.845169 0.598260 0.716418 0.474102 0.521785 0.456952 0.230616 0.206194 0.146271 0.00529867  24.9535</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  23.88984 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  55:    -96.478904: 0.511023 0.845110 0.598504 0.716409 0.474139 0.521776 0.456925 0.230574 0.206485 0.146241 0.00529877  24.9600</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  11.85171 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  56:    -96.478905: 0.511030 0.845113 0.598483 0.716339 0.474068 0.521750 0.456834 0.230581 0.206450 0.146206 0.00529887  24.9604</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  2.05176 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  57:    -96.478913: 0.511041 0.845112 0.598481 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9606</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.2997585 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  58:    -96.478915: 0.511043 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.09257133 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  59:    -96.478920: 0.511044 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.09256928 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  60:    -96.478921: 0.511044 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.0925664 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  61:    -96.478922: 0.511044 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.09256415 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  62:    -96.478922: 0.511044 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  63:    -96.478922: 0.511044 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  4090.948 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  34:    -88.615340: -0.000990117 0.902580 0.704435 0.787394 0.558575 0.568736 0.517017 0.339891 0.253565 0.244840 0.00543371  16.7473</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  6187 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  35:    -90.392361: 0.0985384 0.859188 0.666724 0.747058 0.538160 0.535854 0.494613 0.299087 0.221230 0.165105 0.00537535  17.5781</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  23677.04 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  36:    -90.601186: 0.285604 0.888612 0.601393 0.700915 0.510188 0.513569 0.451882 0.236701 0.192324 0.123306 0.00521226  19.2551</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  5588.836 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  37:    -92.504039: 0.314495 0.858162 0.577322 0.696464 0.473482 0.521344 0.444638 0.208070 0.197319 0.121994 0.00516530  19.3876</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3309.01 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  38:    -93.042485: 0.316922 0.850751 0.574503 0.695607 0.469865 0.519612 0.445518 0.208463 0.198603 0.125129 0.00518065  19.5362</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3996.37 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  39:    -93.550654: 0.320696 0.843080 0.584565 0.705608 0.469072 0.517989 0.444761 0.205085 0.200705 0.126715 0.00520644  19.8338</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  17352.9 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  40:    -93.849295: 0.332284 0.837333 0.584783 0.707135 0.467210 0.521063 0.448395 0.208314 0.202877 0.128243 0.00522856  20.1314</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3406.926 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  41:    -94.407021: 0.332577 0.839173 0.587505 0.710933 0.467005 0.525668 0.458377 0.222651 0.205102 0.130060 0.00524213  20.4289</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3404.861 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  42:    -94.965671: 0.338916 0.840802 0.596147 0.710362 0.473493 0.511103 0.456749 0.226911 0.203994 0.151337 0.00533729  21.2777</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  11745.88 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  43:    -95.316480: 0.385958 0.835928 0.593772 0.718096 0.472879 0.514803 0.454766 0.233790 0.209386 0.152955 0.00531950  22.1256</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  29124.77 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  44:    -95.424092: 0.420780 0.842716 0.608497 0.718265 0.475043 0.523533 0.473657 0.236527 0.216087 0.158017 0.00532031  22.9738</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  26418.49 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  45:    -95.903342: 0.450111 0.857226 0.610560 0.733602 0.486467 0.535142 0.464887 0.241711 0.218040 0.154498 0.00532283  23.8222</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  7282.638 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  46:    -96.130130: 0.482702 0.846682 0.602675 0.722989 0.477554 0.529472 0.454392 0.235030 0.210302 0.152475 0.00525428  24.0048</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  494.5489 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  47:    -96.419380: 0.517819 0.839957 0.588196 0.712568 0.469754 0.516728 0.450185 0.224011 0.204821 0.138566 0.00526935  24.7520</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15965.98 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  48:    -96.538019: 0.550107 0.835039 0.586860 0.706278 0.466407 0.518103 0.446995 0.221504 0.199669 0.138062 0.00527778  25.4999</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15031.69 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  49:    -96.659069: 0.557186 0.845174 0.599215 0.713727 0.475068 0.523388 0.461330 0.230088 0.209579 0.142691 0.00531772  26.2481</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  13666.62 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  50:    -96.711138: 0.582396 0.845663 0.596602 0.717698 0.467337 0.516890 0.457806 0.228835 0.201826 0.146314 0.00530960  26.7748</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  16605.03 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  51:    -96.746333: 0.612420 0.835144 0.589205 0.710119 0.466430 0.522167 0.443310 0.223068 0.203402 0.146455 0.00526602  27.1813</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3047.527 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  52:    -96.856774: 0.631822 0.834713 0.589072 0.709363 0.467874 0.521528 0.445107 0.223565 0.205436 0.144507 0.00525969  27.5891</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  4208.215 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  53:    -96.913357: 0.623331 0.838380 0.591607 0.710749 0.468404 0.522118 0.450086 0.225334 0.202047 0.142088 0.00528496  27.6198</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3652.26 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  54:    -96.925764: 0.625525 0.839120 0.592494 0.710706 0.467948 0.521317 0.450339 0.225835 0.203158 0.141871 0.00528569  27.6942</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  2573.476 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  55:    -96.943591: 0.638980 0.839453 0.592738 0.712369 0.469199 0.520650 0.453156 0.225869 0.204723 0.143744 0.00528184  28.0554</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  9137.558 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  56:    -96.951202: 0.664042 0.838739 0.591799 0.710578 0.466411 0.519601 0.449840 0.224810 0.203804 0.141213 0.00528572  28.7344</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1136.99 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  57:    -96.963458: 0.659247 0.838551 0.591743 0.709944 0.466831 0.519796 0.449813 0.225556 0.203513 0.141109 0.00528219  28.5996</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  148.7722 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  58:    -96.966516: 0.662090 0.838353 0.591771 0.710711 0.466827 0.520583 0.450310 0.224574 0.203554 0.142080 0.00528305  28.6888</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  543.1121 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  59:    -96.967765: 0.665646 0.838222 0.591471 0.710511 0.466972 0.520396 0.450134 0.224799 0.203323 0.142067 0.00528229  28.7781</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  226.7339 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  60:    -96.968925: 0.668602 0.838025 0.591338 0.710310 0.466683 0.520141 0.449752 0.224688 0.203174 0.141518 0.00528215  28.8559</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  16.20516 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  61:    -96.969362: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.99016 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  62:    -96.969383: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.94717 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  63:    -96.969388: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.86117 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  64:    -96.969396: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.68918 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  65:    -96.969414: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.65478 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  66:    -96.969417: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.6479 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  67:    -96.969418: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64652 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  68:    -96.969418: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64377 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  69:    -96.969418: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64322 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  70:    -96.969418: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64212 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  71:    -96.969419: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  72:    -96.969419: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Computing standard errors...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.09256415 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  7157.852 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  6484.594 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  621.6198 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  635.2601 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  462.0846 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  472.2466 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  540.2503 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  552.1197 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  747.9303 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  764.5021 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  696.8724 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  711.8765 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  601.0721 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  614.3962 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  823.469 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  841.6159 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  727.6203 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  743.5208 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  430.3323 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  439.7047 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  372831.9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  388700281 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  260.1394 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  259.8767 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64212 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  8566.585 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  8756.273 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  833.0485 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  822.9346 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  632.0476 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  616.7627 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  749.2533 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  737.0134 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1020.709 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1015.726 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  960.3235 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  953.1672 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  824.0432 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  813.9203 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1139.862 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1137.806 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1000.361 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  994.5989 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  590.628 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  574.1314 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  433964.4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1606458690 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  287.6913 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  318.6724 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1 </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span></span></span>
@@ -1203,11 +1224,11 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="co"># Note: Cannot compute confint() without hessian</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_fast</span><span class="op">)</span> <span class="co"># Point estimates still available</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)      alpha:batch1      alpha:batch2      alpha:batch3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       0.511043664       0.845112184       0.598480138       0.716336887 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       0.669890502       0.838119547       0.591221840       0.710175690 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      alpha:batch4      alpha:batch5      alpha:batch6      alpha:batch7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       0.474068576       0.521750284       0.456833294       0.230582142 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       0.466628737       0.520248475       0.449795650       0.224738999 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      alpha:batch8      alpha:batch9        alpha:temp  beta:(Intercept) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       0.206450367       0.146206617       0.005298865      24.960692248 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       0.203245105       0.141746636       0.005281963      28.892379849 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 2.4: Custom convergence tolerances</span></span></span>
 <span class="r-in"><span><span class="va">fit_tight</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span></span></span>
@@ -1242,47 +1263,47 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0931 -0.0192  0.0006 -0.0092  0.0127  0.0229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0990 -0.0280  0.0006 -0.0111  0.0118  0.0215 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  1.716145   0.067740  25.334  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.859082   0.066090  12.999  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.607943   0.067747   8.974  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.753252   0.066868  11.265  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.513857   0.066458   7.732 1.06e-14 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.524146   0.070690   7.415 1.22e-13 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.499502   0.069489   7.188 6.56e-13 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.251466   0.066681   3.771 0.000162 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.203819   0.070869   2.876 0.004028 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.208587   0.080628   2.587 0.009680 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  43.700691   1.674361  26.100  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp         -0.084933   0.004366 -19.452  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   Estimate Std. Error z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  1.88084    0.12348  15.232  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.86290    0.05699  15.141  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.60817    0.05787  10.509  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.75747    0.05712  13.260  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.51478    0.05681   9.062  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.51953    0.06006   8.650  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.49757    0.05932   8.388  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.25316    0.05717   4.429 9.49e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.20458    0.06012   3.403 0.000667 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.20749    0.06810   3.047 0.002312 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  51.72440    5.85835   8.829  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp         -0.10086    0.01182  -8.531  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                        3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  1.5834  1.8489</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.7295  0.9886</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.4752  0.7407</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.6222  0.8843</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.3836  0.6441</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.3856  0.6627</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.3633  0.6357</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.1208  0.3822</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.0649  0.3427</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.0506  0.3666</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  40.4190 46.9824</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp         -0.0935 -0.0764</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  1.6388  2.1229</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.7512  0.9746</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.4947  0.7216</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.6455  0.8694</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.4034  0.6261</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.4018  0.6373</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.3813  0.6138</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.1411  0.3652</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.0867  0.3224</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.0740  0.3410</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  40.2422 63.2066</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp         -0.1240 -0.0777</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 9.094</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 1.36e+10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 10.73</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 1.441e+12</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1</span>
@@ -1291,15 +1312,15 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 32 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 12 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 20 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 79.78 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -135.6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -118 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.03321 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.9009 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.02256 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 80.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -137 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -119.4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.03472 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.8918 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.02323 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 47 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 48 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 3.2: Intercept-only for one parameter</span></span></span>
@@ -1327,8 +1348,6 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fits</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">families</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare via information criteria</span></span></span>
@@ -1342,10 +1361,10 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">comparison</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Family   LogLik        AIC        BIC npar</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta   beta 45.26157  -66.52315  -48.93432   12</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> kw       kw 96.47892 -168.95784 -151.36901   12</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ekw     ekw 97.28973 -168.57946 -149.52490   13</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> bkw     bkw 96.44144 -164.88287 -144.36257   14</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gkw     gkw 96.52548 -163.05096 -141.06492   15</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> kw       kw 96.96942 -169.93884 -152.35001   12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ekw     ekw 97.31813 -168.63626 -149.58169   13</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> bkw     bkw 96.39339 -164.78677 -144.26647   14</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gkw     gkw 96.50393 -163.00786 -141.02182   15</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 4.2: Formal nested model testing</span></span></span>
 <span class="r-in"><span><span class="va">fit_kw</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span></span>
@@ -1353,7 +1372,6 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="va">fit_ekw</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"ekw"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="va">fit_gkw</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"gkw"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">fit_ekw</span>, <span class="va">fit_gkw</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative deviance change detected; models may not be nested</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Analysis of Deviance Table</span>
@@ -1363,9 +1381,9 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 3: yield ~ batch + temp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   20.00000 -192.95784                       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw  19.00000 -194.57946  1  1.62162  0.20287  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_gkw  17.00000 -193.05096  2 -1.52851           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   20.00000 -193.93884                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw  19.00000 -194.63626  1  0.69742  0.40365  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_gkw  17.00000 -193.00786  2 -1.62840           </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span></span></span>
@@ -1408,48 +1426,48 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, level <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span> <span class="co"># 95% CI</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>some standard errors are NA or infinite; intervals may be unreliable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                         2.5 %     97.5 %</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.46546878  0.5566185</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.79054008  0.8996843</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.53953733  0.6574229</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.65732574  0.7753480</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.41885996  0.5292772</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.46088005  0.5826205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.39671081  0.5169558</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.17469502  0.2864693</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.14465787  0.2682429</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.07755916  0.2148541</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.61360892  0.7261721</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.78583358  0.8904055</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.53532330  0.6471204</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.65443679  0.7659146</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.41441364  0.5188438</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.46463674  0.5758602</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.39394438  0.5056469</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.17260900  0.2768690</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.14783914  0.2586511</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.07933947  0.2041538</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp                NaN        NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  24.27478345 25.6466010</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  28.04744330 29.7373164</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, level <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span> <span class="co"># 90% CI</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>some standard errors are NA or infinite; intervals may be unreliable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                           5 %       95 %</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.47279602  0.5492913</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.79931383  0.8909105</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.54901378  0.6479465</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.66681317  0.7658606</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.42773605  0.5204011</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.47066637  0.5728342</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.40637691  0.5072897</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.18368019  0.2774841</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.15459247  0.2583083</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.08859585  0.2038174</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.62265751  0.7171235</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.79423978  0.8819993</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.54431031  0.6381334</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.66339813  0.7569532</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.42280844  0.5104490</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.47357764  0.5669193</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.40292379  0.4966675</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.18099013  0.2684879</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.15674695  0.2497433</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.08937289  0.1941204</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp                NaN        NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  24.38505944 25.5363251</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  28.18328674 29.6014730</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, level <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span> <span class="co"># 99% CI</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>some standard errors are NA or infinite; intervals may be unreliable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                         0.5 %     99.5 %</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.45114812  0.5709392</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.77339228  0.9168321</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.52101616  0.6759441</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.63878309  0.7938907</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.40151216  0.5466250</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.44175323  0.6017473</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.37781896  0.5358476</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.15713401  0.3040303</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.12524127  0.2876595</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.05598857  0.2364247</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.59592396  0.7438570</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.76940413  0.9068350</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.51775871  0.6646850</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.63692236  0.7834290</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.39800646  0.5352510</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.44716227  0.5933347</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.37639464  0.5231967</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.15622857  0.2932494</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.13042932  0.2760609</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.05972972  0.2237636</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp                NaN        NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  24.05925529 25.8621292</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  27.78194499 30.0028147</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># SECTION 7: Diagnostic Plots and Model Checking</span></span></span>
 <span class="r-in"><span></span></span>
@@ -1471,6 +1489,8 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="co"># Example 7.3: Using ggplot2 for modern graphics</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, use_ggplot <span class="op">=</span> <span class="cn">TRUE</span>, arrange_plots <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 1 row containing missing values or values outside the scale range</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> (`geom_segment()`).</span>
 <span class="r-plt img"><img src="gkwreg-4.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 7.4: Customized half-normal plot</span></span></span>
@@ -1488,13 +1508,13 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="va">diagnostics</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, save_diagnostics <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simulating envelope ( 100 iterations): .......... Done!</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">diagnostics</span><span class="op">$</span><span class="va">data</span><span class="op">)</span> <span class="co"># Residuals, Cook's distance, etc.</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   index y_obs    fitted      resid abs_resid   cook_dist  leverage  linpred</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1     1 0.122 0.1092212  1.1932643 1.1932643 0.137685117 0.3755669 2.442423</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     2 0.223 0.2166827  0.2915295 0.2915295 0.008703730 0.3853667 2.813344</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3 0.347 0.3478678 -0.1958711 0.1958711 0.004293383 0.4005540 3.184264</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     4 0.457 0.4673080 -0.7144760 0.7144760 0.054452114 0.3923400 3.512794</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5     5 0.080 0.0710716  1.0395827 1.0395827 0.113486840 0.3896549 2.264676</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6     6 0.131 0.1384736 -0.6639264 0.6639264 0.043172353 0.3777472 2.556114</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   index y_obs     fitted    resid abs_resid  cook_dist  leverage  linpred</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     1 0.122 0.11054085 1.889619  1.889619 0.08026648 0.3755669 2.590812</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     2 0.223 0.21642848 1.889619  1.889619 0.08500820 0.3853667 2.960550</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3 0.347 0.35129809 1.889619  1.889619 0.09289227 0.4005540 3.330287</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     4 0.457 0.46539436 1.889619  1.889619 0.08854416 0.3923400 3.657769</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5     5 0.080 0.07249446 1.889619  1.889619 0.08716616 0.3896549 2.412580</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6     6 0.131 0.13973673 1.889619  1.889619 0.08129922 0.3777472 2.703088</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># SECTION 8: Real Data Example - Food Expenditure</span></span></span>
 <span class="r-in"><span></span></span>
@@ -1671,35 +1691,35 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.3791 -0.1005  0.0274  0.0343  0.1497  0.6128 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.3770 -0.1000  0.0267  0.0340  0.1490  0.6110 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)    0.8711     0.3012   2.892 0.003825 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:x             -0.8149     0.2937  -2.775 0.005526 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    -0.7094     0.2486  -2.854 0.004318 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:x               0.2722     0.1536   1.772 0.076423 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)    0.1728     0.3166   0.546 0.585283    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:x              0.3077     0.6980   0.441 0.659327    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)    1.0725     1.3415   0.799 0.424022    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:x              1.3580     0.8127   1.671 0.094736 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  -0.2392     0.2789  -0.858 0.391068    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:x             1.2660     0.3368   3.759 0.000171 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   0.50770    0.46634   1.089 0.276288    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:x            -1.42339    0.40600  -3.506 0.000455 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)   -0.25466    0.26649  -0.956 0.339267    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:x              0.05103    0.13453   0.379 0.704463    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)   0.26511    0.35681   0.743 0.457489    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:x             0.21267    0.75215   0.283 0.777371    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -0.11634    0.61012  -0.191 0.848768    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:x             0.68690    0.38709   1.775 0.075979 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  0.02721    0.45886   0.059 0.952712    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:x            1.94496    0.58321   3.335 0.000853 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                         3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   0.2808  1.4614</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:x            -1.3905 -0.2393</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)   -1.1965 -0.2222</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:x             -0.0289  0.5733</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)  -0.4478  0.7933</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:x            -1.0603  1.6757</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -1.5568  3.7018</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:x            -0.2349  2.9509</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -0.7858  0.3074</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:x            0.6059  1.9261</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -0.4063  1.4217</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:x            -2.2191 -0.6277</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)   -0.7770  0.2676</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:x             -0.2126  0.3147</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)  -0.4342  0.9644</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:x            -1.2615  1.6869</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -1.3122  1.0795</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:x            -0.0718  1.4456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -0.8721  0.9266</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:x            0.8019  3.0880</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
@@ -1709,25 +1729,25 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 2.588</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.5032</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1.222</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta: 7.286</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1.062</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 2.182</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.777</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1.324</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta: 4.783</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1.927</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 1000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 10 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 990 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 421.6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -823.1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -774 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.1727 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.3194 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 421.3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -822.7 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -773.6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.1726 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.3196 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.1404 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 88 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 37 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># SECTION 10: Handling Convergence Issues</span></span></span>
@@ -1772,11 +1792,11 @@ for the GKw distribution family functions</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Using TMB model: kwreg</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Checking TMB model status for  kwreg ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Found TMB source file:  /home/jlopes/R/x86_64-pc-linux-gnu-library/4.5/gkwreg/tmb/kwreg.cpp </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Found cached TMB model:  /home/jlopes/.cache/gkwreg/tmb_cache/R4.5/2.0.0/kwreg.so </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Found cached TMB model:  /home/jlopes/.cache/gkwreg/tmb_cache/R4.5/2.1.1/kwreg.so </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Successfully loaded cached TMB model.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Optimizing with nlminb...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  7535.888 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0:-7.1054274e-14:  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0:     0.0000000:  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000  0.00000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1043.999 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  248.2347 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   2:    -5.6372510: -0.000220415 4.16287e-05 -6.57121e-05 -4.96481e-05 -2.17994e-05 4.41064e-05 1.14631e-05 -0.000146966 -2.99241e-05 1.37058e-05 -0.00157060 0.00131183</span>
@@ -1826,76 +1846,90 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  16178.4 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  32:    -86.555130: -0.103660 0.852072 0.593116 0.723514 0.494456 0.507035 0.475202 0.234153 0.220827 0.171784 0.00526956  13.3773</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  29858.1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  4090.935 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  34:    -88.615341: -0.000990104 0.902580 0.704435 0.787394 0.558575 0.568736 0.517017 0.339891 0.253565 0.244840 0.00543371  16.7473</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  6186.975 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  23677.06 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  36:    -90.601197: 0.285604 0.888612 0.601393 0.700915 0.510188 0.513569 0.451882 0.236701 0.192324 0.123306 0.00521226  19.2551</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  5588.919 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3309.08 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  38:    -93.042504: 0.316922 0.850751 0.574503 0.695607 0.469865 0.519612 0.445518 0.208463 0.198603 0.125129 0.00518065  19.5363</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3996.63 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  17353.55 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  40:    -93.849315: 0.332285 0.837332 0.584783 0.707135 0.467210 0.521062 0.448394 0.208314 0.202877 0.128243 0.00522856  20.1315</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3405.852 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3404.563 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  42:    -94.965756: 0.338920 0.840802 0.596147 0.710362 0.473492 0.511102 0.456749 0.226911 0.203994 0.151338 0.00533730  21.2778</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  11748.02 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  29130.55 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  44:    -95.424402: 0.420794 0.842713 0.608494 0.718265 0.475041 0.523530 0.473653 0.236527 0.216087 0.158018 0.00532032  22.9741</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  26449.94 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  7298.249 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  46:    -96.131311: 0.482761 0.846681 0.602681 0.722993 0.477555 0.529477 0.454398 0.235033 0.210310 0.152480 0.00525426  24.0062</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  250.4761 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  5570.218 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  48:    -96.433056: 0.522167 0.839729 0.590534 0.711373 0.470034 0.519762 0.450951 0.224867 0.202519 0.140202 0.00528254  24.9677</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  69.23836 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1869.847 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  50:    -96.476842: 0.510728 0.845808 0.598652 0.716292 0.473691 0.521282 0.457649 0.230841 0.206275 0.145476 0.00530135  24.9706</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  988.5663 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  366.5992 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  52:    -96.478432: 0.510367 0.844864 0.598549 0.716430 0.474189 0.521715 0.456429 0.230335 0.206506 0.146313 0.00529974  24.9515</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  263.2514 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  84.98653 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  54:    -96.478759: 0.510812 0.845169 0.598260 0.716418 0.474102 0.521785 0.456952 0.230616 0.206194 0.146271 0.00529867  24.9535</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  23.88984 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  11.85171 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  56:    -96.478905: 0.511030 0.845113 0.598483 0.716339 0.474068 0.521750 0.456834 0.230581 0.206450 0.146206 0.00529887  24.9604</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  2.05176 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.2997585 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  58:    -96.478915: 0.511043 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.09257133 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.09256928 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  60:    -96.478921: 0.511044 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.0925664 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.09256415 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  62:    -96.478922: 0.511044 0.845112 0.598480 0.716337 0.474069 0.521750 0.456833 0.230582 0.206450 0.146207 0.00529887  24.9607</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  4090.948 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  34:    -88.615340: -0.000990117 0.902580 0.704435 0.787394 0.558575 0.568736 0.517017 0.339891 0.253565 0.244840 0.00543371  16.7473</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  6187 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  23677.04 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  36:    -90.601186: 0.285604 0.888612 0.601393 0.700915 0.510188 0.513569 0.451882 0.236701 0.192324 0.123306 0.00521226  19.2551</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  5588.836 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3309.01 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  38:    -93.042485: 0.316922 0.850751 0.574503 0.695607 0.469865 0.519612 0.445518 0.208463 0.198603 0.125129 0.00518065  19.5362</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3996.37 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  17352.9 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  40:    -93.849295: 0.332284 0.837333 0.584783 0.707135 0.467210 0.521063 0.448395 0.208314 0.202877 0.128243 0.00522856  20.1314</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3406.926 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3404.861 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  42:    -94.965671: 0.338916 0.840802 0.596147 0.710362 0.473493 0.511103 0.456749 0.226911 0.203994 0.151337 0.00533729  21.2777</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  11745.88 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  29124.77 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  44:    -95.424092: 0.420780 0.842716 0.608497 0.718265 0.475043 0.523533 0.473657 0.236527 0.216087 0.158017 0.00532031  22.9738</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  26418.49 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  7282.638 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  46:    -96.130130: 0.482702 0.846682 0.602675 0.722989 0.477554 0.529472 0.454392 0.235030 0.210302 0.152475 0.00525428  24.0048</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  494.5489 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15965.98 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  48:    -96.538019: 0.550107 0.835039 0.586860 0.706278 0.466407 0.518103 0.446995 0.221504 0.199669 0.138062 0.00527778  25.4999</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15031.69 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  13666.62 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  50:    -96.711138: 0.582396 0.845663 0.596602 0.717698 0.467337 0.516890 0.457806 0.228835 0.201826 0.146314 0.00530960  26.7748</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  16605.03 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3047.527 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  52:    -96.856774: 0.631822 0.834713 0.589072 0.709363 0.467874 0.521528 0.445107 0.223565 0.205436 0.144507 0.00525969  27.5891</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  4208.215 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  3652.26 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  54:    -96.925764: 0.625525 0.839120 0.592494 0.710706 0.467948 0.521317 0.450339 0.225835 0.203158 0.141871 0.00528569  27.6942</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  2573.476 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  9137.558 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  56:    -96.951202: 0.664042 0.838739 0.591799 0.710578 0.466411 0.519601 0.449840 0.224810 0.203804 0.141213 0.00528572  28.7344</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1136.99 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  148.7722 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  58:    -96.966516: 0.662090 0.838353 0.591771 0.710711 0.466827 0.520583 0.450310 0.224574 0.203554 0.142080 0.00528305  28.6888</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  543.1121 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  226.7339 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  60:    -96.968925: 0.668602 0.838025 0.591338 0.710310 0.466683 0.520141 0.449752 0.224688 0.203174 0.141518 0.00528215  28.8559</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  16.20516 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.99016 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  62:    -96.969383: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.94717 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.86117 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  64:    -96.969396: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.68918 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.65478 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  66:    -96.969417: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.6479 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64652 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  68:    -96.969418: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64377 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64322 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  70:    -96.969418: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64212 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  72:    -96.969419: 0.669891 0.838120 0.591222 0.710176 0.466629 0.520248 0.449796 0.224739 0.203245 0.141747 0.00528196  28.8924</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Computing standard errors...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  0.09256415 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  7157.852 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  6484.594 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  621.6198 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  635.2601 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  462.0846 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  472.2466 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  540.2503 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  552.1197 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  747.9303 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  764.5021 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  696.8724 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  711.8765 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  601.0721 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  614.3962 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  823.469 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  841.6159 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  727.6203 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  743.5208 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  430.3323 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  439.7047 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  372831.9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  388700281 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  260.1394 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  259.8767 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  15.64212 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  8566.585 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  8756.273 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  833.0485 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  822.9346 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  632.0476 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  616.7627 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  749.2533 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  737.0134 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1020.709 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1015.726 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  960.3235 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  953.1672 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  824.0432 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  813.9203 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1139.862 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1137.806 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1000.361 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  994.5989 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  590.628 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  574.1314 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  433964.4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1606458690 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  287.6913 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  318.6724 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> outer mgc:  1 </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span></span></span>
@@ -1939,7 +1973,7 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare models via AIC</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">fast_fits</span>, <span class="va">AIC</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1]  -42.93436  -74.90259 -168.95784 -169.73262</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1]  -42.93436  -74.90259 -169.93884 -180.67992</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Refit best model with full inference</span></span></span>
 <span class="r-in"><span><span class="va">best_formula</span> <span class="op">&lt;-</span> <span class="va">formulas</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.min</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">fast_fits</span>, <span class="va">AIC</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span></span>
@@ -1955,66 +1989,64 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gkwreg(formula = best_formula, data = GasolineYield, family = "kw")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0348 -0.0005  0.0050  0.0036  0.0080  0.0152 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Min   Q1.25%   Median     Mean   Q3.75%      Max </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -20.6713 -20.5828 -20.5213 -20.5027 -20.4288 -20.2423 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  1.3336413  0.0207832   64.17   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.1985791        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2      -0.0936398        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3      -0.2645930        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4      -0.2347967        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5      -0.8289201        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6      -0.2690259        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7      -0.6041666        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8      -0.8590190        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9      -0.1547805        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp         0.0033288        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1:temp  0.0015734        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2:temp  0.0017075        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3:temp  0.0027438        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4:temp  0.0018139        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5:temp  0.0035480        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6:temp  0.0018728        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7:temp  0.0021980        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8:temp  0.0027717        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9:temp  0.0007384        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  26.6038003  0.3693315   72.03   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     Estimate Std. Error z value Pr(&gt;|z|)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  1.7004537        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.1059611        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2      -0.1847242        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3      -0.3499887        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4      -0.3335081        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5      -0.9271798        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6      -0.3519779        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7      -0.6985736        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8      -0.9335501        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9      -0.2581795        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp         0.0031152        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1:temp  0.0017948        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2:temp  0.0019375        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3:temp  0.0029493        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4:temp  0.0020489        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5:temp  0.0037800        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6:temp  0.0020658        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7:temp  0.0024206        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8:temp  0.0029466        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9:temp  0.0009828        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  35.0310990        NaN     NaN      NaN</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                        3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  1.2929  1.3744</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9          NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp            NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9:temp     NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  25.8799 27.3277</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    3% 98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept) NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9      NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp        NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9:temp NaN NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  NaN NaN</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 16.83</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 3.576e+11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 22.21</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 1.634e+15</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1</span>
@@ -2023,15 +2055,15 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 32 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 21 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 11 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 105.9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -169.7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.009555 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.9918 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.007052 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 111.3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -180.7 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -149.9 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 20.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: -37742 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 20.5 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 264 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 284 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># SECTION 12: Model Selection and Comparison</span></span></span>
@@ -2053,7 +2085,7 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Resid. Df Resid. Dev Df  Deviance Pr(&gt;Chi)    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit1  30.00000  -57.02258                          </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit2  21.00000  -64.93436  9   7.91178  0.54306    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit3  20.00000 -192.95784  1 128.02349  &lt; 1e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit3  20.00000 -193.93884  1 129.00448  &lt; 1e-04 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span></span></span>
@@ -2074,9 +2106,9 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">ic_table</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                         Model df   LogLik        AIC        BIC Delta_AIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept only Intercept only  2 28.51129  -53.02258  -50.09111  115.9353</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Batch effect     Batch effect 11 32.46718  -42.93436  -26.81126  126.0235</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Batch + Temp     Batch + Temp 12 96.47892 -168.95784 -151.36901    0.0000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept only Intercept only  2 28.51129  -53.02258  -50.09111  116.9163</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Batch effect     Batch effect 11 32.46718  -42.93436  -26.81126  127.0045</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Batch + Temp     Batch + Temp 12 96.96942 -169.93884 -152.35001    0.0000</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 12.3: Cross-validation for predictive performance</span></span></span>
 <span class="r-in"><span><span class="co"># 5-fold cross-validation</span></span></span>
@@ -2097,10 +2129,9 @@ for the GKw distribution family functions</p>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Cross-validated RMSE:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">cv_rmse</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Cross-validated RMSE: 0.02065961 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cross-validated RMSE: 0.09026605 </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

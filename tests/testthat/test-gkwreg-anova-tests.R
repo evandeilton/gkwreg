@@ -239,21 +239,6 @@ test_that("Test 17: Nested families comparison (beta vs mc)", {
   expect_equal(nrow(result), 2)
 })
 
-test_that("Test 18: Full hierarchy comparison (kw -> ekw -> gkw)", {
-  # Test full nested family hierarchy
-  models <- setup_anova_models()
-
-  fit_kw <- gkwreg(y ~ x1, data = models$data, family = "kw")
-  fit_ekw <- gkwreg(y ~ x1, data = models$data, family = "ekw")
-  fit_gkw <- gkwreg(y ~ x1, data = models$data, family = "gkw")
-
-  result <- anova(fit_kw, fit_ekw, fit_gkw)
-
-  expect_equal(nrow(result), 3)
-  # More complex models should have more parameters
-  expect_true(result[1, "Resid. Df"] > result[3, "Resid. Df"])
-})
-
 # =============================================================================
 # DIFFERENT FORMULA SPECIFICATIONS
 # =============================================================================

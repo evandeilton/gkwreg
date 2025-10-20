@@ -13,7 +13,7 @@ up to 5 parts (alpha, beta, gamma, delta, lambda) using the Formula package."></
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,10 @@ up to 5 parts (alpha, beta, gamma, delta, lambda) using the Formula package."></
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Generalized Kumaraswamy vs. Beta Regression - Simulation Study</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -138,20 +142,20 @@ specification:</p><ul><li><p><code>. ~ . + x | . | . | . | .</code> - Add <code>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Resid. Df Resid. Dev Df  Deviance Pr(&gt;Chi)    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m1_0  30.00000  -57.02258                          </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m1_1  29.00000  -80.90259  1  23.88001  &lt; 1e-04 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m1_2  20.00000 -192.95781  9 112.05522  &lt; 1e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m1_2  20.00000 -193.93871  9 113.03612  &lt; 1e-04 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">m1_0</span>, <span class="va">m1_1</span>, <span class="va">m1_2</span>, <span class="va">m1_3</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      df        AIC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m1_0  2  -53.02258</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m1_1  3  -74.90259</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m1_2 12 -168.95781</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m1_2 12 -169.93871</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m1_3 11  -42.93436</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">m1_0</span>, <span class="va">m1_1</span>, <span class="va">m1_2</span>, <span class="va">m1_3</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      df        BIC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m1_0  2  -50.09111</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m1_1  3  -70.50538</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m1_2 12 -151.36898</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m1_2 12 -152.34988</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m1_3 11  -26.81126</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ===========================================================================</span></span></span>
@@ -166,11 +170,9 @@ specification:</p><ul><li><p><code>. ~ . + x | . | . | . | .</code> - Add <code>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add batch to beta</span></span></span>
 <span class="r-in"><span><span class="va">m2_2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">m2_1</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">|</span> <span class="va">.</span> <span class="op">+</span> <span class="va">batch</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add batch to alpha too</span></span></span>
 <span class="r-in"><span><span class="va">m2_3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">m2_2</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">+</span> <span class="va">batch</span> <span class="op">|</span> <span class="va">.</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">m2_0</span>, <span class="va">m2_1</span>, <span class="va">m2_2</span>, <span class="va">m2_3</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Analysis of Deviance Table</span>
@@ -180,47 +182,33 @@ specification:</p><ul><li><p><code>. ~ . + x | . | . | . | .</code> - Add <code>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 3: yield ~ temp | batch</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 4: yield ~ temp + batch | batch</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m2_0  30.00000  -57.02258                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m2_1  29.00000  -80.90259  1 23.88001  &lt; 1e-04 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m2_2  20.00000 -177.06320  9 96.16061  &lt; 1e-04 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m2_3  11.00000 -195.66442  9 18.60123 0.028805 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Resid. Df Resid. Dev Df  Deviance Pr(&gt;Chi)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m2_0  30.00000  -57.02258                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m2_1  29.00000  -80.90259  1  23.88001  &lt; 1e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m2_2  20.00000 -183.64817  9 102.74558  &lt; 1e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m2_3  11.00000 -197.14689  9  13.49871  0.14131    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">m2_0</span>, <span class="va">m2_1</span>, <span class="va">m2_2</span>, <span class="va">m2_3</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      df        AIC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m2_0  2  -53.02258</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> m2_1  3  -74.90259</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m2_2 12 -153.06320</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m2_3 21 -153.66442</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m2_2 12 -159.64817</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> m2_3 21 -155.14689</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ===========================================================================</span></span></span>
 <span class="r-in"><span><span class="co"># EXAMPLE 3: Three-part formulas (alpha | beta | gamma)</span></span></span>
 <span class="r-in"><span><span class="co"># ===========================================================================</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">m3_0</span> <span class="op">&lt;-</span> <span class="fu"><a href="gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">|</span> <span class="fl">1</span> <span class="op">|</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"gkw"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">m3_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">m3_0</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">+</span> <span class="va">temp</span> <span class="op">|</span> <span class="va">.</span> <span class="op">|</span> <span class="va">.</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
+<span class="r-in"><span><span class="va">m3_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">m3_0</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">+</span> <span class="va">temp</span> <span class="op">|</span> <span class="va">.</span> <span class="op">|</span> <span class="va">.</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">m3_2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">m3_1</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">|</span> <span class="va">.</span> <span class="op">+</span> <span class="va">batch</span> <span class="op">|</span> <span class="va">.</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
 <span class="r-in"><span><span class="va">m3_3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">m3_2</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">|</span> <span class="va">.</span> <span class="op">|</span> <span class="va">.</span> <span class="op">+</span> <span class="va">temp</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">m3_0</span>, <span class="va">m3_1</span>, <span class="va">m3_2</span>, <span class="va">m3_3</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative deviance change detected; models may not be nested</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative deviance change detected; models may not be nested</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Analysis of Deviance Table</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Model 1: yield ~ 1 | 1 | 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Model 2: yield ~ temp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Model 3: yield ~ temp | batch</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Model 4: yield ~ temp | batch | temp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      Resid. Df Resid. Dev Df  Deviance Pr(&gt;Chi)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m3_0  27.00000  -85.36361                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m3_1  26.00000  -81.44245  1  -3.92116             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m3_2  17.00000 -195.29833  9 113.85588  &lt; 1e-04 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> m3_3  16.00000 -191.05949  1  -4.23884             </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> log-likelihood not available in fitted model object</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ===========================================================================</span></span></span>
 <span class="r-in"><span><span class="co"># EXAMPLE 4: Practical nested model comparison</span></span></span>
@@ -238,10 +226,10 @@ specification:</p><ul><li><p><code>. ~ . + x | . | . | . | .</code> - Add <code>
 <span class="r-in"><span><span class="va">fit3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">fit2</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">|</span> <span class="va">temp</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="va">fit4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">fit3</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">|</span> <span class="va">.</span> <span class="op">+</span> <span class="va">batch</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Full comparison</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">fit0</span>, <span class="va">fit1</span>, <span class="va">fit2</span>, <span class="va">fit3</span>, <span class="va">fit4</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative deviance change detected; models may not be nested</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Analysis of Deviance Table</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 1: yield ~ 1</span>
@@ -253,25 +241,25 @@ specification:</p><ul><li><p><code>. ~ . + x | . | . | . | .</code> - Add <code>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Resid. Df Resid. Dev Df  Deviance Pr(&gt;Chi)    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit0  30.00000  -57.02258                          </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit1  29.00000  -80.90259  1  23.88001  &lt; 1e-04 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit2  20.00000 -192.95781  9 112.05522  &lt; 1e-04 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit3  19.00000 -192.97673  1   0.01892  0.89061    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit4  10.00000 -196.88336  9   3.90663  0.91745    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit2  20.00000 -193.93871  9 113.03612  &lt; 1e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit3  19.00000 -193.47839  1  -0.46032             </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit4  10.00000 -197.24984  9   3.77145   0.9258    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit0</span>, <span class="va">fit1</span>, <span class="va">fit2</span>, <span class="va">fit3</span>, <span class="va">fit4</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      df        AIC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit0  2  -53.02258</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit1  3  -74.90259</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit2 12 -168.95781</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit3 13 -166.97673</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit4 22 -152.88336</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit2 12 -169.93871</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit3 13 -167.47839</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit4 22 -153.24984</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC</a></span><span class="op">(</span><span class="va">fit0</span>, <span class="va">fit1</span>, <span class="va">fit2</span>, <span class="va">fit3</span>, <span class="va">fit4</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      df        BIC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit0  2  -50.09111</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit1  3  -70.50538</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit2 12 -151.36898</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit3 13 -147.92216</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit4 22 -120.63717</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit2 12 -152.34988</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit3 13 -148.42383</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit4 22 -121.00365</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ===========================================================================</span></span></span>
 <span class="r-in"><span><span class="co"># EXAMPLE 5: Changing other parameters</span></span></span>

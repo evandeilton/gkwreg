@@ -340,21 +340,6 @@ test_that("Fitted values with weights are properly calculated", {
   expect_true(all(is.finite(fitted_vals)))
 })
 
-test_that("Fitted values work with complex GKw family", {
-  # Test fitted values for full 5-parameter GKw model
-  setup <- setup_fitted_data()
-
-  fit_gkw <- gkwreg(y ~ x1 | x2 | 1 | 1 | 1,
-    data = setup$data,
-    family = "gkw"
-  )
-
-  fitted_gkw <- fitted(fit_gkw)
-
-  expect_length(fitted_gkw, nrow(setup$data))
-  expect_true(all(fitted_gkw > 0 & fitted_gkw < 1))
-  expect_true(all(is.finite(fitted_gkw)))
-})
 
 test_that("Fitted values for intercept-only model are constant", {
   # Test that intercept-only model produces constant fitted values

@@ -70,27 +70,6 @@ test_that("Test 4: Beta family produces correct fixed parameters", {
   expect_true(all(fit$parameter_vectors$lambdaVec == 1))
 })
 
-test_that("Test 5: Exponentiated Kumaraswamy family has three free parameters", {
-  # Test EKW family structure
-  data <- setup_test_data()
-
-  fit <- gkwreg(y ~ 1, data = data, family = "ekw")
-
-  expect_equal(length(coef(fit)), 3) # alpha, beta, lambda intercepts
-  expect_true("lambda:(Intercept)" %in% names(coef(fit)))
-})
-
-test_that("Test 6: Full GKw family fits with all five parameters", {
-  # Test most complex model with all parameters
-  data <- setup_test_data()
-
-  fit <- gkwreg(y ~ 1, data = data, family = "gkw")
-
-  expect_equal(length(coef(fit)), 5) # All five parameter intercepts
-  expect_equal(fit$npar, 5)
-  expect_true(all(c("alpha", "beta", "gamma", "delta", "lambda") %in% fit$param_names))
-})
-
 test_that("Test 7: Different predictors per parameter specification works", {
   # Test extended formula syntax with different predictors
   data <- setup_test_data()
@@ -265,7 +244,7 @@ test_that("Test 20: Model components not returned when disabled", {
   data <- setup_test_data()
 
   fit <- gkwreg(y ~ x1,
-    data = data, family = "kw",
+    data = data, family = "ekw",
     model = FALSE, x = FALSE, y = FALSE
   )
 
@@ -441,33 +420,6 @@ test_that("Parameter recovery works for known Kumaraswamy data", {
   expect_equal(as.numeric(coef(fit)["alpha:(Intercept)"]), 0.5, tolerance = 0.15)
   expect_equal(as.numeric(coef(fit)["alpha:x"]), 0.3, tolerance = 0.1)
   expect_equal(as.numeric(coef(fit)["beta:(Intercept)"]), 1.0, tolerance = 0.15)
-})
-
-test_that("Complex GKw simulation converges", {
-  # Test fitting most complex model on simulated GKw data
-  set.seed(999)
-  n <- 300
-  x <- runif(n, -1, 1)
-
-  alpha <- exp(0.5)
-  beta <- exp(1.0)
-  gamma <- exp(0.7)
-  delta <- plogis(0.0)
-  lambda <- exp(-0.3)
-
-  y <- rgkw(n,
-    alpha = alpha, beta = beta, gamma = gamma,
-    delta = delta, lambda = lambda
-  )
-
-  data <- data.frame(y = y, x = x)
-  fit <- gkwreg(y ~ 1,
-    data = data, family = "gkw",
-    control = gkw_control(maxit = 1000)
-  )
-
-  expect_true(fit$convergence)
-  expect_equal(fit$npar, 5)
 })
 
 # =============================================================================

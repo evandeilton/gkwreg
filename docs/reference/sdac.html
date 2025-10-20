@@ -13,7 +13,7 @@ transplants."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,10 @@ transplants."></head><body>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Generalized Kumaraswamy vs. Beta Regression - Simulation Study</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -298,33 +302,33 @@ Regression Analysis of Proportional Data Using the Simplex Distribution.
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.3888 -0.0434  0.0258  0.0143  0.0909  0.2388 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.3885  0.0115  0.1504  0.3669  0.7999  0.9899 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                      Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   1.152e+00  8.975e-01   1.284  0.19926    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:ageadj        1.498e-02  4.736e-03   3.163  0.00156 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:chemo        -1.200e+01  5.057e-01 -23.730  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:genderM       9.734e-02  8.606e-02   1.131  0.25801    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    8.383e-01  2.581e-01   3.247  0.00117 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:age           -1.448e-04        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:chemo         -2.465e-01  2.676e-01  -0.921  0.35698    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  5.330e-01  1.148e+00   0.464  0.64234    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:chemo        2.100e+01        NaN     NaN      NaN    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   1.058e+00  9.594e-01   1.103  0.27000    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:ageadj        1.420e-02        NaN     NaN      NaN    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:chemo        -3.226e+01  9.296e-01 -34.706  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:genderM       9.107e-02  7.744e-02   1.176  0.23962    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    7.982e-01  2.480e-01   3.218  0.00129 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:age           -2.123e-06        NaN     NaN      NaN    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:chemo         -2.332e-01  2.464e-01  -0.947  0.34389    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  6.733e-01  1.222e+00   0.551  0.58154    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:chemo        5.628e+01  8.348e-01  67.410  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                          3%      98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   -0.6070   2.9112</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:ageadj         0.0057   0.0243</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:chemo        -12.9918 -11.0094</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:genderM       -0.0713   0.2660</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)     0.3323   1.3443</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   -0.8221   2.9387</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:ageadj            NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:chemo        -34.0844 -30.4405</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:genderM       -0.0607   0.2429</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)     0.3120   1.2843</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta:age                NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:chemo          -0.7709   0.2780</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  -1.7164   2.7824</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:chemo            NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:chemo          -0.7162   0.2497</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  -1.7210   3.0676</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:chemo        54.6401  57.9126</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
@@ -332,25 +336,25 @@ Regression Analysis of Proportional Data Using the Simplex Distribution.
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 2.44</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 2.066</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 2.179</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 2.01</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1.025e+09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 2.463e+24</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 239 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 9 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 230 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 201.3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -384.6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -353.3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.1124 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.02486 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.08868 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 312.7 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -607.4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -576.1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.5497 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: -22.33 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.4142 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 73 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 62 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Clinical interpretation:</span></span></span>
@@ -366,9 +370,9 @@ Regression Analysis of Proportional Data Using the Simplex Distribution.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 1: rcd ~ ageadj + chemo + gender | age + gender</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 2: rcd ~ ageadj + chemo + gender | age + chemo | chemo</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               Resid. Df Resid. Dev Df Deviance  Pr(&gt;Chi)   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw_gender 232.00000 -392.23401                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw       230.00000 -402.55486  2 10.32086 0.0057392 **</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Resid. Df Resid. Dev Df  Deviance Pr(&gt;Chi)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw_gender 232.00000 -392.23401                          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw       230.00000 -625.37529  2 233.14128  &lt; 1e-04 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span></span></span>

@@ -1,4 +1,18 @@
+# gkwreg 2.1.1
+
 # gkwreg 2.1.0
+
+### Comparative Testing
+
+*   **Introduced a dedicated comparative test suite** to validate `gkwreg`'s beta family implementation against the reference `betareg` package, ensuring numerical accuracy and reliability.
+
+*   **Confirmed statistical equivalence** despite different internal parameterizations. Tests demonstrate that `gkwreg`'s shape-based (`gamma`, `delta+1`) approach produces equivalent statistical models to `betareg`'s mean-precision (`mu`, `phi`) approach.
+
+*   **Validated key outputs**, showing that log-likelihood, AIC/BIC, fitted values, and predictions are virtually identical between the two packages when fitting the same beta regression model.
+
+*   **Successfully benchmarked `gkwreg` with `family = "beta"`** as a robust and reliable alternative for beta regression, yielding the same inferential conclusions as the established `betareg` package.
+
+*   **Verified consistency across multiple scenarios**, including controlled simulations with known parameters and real-world datasets (`GasolineYield`, `FoodExpenditure`), ensuring robust performance in diverse modeling contexts.
 
 # gkwreg 2.0.0
 

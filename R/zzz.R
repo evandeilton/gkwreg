@@ -288,7 +288,8 @@ utils::globalVariables(c(
           TMB::compile(cpp_basename, # Use only the filename
             safebounds = FALSE,
             safeunload = FALSE,
-            verbose = verbose
+            verbose = verbose,
+            flags = "-O3 -march=native -ffast-math -funroll-loops"
           )
         },
         silent = !verbose
@@ -300,7 +301,8 @@ utils::globalVariables(c(
           TMB::compile(temp_cpp_file,
             safebounds = FALSE,
             safeunload = FALSE,
-            verbose = verbose
+            verbose = verbose,
+            flags = "-O3 -march=native -ffast-math -funroll-loops"
           )
         },
         silent = !verbose
@@ -319,7 +321,8 @@ utils::globalVariables(c(
             TMB::compile("tmb_file.cpp",
               safebounds = FALSE,
               safeunload = FALSE,
-              verbose = verbose
+              verbose = verbose,
+              flags = "-O3 -march=native -ffast-math -funroll-loops"
             )
           },
           silent = !verbose

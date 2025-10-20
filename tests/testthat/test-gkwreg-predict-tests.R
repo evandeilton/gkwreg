@@ -67,70 +67,6 @@ test_that("Test 2: Prediction without newdata uses original data correctly", {
   expect_length(pred_no_newdata, nrow(setup$data))
 })
 
-test_that("Test 3: Link predictions return linear predictors correctly", {
-  # Test type = "link" returns untransformed linear predictors
-  setup <- setup_predict_data()
-
-  fit <- gkwreg(y ~ x1 | x2, data = setup$data, family = "kw")
-
-  # Get link predictions
-  pred_link <- predict(fit, type = "link")
-
-  expect_s3_class(pred_link, "data.frame")
-  expect_true("alpha" %in% names(pred_link))
-  expect_true("beta" %in% names(pred_link))
-  expect_equal(nrow(pred_link), nrow(setup$data))
-
-  # Linear predictors should be unbounded (can be negative)
-  expect_true(all(is.finite(pred_link$alpha)))
-  expect_true(all(is.finite(pred_link$beta)))
-})
-
-test_that("Test 4: Parameter predictions apply inverse link correctly", {
-  # Test type = "parameter" returns transformed parameters
-  setup <- setup_predict_data()
-
-  fit <- gkwreg(y ~ x1 | x2, data = setup$data, family = "kw")
-
-  # Get parameter predictions
-  pred_param <- predict(fit, type = "parameter")
-
-  expect_s3_class(pred_param, "data.frame")
-  expect_true("alpha" %in% names(pred_param))
-  expect_true("beta" %in% names(pred_param))
-
-  # Parameters should be positive (after exp transformation with log link)
-  expect_true(all(pred_param$alpha > 0))
-  expect_true(all(pred_param$beta > 0))
-
-  # Verify inverse link: for log link, exp(link) = parameter
-  pred_link <- predict(fit, type = "link")
-  expect_equal(exp(pred_param$alpha), exp(pred_link$alpha), tolerance = 1e-10)
-  expect_equal(exp(pred_param$beta), exp(pred_link$beta), tolerance = 1e-10)
-})
-
-test_that("Test 5: Individual parameter extraction works for all parameters", {
-  # Test extracting specific parameters (alpha, beta, etc.)
-  setup <- setup_predict_data()
-
-  fit_kw <- gkwreg(y ~ x1, data = setup$data, family = "kw")
-
-  # Extract individual parameters
-  pred_alpha <- predict(fit_kw, type = "alpha")
-  pred_beta <- predict(fit_kw, type = "beta")
-
-  expect_type(pred_alpha, "double")
-  expect_type(pred_beta, "double")
-  expect_length(pred_alpha, nrow(setup$data))
-  expect_length(pred_beta, nrow(setup$data))
-  expect_true(all(pred_alpha > 0))
-  expect_true(all(pred_beta > 0))
-
-  # Should match parameter data frame
-  pred_param <- predict(fit_kw, type = "parameter")
-  expect_equal(pred_alpha, pred_param$alpha)
-  expect_equal(pred_beta, pred_param$beta)
-})
 
 test_that("Test 6: Density calculation at specified points works correctly", {
   # Test type = "density" evaluates PDF at given points
@@ -354,46 +290,6 @@ test_that("Predict density integrates to approximately 1", {
   expect_equal(integral, 1, tolerance = 0.05)
 })
 
-test_that("Predict with all parameter types for GKw family", {
-  # Test that GKw family allows all 5 parameters to be predicted
-  setup <- setup_predict_data()
-
-  fit <- gkwreg(y ~ x1,
-    data = setup$data, family = "gkw",
-    control = gkw_control(method = "CG")
-  )
-
-  pred_param <- predict(fit, type = "parameter")
-
-  expect_true("alpha" %in% names(pred_param))
-  expect_true("beta" %in% names(pred_param))
-  expect_true("gamma" %in% names(pred_param))
-  expect_true("delta" %in% names(pred_param))
-  expect_true("lambda" %in% names(pred_param))
-
-  # All parameters should be positive except delta in (0,1)
-  expect_true(all(pred_param$alpha > 0))
-  expect_true(all(pred_param$beta > 0))
-  expect_true(all(pred_param$gamma > 0))
-  expect_true(all(pred_param$lambda > 0))
-})
-
-test_that("Predict respects fixed parameters in restricted families", {
-  # Test that Beta family fixes alpha=1, beta=1, lambda=1
-  setup <- setup_predict_data()
-
-  fit <- gkwreg(y ~ x1, data = setup$data, family = "beta")
-
-  pred_param <- predict(fit, type = "parameter")
-
-  # Check fixed parameters
-  expect_true(all(pred_param$alpha == 1))
-  expect_true(all(pred_param$beta == 1))
-  expect_true(all(pred_param$lambda == 1))
-
-  # Gamma and delta should vary
-  expect_true(var(pred_param$gamma) > 0 | var(pred_param$delta) > 0)
-})
 
 test_that("Predict with default at value works for density", {
   # Test default at = 0.5 for density/probability

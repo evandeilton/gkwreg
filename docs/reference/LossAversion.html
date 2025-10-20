@@ -11,7 +11,7 @@ short-term investment horizons lead to more conservative investment behavior."><
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,10 @@ short-term investment horizons lead to more conservative investment behavior."><
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Generalized Kumaraswamy vs. Beta Regression - Simulation Study</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -142,39 +146,37 @@ No Myopic Loss Aversion in Adolescents? – An Experimental Note.
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.6754 -0.2299 -0.0383 -0.0361  0.1480  0.5845 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.5002 -0.2002  0.0000  0.0037  0.1999  0.5000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)     -1.86038    0.56096  -3.316 0.000912 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam  0.57810    0.14964   3.863 0.000112 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age              0.14165    0.04362   3.247 0.001166 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes         -0.68895    0.15156  -4.546 5.47e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12      -0.84625    0.19849  -4.264 2.01e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)       0.06772    0.07482   0.905 0.365439    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam   0.05586    0.12910   0.433 0.665226    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes          -1.09481    0.12394  -8.833  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       Estimate Std. Error z value Pr(&gt;|z|)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)      0.00000    0.47351       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam  0.00000    0.18358       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age              0.00000    0.03771       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes          0.00000    0.12103       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12       0.00000    0.17325       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)       0.00000    0.09653       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam   0.00000    0.16937       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes           0.00000    0.13944       0        1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                            3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)     -2.9598 -0.7609</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam  0.2848  0.8714</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age              0.0561  0.2271</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes         -0.9860 -0.3919</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12      -1.2353 -0.4572</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)      -0.0789  0.2144</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam  -0.1972  0.3089</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes          -1.3377 -0.8519</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            3%    98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)     -0.9281 0.9281</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam -0.3598 0.3598</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age             -0.0739 0.0739</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes         -0.2372 0.2372</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12      -0.3396 0.3396</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)      -0.1892 0.1892</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam  -0.3320 0.3320</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes          -0.2733 0.2733</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.8082</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.7676</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.9996</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1</span>
@@ -183,15 +185,15 @@ No Myopic Loss Aversion in Adolescents? – An Experimental Note.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 570 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 8 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 562 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 160.8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -305.5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -270.8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.2551 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.09284 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.2115 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -3e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: 6e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: 6e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.2678 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 7.819e-05 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.2217 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 30 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Interpretation:</span></span></span>
@@ -220,45 +222,43 @@ No Myopic Loss Aversion in Adolescents? – An Experimental Note.
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.7512 -0.2281 -0.0302 -0.0323  0.1659  0.5579 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.5002 -0.2002  0.0000  0.0037  0.2000  0.5000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                  Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                -0.88793    0.57872  -1.534 0.124960    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12                 -2.71402    1.56623  -1.733 0.083124 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam             0.44530    0.14176   3.141 0.001683 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age                         0.09114    0.04495   2.028 0.042604 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes                    -0.48035    0.13716  -3.502 0.000462 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:arrangementteam  0.34515    0.25009   1.380 0.167555    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:age              0.07595    0.09788   0.776 0.437775    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.57264    0.08752   6.543 6.02e-11 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam              0.12743    0.12998   0.980 0.326879    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes                     -0.98691    0.12364  -7.982 1.44e-15 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:grade10-12                  -1.05841    0.10730  -9.864  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                  Estimate Std. Error z value Pr(&gt;|z|)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                 0.00000    0.67535       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12                  0.00000    1.12039       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam             0.00000    0.21132       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age                         0.00000    0.05342       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes                     0.00000    0.12237       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:arrangementteam  0.00000    0.22609       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:age              0.00000    0.07630       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.00000    0.11264       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam              0.00000    0.17198       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes                      0.00000    0.13977       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:grade10-12                   0.00000    0.14404       0        1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                       3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                -2.0222  0.2464</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12                 -5.7838  0.3557</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam             0.1675  0.7231</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age                         0.0030  0.1793</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes                    -0.7492 -0.2115</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:arrangementteam -0.1450  0.8353</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:age             -0.1159  0.2678</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.4011  0.7442</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam             -0.1273  0.3822</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes                     -1.2292 -0.7446</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:grade10-12                  -1.2687 -0.8481</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                       3%    98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                -1.3237 1.3237</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12                 -2.1959 2.1959</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam            -0.4142 0.4142</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age                        -0.1047 0.1047</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes                    -0.2398 0.2398</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:arrangementteam -0.4431 0.4431</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:age             -0.1495 0.1495</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                 -0.2208 0.2208</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam             -0.3371 0.3371</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes                     -0.2740 0.2740</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:grade10-12                  -0.2823 0.2823</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.9604</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.9774</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.9996</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1</span>
@@ -267,15 +267,15 @@ No Myopic Loss Aversion in Adolescents? – An Experimental Note.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 570 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 11 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 559 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 211.6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -401.2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -353.4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.2521 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.1145 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.2092 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -3e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: 6e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: 6e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.2679 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: -0.0001649 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.2218 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 44 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Interpretation:</span></span></span>
@@ -303,45 +303,43 @@ No Myopic Loss Aversion in Adolescents? – An Experimental Note.
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.7512 -0.2281 -0.0302 -0.0323  0.1659  0.5579 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.5002 -0.2002  0.0000  0.0037  0.2000  0.5000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                  Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                -0.88793    0.57872  -1.534 0.124960    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12                 -2.71402    1.56623  -1.733 0.083124 .  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam             0.44530    0.14176   3.141 0.001683 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age                         0.09114    0.04495   2.028 0.042604 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes                    -0.48035    0.13716  -3.502 0.000462 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:arrangementteam  0.34515    0.25009   1.380 0.167555    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:age              0.07595    0.09788   0.776 0.437775    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.57264    0.08752   6.543 6.02e-11 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam              0.12743    0.12998   0.980 0.326879    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes                     -0.98691    0.12364  -7.982 1.44e-15 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:grade10-12                  -1.05841    0.10730  -9.864  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                  Estimate Std. Error z value Pr(&gt;|z|)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                 0.00000    0.67535       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12                  0.00000    1.12039       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam             0.00000    0.21132       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age                         0.00000    0.05342       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes                     0.00000    0.12237       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:arrangementteam  0.00000    0.22609       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:age              0.00000    0.07630       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.00000    0.11264       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam              0.00000    0.17198       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes                      0.00000    0.13977       0        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:grade10-12                   0.00000    0.14404       0        1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                       3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                -2.0222  0.2464</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12                 -5.7838  0.3557</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam             0.1675  0.7231</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age                         0.0030  0.1793</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes                    -0.7492 -0.2115</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:arrangementteam -0.1450  0.8353</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:age             -0.1159  0.2678</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.4011  0.7442</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam             -0.1273  0.3822</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes                     -1.2292 -0.7446</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:grade10-12                  -1.2687 -0.8481</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                       3%    98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                -1.3237 1.3237</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12                 -2.1959 2.1959</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:arrangementteam            -0.4142 0.4142</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:age                        -0.1047 0.1047</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:maleyes                    -0.2398 0.2398</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:arrangementteam -0.4431 0.4431</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:grade10-12:age             -0.1495 0.1495</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                 -0.2208 0.2208</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:arrangementteam             -0.3371 0.3371</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:maleyes                     -0.2740 0.2740</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:grade10-12                  -0.2823 0.2823</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.9604</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.9774</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.9996</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1</span>
@@ -350,15 +348,15 @@ No Myopic Loss Aversion in Adolescents? – An Experimental Note.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 570 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 11 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 559 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 211.6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -401.2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -353.4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.2521 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.1145 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.2092 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -3e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: 6e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: 6e+21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.2679 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: -0.0001649 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.2218 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 44 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Interpretation:</span></span></span>
@@ -372,9 +370,9 @@ No Myopic Loss Aversion in Adolescents? – An Experimental Note.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 2: invest ~ grade * (arrangement + age) + male | arrangement + male + </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 2:     grade</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 Resid. Df Resid. Dev Df  Deviance Pr(&gt;Chi)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw          562.00000 -321.52333                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw_interact 559.00000 -423.16260  3 101.63927  &lt; 1e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw          562.00000      6e+21                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw_interact 559.00000      6e+21  3  0.00000        1  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span></span></span>
