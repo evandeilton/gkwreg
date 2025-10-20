@@ -11,7 +11,7 @@ demonstrating beta regression with interaction effects and heteroscedasticity.">
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,10 @@ demonstrating beta regression with interaction effects and heteroscedasticity.">
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Beta Regression vs Kumaraswamy-Based Models for Bounded Data</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -227,6 +231,7 @@ Maximum-Likelihood Regression with Beta-Distributed Dependent Variables.
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">ReadingSkills</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="st">"ekw"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_ekw</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Generalized Kumaraswamy Regression Model Summary</span>
@@ -239,33 +244,33 @@ Maximum-Likelihood Regression with Beta-Distributed Dependent Variables.
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.2459 -0.0355  0.0029  0.0121  0.0611  0.2147 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.2476 -0.0278  0.0100  0.0151  0.0658  0.2205 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   -1.3372     3.3009  -0.405  0.68541    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:dyslexia       4.8492     3.2815   1.478  0.13948    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:iq             2.1898     0.8053   2.719  0.00655 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:dyslexia:iq   -2.2626     0.8239  -2.746  0.00603 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)     6.8940     0.2880  23.934  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:dyslexia        7.2136     0.3382  21.328  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:iq              0.5484     0.2627   2.087  0.03687 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)   2.1369     2.7924   0.765  0.44412    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:dyslexia     -3.5718     2.7892  -1.281  0.20035    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   -0.4810     2.7386  -0.176  0.86057    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:dyslexia       4.3653     2.7339   1.597  0.11032    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:iq             2.0146     0.7049   2.858  0.00426 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:dyslexia:iq   -2.1036     0.7152  -2.941  0.00327 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)     9.6682     0.6556  14.748  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:dyslexia       10.0130     0.6667  15.019  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:iq              0.5985     0.2518   2.377  0.01744 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)   1.3650     2.3351   0.585  0.55884    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:dyslexia     -3.2604     2.3414  -1.392  0.16378    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                         3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -7.8068  5.1324</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:dyslexia     -1.5824 11.2808</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:iq            0.6114  3.7683</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:dyslexia:iq  -3.8774 -0.6477</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    6.3294  7.4585</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:dyslexia       6.5507  7.8765</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:iq             0.0334  1.0634</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -3.3361  7.6099</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:dyslexia    -9.0386  1.8950</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -5.8486  4.8866</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:dyslexia     -0.9930  9.7236</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:iq            0.6331  3.3961</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:dyslexia:iq  -3.5054 -0.7018</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    8.3833 10.9531</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:dyslexia       8.7063 11.3198</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:iq             0.1051  1.0920</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -3.2117  5.9418</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:dyslexia    -7.8494  1.3287</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
@@ -273,25 +278,25 @@ Maximum-Likelihood Regression with Beta-Distributed Dependent Variables.
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 15.72</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 449869</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 19.37</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 7525984</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 171.6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 92.74</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 44 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 9 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 35 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 70.67 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -123.3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -107.3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.09733 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.6975 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.07224 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: Inf </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -Inf </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -Inf </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.09831 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.6913 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.07276 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 82 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 80 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Interpretation:</span></span></span>
@@ -300,16 +305,7 @@ Maximum-Likelihood Regression with Beta-Distributed Dependent Variables.
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Test if ceiling effect modeling improves fit</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">fit_ekw</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Analysis of Deviance Table</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Model 1: accuracy ~ dyslexia * iq | dyslexia + iq</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Model 2: accuracy ~ dyslexia * iq | dyslexia + iq | dyslexia</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   37.00000 -136.89181                       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw  35.00000 -141.33729  2  4.44548  0.10831  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> log-likelihood not available in fitted model object</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 4: McDonald distribution alternative</span></span></span>
 <span class="r-in"><span><span class="co"># Provides different parameterization for extreme values</span></span></span>
@@ -391,14 +387,12 @@ Maximum-Likelihood Regression with Beta-Distributed Dependent Variables.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.1362 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 41 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 40 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare 3-parameter models</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit_ekw</span>, <span class="va">fit_mc</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         df       AIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw  9 -123.3373</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_mc  11  -49.5132</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> log-likelihood not available in fitted model object</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
