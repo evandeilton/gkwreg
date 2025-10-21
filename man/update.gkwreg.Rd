@@ -58,11 +58,11 @@ Omitting parts at the end is allowed (they default to \code{.}):
 \examples{
 \donttest{
 # Load example data
+require(gkwreg)
+
 data(GasolineYield)
 
-# ===========================================================================
 # EXAMPLE 1: Simple formulas (1 part - alpha only)
-# ===========================================================================
 
 m1_0 <- gkwreg(yield ~ 1, data = GasolineYield, family = "kw")
 m1_1 <- update(m1_0, . ~ . + temp)
@@ -73,9 +73,7 @@ anova(m1_0, m1_1, m1_2)
 AIC(m1_0, m1_1, m1_2, m1_3)
 BIC(m1_0, m1_1, m1_2, m1_3)
 
-# ===========================================================================
 # EXAMPLE 2: Two-part formulas (alpha | beta)
-# ===========================================================================
 
 # Start with intercept-only for both
 m2_0 <- gkwreg(yield ~ 1 | 1, data = GasolineYield, family = "kw")
@@ -92,23 +90,27 @@ m2_3 <- update(m2_2, . ~ . + batch | .)
 anova(m2_0, m2_1, m2_2, m2_3)
 AIC(m2_0, m2_1, m2_2, m2_3)
 
-# ===========================================================================
 # EXAMPLE 3: Three-part formulas (alpha | beta | gamma)
-# ===========================================================================
 
-m3_0 <- gkwreg(yield ~ 1 | 1 | 1, data = GasolineYield, family = "gkw")
+m3_0 <- gkwreg(yield ~ 1,
+               data = GasolineYield,
+               family = "gkw",
+               control = gkw_control(method = "BFGS", maxit = 2000))
+
 m3_1 <- update(m3_0, . ~ . + temp | . | .)
 m3_2 <- update(m3_1, . ~ . | . + batch | .)
 m3_3 <- update(m3_2, . ~ . | . | . + temp)
 
 anova(m3_0, m3_1, m3_2, m3_3)
 
-# ===========================================================================
 # EXAMPLE 4: Practical nested model comparison
-# ===========================================================================
 
 # Null model
-fit0 <- gkwreg(yield ~ 1, data = GasolineYield, family = "kw")
+fit0 <- gkwreg(yield ~ 1,
+               data = GasolineYield,
+               family = "kw",
+               control = gkw_control(method = "BFGS", maxit = 2000)
+)
 
 # Add main effects to alpha
 fit1 <- update(fit0, . ~ . + temp)
@@ -123,9 +125,7 @@ anova(fit0, fit1, fit2, fit3, fit4)
 AIC(fit0, fit1, fit2, fit3, fit4)
 BIC(fit0, fit1, fit2, fit3, fit4)
 
-# ===========================================================================
 # EXAMPLE 5: Changing other parameters
-# ===========================================================================
 
 # Change family
 fit_gkw <- update(fit2, family = "gkw")

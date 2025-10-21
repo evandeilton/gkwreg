@@ -26,7 +26,7 @@ for new data or for the original data used to fit the model."></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Generalized Kumaraswamy vs. Beta Regression - Simulation Study</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Beta Regression vs Kumaraswamy-Based Models for Bounded Data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -415,7 +415,7 @@ tractability advantages. <em>Statistical Methodology</em>, <strong>6</strong>(1)
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Beta:"</span>, <span class="va">mse_beta</span>, <span class="st">"\n"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Beta: 0.06684878 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"GKw:"</span>, <span class="va">mse_gkw</span>, <span class="st">"\n"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> GKw: 0.02901257 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> GKw: 0.02901278 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare predictions from different families visually</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">test_data</span><span class="op">$</span><span class="va">y</span>, <span class="va">pred_kw</span>,</span></span>

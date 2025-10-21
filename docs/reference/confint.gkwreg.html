@@ -20,7 +20,7 @@ using Wald (normal approximation) method based on asymptotic theory."></head><bo
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Generalized Kumaraswamy vs. Beta Regression - Simulation Study</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Beta Regression vs Kumaraswamy-Based Models for Bounded Data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -110,47 +110,47 @@ error is raised.</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>some standard errors are NA or infinite; intervals may be unreliable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                         2.5 %     97.5 %</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.61360892  0.7261721</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.78583358  0.8904055</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.53532330  0.6471204</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.65443679  0.7659146</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.41441364  0.5188438</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.46463674  0.5758602</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.39394438  0.5056469</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.17260900  0.2768690</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.14783914  0.2586511</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.07933947  0.2041538</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.61309049  0.7255762</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.78581980  0.8904463</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.53531608  0.6472063</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.65446611  0.7660917</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.41447097  0.5190488</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.46459924  0.5759595</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.39388604  0.5056496</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.17258723  0.2769559</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.14773407  0.2586001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.07935147  0.2043948</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp                NaN        NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  28.04744330 29.7373164</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  28.03819235 29.7240822</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 90 percent confidence intervals</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, level <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>some standard errors are NA or infinite; intervals may be unreliable</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                           5 %       95 %</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.62265751  0.7171235</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.79423978  0.8819993</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.54431031  0.6381334</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.66339813  0.7569532</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.42280844  0.5104490</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.47357764  0.5669193</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.40292379  0.4966675</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.18099013  0.2684879</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.15674695  0.2497433</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.08937289  0.1941204</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp                NaN        NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  28.18328674 29.6014730</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5 %       95 %</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.6221328  0.7165338</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.7942304  0.8820357</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.5443106  0.6382118</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.6634393  0.7571185</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.4228776  0.5106421</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.4735511  0.5670076</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.4028704  0.4966653</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.1809771  0.2685661</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.1566462  0.2496880</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.0894033  0.1943430</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp               NaN        NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  28.1737156 29.5885589</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Specific parameters</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, parm <span class="op">=</span> <span class="st">"alpha:(Intercept)"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>some standard errors are NA or infinite; intervals may be unreliable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                       2.5 %    97.5 %</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept) 0.6136089 0.7261721</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept) 0.6130905 0.7255762</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, parm <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>some standard errors are NA or infinite; intervals may be unreliable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                       2.5 %    97.5 %</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept) 0.6136089 0.7261721</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1      0.7858336 0.8904055</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2      0.5353233 0.6471204</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept) 0.6130905 0.7255762</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1      0.7858198 0.8904463</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2      0.5353161 0.6472063</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

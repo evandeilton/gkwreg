@@ -663,7 +663,8 @@
 #'   accuracy ~ dyslexia * iq |
 #'     dyslexia + iq,
 #'   data = ReadingSkills,
-#'   family = "kw"
+#'   family = "kw",
+#'   control = gkw_control(method = "L-BFGS-B", maxit = 2000)
 #' )
 #' summary(fit_kw)
 #'
@@ -678,7 +679,8 @@
 #'   accuracy ~ dyslexia + iq |
 #'     dyslexia + iq,
 #'   data = ReadingSkills,
-#'   family = "kw"
+#'   family = "kw",
+#'   control = gkw_control(method = "L-BFGS-B", maxit = 2000)
 #' )
 #'
 #' # Test if interaction is significant
@@ -692,7 +694,8 @@
 #'     dyslexia + iq | # beta
 #'     dyslexia, # lambda: ceiling effect by group
 #'   data = ReadingSkills,
-#'   family = "ekw"
+#'   family = "ekw",
+#'   control = gkw_control(method = "L-BFGS-B", maxit = 2000)
 #' )
 #' summary(fit_ekw)
 #'
@@ -711,7 +714,7 @@
 #'     dyslexia * iq, # lambda: interaction affects tails
 #'   data = ReadingSkills,
 #'   family = "mc",
-#'   control = gkw_control(method = "BFGS", maxit = 1500)
+#'   control = gkw_control(method = "L-BFGS-B", maxit = 2000)
 #' )
 #' summary(fit_mc)
 #'

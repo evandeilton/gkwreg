@@ -571,7 +571,6 @@ tables, tests, and fit statistics
 \examples{
 \donttest{
 # SECTION 1: Basic Usage - Getting Started
-
 # Load packages and data
 library(gkwreg)
 library(gkwdist)
@@ -838,8 +837,8 @@ cbind(
 )
 
 # Example 9.2: Complex simulation with all five parameters
-set.seed(456)
-n <- 1000
+set.seed(2203)
+n <- 2000
 x <- runif(n, -1, 1)
 
 # True parameters
@@ -861,7 +860,7 @@ fit_gkw <- gkwreg(
   y ~ x | x | x | x | x,
   data = sim_data2,
   family = "gkw",
-  control = gkw_control(maxit = 1000)
+  control = gkw_control(method = "L-BFGS-B", maxit = 2000)
 )
 summary(fit_gkw)
 
@@ -895,9 +894,10 @@ fit_debug <- gkwreg(
   data = GasolineYield,
   family = "kw",
   control = gkw_control(
-    silent = FALSE,
-    trace = 2, # Maximum verbosity
-    maxit = 100
+    method = "BFGS",
+    silent = TRUE,
+    trace = 0, # 2, Maximum verbosity
+    maxit = 1000
   )
 )
 
@@ -983,7 +983,9 @@ cv_rmse <- sapply(1:5, function(fold) {
   train <- GasolineYield[folds != fold, ]
   test <- GasolineYield[folds == fold, ]
 
-  fit_train <- gkwreg(yield ~ batch + temp, train, family = "kw")
+  fit_train <- gkwreg(yield ~ batch + temp, train,
+    family = "kw"
+  )
   pred_test <- predict(fit_train, newdata = test, type = "response")
 
   sqrt(mean((test$yield - pred_test)^2))
@@ -991,7 +993,6 @@ cv_rmse <- sapply(1:5, function(fold) {
 
 cat("Cross-validated RMSE:", mean(cv_rmse), "\n")
 }
-
 }
 \references{
 \strong{Generalized Kumaraswamy Distribution:}

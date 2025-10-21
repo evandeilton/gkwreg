@@ -24,7 +24,7 @@ fitted.values function.'></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Generalized Kumaraswamy vs. Beta Regression - Simulation Study</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gkwreg-vs-betareg.html">Beta Regression vs Kumaraswamy-Based Models for Bounded Data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -158,7 +158,9 @@ always force recalculation using the <code>predict</code> method (step 4).</p>
 <span class="r-in"><span><span class="co"># Fitted values under different family assumptions</span></span></span>
 <span class="r-in"><span><span class="va">fitted_ekw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">fit_ekw</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fitted_kw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">fit_ekw</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using different family (kw) than what was used to fit the model (ekw). Recalculating fitted values...</span>
 <span class="r-in"><span><span class="va">fitted_beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted</a></span><span class="op">(</span><span class="va">fit_ekw</span>, family <span class="op">=</span> <span class="st">"beta"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using different family (beta) than what was used to fit the model (ekw). Recalculating fitted values...</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare differences</span></span></span>
 <span class="r-in"><span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
@@ -170,12 +172,12 @@ always force recalculation using the <code>predict</code> method (step 4).</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">comparison</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          EKW         KW       Beta Diff_EKW_KW Diff_EKW_Beta</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.12229921 0.12229921 0.12229921           0             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.12232274 0.12232274 0.12232274           0             0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.00010000 0.00010000 0.00010000           0             0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.35297121 0.35297121 0.35297121           0             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.35297369 0.35297369 0.35297369           0             0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.46181798 0.46181798 0.46181798           0             0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 0.06801077 0.06801077 0.06801077           0             0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 0.13405857 0.13405857 0.13405857           0             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 0.06734392 0.06734392 0.06734392           0             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 0.12847689 0.12847689 0.12847689           0             0</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Visualize differences</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
