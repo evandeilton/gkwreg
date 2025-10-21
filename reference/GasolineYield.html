@@ -127,6 +127,7 @@ Rates and Proportions. <em>Journal of Applied Statistics</em>, <strong>31</stron
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">GasolineYield</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="st">"kw"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_kw</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Generalized Kumaraswamy Regression Model Summary</span>
@@ -139,49 +140,49 @@ Rates and Proportions. <em>Journal of Applied Statistics</em>, <strong>31</stron
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.1272 -0.0124  0.0021 -0.0055  0.0085  0.0656 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.4914 -0.0175 -0.0034 -0.0249  0.0065  0.0745 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error   z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept) 2.517e-01  2.900e-02 8.679e+00  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1      8.280e-01  2.912e-02 2.843e+01  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2      5.846e-01  3.125e-02 1.870e+01  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3      7.122e-01  2.893e-02 2.462e+01  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4      4.648e-01  2.606e-02 1.783e+01  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5      5.234e-01  2.626e-02 1.993e+01  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6      4.497e-01  2.722e-02 1.652e+01  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7      2.251e-01  2.497e-02 9.017e+00  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8      2.028e-01  2.556e-02 7.932e+00 2.15e-15 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9      1.426e-01  2.991e-02 4.768e+00 1.86e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp        6.565e-03  2.584e-09 2.541e+06  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  1.687e+01  1.449e+00 1.164e+01  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp         3.709e-02  2.917e-03 1.271e+01  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.319842   0.026078  12.265  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.826719   0.028879  28.627  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.582466   0.030836  18.889  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.710004   0.028636  24.794  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.461921   0.025812  17.895  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.520953   0.026011  20.028  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.447006   0.026950  16.586  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.222963   0.024710   9.023  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.200138   0.024892   8.040 8.96e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.138999   0.029271   4.749 2.05e-06 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp         0.006445        NaN     NaN      NaN    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  18.458156   1.405043  13.137  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp          0.034533   0.002942  11.737  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                        3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.1949  0.3086</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.7709  0.8850</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.5233  0.6458</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.6555  0.7689</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.4137  0.5158</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.4719  0.5748</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.3963  0.5030</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.1762  0.2741</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.1527  0.2529</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.0840  0.2012</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp         0.0066  0.0066</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  14.0346 19.7151</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp          0.0314  0.0428</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  0.2687  0.3710</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1       0.7701  0.8833</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2       0.5220  0.6429</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3       0.6539  0.7661</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4       0.4113  0.5125</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5       0.4700  0.5719</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6       0.3942  0.4998</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7       0.1745  0.2714</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8       0.1514  0.2489</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9       0.0816  0.1964</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp            NaN     NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  15.7043 21.2120</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp          0.0288  0.0403</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 19.06</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 2.377e+13</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 19.51</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 4.025e+13</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1</span>
@@ -190,15 +191,15 @@ Rates and Proportions. <em>Journal of Applied Statistics</em>, <strong>31</stron
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 32 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 13 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 19 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 96.75 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -167.5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -148.4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.034 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.8962 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.02013 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 96.81 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -167.6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -148.6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.09951 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.111 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.04167 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 76 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 93 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Interpretation:</span></span></span>
@@ -235,7 +236,7 @@ Rates and Proportions. <em>Journal of Applied Statistics</em>, <strong>31</stron
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:pressure     0.024644   0.012936   1.905  0.05676 .  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp10      -0.001364        NaN     NaN      NaN    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp         0.005833        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  -1.766739   3.731457  -0.473  0.63588    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)  -1.766735   3.731464  -0.473  0.63588    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp10        0.059930   0.013139   4.561 5.08e-06 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp          0.008332   0.001735   4.802 1.57e-06 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
@@ -258,7 +259,7 @@ Rates and Proportions. <em>Journal of Applied Statistics</em>, <strong>31</stron
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 9.935</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 59340415</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 59340318</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1</span>
@@ -303,33 +304,33 @@ Rates and Proportions. <em>Journal of Applied Statistics</em>, <strong>31</stron
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0360 -0.0143 -0.0047  0.0017  0.0049  0.2229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0356 -0.0133 -0.0020  0.0048  0.0082  0.2229 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     Estimate Std. Error z value Pr(&gt;|z|)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -0.318429        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1        0.533730        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2        0.525889        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3        0.690016        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4        0.350257        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5        0.543610        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6        0.311936        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7        0.193041        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8        0.229574        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9        0.161059        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp          0.006078        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)   10.512482        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp           0.011623        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  0.356490        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch1      48.038859        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch2       2.279667        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch3       0.561476        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch4       7.008866        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch5      -0.081997        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch6       8.826415        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch7       1.644509        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch8       0.014281        NaN     NaN      NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch9      -0.021619        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -0.36374        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1        0.52791        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2        0.49225        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3        0.67943        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4        0.31973        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5        0.50498        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6        0.30367        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7        0.16380        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8        0.19265        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9        0.09724        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp          0.00610        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    9.81853        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:temp           0.01178        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -0.14664        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch1      36.09593        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch2       3.21155        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch3       1.08510        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch4       7.26510        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch5       0.63205        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch6       7.47889        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch7       2.23889        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch8       0.72835        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:batch9       1.47656        NaN     NaN      NaN</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                     3% 98%</span>
@@ -363,25 +364,25 @@ Rates and Proportions. <em>Journal of Applied Statistics</em>, <strong>31</stron
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 8.419</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 2313893</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 7.912</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 1225127</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1.302e+20</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 5.123e+14</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 32 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 23 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 125.5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -205 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -171.3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.04243 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.8384 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.01919 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 114.3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -182.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -148.8 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.04235 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.839 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.01908 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 105 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 99 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Interpretation:</span></span></span>
@@ -395,9 +396,9 @@ Rates and Proportions. <em>Journal of Applied Statistics</em>, <strong>31</stron
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 1: yield ~ batch + temp | temp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model 2: yield ~ batch + temp | temp | batch</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   19.00000 -193.49997                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw   9.00000 -250.98137 10 57.48139  &lt; 1e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         Resid. Df Resid. Dev Df Deviance   Pr(&gt;Chi)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   19.00000 -193.61594                           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw   9.00000 -228.53221 10 34.91627 0.00012904 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span></span></span>

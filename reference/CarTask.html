@@ -255,6 +255,7 @@ Imprecise Probabilities. <em>Journal of Statistical Theory and Practice</em>,
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">CarTask</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="st">"ekw"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_ekw</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Generalized Kumaraswamy Regression Model Summary</span>
@@ -267,31 +268,31 @@ Imprecise Probabilities. <em>Journal of Statistical Theory and Practice</em>,
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.2679 -0.1040  0.0321  0.0382  0.1321  0.6589 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.2927  0.1036  0.1499  0.1947  0.3299  0.9989 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                 Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)               -8.05880   36.69755  -0.220   0.8262    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson           -5.67320   36.73465  -0.154   0.8773    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:NFCCscale                  0.21932    0.09656   2.271   0.0231 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson:NFCCscale -0.31493    0.15593  -2.020   0.0434 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                 0.86425    0.10030   8.617   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:taskSalesperson            -0.12891    0.14160  -0.910   0.3626    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)              17.16540   86.25090   0.199   0.8422    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:taskSalesperson          11.74932   86.29877   0.136   0.8917    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                  Estimate Std. Error z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)               -14.59427    0.36201 -40.315  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson           -11.81563    0.53713 -21.998  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:NFCCscale                   0.22010    0.08734   2.520   0.0117 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson:NFCCscale  -0.31692    0.16846  -1.881   0.0599 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.85723    0.02072  41.381  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:taskSalesperson             -0.12052    0.02288  -5.267 1.39e-07 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)               32.63595        NaN     NaN      NaN    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:taskSalesperson           23.05168        NaN     NaN      NaN    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                        3%      98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)                -79.9847  63.8671</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson            -77.6718  66.3254</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:NFCCscale                    0.0301   0.4086</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson:NFCCscale   -0.6205  -0.0093</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                   0.6677   1.0608</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:taskSalesperson              -0.4064   0.1486</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)              -151.8833 186.2141</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:taskSalesperson          -157.3932 180.8918</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                       3%      98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)               -15.3038 -13.8848</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson           -12.8684 -10.7629</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:NFCCscale                   0.0489   0.3913</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:taskSalesperson:NFCCscale  -0.6471   0.0133</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)                  0.8166   0.8978</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:taskSalesperson             -0.1654  -0.0757</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)                   NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:taskSalesperson               NaN      NaN</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
@@ -299,25 +300,25 @@ Imprecise Probabilities. <em>Journal of Statistical Theory and Practice</em>,
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.0003335</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 2.231</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 4.848e-07</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 2.224</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> delta: 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 1.792e+12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 7.595e+23</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 155 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 8 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 147 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 55.63 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -95.26 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -70.91 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.1843 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: -0.0374 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.1508 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 149.7 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -283.4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -259 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.3211 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: -2.148 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.2569 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 67 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 57 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Interpretation:</span></span></span>
