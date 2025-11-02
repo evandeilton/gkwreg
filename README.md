@@ -33,7 +33,7 @@ speed, numerical accuracy, and optimization stability.
 
 ## Key Features
 
-### 📊 Flexible Distribution Hierarchy
+### Flexible Distribution Hierarchy
 
 Model bounded data using the **5-parameter Generalized Kumaraswamy
 (GKw)** distribution and its **seven nested subfamilies**:
@@ -52,7 +52,7 @@ Each family offers distinct flexibility-parsimony tradeoffs. Start
 simple (`kw` or `beta`) and compare nested models using likelihood ratio
 tests or information criteria.
 
-### 🎯 Advanced Regression Modeling
+### Advanced Regression Modeling
 
 - **Extended formula syntax** for parameter-specific linear predictors:
 
@@ -80,7 +80,7 @@ tests or information criteria.
     only)
   - Debugging tools (verbose output, trace levels)
 
-### ⚡ Computational Efficiency
+### Computational Efficiency
 
 - **TMB-powered estimation**: Compiled C++ templates with automatic
   differentiation
@@ -92,7 +92,7 @@ tests or information criteria.
   - Vectorized operations via Eigen/Armadillo
   - Memory-efficient for large datasets (n \> 100,000)
 
-### 🔬 Comprehensive Inference Tools
+### Comprehensive Inference Tools
 
 **Standard R Methods** (familiar workflow): - `summary()`, `print()`,
 `coef()`, `vcov()`, `confint()` - `logLik()`, `AIC()`, `BIC()`,
@@ -111,7 +111,7 @@ under alternative distributional assumptions
 Information criteria: `AIC()`, `BIC()` with multi-model comparison -
 Automated nesting detection and proper test statistics
 
-### 📈 Sophisticated Diagnostics
+### Sophisticated Diagnostics
 
 **6 Diagnostic Plot Types** (`plot.gkwreg`): 1. **Residuals vs
 Observation Indices**: Detect autocorrelation, temporal patterns 2.
@@ -129,7 +129,7 @@ for titles, themes, arrangement - **Performance**: Automatic sampling
 for large datasets, adjustable envelope simulations - **Programmatic
 access**: `save_diagnostics = TRUE` returns computed measures
 
-### 🔗 Ecosystem Integration
+### Ecosystem Integration
 
 - **Distribution functions** via companion package
   [`gkwdist`](https://github.com/evandeilton/gkwdist):
@@ -416,7 +416,7 @@ $$F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{
 where $I_z(a,b)$ is the regularized incomplete beta function. The
 probability density function is:
 
-$$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} [1-(1-x^{\alpha})^{\beta}]^{\gamma\lambda-1} \{1-[1-(1-x^{\alpha})^{\beta}]^{\lambda}\}^{\delta-1}$$
+$$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \left\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda} \right \}^{\delta-1}$$
 
 **Parameter Roles**: - **α, β**: Control basic shape (inherited from
 Kumaraswamy) - **γ, δ**: Govern tail behavior and concentration - **λ**:
@@ -448,10 +448,12 @@ automatic differentiation, enabling fast and stable optimization.
 **Template Model Builder (TMB)** translates statistical models into
 optimized C++ code with automatic differentiation:
 
-**Advantages**: - **Speed**: 10-100× faster than numerical
-differentiation - **Accuracy**: Machine-precision derivatives (\< 1e-15
-relative error) - **Stability**: Exact Hessian improves convergence
-reliability - **Scalability**: Efficient for large n and many parameters
+**Advantages**:
+
+- **Speed**: 10-100× faster than numerical differentiation
+- **Accuracy**: Machine-precision derivatives (\< 1e-15 relative error)
+- **Stability**: Exact Hessian improves convergence reliability
+- **Scalability**: Efficient for large n and many parameters
 
 **Under the Hood**:
 
@@ -480,11 +482,11 @@ reliability - **Scalability**: Efficient for large n and many parameters
 
 **When to use gkwreg**:
 
-- ✅ Need flexible bounded distributions beyond Beta
-- ✅ Large datasets requiring fast computation
-- ✅ All parameters depend on covariates
-- ✅ Frequentist inference preferred
-- ✅ Standard R workflow integration
+- Need flexible bounded distributions beyond Beta
+- Large datasets requiring fast computation
+- All parameters depend on covariates
+- Frequentist inference preferred
+- Standard R workflow integration
 
 **When to consider alternatives**:
 
@@ -555,20 +557,13 @@ reliability - **Scalability**: Efficient for large n and many parameters
 
 Contributions are welcome! Ways to contribute:
 
-- 🐛 **Report bugs**: [GitHub
+- **Report bugs**: [GitHub
   Issues](https://github.com/evandeilton/gkwreg/issues)
-- 💡 **Suggest features**: Open a feature request issue
-- 📝 **Improve documentation**: Submit pull requests for typos,
+- **Suggest features**: Open a feature request issue
+- **Improve documentation**: Submit pull requests for typos,
   clarifications
-- 🔬 **Add examples**: Share use cases from your research
-- 🧪 **Extend functionality**: Propose new methods or families
-
-**Development Workflow**: 1. Fork the repository 2. Create a feature
-branch (`git checkout -b feature/amazing-feature`) 3. Commit changes
-(`git commit -m 'Add amazing feature'`) 4. Push to branch
-(`git push origin feature/amazing-feature`) 5. Open a Pull Request
-
-------------------------------------------------------------------------
+- **Add examples**: Share use cases from your research
+- **Extend functionality**: Propose new methods or families
 
 ## Citation
 
@@ -577,23 +572,6 @@ If you use **gkwreg** in your research, please cite:
 ``` r
 citation("gkwreg")
 ```
-
-    To cite package ‘gkwreg’ in publications use:
-
-      J. E. L (2025). _gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data_. R package version 2.0.0,
-      <https://github.com/evandeilton/gkwreg>.
-
-    A BibTeX entry for LaTeX users is
-
-      @Manual{,
-        title = {gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data},
-        author = {Lopes, {J. E.}},
-        year = {2025},
-        note = {R package version 2.0.0},
-        url = {https://github.com/evandeilton/gkwreg},
-      }
-
-------------------------------------------------------------------------
 
 ## License
 
@@ -605,21 +583,10 @@ This package is licensed under the **MIT License**. See the
 ## Author and Maintainer
 
 **Lopes, J. E.**  
-📧 <evandeilton@gmail.com>  
-🏛️ LEG - Laboratório de Estatística e Geoinformação  
-🎓 UFPR - Universidade Federal do Paraná, Brazil  
-🔗 [GitHub](https://github.com/evandeilton) \|
-[ORCID](https://orcid.org/0000-0000-0000-0000)
+<evandeilton@gmail.com>  
+LEG - Laboratório de Estatística e Geoinformação  
+UFPR - Universidade Federal do Paraná, Brazil  
+[GitHub](https://github.com/evandeilton) \|
+[ORCID](https://orcid.org/0009-0007-5887-4084)
 
 ------------------------------------------------------------------------
-
-## Acknowledgments
-
-- **TMB Development Team** for the outstanding computational framework
-- **betareg** and **gamlss** authors for inspiration and design patterns
-- **R Core Team** for the R language and ecosystem
-- Contributors and users providing feedback and bug reports
-
-------------------------------------------------------------------------
-
-**Happy Modeling! 📊✨**
