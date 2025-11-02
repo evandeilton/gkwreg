@@ -60,7 +60,7 @@
                         <h4 data-toc-skip class="author">Lopes, J.
 E.</h4>
             
-            <h4 data-toc-skip class="date">2025-10-21</h4>
+            <h4 data-toc-skip class="date">2025-11-02</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/evandeilton/gkwreg/blob/main/vignettes/gkwreg-vs-betareg.Rmd" class="external-link"><code>vignettes/gkwreg-vs-betareg.Rmd</code></a></small>
       <div class="d-none name"><code>gkwreg-vs-betareg.Rmd</code></div>
@@ -1269,7 +1269,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-181.12</td>
 <td align="right">0.228</td>
-<td align="right">0.032</td>
+<td align="right">0.022</td>
 </tr>
 <tr class="odd">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1278,7 +1278,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-219.76</td>
 <td align="right">0.199</td>
-<td align="right">0.020</td>
+<td align="right">0.013</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1287,7 +1287,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-219.24</td>
 <td align="right">0.662</td>
-<td align="right">0.046</td>
+<td align="right">0.033</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1296,7 +1296,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-139.28</td>
 <td align="right">0.191</td>
-<td align="right">0.013</td>
+<td align="right">0.014</td>
 </tr>
 <tr class="even">
 <td align="left">S2: Heavy Tails</td>
@@ -1314,14 +1314,14 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-115.77</td>
 <td align="right">0.194</td>
-<td align="right">0.011</td>
+<td align="right">0.012</td>
 </tr>
 <tr class="even">
 <td align="left">S2: Heavy Tails</td>
 <td align="left">Exp. Kumaraswamy</td>
 <td align="right">200</td>
-<td align="right">58.5</td>
-<td align="right">-267.39</td>
+<td align="right">58.0</td>
+<td align="right">-213.45</td>
 <td align="right">0.618</td>
 <td align="right">0.033</td>
 </tr>
@@ -1329,10 +1329,10 @@ Scenarios</caption>
 <td align="left">S3: Extreme Shapes</td>
 <td align="left">Beta (betareg)</td>
 <td align="right">200</td>
-<td align="right">5.0</td>
-<td align="right">16614.42</td>
+<td align="right">4.5</td>
+<td align="right">16677.68</td>
 <td align="right">0.405</td>
-<td align="right">0.429</td>
+<td align="right">0.354</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
@@ -1341,7 +1341,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-2007.68</td>
 <td align="right">0.292</td>
-<td align="right">0.049</td>
+<td align="right">0.034</td>
 </tr>
 <tr class="odd">
 <td align="left">S3: Extreme Shapes</td>
@@ -1350,16 +1350,16 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-2257.56</td>
 <td align="right">0.266</td>
-<td align="right">0.022</td>
+<td align="right">0.015</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">112</td>
-<td align="right">76.8</td>
-<td align="right">-2352.98</td>
+<td align="right">105</td>
+<td align="right">80.0</td>
+<td align="right">-2331.45</td>
 <td align="right">0.365</td>
-<td align="right">0.051</td>
+<td align="right">0.048</td>
 </tr>
 </tbody>
 </table>
@@ -1426,22 +1426,22 @@ Beta Regression</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Kumaraswamy</td>
-<td align="right">0.018</td>
-<td align="right">8.545</td>
+<td align="right">0.013</td>
+<td align="right">9.532</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (gkwreg)</td>
-<td align="right">0.034</td>
-<td align="right">4.518</td>
+<td align="right">0.025</td>
+<td align="right">5.016</td>
 </tr>
 <tr class="odd">
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">0.043</td>
-<td align="right">3.502</td>
+<td align="right">0.038</td>
+<td align="right">3.373</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (betareg)</td>
-<td align="right">0.152</td>
+<td align="right">0.128</td>
 <td align="right">1.000</td>
 </tr>
 </tbody>
@@ -1602,130 +1602,6 @@ for simple models to 9× for complex interactions</p></li>
 </ol>
 <p>These quantitative benchmarks provide practitioners with concrete
 decision rules rather than vague guidance.</p>
-</div>
-<div class="section level3">
-<h3 id="limitations-and-future-directions">Limitations and Future Directions<a class="anchor" aria-label="anchor" href="#limitations-and-future-directions"></a>
-</h3>
-<p>Several limitations warrant acknowledgment:</p>
-<ol style="list-style-type: decimal">
-<li><p><strong>Sample sizes</strong>: Simulations employed moderate
-sample sizes (n = 300-400); asymptotics for very large (n &gt; 10,000)
-or small (n &lt; 50) samples require investigation</p></li>
-<li><p><strong>Covariate structures</strong>: Simple linear predictors
-examined; nonlinear effects, smoothing splines, and high-dimensional
-settings deserve attention</p></li>
-<li><p><strong>Missing data</strong>: Impact of missingness mechanisms
-(MCAR, MAR, MNAR) on relative performance unexplored</p></li>
-<li><p><strong>Bayesian inference</strong>: Comparison focused on
-maximum likelihood; MCMC implementations of Kumaraswamy models and prior
-sensitivity analysis needed</p></li>
-<li><p><strong>Discrete-continuous mixtures</strong>: Zero-inflated or
-one-inflated extensions not addressed</p></li>
-</ol>
-<p>Future research should examine:</p>
-<ul>
-<li>
-<strong>Asymptotic relative efficiency</strong>: Formal Cramér-Rao
-lower bound comparisons under correct and misspecified models</li>
-<li>
-<strong>Diagnostic tools</strong>: Development of residual plots,
-influence measures, and goodness-of-fit tests specific to Kumaraswamy
-regression<br>
-</li>
-<li>
-<strong>Time series extensions</strong>: Adaptation to longitudinal,
-panel, and time series structures</li>
-<li>
-<strong>Multivariate generalizations</strong>: Joint modeling of
-multiple bounded responses</li>
-<li>
-<strong>Machine learning integration</strong>: Incorporation into
-ensemble methods, boosting, and neural networks</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="recommendations-for-practice">Recommendations for Practice<a class="anchor" aria-label="anchor" href="#recommendations-for-practice"></a>
-</h3>
-<p>For applied researchers analyzing bounded continuous data:</p>
-<ol style="list-style-type: decimal">
-<li><p><strong>Default strategy</strong>: Consider Kumaraswamy as the
-primary choice for exploratory analysis given computational advantages
-and robustness. Only switch to Beta if specific theoretical reasons
-warrant (e.g., maintaining consistency with established literature in
-your field)</p></li>
-<li>
-<p><strong>Diagnostic protocol</strong>:</p>
-<ul>
-<li>Generate histogram with density overlay to assess tail behavior</li>
-<li>Create QQ plot against Beta distribution to identify departures</li>
-<li>Calculate proportion of observations within 0.1 of boundaries</li>
-<li>If any diagnostic suggests misspecification, employ Exponentiated
-Kumaraswamy</li>
-</ul>
-</li>
-<li>
-<p><strong>Inference guidelines</strong>:</p>
-<ul>
-<li>For correctly specified models: Beta and Kumaraswamy provide
-equivalent inference</li>
-<li>For misspecified models: Kumaraswamy standard errors more accurately
-reflect uncertainty</li>
-<li>Always report 95% CIs, not just p-values, to make precision
-explicit</li>
-</ul>
-</li>
-<li><p><strong>Computational planning</strong>: For intensive procedures
-(cross-validation, bootstrap, permutation tests), the 2-9× Kumaraswamy
-speedup transforms feasibility. Budget computational resources
-accordingly.</p></li>
-<li>
-<p><strong>Reporting standards</strong>: Document:</p>
-<ul>
-<li>Which distributional family was used and why</li>
-<li>Convergence diagnostics (all models converged? optimization
-details?)</li>
-<li>Computational time (for reproducibility and methods comparison)</li>
-<li>Model selection criteria (AIC, BIC) across candidate families</li>
-</ul>
-</li>
-<li><p><strong>Software implementation</strong>: The <code>gkwreg</code>
-package provides accessible implementation with syntax closely
-paralleling <code>betareg</code>:</p></li>
-</ol>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Beta regression</span></span>
-<span><span class="va">fit_beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/betareg/man/betareg.html" class="external-link">betareg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">|</span> <span class="va">z</span>, data <span class="op">=</span> <span class="va">mydata</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Kumaraswamy regression (drop-in replacement)</span></span>
-<span><span class="va">fit_kw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">|</span> <span class="va">z</span>, data <span class="op">=</span> <span class="va">mydata</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Compare</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit_beta</span>, <span class="va">fit_kw</span><span class="op">)</span></span></code></pre></div>
-<p>The syntactic similarity facilitates adoption and
-experimentation.</p>
-</div>
-<div class="section level3">
-<h3 id="final-perspective">Final Perspective<a class="anchor" aria-label="anchor" href="#final-perspective"></a>
-</h3>
-<p>The dominance of Beta regression in bounded-data analysis reflects
-historical precedent and software availability more than inherent
-statistical superiority. This study demonstrates that
-<strong>Kumaraswamy-based models are not merely “alternatives” but often
-superior choices</strong> across the performance dimensions that matter
-in practice: reliability, speed, and inferential validity.</p>
-<p>As statistical software ecosystems mature and computational
-efficiency becomes increasingly valued (for reproducibility,
-scalability, and environmental impact), we anticipate growing adoption
-of Kumaraswamy regression as the <strong>de facto standard</strong> for
-unit-interval data analysis. The transition from Beta to Kumaraswamy
-parallels historical shifts from normal-based to robust methods—not
-abandoning tradition, but embracing better tools when available.</p>
-<p>For the broader statistical community, this work illustrates the
-continued value of <strong>revisiting foundational
-methodologies</strong> with modern computational tools and
-simulation-based evaluation. Distributions introduced decades ago
-(Kumaraswamy, 1980) may offer unrecognized advantages when paired with
-contemporary software and algorithmic advances.</p>
 <hr>
 </div>
 </div>
@@ -1751,7 +1627,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<pre><code>R version 4.5.1 (2025-06-13)
+<pre><code>R version 4.5.2 (2025-10-31)
 Platform: x86_64-pc-linux-gnu
 Running under: Ubuntu 24.04.3 LTS
 
@@ -1777,23 +1653,23 @@ other attached packages:
 loaded via a namespace (and not attached):
  [1] sandwich_3.1-1         rappdirs_0.3.3         sass_0.4.10           
  [4] generics_0.1.4         lattice_0.22-7         digest_0.6.37         
- [7] magrittr_2.0.4         evaluate_1.0.5         grid_4.5.1            
+ [7] magrittr_2.0.4         evaluate_1.0.5         grid_4.5.2            
 [10] RColorBrewer_1.1-3     fastmap_1.2.0          jsonlite_2.0.0        
-[13] Matrix_1.7-3           nnet_7.3-20            Formula_1.2-5         
+[13] Matrix_1.7-4           nnet_7.3-20            Formula_1.2-5         
 [16] scales_1.4.0           codetools_0.2-20       numDeriv_2016.8-1.1   
 [19] modeltools_0.2-24      textshaping_1.0.4      jquerylib_0.1.4       
 [22] cli_3.6.5              rlang_1.1.6            withr_3.0.2           
 [25] RcppArmadillo_15.0.2-2 cachem_1.1.0           yaml_2.3.10           
-[28] tools_4.5.1            flexmix_2.3-20         dplyr_1.1.4           
-[31] vctrs_0.6.5            R6_2.6.1               stats4_4.5.1          
+[28] tools_4.5.2            flexmix_2.3-20         dplyr_1.1.4           
+[31] vctrs_0.6.5            R6_2.6.1               stats4_4.5.2          
 [34] zoo_1.8-14             lifecycle_1.0.4        fs_1.6.6              
 [37] ragg_1.5.0             pkgconfig_2.0.3        desc_1.4.3            
 [40] pkgdown_2.1.3          bslib_0.9.0            pillar_1.11.1         
 [43] gtable_0.3.6           glue_1.8.0             Rcpp_1.1.0            
 [46] systemfonts_1.3.1      tidyselect_1.2.1       tibble_3.3.0          
-[49] xfun_0.53              lmtest_0.9-40          knitr_1.50            
+[49] xfun_0.54              lmtest_0.9-40          knitr_1.50            
 [52] farver_2.1.2           htmltools_0.5.8.1      rmarkdown_2.30        
-[55] gkwdist_1.0.3          TMB_1.9.18             compiler_4.5.1        
+[55] gkwdist_1.0.8          TMB_1.9.18             compiler_4.5.2        
 [58] S7_0.2.0              </code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
