@@ -88,7 +88,7 @@ AIC(fit1)
 AIC(fit1, fit2, fit3)
 #>      df        AIC
 #> fit1 11  -42.93436
-#> fit2 12 -169.93865
+#> fit2 12 -169.93784
 #> fit3  3  -74.90259
 
 # Use different penalty

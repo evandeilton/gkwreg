@@ -45,13 +45,14 @@ fit1 <- gkwreg(yield ~ batch + temp, data = GasolineYield, family = "kw")
 #> Warning: NaNs produced
 formula(fit1)
 #> yield ~ batch + temp
-#> <environment: 0x55c5ec80dae8>
+#> <environment: 0x55c2294127a8>
 
 # Two-part formula
 fit2 <- gkwreg(yield ~ temp | batch, data = GasolineYield, family = "kw")
+#> Warning: NaNs produced
 formula(fit2)
 #> yield ~ temp | batch
-#> <environment: 0x55c5ec80dae8>
+#> <environment: 0x55c2294127a8>
 
 # Five-part formula
 fit3 <- gkwreg(yield ~ temp | batch | temp | 1 | 1,
@@ -59,6 +60,6 @@ fit3 <- gkwreg(yield ~ temp | batch | temp | 1 | 1,
 )
 formula(fit3)
 #> yield ~ temp | batch | temp | 1 | 1
-#> <environment: 0x55c5ec80dae8>
+#> <environment: 0x55c2294127a8>
 # }
 ```
