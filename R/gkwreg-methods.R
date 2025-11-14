@@ -200,8 +200,6 @@ coef.gkwreg <- function(object, ...) {
 }
 
 
-
-
 #' @title Summary Method for Generalized Kumaraswamy Regression Models
 #'
 #' @description
@@ -386,7 +384,6 @@ summary.gkwreg <- function(object, conf.level = 0.95, ...) {
 }
 
 
-
 #' @title Print Method for Generalized Kumaraswamy Regression Summaries
 #'
 #' @description
@@ -507,7 +504,6 @@ print.summary.gkwreg <- function(x, digits = max(3, getOption("digits") - 3),
   cat("\n")
   invisible(x)
 }
-
 
 
 #' Extract Variance-Covariance Matrix from a Generalized Kumaraswamy Regression Model

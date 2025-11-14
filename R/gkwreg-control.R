@@ -237,43 +237,44 @@
 #'
 #' @export
 gkw_control <- function(
-    method = c("nlminb", "BFGS", "Nelder-Mead", "CG", "SANN", "L-BFGS-B"),
-    start = NULL,
-    fixed = NULL,
-    hessian = TRUE,
-    maxit = 500,
-    reltol = sqrt(.Machine$double.eps),
-    abstol = 0,
-    trace = 0,
-    silent = TRUE,
-    # nlminb-specific parameters
-    eval.max = 500,
-    iter.max = 300,
-    step.min = 1e-8,
-    step.max = 1,
-    x.tol = 1.5e-8,
-    rel.tol = sqrt(.Machine$double.eps),
-    # Nelder-Mead specific parameters
-    alpha = 1.0,
-    beta = 0.5,
-    gamma = 2.0,
-    warn.1d.NelderMead = TRUE,
-    # CG specific parameters
-    type = 1,
-    # SANN specific parameters
-    temp = 10,
-    tmax = 10,
-    # L-BFGS-B specific parameters
-    lmm = 5,
-    factr = 1e7,
-    pgtol = 0,
-    # BFGS and L-BFGS-B specific
-    REPORT = NULL,
-    # General optim parameters
-    fnscale = 1,
-    parscale = NULL,
-    ndeps = NULL,
-    ...) {
+  method = c("nlminb", "BFGS", "Nelder-Mead", "CG", "SANN", "L-BFGS-B"),
+  start = NULL,
+  fixed = NULL,
+  hessian = TRUE,
+  maxit = 500,
+  reltol = sqrt(.Machine$double.eps),
+  abstol = 0,
+  trace = 0,
+  silent = TRUE,
+  # nlminb-specific parameters
+  eval.max = 500,
+  iter.max = 300,
+  step.min = 1e-8,
+  step.max = 1,
+  x.tol = 1.5e-8,
+  rel.tol = sqrt(.Machine$double.eps),
+  # Nelder-Mead specific parameters
+  alpha = 1.0,
+  beta = 0.5,
+  gamma = 2.0,
+  warn.1d.NelderMead = TRUE,
+  # CG specific parameters
+  type = 1,
+  # SANN specific parameters
+  temp = 10,
+  tmax = 10,
+  # L-BFGS-B specific parameters
+  lmm = 5,
+  factr = 1e7,
+  pgtol = 0,
+  # BFGS and L-BFGS-B specific
+  REPORT = NULL,
+  # General optim parameters
+  fnscale = 1,
+  parscale = NULL,
+  ndeps = NULL,
+  ...
+) {
   # ARGUMENT VALIDATION
 
   # Match method argument

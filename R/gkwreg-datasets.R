@@ -115,7 +115,6 @@
 "GasolineYield"
 
 
-
 #' Proportion of Household Income Spent on Food
 #'
 #' Cross-section data on annual food expenditure and annual income for a random
@@ -230,7 +229,6 @@
 "FoodExpenditure"
 
 
-
 #' Imprecise Probabilities for Sunday Weather and Boeing Stock Task
 #'
 #' Data from a cognitive psychology experiment where participants estimated upper
@@ -330,7 +328,6 @@
 #' #   different patterns of extreme probability assessments
 #' }
 "ImpreciseTask"
-
 
 
 #' (No) Myopic Loss Aversion in Adolescents
@@ -453,7 +450,6 @@
 #' )
 #' }
 "LossAversion"
-
 
 
 #' Confidence of Mock Jurors in Their Verdicts
@@ -581,7 +577,6 @@
 #' AIC(fit_ekw, fit_mc)
 #' }
 "MockJurors"
-
 
 
 #' Dyslexia and IQ Predicting Reading Accuracy
@@ -862,7 +857,6 @@
 "StressAnxiety"
 
 
-
 #' Weather Task with Priming and Precise and Imprecise Probabilities
 #'
 #' Data from a cognitive psychology experiment on probabilistic learning and
@@ -971,7 +965,6 @@
 #' #   extreme/polarized probability judgments
 #' }
 "WeatherTask"
-
 
 
 #' Partition-Primed Probability Judgement Task for Car Dealership
@@ -1096,8 +1089,6 @@
 #' text(1.5, 0.27, "Uniform (1/4)", col = "gray")
 #' }
 "CarTask"
-
-
 
 
 #' Autologous Peripheral Blood Stem Cell Transplants Data
@@ -1233,7 +1224,6 @@
 #' # - Critical for personalized treatment selection
 #' }
 "sdac"
-
 
 
 #' Intraocular Gas Decay in Retinal Surgery

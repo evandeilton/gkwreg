@@ -335,8 +335,6 @@ fitted.gkwreg <- function(object, family = NULL, ...) {
 }
 
 
-
-
 #' @title Extract Residuals from a Generalized Kumaraswamy Regression Model
 #'
 #' @description
@@ -720,13 +718,14 @@ fitted.gkwreg <- function(object, family = NULL, ...) {
 #'
 #' @export
 residuals.gkwreg <- function(
-    object, type = c(
-      "response", "pearson", "deviance", "quantile",
-      "modified.deviance", "cox-snell",
-      "score", "partial"
-    ),
-    covariate_idx = 1, parameter = "alpha",
-    family = NULL, ...) {
+  object, type = c(
+    "response", "pearson", "deviance", "quantile",
+    "modified.deviance", "cox-snell",
+    "score", "partial"
+  ),
+  covariate_idx = 1, parameter = "alpha",
+  family = NULL, ...
+) {
   # Check if object is of class "gkwreg"
   if (!inherits(object, "gkwreg")) {
     stop("'object' must be a fitted model of class \"gkwreg\"")

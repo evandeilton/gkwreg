@@ -93,9 +93,10 @@ AIC(m2_0, m2_1, m2_2, m2_3)
 # EXAMPLE 3: Three-part formulas (alpha | beta | gamma)
 
 m3_0 <- gkwreg(yield ~ 1,
-               data = GasolineYield,
-               family = "gkw",
-               control = gkw_control(method = "BFGS", maxit = 2000))
+  data = GasolineYield,
+  family = "gkw",
+  control = gkw_control(method = "BFGS", maxit = 2000)
+)
 
 m3_1 <- update(m3_0, . ~ . + temp | . | .)
 m3_2 <- update(m3_1, . ~ . | . + batch | .)
@@ -107,9 +108,9 @@ anova(m3_0, m3_1, m3_2, m3_3)
 
 # Null model
 fit0 <- gkwreg(yield ~ 1,
-               data = GasolineYield,
-               family = "kw",
-               control = gkw_control(method = "BFGS", maxit = 2000)
+  data = GasolineYield,
+  family = "kw",
+  control = gkw_control(method = "BFGS", maxit = 2000)
 )
 
 # Add main effects to alpha

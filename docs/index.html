@@ -67,7 +67,7 @@
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
 <div class="section level3">
-<h3 id="bar_chart-flexible-distribution-hierarchy">📊 Flexible Distribution Hierarchy<a class="anchor" aria-label="anchor" href="#bar_chart-flexible-distribution-hierarchy"></a>
+<h3 id="flexible-distribution-hierarchy">Flexible Distribution Hierarchy<a class="anchor" aria-label="anchor" href="#flexible-distribution-hierarchy"></a>
 </h3>
 <p>Model bounded data using the <strong>5-parameter Generalized Kumaraswamy (GKw)</strong> distribution and its <strong>seven nested subfamilies</strong>:</p>
 <table class="table">
@@ -140,7 +140,7 @@
 <p>Each family offers distinct flexibility-parsimony tradeoffs. Start simple (<code>kw</code> or <code>beta</code>) and compare nested models using likelihood ratio tests or information criteria.</p>
 </div>
 <div class="section level3">
-<h3 id="dart-advanced-regression-modeling">🎯 Advanced Regression Modeling<a class="anchor" aria-label="anchor" href="#dart-advanced-regression-modeling"></a>
+<h3 id="advanced-regression-modeling">Advanced Regression Modeling<a class="anchor" aria-label="anchor" href="#advanced-regression-modeling"></a>
 </h3>
 <ul>
 <li>
@@ -175,7 +175,7 @@
 </ul>
 </div>
 <div class="section level3">
-<h3 id="zap-computational-efficiency">⚡ Computational Efficiency<a class="anchor" aria-label="anchor" href="#zap-computational-efficiency"></a>
+<h3 id="computational-efficiency">Computational Efficiency<a class="anchor" aria-label="anchor" href="#computational-efficiency"></a>
 </h3>
 <ul>
 <li>
@@ -197,20 +197,20 @@
 </ul>
 </div>
 <div class="section level3">
-<h3 id="microscope-comprehensive-inference-tools">🔬 Comprehensive Inference Tools<a class="anchor" aria-label="anchor" href="#microscope-comprehensive-inference-tools"></a>
+<h3 id="comprehensive-inference-tools">Comprehensive Inference Tools<a class="anchor" aria-label="anchor" href="#comprehensive-inference-tools"></a>
 </h3>
 <p><strong>Standard R Methods</strong> (familiar workflow): - <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code> - <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code>, <code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code> - <code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> - <code><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova()</a></code> for nested model comparisons</p>
 <p><strong>Advanced Prediction</strong> (<code>predict.gkwreg</code>): - Multiple prediction types: - <code>"response"</code>: Expected mean E(Y|X) - <code>"parameter"</code>: All parameter values (α, β, γ, δ, λ) - <code>"link"</code>: Linear predictors (before inverse link) - <code>"variance"</code>: Predicted variance Var(Y|X) - <code>"density"</code>, <code>"probability"</code>, <code>"quantile"</code>: Distribution functions at specified values - Element-wise or vectorized evaluation - Predictions under alternative distributional assumptions</p>
 <p><strong>Model Comparison</strong>: - Likelihood ratio tests: <code><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova()</a></code>, <code><a href="reference/lrtest.html">lrtest()</a></code> - Information criteria: <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code> with multi-model comparison - Automated nesting detection and proper test statistics</p>
 </div>
 <div class="section level3">
-<h3 id="chart_with_upwards_trend-sophisticated-diagnostics">📈 Sophisticated Diagnostics<a class="anchor" aria-label="anchor" href="#chart_with_upwards_trend-sophisticated-diagnostics"></a>
+<h3 id="sophisticated-diagnostics">Sophisticated Diagnostics<a class="anchor" aria-label="anchor" href="#sophisticated-diagnostics"></a>
 </h3>
 <p><strong>6 Diagnostic Plot Types</strong> (<code>plot.gkwreg</code>): 1. <strong>Residuals vs Observation Indices</strong>: Detect autocorrelation, temporal patterns 2. <strong>Cook’s Distance</strong>: Identify influential observations (threshold: 4/n) 3. <strong>Leverage vs Fitted Values</strong>: Flag high-leverage points (threshold: 2p/n) 4. <strong>Residuals vs Linear Predictor</strong>: Check linearity, heteroscedasticity 5. <strong>Half-Normal Plot with Simulated Envelope</strong>: Assess distributional adequacy 6. <strong>Predicted vs Observed</strong>: Overall goodness-of-fit</p>
 <p><strong>Advanced Features</strong>: - <strong>Dual graphics systems</strong>: Base R (fast) or ggplot2 (publication-quality) - <strong>Multiple residual types</strong>: Quantile (default), Pearson, Deviance - <strong>Customizable</strong>: Named-list interface for titles, themes, arrangement - <strong>Performance</strong>: Automatic sampling for large datasets, adjustable envelope simulations - <strong>Programmatic access</strong>: <code>save_diagnostics = TRUE</code> returns computed measures</p>
 </div>
 <div class="section level3">
-<h3 id="link-ecosystem-integration">🔗 Ecosystem Integration<a class="anchor" aria-label="anchor" href="#link-ecosystem-integration"></a>
+<h3 id="ecosystem-integration">Ecosystem Integration<a class="anchor" aria-label="anchor" href="#ecosystem-integration"></a>
 </h3>
 <ul>
 <li>
@@ -505,7 +505,7 @@
 <p>The GKw distribution is a five-parameter family for variables on (0, 1) with cumulative distribution function:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>I</mi><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mi>λ</mi></msup></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)</annotation></semantics></math></p>
 <p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>z</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">I_z(a,b)</annotation></semantics></math> is the regularized incomplete beta function. The probability density function is:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><mi>λ</mi><mi>α</mi><mi>β</mi><msup><mi>x</mi><mrow><mi>α</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mi>γ</mi><mi>λ</mi><mo>−</mo><mn>1</mn></mrow></msup><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mi>λ</mi></msup><msup><mo stretchy="false" form="postfix">}</mo><mrow><mi>δ</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} [1-(1-x^{\alpha})^{\beta}]^{\gamma\lambda-1} \{1-[1-(1-x^{\alpha})^{\beta}]^{\lambda}\}^{\delta-1}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><mi>λ</mi><mi>α</mi><mi>β</mi><msup><mi>x</mi><mrow><mi>α</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mi>γ</mi><mi>λ</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">{</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mi>λ</mi></msup><mo stretchy="true" form="postfix">}</mo></mrow><mrow><mi>δ</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \left\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda} \right \}^{\delta-1}</annotation></semantics></math></p>
 <p><strong>Parameter Roles</strong>: - <strong>α, β</strong>: Control basic shape (inherited from Kumaraswamy) - <strong>γ, δ</strong>: Govern tail behavior and concentration - <strong>λ</strong>: Additional flexibility for skewness and peaks</p>
 <p>This parameterization captures diverse shapes: symmetric, skewed, unimodal, bimodal, J-shaped, U-shaped, bathtub-shaped.</p>
 </div>
@@ -524,7 +524,17 @@
 <h2 id="computational-engine-tmb">Computational Engine: TMB<a class="anchor" aria-label="anchor" href="#computational-engine-tmb"></a>
 </h2>
 <p><strong>Template Model Builder (TMB)</strong> translates statistical models into optimized C++ code with automatic differentiation:</p>
-<p><strong>Advantages</strong>: - <strong>Speed</strong>: 10-100× faster than numerical differentiation - <strong>Accuracy</strong>: Machine-precision derivatives (&lt; 1e-15 relative error) - <strong>Stability</strong>: Exact Hessian improves convergence reliability - <strong>Scalability</strong>: Efficient for large n and many parameters</p>
+<p><strong>Advantages</strong>:</p>
+<ul>
+<li>
+<strong>Speed</strong>: 10-100× faster than numerical differentiation</li>
+<li>
+<strong>Accuracy</strong>: Machine-precision derivatives (&lt; 1e-15 relative error)</li>
+<li>
+<strong>Stability</strong>: Exact Hessian improves convergence reliability</li>
+<li>
+<strong>Scalability</strong>: Efficient for large n and many parameters</li>
+</ul>
 <p><strong>Under the Hood</strong>:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>R Formula → TMB C<span class="sc">++</span> Template → Automatic Differentiation → </span>
 <span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>Compiled Object → Fast <span class="fu">Optimization</span> (nlminb<span class="sc">/</span>optim) → </span>
@@ -639,11 +649,11 @@
 </table>
 <p><strong>When to use gkwreg</strong>:</p>
 <ul>
-<li>✅ Need flexible bounded distributions beyond Beta</li>
-<li>✅ Large datasets requiring fast computation</li>
-<li>✅ All parameters depend on covariates</li>
-<li>✅ Frequentist inference preferred</li>
-<li>✅ Standard R workflow integration</li>
+<li>Need flexible bounded distributions beyond Beta</li>
+<li>Large datasets requiring fast computation</li>
+<li>All parameters depend on covariates</li>
+<li>Frequentist inference preferred</li>
+<li>Standard R workflow integration</li>
 </ul>
 <p><strong>When to consider alternatives</strong>:</p>
 <ul>
@@ -706,15 +716,18 @@
 </h2>
 <p>Contributions are welcome! Ways to contribute:</p>
 <ul>
-<li>🐛 <strong>Report bugs</strong>: <a href="https://github.com/evandeilton/gkwreg/issues" class="external-link">GitHub Issues</a>
+<li>
+<strong>Report bugs</strong>: <a href="https://github.com/evandeilton/gkwreg/issues" class="external-link">GitHub Issues</a>
 </li>
-<li>💡 <strong>Suggest features</strong>: Open a feature request issue</li>
-<li>📝 <strong>Improve documentation</strong>: Submit pull requests for typos, clarifications</li>
-<li>🔬 <strong>Add examples</strong>: Share use cases from your research</li>
-<li>🧪 <strong>Extend functionality</strong>: Propose new methods or families</li>
+<li>
+<strong>Suggest features</strong>: Open a feature request issue</li>
+<li>
+<strong>Improve documentation</strong>: Submit pull requests for typos, clarifications</li>
+<li>
+<strong>Add examples</strong>: Share use cases from your research</li>
+<li>
+<strong>Extend functionality</strong>: Propose new methods or families</li>
 </ul>
-<p><strong>Development Workflow</strong>: 1. Fork the repository 2. Create a feature branch (<code>git checkout -b feature/amazing-feature</code>) 3. Commit changes (<code>git commit -m 'Add amazing feature'</code>) 4. Push to branch (<code>git push origin feature/amazing-feature</code>) 5. Open a Pull Request</p>
-<hr>
 </div>
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
@@ -722,21 +735,6 @@
 <p>If you use <strong>gkwreg</strong> in your research, please cite:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"gkwreg"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>To cite package ‘gkwreg’ <span class="cf">in</span> publications use<span class="sc">:</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  J. E. <span class="fu">L</span> (<span class="dv">2025</span>). _gkwreg<span class="sc">:</span> Generalized Kumaraswamy Regression Models <span class="cf">for</span> Bounded Data_. R package version <span class="dv">2</span>.<span class="fl">0.0</span>,</span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="sc">&lt;</span>https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>evandeilton<span class="sc">/</span>gkwreg<span class="sc">&gt;</span>.</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>A BibTeX entry <span class="cf">for</span> LaTeX users is</span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a></span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="sc">@</span>Manual{,</span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>    title <span class="ot">=</span> {gkwreg<span class="sc">:</span> Generalized Kumaraswamy Regression Models <span class="cf">for</span> Bounded Data},</span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>    author <span class="ot">=</span> {Lopes, {J. E.}},</span>
-<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>    year <span class="ot">=</span> {<span class="dv">2025</span>},</span>
-<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>    note <span class="ot">=</span> {R package version <span class="dv">2</span>.<span class="fl">0.0</span>},</span>
-<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>    url <span class="ot">=</span> {https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>evandeilton<span class="sc">/</span>gkwreg},</span>
-<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  }</span></code></pre></div>
-<hr>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
@@ -747,27 +745,10 @@
 <div class="section level2">
 <h2 id="author-and-maintainer">Author and Maintainer<a class="anchor" aria-label="anchor" href="#author-and-maintainer"></a>
 </h2>
-<p><strong>Lopes, J. E.</strong><br>
-📧 <a href="mailto:evandeilton@gmail.com" class="email">evandeilton@gmail.com</a><br>
-🏛️ LEG - Laboratório de Estatística e Geoinformação<br>
-🎓 UFPR - Universidade Federal do Paraná, Brazil<br>
-🔗 <a href="https://github.com/evandeilton" class="external-link">GitHub</a> | <a href="https://orcid.org/0000-0000-0000-0000" class="external-link">ORCID</a></p>
+<p><strong>Lopes, J. E.</strong><br><a href="mailto:evandeilton@gmail.com" class="email">evandeilton@gmail.com</a><br>
+LEG - Laboratório de Estatística e Geoinformação<br>
+UFPR - Universidade Federal do Paraná, Brazil<br><a href="https://github.com/evandeilton" class="external-link">GitHub</a> | <a href="https://orcid.org/0009-0007-5887-4084" class="external-link">ORCID</a></p>
 <hr>
-</div>
-<div class="section level2">
-<h2 id="acknowledgments">Acknowledgments<a class="anchor" aria-label="anchor" href="#acknowledgments"></a>
-</h2>
-<ul>
-<li>
-<strong>TMB Development Team</strong> for the outstanding computational framework</li>
-<li>
-<strong>betareg</strong> and <strong>gamlss</strong> authors for inspiration and design patterns</li>
-<li>
-<strong>R Core Team</strong> for the R language and ecosystem</li>
-<li>Contributors and users providing feedback and bug reports</li>
-</ul>
-<hr>
-<p><strong>Happy Modeling! 📊✨</strong></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -798,7 +779,7 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Lopes J. E. <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0009-0007-5887-4084" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>José Evandeilton Lopes <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0009-0007-5887-4084" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 </ul>
 </div>
 
@@ -809,7 +790,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Lopes J. E..</p>
+  <p>Developed by José Evandeilton Lopes.</p>
 </div>
 
 <div class="pkgdown-footer-right">

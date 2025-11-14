@@ -423,7 +423,6 @@ utils::globalVariables(c(
 }
 
 
-
 .onLoad <- function(libname, pkgname) {
   # require("gkwdist", quietly = TRUE)
   # Pre-compile all TMB models

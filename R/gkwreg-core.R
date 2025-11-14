@@ -1548,12 +1548,6 @@ gkwreg <- function(formula,
 }
 
 
-
-
-
-
-
-
 #' Prepare TMB Parameters for GKw Regression
 #'
 #' @param model_data List of model data.
@@ -1618,9 +1612,6 @@ gkwreg <- function(formula,
 
   return(params)
 }
-
-
-
 
 
 #' Prepare TMB Data for GKw Regression
@@ -1703,14 +1694,6 @@ gkwreg <- function(formula,
 
   return(tmb_data)
 }
-
-
-
-
-
-
-
-
 
 
 #' #' Fit Generalized Kumaraswamy Regression Models

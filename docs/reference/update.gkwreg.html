@@ -198,9 +198,10 @@ specification:</p><ul><li><p><code>. ~ . + x | . | . | . | .</code> - Add <code>
 <span class="r-in"><span><span class="co"># EXAMPLE 3: Three-part formulas (alpha | beta | gamma)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">m3_0</span> <span class="op">&lt;-</span> <span class="fu"><a href="gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="fl">1</span>,</span></span>
-<span class="r-in"><span>               data <span class="op">=</span> <span class="va">GasolineYield</span>,</span></span>
-<span class="r-in"><span>               family <span class="op">=</span> <span class="st">"gkw"</span>,</span></span>
-<span class="r-in"><span>               control <span class="op">=</span> <span class="fu"><a href="gkw_control.html">gkw_control</a></span><span class="op">(</span>method <span class="op">=</span> <span class="st">"BFGS"</span>, maxit <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">GasolineYield</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="st">"gkw"</span>,</span></span>
+<span class="r-in"><span>  control <span class="op">=</span> <span class="fu"><a href="gkw_control.html">gkw_control</a></span><span class="op">(</span>method <span class="op">=</span> <span class="st">"BFGS"</span>, maxit <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">m3_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">m3_0</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">+</span> <span class="va">temp</span> <span class="op">|</span> <span class="va">.</span> <span class="op">|</span> <span class="va">.</span><span class="op">)</span></span></span>
@@ -232,9 +233,9 @@ specification:</p><ul><li><p><code>. ~ . + x | . | . | . | .</code> - Add <code>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Null model</span></span></span>
 <span class="r-in"><span><span class="va">fit0</span> <span class="op">&lt;-</span> <span class="fu"><a href="gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="fl">1</span>,</span></span>
-<span class="r-in"><span>               data <span class="op">=</span> <span class="va">GasolineYield</span>,</span></span>
-<span class="r-in"><span>               family <span class="op">=</span> <span class="st">"kw"</span>,</span></span>
-<span class="r-in"><span>               control <span class="op">=</span> <span class="fu"><a href="gkw_control.html">gkw_control</a></span><span class="op">(</span>method <span class="op">=</span> <span class="st">"BFGS"</span>, maxit <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">GasolineYield</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="st">"kw"</span>,</span></span>
+<span class="r-in"><span>  control <span class="op">=</span> <span class="fu"><a href="gkw_control.html">gkw_control</a></span><span class="op">(</span>method <span class="op">=</span> <span class="st">"BFGS"</span>, maxit <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add main effects to alpha</span></span></span>
@@ -301,7 +302,7 @@ specification:</p><ul><li><p><code>. ~ . + x | . | . | . | .</code> - Add <code>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Lopes J. E..</p>
+  <p>Developed by José Evandeilton Lopes.</p>
 </div>
 
 <div class="pkgdown-footer-right">

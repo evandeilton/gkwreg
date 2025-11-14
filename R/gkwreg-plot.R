@@ -1983,14 +1983,6 @@ plot.gkwreg <- function(x,
 }
 
 
-
-
-
-
-
-
-
-
 #' #' @title Diagnostic Plots for Generalized Kumaraswamy Regression Models
 #' #'
 #' #' @description
