@@ -86,13 +86,13 @@ an object of class <code>"Formula"</code>.</p>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/formula.html" class="external-link">formula</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> yield ~ batch + temp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x555ce75f50b8&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x55c5ec80dae8&gt;</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Two-part formula</span></span></span>
 <span class="r-in"><span><span class="va">fit2</span> <span class="op">&lt;-</span> <span class="fu"><a href="gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">temp</span> <span class="op">|</span> <span class="va">batch</span>, data <span class="op">=</span> <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/formula.html" class="external-link">formula</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> yield ~ temp | batch</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x555ce75f50b8&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x55c5ec80dae8&gt;</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Five-part formula</span></span></span>
 <span class="r-in"><span><span class="va">fit3</span> <span class="op">&lt;-</span> <span class="fu"><a href="gkwreg.html">gkwreg</a></span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">temp</span> <span class="op">|</span> <span class="va">batch</span> <span class="op">|</span> <span class="va">temp</span> <span class="op">|</span> <span class="fl">1</span> <span class="op">|</span> <span class="fl">1</span>,</span></span>
@@ -100,7 +100,7 @@ an object of class <code>"Formula"</code>.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/formula.html" class="external-link">formula</a></span><span class="op">(</span><span class="va">fit3</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> yield ~ temp | batch | temp | 1 | 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x555ce75f50b8&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x55c5ec80dae8&gt;</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
@@ -110,11 +110,11 @@ an object of class <code>"Formula"</code>.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Lopes J. E..</p>
+  <p>Developed by José Evandeilton Lopes.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>
