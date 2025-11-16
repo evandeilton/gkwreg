@@ -8,8 +8,7 @@ object of class `"gkwreg"`. This is an S3 method for the generic
 ## Usage
 
 ``` r
-# S3 method for class 'gkwreg'
-fitted(object, family = NULL, ...)
+fitted.gkwreg(object, family = NULL, ...)
 ```
 
 ## Arguments
@@ -127,9 +126,7 @@ fit_ekw <- gkwreg(yield ~ batch + temp | temp | batch,
 # Fitted values under different family assumptions
 fitted_ekw <- fitted(fit_ekw)
 fitted_kw <- fitted(fit_ekw, family = "kw")
-#> Using different family (kw) than what was used to fit the model (ekw). Recalculating fitted values...
 fitted_beta <- fitted(fit_ekw, family = "beta")
-#> Using different family (beta) than what was used to fit the model (ekw). Recalculating fitted values...
 
 # Compare differences
 comparison <- data.frame(
@@ -141,12 +138,12 @@ comparison <- data.frame(
 )
 head(comparison)
 #>          EKW         KW       Beta Diff_EKW_KW Diff_EKW_Beta
-#> 1 0.12232728 0.12232728 0.12232728           0             0
+#> 1 0.12232274 0.12232274 0.12232274           0             0
 #> 2 0.00010000 0.00010000 0.00010000           0             0
-#> 3 0.35297443 0.35297443 0.35297443           0             0
+#> 3 0.35297369 0.35297369 0.35297369           0             0
 #> 4 0.46181798 0.46181798 0.46181798           0             0
-#> 5 0.06734871 0.06734871 0.06734871           0             0
-#> 6 0.12862292 0.12862292 0.12862292           0             0
+#> 5 0.06734392 0.06734392 0.06734392           0             0
+#> 6 0.12847689 0.12847689 0.12847689           0             0
 
 # Visualize differences
 par(mfrow = c(1, 2))

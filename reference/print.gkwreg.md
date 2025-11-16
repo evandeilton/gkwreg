@@ -62,24 +62,24 @@ print(fit)
 #> 
 #> Deviance Residuals: 
 #>       Min        1Q    Median        3Q       Max 
-#> -0.028057 -0.002998  0.003669  0.009988  0.017351 
+#> -0.030691 -0.007432  0.003587  0.008642  0.017537 
 #> 
 #> Coefficients:
 #> alpha:(Intercept)      alpha:batch1      alpha:batch2      alpha:batch3 
-#>          0.669355          0.838130          0.591274          0.710287 
+#>          0.669333          0.838133          0.591261          0.710279 
 #>      alpha:batch4      alpha:batch5      alpha:batch6      alpha:batch7 
-#>          0.466756          0.520260          0.449785          0.224769 
+#>          0.466760          0.520279          0.449768          0.224772 
 #>      alpha:batch8      alpha:batch9        alpha:temp  beta:(Intercept) 
-#>          0.203183          0.141845          0.005282         28.881698 
+#>          0.203167          0.141873          0.005282         28.881137 
 #> 
 #> Link functions:  alpha = log, beta = log
 #> 
 #> Degrees of Freedom: 31 Total (i.e. Null);  20 Residual
 #> Residual Deviance: -193.9    AIC: -169.9
 #> Log-Lik: 96.97,  BIC: -152.3 
-#> R-squared: 0.9856,  RMSE: 0.01266 
+#> R-squared: 0.985,  RMSE: 0.01292 
 #> 
-#> Number of Fisher Scoring iterations: 68
+#> Number of Fisher Scoring iterations: 77
 #> 
 
 # With more digits
@@ -90,24 +90,24 @@ print(fit, digits = 5)
 #> 
 #> Deviance Residuals: 
 #>        Min         1Q     Median         3Q        Max 
-#> -0.0280573 -0.0029985  0.0036691  0.0099881  0.0173508 
+#> -0.0306910 -0.0074323  0.0035873  0.0086417  0.0175366 
 #> 
 #> Coefficients:
 #> alpha:(Intercept)      alpha:batch1      alpha:batch2      alpha:batch3 
-#>         0.6693546         0.8381300         0.5912742         0.7102867 
+#>         0.6693333         0.8381330         0.5912612         0.7102789 
 #>      alpha:batch4      alpha:batch5      alpha:batch6      alpha:batch7 
-#>         0.4667565         0.5202601         0.4497854         0.2247689 
+#>         0.4667599         0.5202794         0.4497678         0.2247716 
 #>      alpha:batch8      alpha:batch9        alpha:temp  beta:(Intercept) 
-#>         0.2031834         0.1418454         0.0052823        28.8816975 
+#>         0.2031671         0.1418731         0.0052825        28.8811373 
 #> 
 #> Link functions:  alpha = log, beta = log
 #> 
 #> Degrees of Freedom: 31 Total (i.e. Null);  20 Residual
 #> Residual Deviance: -193.94   AIC: -169.94
 #> Log-Lik: 96.969,  BIC: -152.35 
-#> R-squared: 0.98561,  RMSE: 0.01266 
+#> R-squared: 0.98502,  RMSE: 0.012917 
 #> 
-#> Number of Fisher Scoring iterations: 68
+#> Number of Fisher Scoring iterations: 77
 #> 
 # }
 ```

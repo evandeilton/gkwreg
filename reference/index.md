@@ -26,6 +26,8 @@
   : Weather Task with Priming and Precise and Imprecise Probabilities
 - [`anova(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/anova.gkwreg.md)
   : Analysis of Deviance for GKw Regression Models
+- [`clean_tmb_cache()`](https://evandeilton.github.io/gkwreg/reference/clean_tmb_cache.md)
+  : Clean TMB Cache
 - [`coef(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/coef.gkwreg.md)
   : Extract Coefficients from a Fitted GKw Regression Model
 - [`confint(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/confint.gkwreg.md)
@@ -33,7 +35,7 @@
   Parameters
 - [`family(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/family.gkwreg.md)
   : Extract Family from GKw Regression Model
-- [`fitted(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/fitted.gkwreg.md)
+- [`fitted.gkwreg()`](https://evandeilton.github.io/gkwreg/reference/fitted.gkwreg.md)
   : Extract Fitted Values from a Generalized Kumaraswamy Regression
   Model
 - [`formula(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/formula.gkwreg.md)
@@ -45,6 +47,8 @@
   : Control Parameters for Generalized Kumaraswamy Regression
 - [`gkwreg()`](https://evandeilton.github.io/gkwreg/reference/gkwreg.md)
   : Fit Generalized Kumaraswamy Regression Models
+- [`list_tmb_models()`](https://evandeilton.github.io/gkwreg/reference/list_tmb_models.md)
+  : List Available TMB Models
 - [`logLik(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/logLik.gkwreg.md)
   : Extract Log-Likelihood from Generalized Kumaraswamy Regression
   Models
@@ -58,6 +62,8 @@
   : Number of Observations for GKw Regression Models
 - [`plot(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/plot.gkwreg.md)
   : Diagnostic Plots for Generalized Kumaraswamy Regression Models
+- [`precompile_tmb_models()`](https://evandeilton.github.io/gkwreg/reference/precompile_tmb_models.md)
+  : Precompile All TMB Models
 - [`predict(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/predict.gkwreg.md)
   : Predictions from a Fitted Generalized Kumaraswamy Regression Model
 - [`print(`*`<anova.gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/print.anova.gkwreg.md)

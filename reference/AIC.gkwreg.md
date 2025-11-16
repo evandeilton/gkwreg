@@ -76,6 +76,7 @@ data(GasolineYield)
 
 # Fit competing models
 fit1 <- gkwreg(yield ~ batch, data = GasolineYield, family = "kw")
+#> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’
 fit2 <- gkwreg(yield ~ batch + temp, data = GasolineYield, family = "kw")
 #> Warning: NaNs produced
 fit3 <- gkwreg(yield ~ temp, data = GasolineYield, family = "kw")
@@ -88,7 +89,7 @@ AIC(fit1)
 AIC(fit1, fit2, fit3)
 #>      df        AIC
 #> fit1 11  -42.93436
-#> fit2 12 -169.93784
+#> fit2 12 -169.93865
 #> fit3  3  -74.90259
 
 # Use different penalty

@@ -2,6 +2,8 @@
 
 ## gkwreg 2.1.1
 
+CRAN release: 2025-11-15
+
 ## gkwreg 2.1.0
 
 #### Comparative Testing

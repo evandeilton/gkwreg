@@ -19,13 +19,18 @@
 <url><loc>https://evandeilton.github.io/gkwreg/reference/StressAnxiety.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/WeatherTask.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/anova.gkwreg.html</loc></url>
+<url><loc>https://evandeilton.github.io/gkwreg/reference/clean_tmb_cache.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/coef.gkwreg.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/confint.gkwreg.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/dot-check_and_compile_TMB_code.html</loc></url>
+<url><loc>https://evandeilton.github.io/gkwreg/reference/dot-compile_model.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/dot-convert_links_to_int.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/dot-extract_model_data.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/dot-format_coefficient_names.html</loc></url>
+<url><loc>https://evandeilton.github.io/gkwreg/reference/dot-get_cache_dir.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/dot-get_family_param_info.html</loc></url>
+<url><loc>https://evandeilton.github.io/gkwreg/reference/dot-is_dll_functional.html</loc></url>
+<url><loc>https://evandeilton.github.io/gkwreg/reference/dot-load_dll.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/dot-prepare_tmb_data.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/dot-prepare_tmb_params.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/dot-process_fixed.html</loc></url>
@@ -40,6 +45,7 @@
 <url><loc>https://evandeilton.github.io/gkwreg/reference/gkw_control.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/gkwreg.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/index.html</loc></url>
+<url><loc>https://evandeilton.github.io/gkwreg/reference/list_tmb_models.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/logLik.gkwreg.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/lrtest.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/model.frame.gkwreg.html</loc></url>
@@ -47,6 +53,7 @@
 <url><loc>https://evandeilton.github.io/gkwreg/reference/nobs.gkwreg.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/pipe.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/plot.gkwreg.html</loc></url>
+<url><loc>https://evandeilton.github.io/gkwreg/reference/precompile_tmb_models.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/predict.gkwreg.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/print.anova.gkwreg.html</loc></url>
 <url><loc>https://evandeilton.github.io/gkwreg/reference/print.gkwreg.html</loc></url>

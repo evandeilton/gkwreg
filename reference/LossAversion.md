@@ -119,15 +119,15 @@ summary(fit_kw)
 #> -0.5002 -0.2002  0.0000  0.0037  0.1999  0.5000 
 #> 
 #> Coefficients:
-#>                       Estimate Std. Error z value Pr(>|z|)
-#> alpha:(Intercept)      0.00000    0.47351       0        1
-#> alpha:arrangementteam  0.00000    0.18358       0        1
-#> alpha:age              0.00000    0.03771       0        1
-#> alpha:maleyes          0.00000    0.12103       0        1
-#> alpha:grade10-12       0.00000    0.17325       0        1
-#> beta:(Intercept)       0.00000    0.09653       0        1
-#> beta:arrangementteam   0.00000    0.16937       0        1
-#> beta:maleyes           0.00000    0.13944       0        1
+#>                         Estimate Std. Error z value Pr(>|z|)
+#> alpha:(Intercept)     -2.841e-10  4.735e-01       0        1
+#> alpha:arrangementteam  2.126e-10  1.836e-01       0        1
+#> alpha:age             -4.949e-09  3.771e-02       0        1
+#> alpha:maleyes          1.889e-11  1.210e-01       0        1
+#> alpha:grade10-12      -4.135e-10  1.732e-01       0        1
+#> beta:(Intercept)       4.573e-10  9.653e-02       0        1
+#> beta:arrangementteam  -3.177e-11  1.694e-01       0        1
+#> beta:maleyes          -1.490e-11  1.394e-01       0        1
 #> 
 #> Confidence intervals (95%):
 #>                            3%    98%
@@ -155,15 +155,15 @@ summary(fit_kw)
 #> Number of observations: 570 
 #> Number of parameters: 8 
 #> Residual degrees of freedom: 562 
-#> Log-likelihood: -3e+21 
-#> AIC: 6e+21 
-#> BIC: 6e+21 
+#> Log-likelihood: -3e+11 
+#> AIC: 6e+11 
+#> BIC: 6e+11 
 #> RMSE: 0.2678 
 #> Efron's R2: 7.819e-05 
 #> Mean Absolute Error: 0.2217 
 #> 
-#> Convergence status: Successful 
-#> Iterations: 1 
+#> Convergence status: Failed 
+#> Iterations: 2 
 #> 
 
 # Interpretation:
@@ -195,18 +195,18 @@ summary(fit_kw_interact)
 #> -0.5002 -0.2002  0.0000  0.0037  0.2000  0.5000 
 #> 
 #> Coefficients:
-#>                                  Estimate Std. Error z value Pr(>|z|)
-#> alpha:(Intercept)                 0.00000    0.67535       0        1
-#> alpha:grade10-12                  0.00000    1.12039       0        1
-#> alpha:arrangementteam             0.00000    0.21132       0        1
-#> alpha:age                         0.00000    0.05342       0        1
-#> alpha:maleyes                     0.00000    0.12237       0        1
-#> alpha:grade10-12:arrangementteam  0.00000    0.22609       0        1
-#> alpha:grade10-12:age              0.00000    0.07630       0        1
-#> beta:(Intercept)                  0.00000    0.11264       0        1
-#> beta:arrangementteam              0.00000    0.17198       0        1
-#> beta:maleyes                      0.00000    0.13977       0        1
-#> beta:grade10-12                   0.00000    0.14404       0        1
+#>                                    Estimate Std. Error z value Pr(>|z|)
+#> alpha:(Intercept)                -1.698e-10  6.753e-01       0        1
+#> alpha:grade10-12                 -2.471e-10  1.120e+00       0        1
+#> alpha:arrangementteam             1.270e-10  2.113e-01       0        1
+#> alpha:age                        -2.958e-09  5.342e-02       0        1
+#> alpha:maleyes                     1.129e-11  1.224e-01       0        1
+#> alpha:grade10-12:arrangementteam  3.069e-11  2.261e-01       0        1
+#> alpha:grade10-12:age             -4.007e-09  7.630e-02       0        1
+#> beta:(Intercept)                  2.733e-10  1.126e-01       0        1
+#> beta:arrangementteam             -1.898e-11  1.720e-01       0        1
+#> beta:maleyes                     -8.903e-12  1.398e-01       0        1
+#> beta:grade10-12                   1.314e-10  1.440e-01       0        1
 #> 
 #> Confidence intervals (95%):
 #>                                       3%    98%
@@ -237,15 +237,15 @@ summary(fit_kw_interact)
 #> Number of observations: 570 
 #> Number of parameters: 11 
 #> Residual degrees of freedom: 559 
-#> Log-likelihood: -3e+21 
-#> AIC: 6e+21 
-#> BIC: 6e+21 
+#> Log-likelihood: -3e+11 
+#> AIC: 6e+11 
+#> BIC: 6e+11 
 #> RMSE: 0.2679 
 #> Efron's R2: -0.0001649 
 #> Mean Absolute Error: 0.2218 
 #> 
-#> Convergence status: Successful 
-#> Iterations: 1 
+#> Convergence status: Failed 
+#> Iterations: 2 
 #> 
 
 # Interpretation:
@@ -276,18 +276,18 @@ summary(fit_xbx)
 #> -0.5002 -0.2002  0.0000  0.0037  0.2000  0.5000 
 #> 
 #> Coefficients:
-#>                                  Estimate Std. Error z value Pr(>|z|)
-#> alpha:(Intercept)                 0.00000    0.67535       0        1
-#> alpha:grade10-12                  0.00000    1.12039       0        1
-#> alpha:arrangementteam             0.00000    0.21132       0        1
-#> alpha:age                         0.00000    0.05342       0        1
-#> alpha:maleyes                     0.00000    0.12237       0        1
-#> alpha:grade10-12:arrangementteam  0.00000    0.22609       0        1
-#> alpha:grade10-12:age              0.00000    0.07630       0        1
-#> beta:(Intercept)                  0.00000    0.11264       0        1
-#> beta:arrangementteam              0.00000    0.17198       0        1
-#> beta:maleyes                      0.00000    0.13977       0        1
-#> beta:grade10-12                   0.00000    0.14404       0        1
+#>                                    Estimate Std. Error z value Pr(>|z|)
+#> alpha:(Intercept)                -1.698e-10  6.753e-01       0        1
+#> alpha:grade10-12                 -2.471e-10  1.120e+00       0        1
+#> alpha:arrangementteam             1.270e-10  2.113e-01       0        1
+#> alpha:age                        -2.958e-09  5.342e-02       0        1
+#> alpha:maleyes                     1.129e-11  1.224e-01       0        1
+#> alpha:grade10-12:arrangementteam  3.069e-11  2.261e-01       0        1
+#> alpha:grade10-12:age             -4.007e-09  7.630e-02       0        1
+#> beta:(Intercept)                  2.733e-10  1.126e-01       0        1
+#> beta:arrangementteam             -1.898e-11  1.720e-01       0        1
+#> beta:maleyes                     -8.903e-12  1.398e-01       0        1
+#> beta:grade10-12                   1.314e-10  1.440e-01       0        1
 #> 
 #> Confidence intervals (95%):
 #>                                       3%    98%
@@ -318,15 +318,15 @@ summary(fit_xbx)
 #> Number of observations: 570 
 #> Number of parameters: 11 
 #> Residual degrees of freedom: 559 
-#> Log-likelihood: -3e+21 
-#> AIC: 6e+21 
-#> BIC: 6e+21 
+#> Log-likelihood: -3e+11 
+#> AIC: 6e+11 
+#> BIC: 6e+11 
 #> RMSE: 0.2679 
 #> Efron's R2: -0.0001649 
 #> Mean Absolute Error: 0.2218 
 #> 
-#> Convergence status: Successful 
-#> Iterations: 1 
+#> Convergence status: Failed 
+#> Iterations: 2 
 #> 
 
 # Interpretation:
@@ -341,8 +341,8 @@ anova(fit_kw, fit_kw_interact)
 #> Model 2:     grade
 #> 
 #>                 Resid. Df Resid. Dev Df Deviance Pr(>Chi)  
-#> fit_kw          562.00000      6e+21                       
-#> fit_kw_interact 559.00000      6e+21  3  0.00000        1  
+#> fit_kw          562.00000      6e+11                       
+#> fit_kw_interact 559.00000      6e+11  3  0.00000        1  
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
