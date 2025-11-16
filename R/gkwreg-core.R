@@ -1,231 +1,547 @@
 #' Fit Generalized Kumaraswamy Regression Models
 #'
 #' @description
-#' Fits regression models for response variables strictly bounded in the (0, 1)
-#' interval using the Generalized Kumaraswamy (GKw) family of distributions.
-#' It provides a unified interface for fitting the GKw and six nested submodels,
-#' allowing flexible regression on multiple distribution parameters.
+#' Fits regression models using the Generalized Kumaraswamy (GKw) family of
+#' distributions for modeling response variables strictly bounded in the interval
+#' (0, 1). The function provides a unified interface for fitting seven nested
+#' submodels of the GKw family, allowing flexible modeling of proportions, rates,
+#' and other bounded continuous outcomes through regression on distributional
+#' parameters.
 #'
-#' @details
-#' Estimation is performed via Maximum Likelihood using automatic differentiation
-#' through the TMB (Template Model Builder) package for efficiency and accuracy.
-#' The modeling interface uses \code{\link[Formula]{Formula}} syntax, similar to
-#' \code{\link[stats]{glm}} and \code{\link[betareg]{betareg}}, allowing different
-#' linear predictors for each distributional parameter.
+#' Maximum Likelihood Estimation is performed via automatic differentiation using
+#' the TMB (Template Model Builder) package, ensuring computational efficiency and
+#' numerical accuracy. The interface follows standard R regression modeling
+#' conventions similar to \code{\link[stats]{lm}}, \code{\link[stats]{glm}}, and
+#' \code{\link[betareg]{betareg}}, making it immediately familiar to R users.
 #'
-#' \subsection{Distribution Families}{
-#' The \code{family} argument selects a distribution from the GKw hierarchy.
-#' Simpler families (\code{"beta"}, \code{"kw"}) are often sufficient and
-#' computationally faster. More complex families (\code{"bkw"}, \code{"gkw"})
-#' add flexibility but risk overfitting. Use \code{\link[stats]{AIC}},
-#' \code{\link[stats]{BIC}}, or \code{\link{anova.gkwreg}} to compare nested models.
-#' }
+#' @param formula An object of class \code{\link[Formula]{Formula}} (or one that
+#'   can be coerced to that class). The formula uses extended syntax to specify
+#'   potentially different linear predictors for each distribution parameter:
 #'
-#' \subsection{Formula Specification}{
-#' The extended formula syntax \code{y ~ model_alpha | model_beta | ...} allows
-#' each parameter's linear predictor to be specified. Parameters are in the
-#' order \eqn{\alpha, \beta, \gamma, \delta, \lambda}.
-#'
-#' If a part is omitted (e.g., \code{y ~ model_alpha}), the remaining parameters
-#' are modeled as intercept-only. Parts corresponding to fixed parameters
-#' (defined by \code{family}) are ignored.
-#'
-#' \preformatted{
-#' # Kw family ("kw") parameters: alpha, beta
-#'
-#' # alpha ~ x1 + x2, beta ~ x3
-#' y ~ x1 + x2 | x3
-#'
-#' # alpha ~ x1, beta ~ 1 (intercept only)
-#' y ~ x1 | 1
-#'
-#' # alpha ~ x1, beta ~ x1 (same formula for both)
-#' y ~ x1
-#' }
-#' }
-#'
-#' \subsection{Optimization and Convergence}{
-#' Fitting is performed by \code{\link[stats]{optim}} or \code{\link[stats]{nlminb}}.
-#' If convergence fails, consider:
-#' \itemize{
-#'   \item Checking data for separation, outliers, or collinearity.
-#'   \item Rescaling predictors.
-#'   \item Trying a different optimizer, e.g.,
-#'     \code{control = gkw_control(method = "BFGS")}.
-#'   \item Simplifying the model (fewer predictors or a simpler \code{family}).
-#'   \item Providing starting values via \code{control = gkw_control(start = ...)}.
-#' }
-#' }
-#'
-#' @param formula An object of class \code{\link[Formula]{Formula}}. The formula
-#'   uses extended syntax to specify different linear predictors for each
-#'   parameter:
 #'   \code{y ~ model_alpha | model_beta | model_gamma | model_delta | model_lambda}
 #'
-#'   \describe{
-#'     \item{\code{y}}{The response variable, which must be in the (0, 1) interval.}
-#'     \item{\code{model_alpha}}{Predictors for the \eqn{\alpha} parameter.}
-#'     \item{\code{model_beta}}{Predictors for the \eqn{\beta} parameter.}
-#'     \item{\code{model_gamma}}{Predictors for the \eqn{\gamma} parameter.}
-#'     \item{\code{model_delta}}{Predictors for the \eqn{\delta} parameter.}
-#'     \item{\code{model_lambda}}{Predictors for the \eqn{\lambda} parameter.}
+#'   where:
+#'   \itemize{
+#'     \item \code{y} is the response variable (must be in the open interval (0, 1))
+#'     \item \code{model_alpha} specifies predictors for the \eqn{\alpha} parameter
+#'     \item \code{model_beta} specifies predictors for the \eqn{\beta} parameter
+#'     \item \code{model_gamma} specifies predictors for the \eqn{\gamma} parameter
+#'     \item \code{model_delta} specifies predictors for the \eqn{\delta} parameter
+#'     \item \code{model_lambda} specifies predictors for the \eqn{\lambda} parameter
 #'   }
-#'   See Details for examples.
+#'
+#'   If a part is omitted or specified as \code{~ 1}, an intercept-only model is
+#'   used for that parameter. Parts corresponding to fixed parameters (determined
+#'   by \code{family}) are automatically ignored. See Details and Examples for
+#'   proper usage.
 #'
 #' @param data A data frame containing the variables specified in \code{formula}.
+#'   Standard R subsetting and missing value handling apply.
 #'
-#' @param family A character string specifying the distribution family. Must be one of:
+#' @param family A character string specifying the distribution family from the
+#'   Generalized Kumaraswamy hierarchy. Must be one of:
 #'   \describe{
-#'     \item{\code{"gkw"}}{Generalized Kumaraswamy (default). Parameters:
-#'       \eqn{\alpha, \beta, \gamma, \delta, \lambda}.}
-#'     \item{\code{"bkw"}}{Beta-Kumaraswamy. Parameters:
-#'       \eqn{\alpha, \beta, \gamma, \delta} (fixes \eqn{\lambda = 1}).}
-#'     \item{\code{"kkw"}}{Kumaraswamy-Kumaraswamy. Parameters:
-#'       \eqn{\alpha, \beta, \delta, \lambda} (fixes \eqn{\gamma = 1}).}
-#'     \item{\code{"ekw"}}{Exponentiated Kumaraswamy. Parameters:
-#'       \eqn{\alpha, \beta, \lambda} (fixes \eqn{\gamma = 1, \delta = 0}).}
-#'     \item{\code{"mc"}}{McDonald (Beta Power). Parameters:
-#'       \eqn{\gamma, \delta, \lambda} (fixes \eqn{\alpha = 1, \beta = 1}).}
-#'     \item{\code{"kw"}}{Kumaraswamy. Parameters: \eqn{\alpha, \beta}
-#'       (fixes \eqn{\gamma = 1, \delta = 0, \lambda = 1}).}
-#'     \item{\code{"beta"}}{Beta distribution. Parameters: \eqn{\gamma, \delta}
-#'       (fixes \eqn{\alpha = 1, \beta = 1, \lambda = 1}). Corresponds to
-#'       \code{shape1 = \eqn{\gamma}}, \code{shape2 = \eqn{\delta}}.}
+#'     \item{\code{"gkw"}}{Generalized Kumaraswamy (default). Five parameters:
+#'       \eqn{\alpha, \beta, \gamma, \delta, \lambda}. Most flexible, suitable
+#'       when data show complex behavior not captured by simpler families.}
+#'     \item{\code{"bkw"}}{Beta-Kumaraswamy. Four parameters:
+#'       \eqn{\alpha, \beta, \gamma, \delta} (fixes \eqn{\lambda = 1}).
+#'       Combines Beta and Kumaraswamy flexibility.}
+#'     \item{\code{"kkw"}}{Kumaraswamy-Kumaraswamy. Four parameters:
+#'       \eqn{\alpha, \beta, \delta, \lambda} (fixes \eqn{\gamma = 1}).
+#'       Alternative four-parameter generalization.}
+#'     \item{\code{"ekw"}}{Exponentiated Kumaraswamy. Three parameters:
+#'       \eqn{\alpha, \beta, \lambda} (fixes \eqn{\gamma = 1, \delta = 0}).
+#'       Adds flexibility to standard Kumaraswamy.}
+#'     \item{\code{"mc"}}{McDonald (Beta Power). Three parameters:
+#'       \eqn{\gamma, \delta, \lambda} (fixes \eqn{\alpha = 1, \beta = 1}).
+#'       Generalization of Beta distribution.}
+#'     \item{\code{"kw"}}{Kumaraswamy. Two parameters: \eqn{\alpha, \beta}
+#'       (fixes \eqn{\gamma = 1, \delta = 0, \lambda = 1}). Computationally
+#'       efficient alternative to Beta with closed-form CDF.}
+#'     \item{\code{"beta"}}{Beta distribution. Two parameters: \eqn{\gamma, \delta}
+#'       (fixes \eqn{\alpha = 1, \beta = 1, \lambda = 1}). Standard choice for
+#'       proportions and rates, corresponds to shape1 = \eqn{\gamma},
+#'       shape2 = \eqn{\delta}.}
+#'   }
+#'   See Details for guidance on family selection.
+#'
+#' @param link Link function(s) for the distributional parameters. Can be specified as:
+#'   \itemize{
+#'     \item \strong{Single character string}: Same link for all relevant parameters.
+#'       Example: \code{link = "log"} applies log link to all parameters.
+#'     \item \strong{Named list}: Parameter-specific links for fine control.
+#'       Example: \code{link = list(alpha = "log", beta = "log", delta = "logit")}
 #'   }
 #'
-#' @param link Specifies the link function(s) for the distributional parameters.
-#'   Can be a single character string (applied to all parameters) or a
-#'   named list for parameter-specific links (e.g.,
-#'   \code{link = list(alpha = "log", delta = "logit")}).
-#'
-#'   If \code{NULL} (default), links are: \code{"log"} for \eqn{\alpha, \beta,
-#'   \gamma, \lambda} and \code{"logit"} for \eqn{\delta}.
-#'
-#'   Available links:
-#'   \describe{
-#'     \item{\code{"log"}}{Log link, maps \eqn{(0, \infty) \to R}. Ensures positivity.}
-#'     \item{\code{"logit"}}{Logit link, maps \eqn{(0, 1) \to R}.}
-#'     \item{\code{"probit"}}{Probit link, maps \eqn{(0, 1) \to R}.}
-#'     \item{\code{"cloglog"}}{Complementary log-log link, maps \eqn{(0, 1) \to R}.}
-#'     \item{\code{"cauchy"}}{Cauchy link, maps \eqn{(0, 1) \to R}.}
-#'     \item{\code{"identity"}}{Identity link (no transformation). Use with
-#'       caution as it does not enforce parameter constraints.}
-#'     \item{\code{"sqrt"}}{Square root link, maps \eqn{x \to \sqrt{x}}.}
-#'     \item{\code{"inverse"}}{Inverse link, maps \eqn{x \to 1/x}.}
-#'     \item{\code{"inverse-square"}}{Inverse squared link, maps \eqn{x \to 1/x^2}.}
+#'   \strong{Default links} (used if \code{link = NULL}):
+#'   \itemize{
+#'     \item \code{"log"} for \eqn{\alpha, \beta, \gamma, \lambda} (positive parameters)
+#'     \item \code{"logit"} for \eqn{\delta} (parameter in (0, 1))
 #'   }
 #'
-#' @param link_scale Numeric scale factor(s) for link functions. Can be a
-#'   single numeric value (applied to all) or a named list.
-#'   Default is \code{NULL}, which uses \code{10} for \eqn{\alpha, \beta,
-#'   \gamma, \lambda} and \code{1} for \eqn{\delta}. Smaller scales produce
-#'   steeper response curves; larger scales produce more gradual ones.
+#'   \strong{Available link functions:}
+#'   \describe{
+#'     \item{\code{"log"}}{Logarithmic link. Maps \eqn{(0, \infty) \to (-\infty, \infty)}.
+#'       Ensures positivity. Most common for shape parameters.}
+#'     \item{\code{"logit"}}{Logistic link. Maps \eqn{(0, 1) \to (-\infty, \infty)}.
+#'       Standard for probability-type parameters like \eqn{\delta}.}
+#'     \item{\code{"probit"}}{Probit link using normal CDF. Maps \eqn{(0, 1) \to (-\infty, \infty)}.
+#'       Alternative to logit, symmetric tails.}
+#'     \item{\code{"cloglog"}}{Complementary log-log. Maps \eqn{(0, 1) \to (-\infty, \infty)}.
+#'       Asymmetric, useful for skewed probabilities.}
+#'     \item{\code{"cauchy"}}{Cauchy link using Cauchy CDF. Maps \eqn{(0, 1) \to (-\infty, \infty)}.
+#'       Heavy-tailed alternative to probit.}
+#'     \item{\code{"identity"}}{Identity link (no transformation). Use with caution;
+#'       does not guarantee parameter constraints.}
+#'     \item{\code{"sqrt"}}{Square root link. Maps \eqn{x \to \sqrt{x}}.
+#'       Variance-stabilizing for some contexts.}
+#'     \item{\code{"inverse"}}{Inverse link. Maps \eqn{x \to 1/x}.
+#'       Useful for rate-type parameters.}
+#'     \item{\code{"inverse-square"}}{Inverse squared link. Maps \eqn{x \to 1/x^2}.}
+#'   }
 #'
-#' @param subset Optional vector specifying a subset of observations.
+#' @param link_scale Numeric scale factor(s) controlling the transformation intensity
+#'   of link functions. Can be:
+#'   \itemize{
+#'     \item \strong{Single numeric}: Same scale for all parameters.
+#'     \item \strong{Named list}: Parameter-specific scales for fine-tuning.
+#'       Example: \code{link_scale = list(alpha = 10, beta = 10, delta = 1)}
+#'   }
 #'
-#' @param weights Optional numeric vector of prior weights. Currently experimental.
+#'   \strong{Default scales} (used if \code{link_scale = NULL}):
+#'   \itemize{
+#'     \item 10 for \eqn{\alpha, \beta, \gamma, \lambda}
+#'     \item 1 for \eqn{\delta}
+#'   }
 #'
-#' @param offset Optional vector or matrix specifying an \emph{a priori} known
-#'   component to be included in the linear predictor(s). Offsets are added
-#'   \emph{before} the link function is applied.
+#'   Larger values produce more gradual transformations; smaller values produce
+#'   more extreme transformations. For probability-type links (logit, probit),
+#'   smaller scales (e.g., 0.5-2) create steeper response curves, while larger
+#'   scales (e.g., 5-20) create gentler curves. Adjust if convergence issues arise
+#'   or if you need different response sensitivities.
 #'
-#' @param na.action A function specifying how to handle \code{NA}s.
-#'   Defaults to \code{getOption("na.action")}. See
-#'   \code{\link[stats]{na.omit}} and \code{\link[stats]{na.exclude}}.
+#' @param subset Optional vector specifying a subset of observations to be used
+#'   in fitting. Can be a logical vector, integer indices, or expression evaluating
+#'   to one of these. Standard R subsetting rules apply.
 #'
-#' @param contrasts Optional list specifying contrasts for factor variables.
-#'   See \code{\link[stats]{contrasts}} and \code{contrasts.arg} in
-#'   \code{\link[stats]{model.matrix}}.
+#' @param weights Optional numeric vector of prior weights (e.g., frequency weights)
+#'   for observations. Should be non-negative. Currently experimental; use with
+#'   caution and validate results.
+#'
+#' @param offset Optional numeric vector or matrix specifying an \emph{a priori} known
+#'   component to be included in the linear predictor(s). If a vector, it is applied
+#'   to the first parameter's predictor. If a matrix, columns correspond to parameters
+#'   in order (\eqn{\alpha, \beta, \gamma, \delta, \lambda}). Offsets are added to
+#'   the linear predictor \emph{before} applying the link function.
+#'
+#' @param na.action A function specifying how to handle missing values (\code{NA}s).
+#'   Options include:
+#'   \describe{
+#'     \item{\code{na.fail}}{Stop with error if \code{NA}s present (default via
+#'       \code{getOption("na.action")})}
+#'     \item{\code{\link[stats]{na.omit}}}{Remove observations with \code{NA}s}
+#'     \item{\code{\link[stats]{na.exclude}}}{Like \code{na.omit} but preserves
+#'       original length in residuals/fitted values}
+#'   }
+#'   See \code{\link[stats]{na.action}} for details.
+#'
+#' @param contrasts Optional list specifying contrasts for factor variables in the
+#'   model. Format: named list where names are factor variable names and values are
+#'   contrast specifications. See \code{\link[stats]{contrasts}} and the
+#'   \code{contrasts.arg} argument of \code{\link[stats]{model.matrix}}.
 #'
 #' @param control A list of control parameters from \code{\link{gkw_control}}
-#'   specifying optimization details (e.g., \code{method}, \code{start},
-#'   \code{hessian}, \code{maxit}). See \code{\link{gkw_control}} for all
-#'   options and defaults.
+#'   specifying technical details of the fitting process. This includes:
+#'   \itemize{
+#'     \item Optimization algorithm (\code{method})
+#'     \item Starting values (\code{start})
+#'     \item Fixed parameters (\code{fixed})
+#'     \item Convergence tolerances (\code{maxit}, \code{reltol}, \code{abstol})
+#'     \item Hessian computation (\code{hessian})
+#'     \item Verbosity (\code{silent}, \code{trace})
+#'   }
 #'
-#' @param model Logical (default \code{TRUE}). If \code{TRUE}, the model frame
-#'   is returned as component \code{model}.
+#'   Default is \code{gkw_control()} which uses sensible defaults for most problems.
+#'   See \code{\link{gkw_control}} for complete documentation of all options.
+#'   \strong{Most users never need to modify control parameters.}
 #'
-#' @param x Logical (default \code{FALSE}). If \code{TRUE}, the list of
-#'   model matrices (one for each modeled parameter) is returned as component \code{x}.
+#' @param model Logical. If \code{TRUE} (default), the model frame (data frame
+#'   containing all variables used in fitting) is returned as component \code{model}
+#'   of the result. Useful for prediction and diagnostics. Set to \code{FALSE} to
+#'   reduce object size.
 #'
-#' @param y Logical (default \code{TRUE}). If \code{TRUE}, the response
-#'   vector is returned as component \code{y}.
+#' @param x Logical. If \code{TRUE}, the list of model matrices (one for each
+#'   modeled parameter) is returned as component \code{x}. Default \code{FALSE}.
+#'   Set to \code{TRUE} if you need direct access to design matrices for custom
+#'   calculations.
 #'
-#' @param ... Arguments for backward compatibility (e.g., \code{method},
-#'   \code{start}, \code{hessian}, \code{silent}). These are deprecated and
-#'   should be passed via the \code{control} argument. Using them will
-#'   trigger a warning.
+#' @param y Logical. If \code{TRUE} (default), the response vector (after processing
+#'   by \code{na.action} and \code{subset}) is returned as component \code{y}.
+#'   Useful for residual calculations and diagnostics.
+#'
+#' @param ... Additional arguments. Currently used only for backward compatibility
+#'   with deprecated arguments from earlier versions. Using deprecated arguments
+#'   triggers informative warnings with migration guidance. Examples of deprecated
+#'   arguments: \code{plot}, \code{conf.level}, \code{method}, \code{start},
+#'   \code{fixed}, \code{hessian}, \code{silent}, \code{optimizer.control}.
+#'   These should now be passed via the \code{control} argument.
 #'
 #' @return
-#' An object of class \code{"gkwreg"}, a list containing:
+#' An object of class \code{"gkwreg"}, which is a list containing the following
+#' components. Standard S3 methods are available for this class (see Methods section).
 #'
 #' \strong{Model Specification:}
 #' \describe{
-#'   \item{\code{call}}{The matched function call.}
-#'   \item{\code{formula}}{The \code{Formula} object used.}
-#'   \item{\code{family}}{The distribution family used.}
-#'   \item{\code{link}}{Named list of link functions used.}
-#'   \item{\code{link_scale}}{Named list of link scale values.}
-#'   \item{\code{control}}{The \code{gkw_control} object used.}
+#'   \item{\code{call}}{The matched function call}
+#'   \item{\code{formula}}{The \code{Formula} object used}
+#'   \item{\code{family}}{Character string: distribution family used}
+#'   \item{\code{link}}{Named list: link functions for each parameter}
+#'   \item{\code{link_scale}}{Named list: link scale values for each parameter}
+#'   \item{\code{param_names}}{Character vector: names of parameters for this family}
+#'   \item{\code{fixed_params}}{Named list: parameters fixed by family definition}
+#'   \item{\code{control}}{The \code{gkw_control} object used for fitting}
 #' }
 #'
 #' \strong{Parameter Estimates:}
 #' \describe{
-#'   \item{\code{coefficients}}{Named vector of estimated regression
-#'     coefficients (on the link scale).}
-#'   \item{\code{fitted_parameters}}{Named list of mean parameter values
-#'     (e.g., \eqn{\alpha, \beta}) averaged across observations.}
-#'   \item{\code{parameter_vectors}}{Named list of observation-specific
-#'     parameter vectors (e.g., \code{alphaVec}, \code{betaVec}).}
+#'   \item{\code{coefficients}}{Named numeric vector: estimated regression coefficients
+#'     (on link scale). Names follow the pattern "parameter:predictor", e.g.,
+#'     "alpha:(Intercept)", "alpha:x1", "beta:(Intercept)", "beta:x2".}
+#'   \item{\code{fitted_parameters}}{Named list: mean values for each distribution
+#'     parameter (\eqn{\alpha, \beta, \gamma, \delta, \lambda}) averaged across
+#'     all observations}
+#'   \item{\code{parameter_vectors}}{Named list: observation-specific parameter
+#'     values. Contains vectors \code{alphaVec}, \code{betaVec}, \code{gammaVec},
+#'     \code{deltaVec}, \code{lambdaVec}, each of length \code{nobs}}
 #' }
 #'
 #' \strong{Fitted Values and Residuals:}
 #' \describe{
-#'   \item{\code{fitted.values}}{Vector of fitted mean values \eqn{E[Y|X]}.}
-#'   \item{\code{residuals}}{Vector of response residuals (observed - fitted).}
+#'   \item{\code{fitted.values}}{Numeric vector: fitted mean values
+#'     \eqn{E[Y|X]} for each observation}
+#'   \item{\code{residuals}}{Numeric vector: response residuals
+#'     (observed - fitted) for each observation}
 #' }
 #'
-#' \strong{Inference:} (Only if \code{control$hessian = TRUE})
+#' \strong{Inference:}
 #' \describe{
-#'   \item{\code{vcov}}{Variance-covariance matrix of coefficients.}
-#'   \item{\code{se}}{Vector of standard errors of coefficients.}
+#'   \item{\code{vcov}}{Variance-covariance matrix of coefficient estimates.
+#'     Only present if \code{control$hessian = TRUE}. \code{NULL} otherwise.}
+#'   \item{\code{se}}{Numeric vector: standard errors of coefficients.
+#'     Only present if \code{control$hessian = TRUE}. \code{NULL} otherwise.}
 #' }
 #'
 #' \strong{Model Fit Statistics:}
 #' \describe{
-#'   \item{\code{loglik}}{Maximized log-likelihood.}
-#'   \item{\code{aic}}{Akaike Information Criterion.}
-#'   \item{\code{bic}}{Bayesian Information Criterion.}
-#'   \item{\code{deviance}}{Deviance (-2 * loglik).}
-#'   \item{\code{df.residual}}{Residual degrees of freedom (nobs - npar).}
-#'   \item{\code{nobs}}{Number of observations.}
-#'   \item{\code{npar}}{Total number of estimated parameters.}
+#'   \item{\code{loglik}}{Numeric: maximized log-likelihood value}
+#'   \item{\code{aic}}{Numeric: Akaike Information Criterion
+#'     (AIC = -2*loglik + 2*npar)}
+#'   \item{\code{bic}}{Numeric: Bayesian Information Criterion
+#'     (BIC = -2*loglik + log(nobs)*npar)}
+#'   \item{\code{deviance}}{Numeric: deviance (-2 * loglik)}
+#'   \item{\code{df.residual}}{Integer: residual degrees of freedom (nobs - npar)}
+#'   \item{\code{nobs}}{Integer: number of observations used in fit}
+#'   \item{\code{npar}}{Integer: total number of estimated parameters}
 #' }
 #'
 #' \strong{Diagnostic Statistics:}
 #' \describe{
-#'   \item{\code{rmse}}{Root Mean Squared Error.}
-#'   \item{\code{efron_r2}}{Efron's pseudo R-squared.}
-#'   \item{\code{mean_absolute_error}}{Mean Absolute Error.}
+#'   \item{\code{rmse}}{Numeric: Root Mean Squared Error of response residuals}
+#'   \item{\code{efron_r2}}{Numeric: Efron's pseudo R-squared
+#'     (1 - SSE/SST, where SSE = sum of squared errors,
+#'     SST = total sum of squares)}
+#'   \item{\code{mean_absolute_error}}{Numeric: Mean Absolute Error of response
+#'     residuals}
 #' }
 #'
 #' \strong{Optimization Details:}
 #' \describe{
-#'   \item{\code{convergence}}{Logical, \code{TRUE} if converged.}
-#'   \item{\code{message}}{Convergence message from optimizer.}
-#'   \item{\code{iterations}}{Number of optimizer iterations.}
+#'   \item{\code{convergence}}{Logical: \code{TRUE} if optimizer converged
+#'     successfully, \code{FALSE} otherwise}
+#'   \item{\code{message}}{Character: convergence message from optimizer}
+#'   \item{\code{iterations}}{Integer: number of iterations used by optimizer}
+#'   \item{\code{method}}{Character: optimization method used
+#'     (e.g., "nlminb", "BFGS")}
 #' }
 #'
-#' \strong{Optional Components:}
+#' \strong{Optional Components} (returned if requested via \code{model}, \code{x}, \code{y}):
 #' \describe{
-#'   \item{\code{model}}{The model frame (if \code{model = TRUE}).}
-#'   \item{\code{x}}{List of model matrices (if \code{x = TRUE}).}
-#'   \item{\code{y}}{The response vector (if \code{y = TRUE}).}
+#'   \item{\code{model}}{Data frame: the model frame (if \code{model = TRUE})}
+#'   \item{\code{x}}{Named list: model matrices for each parameter
+#'     (if \code{x = TRUE})}
+#'   \item{\code{y}}{Numeric vector: the response variable (if \code{y = TRUE})}
 #' }
 #'
 #' \strong{Internal:}
 #' \describe{
-#'   \item{\code{tmb_object}}{The raw object from \code{\link[TMB]{MakeADFun}}.}
+#'   \item{\code{tmb_object}}{The raw object returned by \code{\link[TMB]{MakeADFun}}.
+#'     Contains the TMB automatic differentiation function and environment.
+#'     Primarily for internal use and advanced debugging.}
+#' }
+#'
+#' @section Methods:
+#' The following S3 methods are available for objects of class \code{"gkwreg"}:
+#'
+#' \strong{Basic Methods:}
+#' \itemize{
+#'   \item \code{\link{print.gkwreg}}: Print basic model information
+#'   \item \code{\link{summary.gkwreg}}: Detailed model summary with coefficient
+#'     tables, tests, and fit statistics
+#'   \item \code{\link{coef.gkwreg}}: Extract coefficients
+#'   \item \code{\link{vcov.gkwreg}}: Extract variance-covariance matrix
+#'   \item \code{\link[stats]{logLik}}: Extract log-likelihood
+#'   \item \code{\link[stats]{AIC}}, \code{\link[stats]{BIC}}: Information criteria
+#' }
+#'
+#' \strong{Prediction and Fitted Values:}
+#' \itemize{
+#'   \item \code{\link{fitted.gkwreg}}: Extract fitted values
+#'   \item \code{\link{residuals.gkwreg}}: Extract residuals (multiple types available)
+#'   \item \code{\link{predict.gkwreg}}: Predict on new data
+#' }
+#'
+#' \strong{Inference:}
+#' \itemize{
+#'   \item \code{\link{confint.gkwreg}}: Confidence intervals for parameters
+#'   \item \code{\link{anova.gkwreg}}: Compare nested models via likelihood ratio tests
+#' }
+#'
+#' \strong{Diagnostics:}
+#' \itemize{
+#'   \item \code{\link{plot.gkwreg}}: Comprehensive diagnostic plots (6 types)
+#' }
+#'
+#' @details
+#'
+#' \subsection{Distribution Family Selection}{
+#'
+#' The Generalized Kumaraswamy family provides a flexible hierarchy for modeling
+#' bounded responses. Selection should be guided by:
+#'
+#' \strong{1. Start Simple:} Begin with two-parameter families (\code{"kw"} or
+#' \code{"beta"}) unless you have strong reasons to use more complex models.
+#'
+#' \strong{2. Model Comparison:} Use information criteria (AIC, BIC) and likelihood
+#' ratio tests to compare nested models:
+#' \preformatted{
+#'   # Fit sequence of nested models
+#'   fit_kw   <- gkwreg(y ~ x, data, family = "kw")
+#'   fit_ekw  <- gkwreg(y ~ x, data, family = "ekw")
+#'   fit_gkw  <- gkwreg(y ~ x, data, family = "gkw")
+#'
+#'   # Compare via AIC
+#'   AIC(fit_kw, fit_ekw, fit_gkw)
+#'
+#'   # Formal test (nested models only)
+#'   anova(fit_kw, fit_ekw, fit_gkw)
+#' }
+#'
+#' \strong{3. Family Characteristics:}
+#' \itemize{
+#'   \item \strong{Beta}: Traditional choice, well-understood, good for symmetric
+#'     or moderately skewed data
+#'   \item \strong{Kumaraswamy (kw)}: Computationally efficient alternative to Beta,
+#'     closed-form CDF, similar flexibility
+#'   \item \strong{Exponentiated Kumaraswamy (ekw)}: Adds flexibility for extreme
+#'     values and heavy tails
+#'   \item \strong{Beta-Kumaraswamy (bkw)}, \strong{Kumaraswamy-Kumaraswamy (kkw)}:
+#'     Four-parameter alternatives when three parameters insufficient
+#'   \item \strong{McDonald (mc)}: Beta generalization via power parameter, useful
+#'     for J-shaped distributions
+#'   \item \strong{Kumaraswamy-Kumaraswamy (kkw)}: Most flexible, use only when
+#'     simpler families inadequate. It extends kw
+#'   \item \strong{Generalized Kumaraswamy (gkw)}: Most flexible, use only when
+#'     simpler families inadequate
+#' }
+#'
+#' \strong{4. Avoid Overfitting:} More different parameters better model. Use cross-validation
+#' or hold-out validation to assess predictive performance.
+#' }
+#'
+#' \subsection{Formula Specification}{
+#'
+#' The extended formula syntax allows different predictors for each parameter:
+#'
+#' \strong{Basic Examples:}
+#' \preformatted{
+#'   # Same predictors for both parameters (two-parameter family)
+#'   y ~ x1 + x2
+#'   # Equivalent to: y ~ x1 + x2 | x1 + x2
+#'
+#'   # Different predictors per parameter
+#'   y ~ x1 + x2 | x3 + x4
+#'   # alpha depends on x1, x2
+#'   # beta depends on x3, x4
+#'
+#'   # Intercept-only for some parameters
+#'   y ~ x1 | 1
+#'   # alpha depends on x1
+#'   # beta has only intercept
+#'
+#'   # Complex specification (five-parameter family)
+#'   y ~ x1 | x2 | x3 | x4 | x5
+#'   # alpha ~ x1, beta ~ x2, gamma ~ x3, delta ~ x4, lambda ~ x5
+#' }
+#'
+#' \strong{Important Notes:}
+#' \itemize{
+#'   \item Formula parts correspond to parameters in order:
+#'     \eqn{\alpha}, \eqn{\beta}, \eqn{\gamma}, \eqn{\delta}, \eqn{\lambda}
+#'   \item Unused parts (due to family constraints) are automatically ignored
+#'   \item Use \code{.} to include all predictors: \code{y ~ . | .}
+#'   \item Standard R formula features work: interactions (\code{x1:x2}),
+#'     polynomials (\code{poly(x, 2)}), transformations (\code{log(x)}), etc.
+#' }
+#' }
+#'
+#' \subsection{Link Functions and Scales}{
+#'
+#' Link functions map the range of distributional parameters to the real line,
+#' ensuring parameter constraints are satisfied during optimization.
+#'
+#' \strong{Choosing Links:}
+#' \itemize{
+#'   \item \strong{Defaults are usually best}: The automatic choices
+#'     (log for shape parameters, logit for delta) work well in most cases
+#'   \item \strong{Alternative links}: Consider if you have theoretical reasons
+#'     (e.g., probit for latent variable interpretation) or convergence issues
+#'   \item \strong{Identity link}: Avoid unless you have constraints elsewhere;
+#'     can lead to invalid parameter values during optimization
+#' }
+#'
+#' \strong{Link Scales:}
+#' The \code{link_scale} parameter controls transformation intensity. Think of it
+#' as a "sensitivity" parameter:
+#' \itemize{
+#'   \item \strong{Larger values} (e.g., 20): Gentler response to predictor changes
+#'   \item \strong{Smaller values} (e.g., 2): Steeper response to predictor changes
+#'   \item \strong{Default (10)}: Balanced, works well for most cases
+#' }
+#'
+#' Adjust only if:
+#' \itemize{
+#'   \item Convergence difficulties arise
+#'   \item You need very steep or very gentle response curves
+#'   \item Predictors have unusual scales (very large or very small)
+#' }
+#' }
+#'
+#' \subsection{Optimization and Convergence}{
+#'
+#' The default optimizer (\code{method = "nlminb"}) works well for most problems.
+#' If convergence issues occur:
+#'
+#' \strong{1. Check Data:}
+#' \itemize{
+#'   \item Ensure response is strictly in (0, 1)
+#'   \item Check for extreme outliers or influential points
+#'   \item Verify predictors aren't perfectly collinear
+#'   \item Consider rescaling predictors to similar ranges
+#' }
+#'
+#' \strong{2. Try Alternative Optimizers:}
+#' \preformatted{
+#'   # BFGS often more robust for difficult problems
+#'   fit <- gkwreg(y ~ x, data,
+#'                 control = gkw_control(method = "BFGS"))
+#'
+#'   # Nelder-Mead for non-smooth objectives
+#'   fit <- gkwreg(y ~ x, data,
+#'                 control = gkw_control(method = "Nelder-Mead"))
+#' }
+#'
+#' \strong{3. Adjust Tolerances:}
+#' \preformatted{
+#'   # Increase iterations and loosen tolerance
+#'   fit <- gkwreg(y ~ x, data,
+#'                 control = gkw_control(maxit = 1000, reltol = 1e-6))
+#' }
+#'
+#' \strong{4. Provide Starting Values:}
+#' \preformatted{
+#'   # Fit simpler model first, use as starting values
+#'   fit_simple <- gkwreg(y ~ 1, data, family = "kw")
+#'   start_vals <- list(
+#'     alpha = c(coef(fit_simple)[1], rep(0, ncol(X_alpha) - 1)),
+#'     beta  = c(coef(fit_simple)[2], rep(0, ncol(X_beta) - 1))
+#'   )
+#'   fit_complex <- gkwreg(y ~ x1 + x2 | x3 + x4, data, family = "kw",
+#'                          control = gkw_control(start = start_vals))
+#' }
+#'
+#' \strong{5. Simplify Model:}
+#' \itemize{
+#'   \item Use simpler family (e.g., "kw" instead of "gkw")
+#'   \item Reduce number of predictors
+#'   \item Use intercept-only for some parameters
+#' }
+#' }
+#'
+#' \subsection{Standard Errors and Inference}{
+#'
+#' By default, standard errors are computed via the Hessian matrix at the MLE.
+#' This provides valid asymptotic standard errors under standard regularity conditions.
+#'
+#' \strong{When Standard Errors May Be Unreliable:}
+#' \itemize{
+#'   \item Small sample sizes (n < 30-50 per parameter)
+#'   \item Parameters near boundaries
+#'   \item Highly collinear predictors
+#'   \item Mis-specified models
+#' }
+#'
+#' \strong{Alternatives:}
+#' \itemize{
+#'   \item Bootstrap confidence intervals (more robust, computationally expensive)
+#'   \item Profile likelihood intervals via \code{confint(..., type = "profile")}
+#'     (not yet implemented)
+#'   \item Cross-validation for predictive performance assessment
+#' }
+#'
+#' To skip Hessian computation (faster, no SEs):
+#' \preformatted{
+#'   fit <- gkwreg(y ~ x, data,
+#'                 control = gkw_control(hessian = FALSE))
+#' }
+#' }
+#'
+#' \subsection{Model Diagnostics}{
+#'
+#' Always check model adequacy using diagnostic plots:
+#' \preformatted{
+#'   fit <- gkwreg(y ~ x, data, family = "kw")
+#'   plot(fit)  # Six diagnostic plots
+#' }
+#'
+#' Key diagnostics:
+#' \itemize{
+#'   \item \strong{Residual plots}: Check for patterns, heteroscedasticity
+#'   \item \strong{Half-normal plot}: Assess distributional adequacy
+#'   \item \strong{Cook's distance}: Identify influential observations
+#'   \item \strong{Predicted vs observed}: Overall fit quality
+#' }
+#'
+#' See \code{\link{plot.gkwreg}} for detailed interpretation guidance.
+#' }
+#'
+#' \subsection{Computational Considerations}{
+#'
+#' \strong{Performance Tips:}
+#' \itemize{
+#'   \item GKw family: Most computationally expensive (~2-5x slower than kw/beta)
+#'   \item Beta/Kw families: Fastest, use when adequate
+#'   \item Large datasets (n > 10,000): Consider sampling for exploratory analysis
+#'   \item TMB uses automatic differentiation: Fast gradient/Hessian computation
+#'   \item Disable Hessian (\code{hessian = FALSE}) for faster fitting without SEs
+#' }
+#'
+#' \strong{Memory Usage:}
+#' \itemize{
+#'   \item Set \code{model = FALSE}, \code{x = FALSE}, \code{y = FALSE} to reduce
+#'     object size (but limits some post-fitting capabilities)
+#'   \item Hessian matrix scales as O(p²) where p = number of parameters
+#' }
 #' }
 #'
 #' @references
@@ -251,6 +567,11 @@
 #' rates and proportions. \emph{Journal of Applied Statistics}, \strong{31}(7), 799-815.
 #' \doi{10.1080/0266476042000214501}
 #'
+#' Smithson, M., & Verkuilen, J. (2006). A better lemon squeezer? Maximum-likelihood
+#' regression with beta-distributed dependent variables. \emph{Psychological Methods},
+#' \strong{11}(1), 54-71.
+#' \doi{10.1037/1082-989X.11.1.54}
+#'
 #' \strong{Template Model Builder (TMB):}
 #'
 #' Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016).
@@ -258,61 +579,75 @@
 #' Statistical Software}, \strong{70}(5), 1-21.
 #' \doi{10.18637/jss.v070.i05}
 #'
+#' \strong{Related Software:}
+#'
+#' Zeileis, A., & Croissant, Y. (2010). Extended Model Formulas in R: Multiple
+#' Parts and Multiple Responses. \emph{Journal of Statistical Software},
+#' \strong{34}(1), 1-13.
+#' \doi{10.18637/jss.v034.i01}
+#'
 #' @author Lopes, J. E.
 #'
 #' Maintainer: Lopes, J. E.
 #'
 #' @seealso
-#' \strong{Core Functions:}
-#' \code{\link{gkw_control}} for fitting options.
+#' \strong{Control and Inference:}
+#' \code{\link{gkw_control}} for fitting control parameters,
+#' \code{\link{confint.gkwreg}} for confidence intervals,
+#' \code{\link{anova.gkwreg}} for model comparison
 #'
-#' \strong{S3 Methods:}
-#' \code{\link{summary.gkwreg}}, \code{\link{print.gkwreg}},
-#' \code{\link{plot.gkwreg}}, \code{\link{predict.gkwreg}},
-#' \code{\link{residuals.gkwreg}}, \code{\link{coef.gkwreg}},
-#' \code{\link{vcov.gkwreg}}, \code{\link{logLik.gkwreg}},
-#' \code{\link{confint.gkwreg}}, \code{\link{anova.gkwreg}}
+#' \strong{Methods:}
+#' \code{\link{summary.gkwreg}}, \code{\link{plot.gkwreg}},
+#' \code{\link{coef.gkwreg}}, \code{\link{vcov.gkwreg}},
+#' \code{\link{fitted.gkwreg}}, \code{\link{residuals.gkwreg}},
+#' \code{\link{predict.gkwreg}}
 #'
 #' \strong{Distributions:}
 #' \code{\link[gkwdist]{dgkw}}, \code{\link[gkwdist]{pgkw}},
 #' \code{\link[gkwdist]{qgkw}}, \code{\link[gkwdist]{rgkw}}
+#' for the GKw distribution family functions
 #'
 #' \strong{Related Packages:}
-#' \code{\link[betareg]{betareg}}, \code{\link[Formula]{Formula}},
-#' \code{\link[TMB]{TMB}}
+#' \code{\link[betareg]{betareg}} for traditional beta regression,
+#' \code{\link[Formula]{Formula}} for extended formula interface,
+#' \code{\link[TMB]{MakeADFun}} for TMB functionality
 #'
 #' @examples
 #' \donttest{
 #' # SECTION 1: Basic Usage - Getting Started
+#'
 #' # Load packages and data
 #' library(gkwreg)
 #' library(gkwdist)
 #' data(GasolineYield)
-#' 
+#'
 #' # Example 1.1: Simplest possible model (intercept-only, all defaults)
 #' fit_basic <- gkwreg(yield ~ 1, data = GasolineYield, family = "kw")
 #' summary(fit_basic)
-#' 
+#'
 #' # Example 1.2: Model with predictors (uses all defaults)
 #' # Default: family = "gkw", method = "nlminb", hessian = TRUE
 #' fit_default <- gkwreg(yield ~ batch + temp, data = GasolineYield)
 #' summary(fit_default)
-#' 
+#'
 #' # Example 1.3: Kumaraswamy model (two-parameter family)
 #' # Default link functions: log for both alpha and beta
 #' fit_kw <- gkwreg(yield ~ batch + temp, data = GasolineYield, family = "kw")
 #' summary(fit_kw)
-#' plot(fit_kw, ask = FALSE, use_ggplot = TRUE, arrange_plots = TRUE)
-#' 
+#'
+#' par(mfrow = c(3, 2))
+#' plot(fit_kw, ask = FALSE)
+#'
 #' # Example 1.4: Beta model for comparison
 #' # Default links: log for gamma and delta
 #' fit_beta <- gkwreg(yield ~ batch + temp, data = GasolineYield, family = "beta")
-#' 
+#'
 #' # Compare models using AIC/BIC
 #' AIC(fit_kw, fit_beta)
 #' BIC(fit_kw, fit_beta)
-#' 
+#'
 #' # SECTION 2: Using gkw_control() for Customization
+#'
 #' # Example 2.1: Change optimization method to BFGS
 #' fit_bfgs <- gkwreg(
 #'   yield ~ batch + temp,
@@ -321,7 +656,20 @@
 #'   control = gkw_control(method = "BFGS")
 #' )
 #' summary(fit_bfgs)
-#' 
+#'
+#' # Example 2.2: Increase iterations and enable verbose output
+#' fit_verbose <- gkwreg(
+#'   yield ~ batch + temp,
+#'   data = GasolineYield,
+#'   family = "kw",
+#'   control = gkw_control(
+#'     method = "nlminb",
+#'     maxit = 1000,
+#'     silent = FALSE, # Show optimization progress
+#'     trace = 1 # Print iteration details
+#'   )
+#' )
+#'
 #' # Example 2.3: Fast fitting without standard errors
 #' # Useful for model exploration or large datasets
 #' fit_fast <- gkwreg(
@@ -332,8 +680,20 @@
 #' )
 #' # Note: Cannot compute confint() without hessian
 #' coef(fit_fast) # Point estimates still available
-#' 
+#'
+#' # Example 2.4: Custom convergence tolerances
+#' fit_tight <- gkwreg(
+#'   yield ~ batch + temp,
+#'   data = GasolineYield,
+#'   family = "kw",
+#'   control = gkw_control(
+#'     reltol = 1e-10, # Tighter convergence
+#'     maxit = 2000 # More iterations allowed
+#'   )
+#' )
+#'
 #' # SECTION 3: Advanced Formula Specifications
+#'
 #' # Example 3.1: Different predictors for different parameters
 #' # alpha depends on batch, beta depends on temp
 #' fit_diff <- gkwreg(
@@ -342,7 +702,7 @@
 #'   family = "kw"
 #' )
 #' summary(fit_diff)
-#' 
+#'
 #' # Example 3.2: Intercept-only for one parameter
 #' # alpha varies with predictors, beta is constant
 #' fit_partial <- gkwreg(
@@ -350,22 +710,23 @@
 #'   data = GasolineYield,
 #'   family = "kw"
 #' )
-#' 
+#'
 #' # Example 3.3: Complex model with interactions
 #' fit_interact <- gkwreg(
 #'   yield ~ batch * temp | temp + I(temp^2),
 #'   data = GasolineYield,
 #'   family = "kw"
 #' )
-#' 
+#'
 #' # SECTION 4: Working with Different Families
+#'
 #' # Example 4.1: Fit multiple families and compare
 #' families <- c("beta", "kw", "ekw", "bkw", "gkw")
 #' fits <- lapply(families, function(fam) {
 #'   gkwreg(yield ~ batch + temp, data = GasolineYield, family = fam)
 #' })
 #' names(fits) <- families
-#' 
+#'
 #' # Compare via information criteria
 #' comparison <- data.frame(
 #'   Family = families,
@@ -375,14 +736,15 @@
 #'   npar = sapply(fits, function(x) x$npar)
 #' )
 #' print(comparison)
-#' 
+#'
 #' # Example 4.2: Formal nested model testing
 #' fit_kw <- gkwreg(yield ~ batch + temp, GasolineYield, family = "kw")
 #' fit_ekw <- gkwreg(yield ~ batch + temp, GasolineYield, family = "ekw")
 #' fit_gkw <- gkwreg(yield ~ batch + temp, GasolineYield, family = "gkw")
 #' anova(fit_kw, fit_ekw, fit_gkw)
-#' 
+#'
 #' # SECTION 5: Link Functions and Scales
+#'
 #' # Example 5.1: Custom link functions
 #' fit_links <- gkwreg(
 #'   yield ~ batch + temp,
@@ -390,7 +752,7 @@
 #'   family = "kw",
 #'   link = list(alpha = "sqrt", beta = "log")
 #' )
-#' 
+#'
 #' # Example 5.2: Custom link scales
 #' # Smaller scale = steeper response curve
 #' fit_scale <- gkwreg(
@@ -399,29 +761,60 @@
 #'   family = "kw",
 #'   link_scale = list(alpha = 5, beta = 15)
 #' )
-#' 
+#'
+#' # Example 5.3: Uniform link for all parameters
+#' fit_uniform <- gkwreg(
+#'   yield ~ batch + temp,
+#'   data = GasolineYield,
+#'   family = "kw",
+#'   link = "log" # Single string applied to all
+#' )
+#'
 #' # SECTION 6: Prediction and Inference
+#'
 #' # Fit model for prediction examples
 #' fit <- gkwreg(yield ~ batch + temp, GasolineYield, family = "kw")
-#' 
-#' # Example 6.1: Confidence intervals
+#'
+#' # Example 6.1: Confidence intervals at different levels
 #' confint(fit, level = 0.95) # 95% CI
-#' 
+#' confint(fit, level = 0.90) # 90% CI
+#' confint(fit, level = 0.99) # 99% CI
+#'
 #' # SECTION 7: Diagnostic Plots and Model Checking
+#'
 #' fit <- gkwreg(yield ~ batch + temp, GasolineYield, family = "kw")
-#' 
+#'
 #' # Example 7.1: All diagnostic plots (default)
-#' plot(fit, ask = FALSE, use_ggplot = TRUE, arrange_plots = TRUE)
-#' 
+#' par(mfrow = c(3, 2))
+#' plot(fit, ask = FALSE)
+#'
 #' # Example 7.2: Select specific plots
-#' plot(fit, which = c(2, 4, 5), use_ggplot = TRUE, arrange_plots = TRUE)
-#' 
+#' par(mfrow = c(3, 1))
+#' plot(fit, which = c(2, 4, 5)) # Cook's distance, Residuals, Half-normal
+#'
+#' # Example 7.3: Using ggplot2 for modern graphics
+#' plot(fit, use_ggplot = TRUE, arrange_plots = TRUE)
+#'
+#' # Example 7.4: Customized half-normal plot
+#' par(mfrow = c(1, 1))
+#' plot(fit,
+#'   which = 5,
+#'   type = "quantile",
+#'   nsim = 200, # More simulations for smoother envelope
+#'   level = 0.95
+#' ) # 95% confidence envelope
+#'
+#' # Example 7.5: Extract diagnostic data programmatically
+#' diagnostics <- plot(fit, save_diagnostics = TRUE)
+#' head(diagnostics$data) # Residuals, Cook's distance, etc.
+#'
 #' # SECTION 8: Real Data Example - Food Expenditure
+#'
 #' # Load and prepare data
 #' data(FoodExpenditure, package = "betareg")
 #' food_data <- FoodExpenditure
 #' food_data$prop <- food_data$food / food_data$income
-#' 
+#'
 #' # Example 8.1: Basic model
 #' fit_food <- gkwreg(
 #'   prop ~ persons | income,
@@ -429,88 +822,220 @@
 #'   family = "kw"
 #' )
 #' summary(fit_food)
-#' 
+#'
 #' # Example 8.2: Compare with Beta regression
 #' fit_food_beta <- gkwreg(
 #'   prop ~ persons | income,
 #'   data = food_data,
 #'   family = "beta"
 #' )
-#' 
+#'
 #' # Which fits better?
 #' AIC(fit_food, fit_food_beta)
-#' 
-#' # Example 8.3: Interpretation via effects
+#'
+#' # Example 8.3: Model diagnostics
+#' par(mfrow = c(3, 1))
+#' plot(fit_food, which = c(2, 5, 6))
+#'
+#' # Example 8.4: Interpretation via effects
+#' # How does proportion spent on food change with income?
 #' income_seq <- seq(min(food_data$income), max(food_data$income), length = 50)
 #' pred_data <- data.frame(
 #'   persons = median(food_data$persons),
 #'   income = income_seq
 #' )
 #' pred_food <- predict(fit_food, newdata = pred_data, type = "response")
-#' 
+#'
+#' par(mfrow = c(1, 1))
 #' plot(food_data$income, food_data$prop,
-#'      xlab = "Income", ylab = "Proportion Spent on Food",
-#'      main = "Food Expenditure Pattern"
+#'   xlab = "Income", ylab = "Proportion Spent on Food",
+#'   main = "Food Expenditure Pattern"
 #' )
 #' lines(income_seq, pred_food, col = "red", lwd = 2)
-#' 
+#'
 #' # SECTION 9: Simulation Studies
+#'
 #' # Example 9.1: Simple Kumaraswamy simulation
 #' set.seed(123)
 #' n <- 500
 #' x1 <- runif(n, -2, 2)
 #' x2 <- rnorm(n)
-#' 
+#'
 #' # True model: log(alpha) = 0.8 + 0.3*x1, log(beta) = 1.2 - 0.2*x2
 #' eta_alpha <- 0.8 + 0.3 * x1
 #' eta_beta <- 1.2 - 0.2 * x2
 #' alpha_true <- exp(eta_alpha)
 #' beta_true <- exp(eta_beta)
-#' 
+#'
 #' # Generate response
 #' y <- rkw(n, alpha = alpha_true, beta = beta_true)
 #' sim_data <- data.frame(y = y, x1 = x1, x2 = x2)
-#' 
+#'
 #' # Fit and check parameter recovery
 #' fit_sim <- gkwreg(y ~ x1 | x2, data = sim_data, family = "kw")
-#' 
+#'
 #' # Compare estimated vs true coefficients
 #' cbind(
 #'   True = c(0.8, 0.3, 1.2, -0.2),
 #'   Estimated = coef(fit_sim),
 #'   SE = fit_sim$se
 #' )
-#' 
-#' # SECTION 10: Memory and Performance Optimization
-#' 
-#' # Example 10.1: Minimal object for large datasets
+#'
+#' # Example 9.2: Complex simulation with all five parameters
+#' set.seed(456)
+#' n <- 1000
+#' x <- runif(n, -1, 1)
+#'
+#' # True parameters
+#' alpha <- exp(0.5 + 0.3 * x)
+#' beta <- exp(1.0 - 0.2 * x)
+#' gamma <- exp(0.7 + 0.4 * x)
+#' delta <- plogis(0.0 + 0.5 * x) # logit scale
+#' lambda <- exp(-0.3 + 0.2 * x)
+#'
+#' # Generate from GKw
+#' y <- rgkw(n,
+#'   alpha = alpha, beta = beta, gamma = gamma,
+#'   delta = delta, lambda = lambda
+#' )
+#' sim_data2 <- data.frame(y = y, x = x)
+#'
+#' # Fit GKw model
+#' fit_gkw <- gkwreg(
+#'   y ~ x | x | x | x | x,
+#'   data = sim_data2,
+#'   family = "gkw",
+#'   control = gkw_control(maxit = 1000)
+#' )
+#' summary(fit_gkw)
+#'
+#' # SECTION 10: Handling Convergence Issues
+#'
+#' # Example 10.1: Try different optimizers
+#' methods <- c("nlminb", "BFGS", "Nelder-Mead", "CG")
+#' fits_methods <- lapply(methods, function(m) {
+#'   tryCatch(
+#'     gkwreg(yield ~ batch + temp, GasolineYield,
+#'       family = "kw",
+#'       control = gkw_control(method = m, silent = TRUE)
+#'     ),
+#'     error = function(e) NULL
+#'   )
+#' })
+#' names(fits_methods) <- methods
+#'
+#' # Check which converged
+#' converged <- sapply(fits_methods, function(f) {
+#'   if (is.null(f)) {
+#'     return(FALSE)
+#'   }
+#'   f$convergence
+#' })
+#' print(converged)
+#'
+#' # Example 10.2: Verbose mode for debugging
+#' fit_debug <- gkwreg(
+#'   yield ~ batch + temp,
+#'   data = GasolineYield,
+#'   family = "kw",
+#'   control = gkw_control(
+#'     silent = FALSE,
+#'     trace = 2, # Maximum verbosity
+#'     maxit = 100
+#'   )
+#' )
+#'
+#' # SECTION 11: Memory and Performance Optimization
+#'
+#' # Example 11.1: Minimal object for large datasets
 #' fit_minimal <- gkwreg(
 #'   yield ~ batch + temp,
 #'   data = GasolineYield,
 #'   family = "kw",
 #'   model = FALSE, # Don't store model frame
-#'   x = FALSE,     # Don't store design matrices
-#'   y = FALSE,     # Don't store response
+#'   x = FALSE, # Don't store design matrices
+#'   y = FALSE, # Don't store response
 #'   control = gkw_control(hessian = FALSE) # Skip Hessian
 #' )
-#' 
+#'
 #' # Much smaller object
 #' object.size(fit_minimal)
-#' 
+#'
 #' # Trade-off: Limited post-fitting capabilities
 #' # Can still use: coef(), logLik(), AIC(), BIC()
 #' # Cannot use: predict(), some diagnostics
-#' 
-#' # SECTION 11: Model Selection and Comparison
-#' 
-#' # Example 11.1: Nested model testing
+#'
+#' # Example 11.2: Fast exploratory analysis
+#' # Fit many models quickly without standard errors
+#' formulas <- list(
+#'   yield ~ batch,
+#'   yield ~ temp,
+#'   yield ~ batch + temp,
+#'   yield ~ batch * temp
+#' )
+#'
+#' fast_fits <- lapply(formulas, function(f) {
+#'   gkwreg(f, GasolineYield,
+#'     family = "kw",
+#'     control = gkw_control(hessian = FALSE),
+#'     model = FALSE, x = FALSE, y = FALSE
+#'   )
+#' })
+#'
+#' # Compare models via AIC
+#' sapply(fast_fits, AIC)
+#'
+#' # Refit best model with full inference
+#' best_formula <- formulas[[which.min(sapply(fast_fits, AIC))]]
+#' fit_final <- gkwreg(best_formula, GasolineYield, family = "kw")
+#' summary(fit_final)
+#'
+#' # SECTION 12: Model Selection and Comparison
+#'
+#' # Example 12.1: Nested model testing
 #' fit1 <- gkwreg(yield ~ 1, GasolineYield, family = "kw")
 #' fit2 <- gkwreg(yield ~ batch, GasolineYield, family = "kw")
 #' fit3 <- gkwreg(yield ~ batch + temp, GasolineYield, family = "kw")
-#' 
+#'
 #' # Likelihood ratio tests
 #' anova(fit1, fit2, fit3)
+#'
+#' # Example 12.2: Information criteria table
+#' models <- list(
+#'   "Intercept only" = fit1,
+#'   "Batch effect" = fit2,
+#'   "Batch + Temp" = fit3
+#' )
+#'
+#' ic_table <- data.frame(
+#'   Model = names(models),
+#'   df = sapply(models, function(m) m$npar),
+#'   LogLik = sapply(models, logLik),
+#'   AIC = sapply(models, AIC),
+#'   BIC = sapply(models, BIC),
+#'   Delta_AIC = sapply(models, AIC) - min(sapply(models, AIC))
+#' )
+#' print(ic_table)
+#'
+#' # Example 12.3: Cross-validation for predictive performance
+#' # 5-fold cross-validation
+#' set.seed(2203)
+#' n <- nrow(GasolineYield)
+#' folds <- sample(rep(1:5, length.out = n))
+#'
+#' cv_rmse <- sapply(1:5, function(fold) {
+#'   train <- GasolineYield[folds != fold, ]
+#'   test <- GasolineYield[folds == fold, ]
+#'
+#'   fit_train <- gkwreg(yield ~ batch + temp, train, family = "kw")
+#'   pred_test <- predict(fit_train, newdata = test, type = "response")
+#'
+#'   sqrt(mean((test$yield - pred_test)^2))
+#' })
+#'
+#' cat("Cross-validated RMSE:", mean(cv_rmse), "\n")
 #' }
+#'
 #' @keywords regression models
 #' @export
 gkwreg <- function(formula,
