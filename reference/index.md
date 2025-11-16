@@ -35,7 +35,7 @@
   Parameters
 - [`family(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/family.gkwreg.md)
   : Extract Family from GKw Regression Model
-- [`fitted.gkwreg()`](https://evandeilton.github.io/gkwreg/reference/fitted.gkwreg.md)
+- [`fitted(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/fitted.gkwreg.md)
   : Extract Fitted Values from a Generalized Kumaraswamy Regression
   Model
 - [`formula(`*`<gkwreg>`*`)`](https://evandeilton.github.io/gkwreg/reference/formula.gkwreg.md)

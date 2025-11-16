@@ -8,7 +8,8 @@ object of class `"gkwreg"`. This is an S3 method for the generic
 ## Usage
 
 ``` r
-fitted.gkwreg(object, family = NULL, ...)
+# S3 method for class 'gkwreg'
+fitted(object, family = NULL, ...)
 ```
 
 ## Arguments
@@ -126,7 +127,9 @@ fit_ekw <- gkwreg(yield ~ batch + temp | temp | batch,
 # Fitted values under different family assumptions
 fitted_ekw <- fitted(fit_ekw)
 fitted_kw <- fitted(fit_ekw, family = "kw")
+#> Using different family (kw) than what was used to fit the model (ekw). Recalculating fitted values...
 fitted_beta <- fitted(fit_ekw, family = "beta")
+#> Using different family (beta) than what was used to fit the model (ekw). Recalculating fitted values...
 
 # Compare differences
 comparison <- data.frame(
@@ -216,7 +219,7 @@ system.time({
   fitted_large <- fitted(fit_large)
 })
 #>    user  system elapsed 
-#>       0       0       0 
+#>   0.000   0.000   0.001 
 
 # Verify extraction
 length(fitted_large)
