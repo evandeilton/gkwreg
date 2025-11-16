@@ -20,6 +20,7 @@ Imports:
     TMB,
     Rcpp,
     RcppArmadillo,
+    RcppEigen,
     magrittr,
     ggplot2,
     ggpubr,
@@ -30,7 +31,8 @@ Imports:
 LinkingTo: 
     TMB,
     Rcpp, 
-    RcppArmadillo
+    RcppArmadillo,
+    RcppEigen
 Suggests: 
     betareg, 
     knitr, 
