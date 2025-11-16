@@ -1289,12 +1289,19 @@ plot.gkwreg <- function(x,
 
   # Call the calculateParameters function with proper unpacking
   param_mat <- calculateParameters(
-    X_matrices[[1]], X_matrices[[2]], X_matrices[[3]],
-    X_matrices[[4]], X_matrices[[5]],
-    beta_params[[1]], beta_params[[2]], beta_params[[3]],
-    beta_params[[4]], beta_params[[5]],
-    link_codes, scale_factors,
-    family = family
+    X1 = X_matrices[[1]],
+    X2 = X_matrices[[2]],
+    X3 = X_matrices[[3]],
+    X4 = X_matrices[[4]],
+    X5 = X_matrices[[5]],
+    beta1 = as.vector(beta_params[[1]]),
+    beta2 = as.vector(beta_params[[2]]),
+    beta3 = as.vector(beta_params[[3]]),
+    beta4 = as.vector(beta_params[[4]]),
+    beta5 = as.vector(beta_params[[5]]),
+    link_types = as.integer(link_codes),
+    scale_factors = as.vector(scale_factors),
+    family = as.character(family)
   )
 
   return(param_mat)

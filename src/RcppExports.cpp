@@ -48,7 +48,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // calculateDensities
-NumericVector calculateDensities(const NumericVector& y, const NumericMatrix& params, const std::string& family, bool log);
+NumericVector calculateDensities(const NumericVector& y, const NumericMatrix& params, const std::string& family, const bool log);
 RcppExport SEXP _gkwreg_calculateDensities(SEXP ySEXP, SEXP paramsSEXP, SEXP familySEXP, SEXP logSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -56,7 +56,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericMatrix& >::type params(paramsSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type family(familySEXP);
-    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    Rcpp::traits::input_parameter< const bool >::type log(logSEXP);
     rcpp_result_gen = Rcpp::wrap(calculateDensities(y, params, family, log));
     return rcpp_result_gen;
 END_RCPP
@@ -182,7 +182,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // calculatePartialResiduals
-NumericVector calculatePartialResiduals(const NumericVector& y, const NumericVector& fitted, const NumericMatrix& X, const NumericVector& beta, int covariate_idx);
+NumericVector calculatePartialResiduals(const NumericVector& y, const NumericVector& fitted, const NumericMatrix& X, const NumericVector& beta, const int covariate_idx);
 RcppExport SEXP _gkwreg_calculatePartialResiduals(SEXP ySEXP, SEXP fittedSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP covariate_idxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -191,7 +191,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type fitted(fittedSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< int >::type covariate_idx(covariate_idxSEXP);
+    Rcpp::traits::input_parameter< const int >::type covariate_idx(covariate_idxSEXP);
     rcpp_result_gen = Rcpp::wrap(calculatePartialResiduals(y, fitted, X, beta, covariate_idx));
     return rcpp_result_gen;
 END_RCPP

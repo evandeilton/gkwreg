@@ -12,7 +12,7 @@ library(gkwdist)
 # Setup: Generate test data and fit model
 setup_plot_data <- function() {
   set.seed(36925)
-  n <- 100
+  n <- 1000
   x1 <- rnorm(n)
   x2 <- runif(n, -1, 1)
 
@@ -32,13 +32,15 @@ setup_plot_data <- function() {
   list(data = data, fit = fit, y = y)
 }
 
+setup <- setup_plot_data()
+
 # =============================================================================
 # PLOT.GKWREG TESTS
 # =============================================================================
 
 test_that("Test 1: Basic plot execution works without errors", {
   # Test that plot.gkwreg runs successfully with defaults
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   # Capture plot output to avoid displaying during tests
   pdf(NULL) # Suppress plot display
@@ -57,7 +59,7 @@ test_that("Test 1: Basic plot execution works without errors", {
 
 test_that("Test 2: which argument selects specific diagnostic plots", {
   # Test that which parameter controls plot selection
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -77,7 +79,7 @@ test_that("Test 2: which argument selects specific diagnostic plots", {
 
 test_that("Test 3: Different residual types produce valid plots", {
   # Test that all residual types work correctly
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -100,7 +102,7 @@ test_that("Test 3: Different residual types produce valid plots", {
 
 test_that("Test 4: Caption customization with named list works", {
   # Test new named list interface for partial caption customization
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -134,7 +136,7 @@ test_that("Test 4: Caption customization with named list works", {
 
 test_that("Test 5: ggplot2 option produces different output type", {
   # Test that use_ggplot creates ggplot objects
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   # Skip if ggplot2 not available
   skip_if_not_installed("ggplot2")
@@ -161,7 +163,7 @@ test_that("Test 5: ggplot2 option produces different output type", {
 
 test_that("Test 6: save_diagnostics returns proper data structure", {
   # Test that diagnostic data can be extracted
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -196,7 +198,7 @@ test_that("Test 6: save_diagnostics returns proper data structure", {
 
 test_that("Test 7: Half-normal plot parameters control simulation", {
   # Test nsim and level parameters for half-normal plot
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -243,7 +245,7 @@ test_that("Test 7: Half-normal plot parameters control simulation", {
 
 test_that("Test 8: sample_size reduces data for large datasets", {
   # Test that sample_size parameter works for efficiency
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -268,7 +270,7 @@ test_that("Test 8: sample_size reduces data for large datasets", {
 
 test_that("Test 9: Invalid inputs produce appropriate errors or warnings", {
   # Test error handling for invalid arguments
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -293,7 +295,7 @@ test_that("Test 9: Invalid inputs produce appropriate errors or warnings", {
 
 test_that("Test 10: Plots work across different distribution families", {
   # Test that diagnostic plots work for all supported families
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -332,7 +334,7 @@ test_that("Test 10: Plots work across different distribution families", {
 
 test_that("Plot handles models with different formula specifications", {
   # Test plots with various model complexities
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -352,7 +354,7 @@ test_that("Plot handles models with different formula specifications", {
 
 test_that("Plot respects ask parameter behavior", {
   # Test ask parameter logic
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -370,7 +372,7 @@ test_that("Plot respects ask parameter behavior", {
 
 test_that("Plot customization via ... works for base graphics", {
   # Test that additional graphical parameters are accepted
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -394,7 +396,7 @@ test_that("Plot customization via ... works for base graphics", {
 
 test_that("Subtitle customization works correctly", {
   # Test main and sub.caption arguments
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -420,7 +422,7 @@ test_that("Subtitle customization works correctly", {
 
 test_that("Cook's distance and leverage plots identify outliers", {
   # Test that influence diagnostics are calculated
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
@@ -466,7 +468,7 @@ test_that("Plot handles very small datasets gracefully", {
 
 test_that("Half-normal plot includes envelope when requested", {
   # Test that plot 5 generates envelope data
-  setup <- setup_plot_data()
+  # setup <- setup_plot_data()
 
   pdf(NULL)
   on.exit(dev.off())
