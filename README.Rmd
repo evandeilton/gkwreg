@@ -2,8 +2,6 @@
 output: github_document
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -15,7 +13,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-
 # gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data <img src="man/figures/gkwreg.png" align="right" height="138" />
 
 [![CRAN status](https://www.r-pkg.org/badges/version/gkwreg)](https://CRAN.R-project.org/package=gkwreg)
@@ -23,13 +20,27 @@ knitr::opts_chunk$set(
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gkwreg)](https://cran.r-project.org/package=gkwreg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+
 ## Overview
 
-The **gkwreg** package provides a comprehensive and computationally efficient framework for regression modeling of data restricted to the standard unit interval (0, 1), including proportions, rates, fractions, percentages, and bounded indices. While Beta regression is the traditional approach for such data, **gkwreg** focuses on the **Generalized Kumaraswamy (GKw)** distribution family, offering exceptional flexibility by encompassing seven important bounded distributions—including Beta and Kumaraswamy—as special or limiting cases.
+The **gkwreg** package provides a comprehensive and computationally efficient framework for regression modeling of data restricted to the standard unit interval $(0, 1)$, including proportions, rates, fractions, percentages, and bounded indices.
+
+While Beta regression is the traditional approach for such data, **gkwreg** focuses on the **Generalized Kumaraswamy (GKw)** distribution family. This offers exceptional flexibility by encompassing seven important bounded distributions—including Beta and Kumaraswamy—as special or limiting cases.
 
 The package enables full **distributional regression**, where *all* relevant parameters can be modeled as functions of covariates through flexible link functions. Maximum Likelihood estimation is performed efficiently via the **Template Model Builder (TMB)** framework, leveraging **Automatic Differentiation (AD)** for superior computational speed, numerical accuracy, and optimization stability.
 
----
+## Table of Contents
+
+  - [Key Features](https://www.google.com/search?q=%23key-features)
+  - [Installation](https://www.google.com/search?q=%23installation)
+  - [Quick Start](https://www.google.com/search?q=%23quick-start)
+  - [Real Data Example](https://www.google.com/search?q=%23real-data-example)
+  - [Advanced Features](https://www.google.com/search?q=%23advanced-features)
+  - [Mathematical Background](https://www.google.com/search?q=%23mathematical-background)
+  - [Comparison with Other Packages](https://www.google.com/search?q=%23comparison-with-other-packages)
+  - [Citation](https://www.google.com/search?q=%23citation)
+
+-----
 
 ## Key Features
 
@@ -37,106 +48,84 @@ The package enables full **distributional regression**, where *all* relevant par
 
 Model bounded data using the **5-parameter Generalized Kumaraswamy (GKw)** distribution and its **seven nested subfamilies**:
 
-| Distribution                | Code   | Parameters Modeled                        | Fixed Parameters                         | # Params |
-|:----------------------------|:-------|:------------------------------------------|:-----------------------------------------|:---------|
-| Generalized Kumaraswamy     | `gkw`  | α, β, γ, δ, λ                            | None                                     | 5        |
-| Beta-Kumaraswamy            | `bkw`  | α, β, γ, δ                               | λ = 1                                    | 4        |
-| Kumaraswamy-Kumaraswamy     | `kkw`  | α, β, δ, λ                               | γ = 1                                    | 4        |
-| Exponentiated Kumaraswamy   | `ekw`  | α, β, λ                                  | γ = 1, δ = 0                             | 3        |
-| McDonald (Beta Power)       | `mc`   | γ, δ, λ                                  | α = 1, β = 1                             | 3        |
-| Kumaraswamy                 | `kw`   | α, β                                     | γ = 1, δ = 0, λ = 1                      | 2        |
-| Beta                        | `beta` | γ, δ                                     | α = 1, β = 1, λ = 1                      | 2        |
+| Distribution              | Code   | Parameters Modeled                       | Fixed Parameters                         | \# Params |
+|:--------------------------|:-------|:-----------------------------------------|:-----------------------------------------|:---------|
+| Generalized Kumaraswamy   | `gkw`  | $\alpha, \beta, \gamma, \delta, \lambda$ | None                                     | 5        |
+| Beta-Kumaraswamy          | `bkw`  | $\alpha, \beta, \gamma, \delta$          | $\lambda = 1$                            | 4        |
+| Kumaraswamy-Kumaraswamy   | `kkw`  | $\alpha, \beta, \delta, \lambda$         | $\gamma = 1$                             | 4        |
+| Exponentiated Kumaraswamy | `ekw`  | $\alpha, \beta, \lambda$                 | $\gamma = 1, \delta = 0$                 | 3        |
+| McDonald (Beta Power)     | `mc`   | $\gamma, \delta, \lambda$                | $\alpha = 1, \beta = 1$                  | 3        |
+| Kumaraswamy               | `kw`   | $\alpha, \beta$                          | $\gamma = 1, \delta = 0, \lambda = 1$    | 2        |
+| Beta                      | `beta` | $\gamma, \delta$                         | $\alpha = 1, \beta = 1, \lambda = 1$     | 2        |
 
 Each family offers distinct flexibility-parsimony tradeoffs. Start simple (`kw` or `beta`) and compare nested models using likelihood ratio tests or information criteria.
 
 ### Advanced Regression Modeling
 
-- **Extended formula syntax** for parameter-specific linear predictors:
-  ```r
-  y ~ alpha_predictors | beta_predictors | gamma_predictors | delta_predictors | lambda_predictors
-  ```
-  Example: `yield ~ batch + temp | temp | 1 | temp | batch`
+  - **Extended formula syntax** for parameter-specific linear predictors:
 
-- **Multiple link functions** with optional scaling:
-  - **Positive parameters** (α, β, γ, λ): `log` (default), `sqrt`, `inverse`, `identity`
-  - **Probability parameters** (δ ∈ (0,1)): `logit` (default), `probit`, `cloglog`, `cauchy`
-  - **Link scaling**: Control transformation intensity via `link_scale` (useful for numerical stability)
+    ```r
+    y ~ alpha_predictors | beta_predictors | gamma_predictors | delta_predictors | lambda_predictors
+    ```
 
-- **Flexible control** via `gkw_control()`:
-  - Multiple optimizers: `nlminb` (default), `BFGS`, `Nelder-Mead`, `CG`, `SANN`, `L-BFGS-B`
-  - Custom starting values, convergence tolerances, iteration limits
-  - Fast fitting mode (disable Hessian computation for point estimates only)
-  - Debugging tools (verbose output, trace levels)
+    *Example:* `yield ~ batch + temp | temp | 1 | temp | batch`
+
+  - **Multiple link functions** with optional scaling:
+
+      - **Positive parameters** ($\alpha, \beta, \gamma, \lambda$): `log` (default), `sqrt`, `inverse`, `identity`
+      - **Probability parameters** ($\delta \in (0,1)$): `logit` (default), `probit`, `cloglog`, `cauchy`
+      - **Link scaling**: Control transformation intensity via `link_scale` (useful for numerical stability)
+
+  - **Flexible control** via `gkw_control()`:
+
+      - Multiple optimizers: `nlminb` (default), `BFGS`, `Nelder-Mead`, `CG`, `SANN`, `L-BFGS-B`
+      - Custom starting values, convergence tolerances, iteration limits
+      - Fast fitting mode (disable Hessian computation for point estimates only)
 
 ### Computational Efficiency
 
-- **TMB-powered estimation**: Compiled C++ templates with automatic differentiation
-  - Exact gradients and Hessians (machine precision)
-  - 10-100× faster than numerical differentiation
-  - Superior convergence stability
+  - **TMB-powered estimation**: Compiled C++ templates with automatic differentiation.
 
-- **Performance optimizations**:
-  - Intelligent caching of intermediate calculations
-  - Vectorized operations via Eigen/Armadillo
-  - Memory-efficient for large datasets (n > 100,000)
+      - Exact gradients and Hessians (machine precision).
+      - **10-100× faster** than numerical differentiation.
+      - Superior convergence stability.
+
+  - **Performance optimizations**:
+
+      - Intelligent caching of intermediate calculations.
+      - Vectorized operations via Eigen/Armadillo.
+      - Memory-efficient for large datasets ($n > 100,000$).
 
 ### Comprehensive Inference Tools
 
 **Standard R Methods** (familiar workflow):
-- `summary()`, `print()`, `coef()`, `vcov()`, `confint()`
-- `logLik()`, `AIC()`, `BIC()`, `nobs()`
-- `fitted()`, `residuals()`, `predict()`
-- `anova()` for nested model comparisons
+
+  - `summary()`, `print()`, `coef()`, `vcov()`, `confint()`
+  - `logLik()`, `AIC()`, `BIC()`, `nobs()`
+  - `fitted()`, `residuals()`, `predict()`
+  - `anova()` for nested model comparisons
 
 **Advanced Prediction** (`predict.gkwreg`):
-- Multiple prediction types:
-  - `"response"`: Expected mean E(Y|X)
-  - `"parameter"`: All parameter values (α, β, γ, δ, λ)
-  - `"link"`: Linear predictors (before inverse link)
-  - `"variance"`: Predicted variance Var(Y|X)
-  - `"density"`, `"probability"`, `"quantile"`: Distribution functions at specified values
-- Element-wise or vectorized evaluation
-- Predictions under alternative distributional assumptions
 
-**Model Comparison**:
-- Likelihood ratio tests: `anova()`, `lrtest()`
-- Information criteria: `AIC()`, `BIC()` with multi-model comparison
-- Automated nesting detection and proper test statistics
+  - Multiple prediction types: `"response"`, `"parameter"`, `"link"`, `"variance"`, `"density"`, `"probability"`, `"quantile"`.
+  - Predictions under alternative distributional assumptions.
 
 ### Sophisticated Diagnostics
 
 **6 Diagnostic Plot Types** (`plot.gkwreg`):
-1. **Residuals vs Observation Indices**: Detect autocorrelation, temporal patterns
-2. **Cook's Distance**: Identify influential observations (threshold: 4/n)
-3. **Leverage vs Fitted Values**: Flag high-leverage points (threshold: 2p/n)
-4. **Residuals vs Linear Predictor**: Check linearity, heteroscedasticity
-5. **Half-Normal Plot with Simulated Envelope**: Assess distributional adequacy
-6. **Predicted vs Observed**: Overall goodness-of-fit
 
-**Advanced Features**:
-- **Dual graphics systems**: Base R (fast) or ggplot2 (publication-quality)
-- **Multiple residual types**: Quantile (default), Pearson, Deviance
-- **Customizable**: Named-list interface for titles, themes, arrangement
-- **Performance**: Automatic sampling for large datasets, adjustable envelope simulations
-- **Programmatic access**: `save_diagnostics = TRUE` returns computed measures
+1.  **Residuals vs Indices**: Detect autocorrelation.
+2.  **Cook's Distance**: Identify influential observations.
+3.  **Leverage vs Fitted**: Flag high-leverage points.
+4.  **Residuals vs Linear Predictor**: Check linearity/heteroscedasticity.
+5.  **Half-Normal Plot with Envelope**: Assess distributional adequacy.
+6.  **Predicted vs Observed**: Overall goodness-of-fit.
 
-### Ecosystem Integration
-
-- **Distribution functions** via companion package [`gkwdist`](https://github.com/evandeilton/gkwdist):
-  - Density (`dgkw`, `dkw`, `dbeta`, etc.)
-  - CDF (`pgkw`, `pkw`, `pbeta`, etc.)
-  - Quantile (`qgkw`, `qkw`, `qbeta`, etc.)
-  - Random generation (`rgkw`, `rkw`, `rbeta`, etc.)
-  - All implemented in optimized C++ for speed
-
-- **Seamless compatibility** with R ecosystem:
-  - `broom`: `tidy()`, `glance()`, `augment()` methods (if available)
-  - `tidyverse`: Works naturally with `dplyr`, `ggplot2` pipelines
-  - Standard workflows: Model selection, cross-validation, bootstrapping
-
----
+-----
 
 ## Installation
+
+You can install the stable version from CRAN (once accepted) or the development version from GitHub.
 
 ```r
 # Install from CRAN (stable release):
@@ -146,12 +135,12 @@ install.packages("gkwreg")
 install.packages("gkwdist")
 
 # Or install development versions from GitHub:
-# install.packages("devtools")
-devtools::install_github("evandeilton/gkwdist")
-devtools::install_github("evandeilton/gkwreg")
+# install.packages("remotes")
+remotes::install_github("evandeilton/gkwdist")
+remotes::install_github("evandeilton/gkwreg")
 ```
 
----
+-----
 
 ## Quick Start
 
@@ -255,7 +244,7 @@ diag <- plot(fit_kw, save_diagnostics = TRUE)
 head(diag$data) # Access Cook's distance, leverage, residuals, etc.
 ```
 
----
+-----
 
 ## Real Data Example
 
@@ -290,7 +279,7 @@ pred_df <- data.frame(income = income_seq, persons = median(food$persons))
 lines(income_seq, predict(best_fit, pred_df), col = "red", lwd = 2)
 ```
 
----
+-----
 
 ## Advanced Features
 
@@ -393,13 +382,13 @@ plot(fit_large,
 ) # Use random sample of 5000 obs
 ```
 
----
+-----
 
 ## Mathematical Background
 
 ### The Generalized Kumaraswamy Distribution
 
-The GKw distribution is a five-parameter family for variables on (0, 1) with cumulative distribution function:
+The GKw distribution is a five-parameter family for variables on $(0, 1)$ with cumulative distribution function:
 
 $$F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)$$
 
@@ -408,11 +397,10 @@ where $I_z(a,b)$ is the regularized incomplete beta function. The probability de
 $$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \left\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda} \right \}^{\delta-1}$$
 
 **Parameter Roles**:
-- **α, β**: Control basic shape (inherited from Kumaraswamy)
-- **γ, δ**: Govern tail behavior and concentration
-- **λ**: Additional flexibility for skewness and peaks
 
-This parameterization captures diverse shapes: symmetric, skewed, unimodal, bimodal, J-shaped, U-shaped, bathtub-shaped.
+  - **$\alpha, \beta$**: Control basic shape (inherited from Kumaraswamy)
+  - **$\gamma, \delta$**: Govern tail behavior and concentration
+  - **$\lambda$**: Additional flexibility for skewness and peaks
 
 ### Regression Framework
 
@@ -426,107 +414,52 @@ $$\ell(\Theta; \mathbf{y}, \mathbf{X}) = \sum_{i=1}^{n} \log f(y_i; \theta_i(\Th
 
 TMB computes exact gradients $\nabla \ell$ and Hessian $\mathbf{H}$ via automatic differentiation, enabling fast and stable optimization.
 
----
+-----
 
 ## Computational Engine: TMB
 
 **Template Model Builder (TMB)** translates statistical models into optimized C++ code with automatic differentiation:
 
-**Advantages**:
-
-- **Speed**: 10-100× faster than numerical differentiation
-- **Accuracy**: Machine-precision derivatives (< 1e-15 relative error)
-- **Stability**: Exact Hessian improves convergence reliability
-- **Scalability**: Efficient for large n and many parameters
-
 **Under the Hood**:
 
 ```
-R Formula → TMB C++ Template → Automatic Differentiation → 
-Compiled Object → Fast Optimization (nlminb/optim) → 
+R Formula -> TMB C++ Template -> Automatic Differentiation -> 
+Compiled Object -> Fast Optimization (nlminb/optim) -> 
 Standard Errors (Hessian inversion)
 ```
 
----
+-----
 
 ## Comparison with Other Packages
 
-| Feature                    | gkwreg                | betareg        | gamlss         | brms           |
-|:---------------------------|:----------------------|:---------------|:---------------|:---------------|
-| **Distribution Family**    | GKw hierarchy (7)     | Beta           | 100+           | 50+            |
-| **Estimation**             | MLE (TMB/AD)          | MLE            | GAMLSS         | Bayesian MCMC  |
-| **Parameter Modeling**     | All parameters        | Mean, precision| All parameters | All parameters |
-| **Speed (n=10k)**          | Fast (~1s)            | Fast (~1s)     | Moderate (~5s) | Slow (~5min)   |
-| **Link Functions**         | 9 options + scaling   | Fixed          | Many           | Many           |
-| **Optimization Control**   | `gkw_control()` (detailed) | Basic     | Moderate       | Extensive      |
-| **Diagnostic Plots**       | 6 types, dual graphics| 4 types        | Extensive      | Via bayesplot  |
-| **Prediction Flexibility** | 9 types, elementwise  | 3 types        | Good           | Excellent      |
-| **Model Comparison**       | LRT, AIC, BIC         | LRT            | GAIC           | LOO, WAIC      |
-| **Random Effects**         | No                    | No             | Yes            | Yes            |
-| **Learning Curve**         | Moderate              | Easy           | Steep          | Steep          |
-| **Dependencies**           | gkwdist, TMB, Formula | Minimal        | Many           | Stan, many     |
+| Feature                | gkwreg                     | betareg        | gamlss         | brms           |
+|:-----------------------|:---------------------------|:---------------|:---------------|:---------------|
+| **Distribution Family**| GKw hierarchy (7)          | Beta           | 100+           | 50+            |
+| **Estimation** | MLE (TMB/AD)               | MLE            | GAMLSS         | Bayesian MCMC  |
+| **Parameter Modeling** | All parameters             | Mean, precision| All parameters | All parameters |
+| **Speed (n=10k)** | **Fast (\~1s)** | Fast (\~1s)     | Moderate (\~5s) | Slow (\~5min)   |
+| **Link Functions** | 9 options + scaling        | Fixed          | Many           | Many           |
+| **Optimization** | `gkw_control()` (detailed) | Basic          | Moderate       | Extensive      |
+| **Diagnostic Plots** | 6 types, dual graphics     | 4 types        | Extensive      | Via bayesplot  |
+| **Dependencies** | gkwdist, TMB, Formula      | Minimal        | Many           | Stan, many     |
 
 **When to use gkwreg**:
 
-- Need flexible bounded distributions beyond Beta
-- Large datasets requiring fast computation
-- All parameters depend on covariates
-- Frequentist inference preferred
-- Standard R workflow integration
+  - Need flexible bounded distributions beyond Beta.
+  - Large datasets requiring fast computation.
+  - All parameters depend on covariates.
+  - Frequentist inference preferred.
 
-**When to consider alternatives**:
-
-- Random/mixed effects needed → **gamlss**, **brms**
-- Bayesian inference required → **brms**
-- Beta distribution sufficient → **betareg** (simpler)
-
----
+-----
 
 ## Documentation and Support
 
-- **Reference Manual**: `help(package = "gkwreg")`
-- **Vignettes**: `browseVignettes("gkwreg")`
-- **Function Help**: `?gkwreg`, `?predict.gkwreg`, `?plot.gkwreg`, `?gkw_control`
-- **GitHub Issues**: [Report bugs or request features](https://github.com/evandeilton/gkwreg/issues)
-- **Examples**: See `examples/` directory in package source
+  - **Reference Manual**: `help(package = "gkwreg")`
+  - **Vignettes**: `browseVignettes("gkwreg")`
+  - **Function Help**: `?gkwreg`, `?predict.gkwreg`, `?plot.gkwreg`, `?gkw_control`
+  - **GitHub Issues**: [Report bugs or request features](https://github.com/evandeilton/gkwreg/issues)
 
----
-
-## References
-
-**Primary References**:
-
-- Cordeiro, G. M., & de Castro, M. (2011). A new family of generalized distributions. *Journal of Statistical Computation and Simulation*, **81**(7), 883-898. [DOI: 10.1080/00949650903530745](https://doi.org/10.1080/00949650903530745)
-
-- Kumaraswamy, P. (1980). A generalized probability density function for double-bounded random processes. *Journal of Hydrology*, **46**(1-2), 79-88. [DOI: 10.1016/0022-1694(80)90036-0](https://doi.org/10.1016/0022-1694(80)90036-0)
-
-**TMB Framework**:
-
-- Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016). TMB: Automatic Differentiation and Laplace Approximation. *Journal of Statistical Software*, **70**(5), 1-21. [DOI: 10.18637/jss.v070.i05](https://doi.org/10.18637/jss.v070.i05)
-
-**Related Distributions**:
-
-- Jones, M. C. (2009). Kumaraswamy's distribution: A beta-type distribution with some tractability advantages. *Statistical Methodology*, **6**(1), 70-81. [DOI: 10.1016/j.stamet.2008.04.001](https://doi.org/10.1016/j.stamet.2008.04.001)
-
-- Carrasco, J. M. F., Ferrari, S. L. P., & Cordeiro, G. M. (2010). A new generalized Kumaraswamy distribution. *arXiv preprint arXiv:1004.0911*.
-
-**Beta Regression**:
-
-- Ferrari, S. L. P., & Cribari-Neto, F. (2004). Beta regression for modelling rates and proportions. *Journal of Applied Statistics*, **31**(7), 799-815. [DOI: 10.1080/0266476042000214501](https://doi.org/10.1080/0266476042000214501)
-
-- Cribari-Neto, F., & Zeileis, A. (2010). Beta Regression in R. *Journal of Statistical Software*, **34**(2), 1-24. [DOI: 10.18637/jss.v034.i02](https://doi.org/10.18637/jss.v034.i02)
-
----
-
-## Contributing
-
-Contributions are welcome! Ways to contribute:
-
-- **Report bugs**: [GitHub Issues](https://github.com/evandeilton/gkwreg/issues)
-- **Suggest features**: Open a feature request issue
-- **Improve documentation**: Submit pull requests for typos, clarifications
-- **Add examples**: Share use cases from your research
-- **Extend functionality**: Propose new methods or families
+-----
 
 ## Citation
 
@@ -536,18 +469,29 @@ If you use **gkwreg** in your research, please cite:
 citation("gkwreg")
 ```
 
+Or use the BibTeX entry:
+
+```bibtex
+@Manual{,
+  title = {gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data},
+  author = {J. E. Lopes},
+  year = {2025},
+  note = {R package version 2.1.4},
+  url = {[https://github.com/evandeilton/gkwreg](https://github.com/evandeilton/gkwreg)},
+}
+```
+
 ## License
 
-This package is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+This package is licensed under the **MIT License**. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
 
----
+-----
 
 ## Author and Maintainer
 
-**Lopes, J. E.**  
-evandeilton@gmail.com  
+**Lopes, J. E.** evandeilton@gmail.com  
 LEG - Laboratório de Estatística e Geoinformação  
 UFPR - Universidade Federal do Paraná, Brazil  
 [GitHub](https://github.com/evandeilton) | [ORCID](https://orcid.org/0009-0007-5887-4084)
 
----
+
