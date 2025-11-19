@@ -474,10 +474,10 @@ Or use the BibTeX entry:
 ```bibtex
 @Manual{,
   title = {gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data},
-  author = {J. E. Lopes},
+  author = {José Evandeilton Lopes},
   year = {2025},
   note = {R package version 2.1.4},
-  url = {[https://github.com/evandeilton/gkwreg](https://github.com/evandeilton/gkwreg)},
+  url = {https://github.com/evandeilton/gkwreg},
 }
 ```
 
@@ -489,9 +489,8 @@ This package is licensed under the **MIT License**. See the [LICENSE](https://ww
 
 ## Author and Maintainer
 
-**Lopes, J. E.** evandeilton@gmail.com  
-LEG - Laboratório de Estatística e Geoinformação  
-UFPR - Universidade Federal do Paraná, Brazil  
-[GitHub](https://github.com/evandeilton) | [ORCID](https://orcid.org/0009-0007-5887-4084)
+**José Evandeilton Lopes (Lopes, J. E.)** | evandeilton@gmail.com | [GitHub](https://github.com/evandeilton) | [ORCID](https://orcid.org/0009-0007-5887-4084)
 
+LEG - Laboratório de Estatística e Geoinformação | UFPR - Universidade Federal do Paraná, Brazil
 
+-----

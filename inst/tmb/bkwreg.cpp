@@ -312,6 +312,7 @@ Type objective_function<Type>::operator() () {
   DATA_INTEGER(useMeanCache);  // For compatibility
   DATA_INTEGER(calcFitted);
   DATA_INTEGER(userChunkSize);  // For compatibility
+  (void) userChunkSize;
   
   // == PARAMETERS ==
   PARAMETER_VECTOR(beta1);
