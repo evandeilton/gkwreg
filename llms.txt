@@ -502,6 +502,29 @@ Standard Errors (Hessian inversion)
 
 ------------------------------------------------------------------------
 
+## Contributing
+
+Contributions are welcome! Please see our [Contributing
+Guidelines](https://evandeilton.github.io/gkwreg/CONTRIBUTING.md) and
+[Code of
+Conduct](https://evandeilton.github.io/gkwreg/CODE_OF_CONDUCT.md).
+
+### How to Contribute
+
+- Report bugs or request features via [GitHub
+  Issues](https://github.com/evandeilton/gkwreg/issues)
+- Submit pull requests for bug fixes or new features
+- Improve documentation or add examples
+- Share your use cases and feedback
+
+## Community Guidelines
+
+This project follows a [Code of
+Conduct](https://evandeilton.github.io/gkwreg/CODE_OF_CONDUCT.md).
+Please read it before contributing.
+
+------------------------------------------------------------------------
+
 ## Citation
 
 If you use **gkwreg** in your research, please cite:
@@ -525,7 +548,8 @@ Or use the BibTeX entry:
 ## License
 
 This package is licensed under the **MIT License**. See the
-[LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+[LICENSE](https://evandeilton.github.io/gkwreg/LICENSE.md) file for
+details.
 
 ------------------------------------------------------------------------
 

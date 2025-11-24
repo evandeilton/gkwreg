@@ -280,33 +280,33 @@ summary(fit_ekw)
 #> 
 #> Residuals:
 #>     Min  Q1.25%  Median    Mean  Q3.75%     Max 
-#> -0.3924  0.0076  0.1464  0.3648  0.7999  0.9899 
+#> -0.3884 -0.0622  0.0138  0.0051  0.0819  0.2320 
 #> 
 #> Coefficients:
 #>                      Estimate Std. Error z value Pr(>|z|)    
-#> alpha:(Intercept)   1.059e+00  7.485e-01   1.414    0.157    
-#> alpha:ageadj        1.432e-02        NaN     NaN      NaN    
-#> alpha:chemo        -3.245e+01  7.154e-01 -45.358  < 2e-16 ***
-#> alpha:genderM       9.128e-02  6.306e-02   1.448    0.148    
-#> beta:(Intercept)    7.965e-01  1.814e-01   4.391 1.13e-05 ***
-#> beta:age           -4.334e-04        NaN     NaN      NaN    
-#> beta:chemo         -2.306e-01  1.812e-01  -1.272    0.203    
-#> lambda:(Intercept)  6.693e-01  9.808e-01   0.682    0.495    
-#> lambda:chemo        5.661e+01  9.354e-01  60.525  < 2e-16 ***
+#> alpha:(Intercept)   1.127e+00  9.395e-01   1.200 0.230287    
+#> alpha:ageadj        1.483e-02  3.970e-03   3.737 0.000186 ***
+#> alpha:chemo        -1.654e+01  1.577e+00 -10.487  < 2e-16 ***
+#> alpha:genderM       9.479e-02  8.577e-02   1.105 0.269110    
+#> beta:(Intercept)    8.297e-01  2.653e-01   3.128 0.001762 ** 
+#> beta:age           -1.034e-04        NaN     NaN      NaN    
+#> beta:chemo         -2.595e-01  2.797e-01  -0.928 0.353508    
+#> lambda:(Intercept)  5.704e-01  1.201e+00   0.475 0.634758    
+#> lambda:chemo        2.859e+01        NaN     NaN      NaN    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Confidence intervals (95%):
 #>                          3%      98%
-#> alpha:(Intercept)   -0.4083   2.5257
-#> alpha:ageadj            NaN      NaN
-#> alpha:chemo        -33.8498 -31.0456
-#> alpha:genderM       -0.0323   0.2149
-#> beta:(Intercept)     0.4410   1.1519
+#> alpha:(Intercept)   -0.7144   2.9685
+#> alpha:ageadj         0.0071   0.0226
+#> alpha:chemo        -19.6345 -13.4509
+#> alpha:genderM       -0.0733   0.2629
+#> beta:(Intercept)     0.3098   1.3496
 #> beta:age                NaN      NaN
-#> beta:chemo          -0.5858   0.1247
-#> lambda:(Intercept)  -1.2531   2.5918
-#> lambda:chemo        54.7807  58.4473
+#> beta:chemo          -0.8078   0.2887
+#> lambda:(Intercept)  -1.7830   2.9239
+#> lambda:chemo            NaN      NaN
 #> 
 #> Link functions:
 #> alpha: log
@@ -314,25 +314,25 @@ summary(fit_ekw)
 #> lambda: log
 #> 
 #> Fitted parameter means:
-#> alpha: 2.185
-#> beta: 1.964
+#> alpha: 2.369
+#> beta: 2.042
 #> gamma: 1
 #> delta: 0
-#> lambda: 3.439e+24
+#> lambda: 2.112e+12
 #> 
 #> Model fit statistics:
 #> Number of observations: 239 
 #> Number of parameters: 9 
 #> Residual degrees of freedom: 230 
-#> Log-likelihood: 423.6 
-#> AIC: -829.1 
-#> BIC: -797.8 
-#> RMSE: 0.5497 
-#> Efron's R2: -22.33 
-#> Mean Absolute Error: 0.4138 
+#> Log-likelihood: 201.3 
+#> AIC: -384.5 
+#> BIC: -353.2 
+#> RMSE: 0.1114 
+#> Efron's R2: 0.04241 
+#> Mean Absolute Error: 0.08708 
 #> 
 #> Convergence status: Failed 
-#> Iterations: 65 
+#> Iterations: 74 
 #> 
 
 # Clinical interpretation:
@@ -348,9 +348,9 @@ anova(fit_kw_gender, fit_ekw)
 #> Model 1: rcd ~ ageadj + chemo + gender | age + gender
 #> Model 2: rcd ~ ageadj + chemo + gender | age + chemo | chemo
 #> 
-#>               Resid. Df Resid. Dev Df  Deviance Pr(>Chi)    
-#> fit_kw_gender 232.00000 -392.23401                          
-#> fit_ekw       230.00000 -847.12446  2 454.89045  < 1e-04 ***
+#>               Resid. Df Resid. Dev Df Deviance Pr(>Chi)   
+#> fit_kw_gender 232.00000 -392.23401                        
+#> fit_ekw       230.00000 -402.51458  2 10.28058 0.005856 **
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
