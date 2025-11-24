@@ -1,6 +1,6 @@
 Package: gkwreg
 Title: Generalized Kumaraswamy Regression Models for Bounded Data
-Version: 2.1.4
+Version: 2.1.5
 Authors@R: c(person(given = "José Evandeilton",
                     family = "Lopes",
                     role = c("aut", "cre"),

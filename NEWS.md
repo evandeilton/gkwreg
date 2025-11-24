@@ -1,3 +1,16 @@
+# gkwreg 2.1.4
+
+### Minors and documentation
+* Fixed the link to the LICENSE.md file.
+* Corrected the bold-faced sentences in paper.md.
+* Added contribution guidelines.
+* Fix README.md equations and other small text issues
+
+Other changes:
+
+* Added new subsections: Distributional Regression Framework and Model Diagnostics in paper.md. This makes the paper more comprehensive.
+* Removed mentions of the distribution family, as those implementations are now in the new package "gkwdisst".
+
 # gkwreg 2.1.1
 
 # gkwreg 2.1.0
