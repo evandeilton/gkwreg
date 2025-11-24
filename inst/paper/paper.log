@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2025.10.21)  2 NOV 2025 18:07
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2025.10.21)  24 NOV 2025 14:30
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1154,11 +1154,41 @@ Package fancyhdr Warning: \headheight is too small (62.59596pt):
 (fancyhdr)                \addtolength{\topmargin}{-0.95425pt}.
 
 LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <8> not available
-(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 332.
+(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 329.
 [1
 
 ]
-Underfull \hbox (badness 1264) in paragraph at lines 371--375
+Underfull \hbox (badness 1270) in paragraph at lines 345--360
+\TU/lmr/m/n/10 employs an extended formula syntax allowing users to specify par
+ameter-specific
+ []
+
+
+Underfull \hbox (badness 1043) in paragraph at lines 345--360
+\TU/lmr/m/n/10 linear predictors through the notation \TU/lmtt/m/n/10 y ~ alpha
+_predictors | beta_predictors
+ []
+
+
+Underfull \hbox (badness 4927) in paragraph at lines 345--360
+\TU/lmtt/m/n/10 | gamma_predictors | delta_predictors | lambda_predictors\TU/lm
+r/m/n/10 . Multiple link
+ []
+
+File: /home/jlopes/R/x86_64-pc-linux-gnu-library/4.5/rticles/rmarkdown/template
+s/joss/resources/JOSS-logo.png Graphic file (type bmp)
+</home/jlopes/R/x86_64-pc-linux-gnu-library/4.5/rticles/rmarkdown/templates/jos
+s/resources/JOSS-logo.png>
+
+Package fancyhdr Warning: \headheight is too small (62.59596pt): 
+(fancyhdr)                Make it at least 63.55022pt, for example:
+(fancyhdr)                \setlength{\headheight}{63.55022pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+
+(fancyhdr)                \addtolength{\topmargin}{-0.95425pt}.
+
+[2]
+Underfull \hbox (badness 1264) in paragraph at lines 411--415
 \TU/lmr/m/n/10 random processes. \TU/lmr/m/it/10 Journal of Hydrology\TU/lmr/m/
 n/10 , \TU/lmr/m/it/10 46\TU/lmr/m/n/10 (1-2), 79–88. doi:[][]10.1016/0022-
  []
@@ -1175,24 +1205,24 @@ Package fancyhdr Warning: \headheight is too small (62.59596pt):
 
 (fancyhdr)                \addtolength{\topmargin}{-0.95425pt}.
 
-[2] (./paper.aux)
+[3] (./paper.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `paper.out' has not changed.
-(rerunfilecheck)             Checksum: C62723788077E5EC48AA22929FEF764C;407.
+(rerunfilecheck)             Checksum: CFA6C9CD0B7A290F8B0F8D6436719D21;793.
 Package logreq Info: Writing requests to 'paper.run.xml'.
 \openout1 = `paper.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 36566 strings out of 474878
- 743433 string characters out of 5762515
+ 36570 strings out of 474878
+ 743514 string characters out of 5762515
  1944627 words of memory out of 5000000
- 58053 multiletter control sequences out of 15000+600000
+ 58057 multiletter control sequences out of 15000+600000
  567682 words of font info for 91 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  84i,13n,87p,1194b,850s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on paper.pdf (2 pages).
+Output written on paper.pdf (3 pages).
