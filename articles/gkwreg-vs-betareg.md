@@ -884,16 +884,16 @@ practitioners.
 |:------------------------|:-----------------|----------:|----------:|---------:|------:|------:|
 | S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.192 | 0.015 |
 | S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.022 |
-| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.013 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.033 |
-| S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.191 | 0.014 |
-| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.020 |
-| S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.194 | 0.012 |
-| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.0 |  -213.45 | 0.618 | 0.033 |
-| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.351 |
-| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.035 |
+| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.014 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.035 |
+| S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.191 | 0.013 |
+| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.021 |
+| S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.194 | 0.013 |
+| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.0 |  -213.45 | 0.618 | 0.034 |
+| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.352 |
+| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.034 |
 | S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.266 | 0.015 |
-| S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.045 |
+| S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.046 |
 
 Table 4: Comprehensive Model Comparison Across Three Simulation
 Scenarios
@@ -951,9 +951,9 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |           0.013 |          9.577 |
-| Beta (gkwreg)    |           0.026 |          4.912 |
-| Exp. Kumaraswamy |           0.037 |          3.441 |
+| Kumaraswamy      |           0.014 |          8.955 |
+| Beta (gkwreg)    |           0.026 |          4.893 |
+| Exp. Kumaraswamy |           0.038 |          3.319 |
 | Beta (betareg)   |           0.127 |          1.000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
@@ -1138,7 +1138,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [1] stats     graphics  grDevices utils     datasets  methods   base     
 
     other attached packages:
-    [1] ggplot2_4.0.1 betareg_3.2-4 gkwreg_2.1.4 
+    [1] ggplot2_4.0.1 betareg_3.2-4 gkwreg_2.1.5 
 
     loaded via a namespace (and not attached):
      [1] rappdirs_0.3.3         sandwich_3.1-1         sass_0.4.10           
@@ -1149,7 +1149,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [16] scales_1.4.0           codetools_0.2-20       numDeriv_2016.8-1.1   
     [19] modeltools_0.2-24      textshaping_1.0.4      jquerylib_0.1.4       
     [22] cli_3.6.5              rlang_1.1.6            withr_3.0.2           
-    [25] RcppArmadillo_15.0.2-2 cachem_1.1.0           yaml_2.3.10           
+    [25] RcppArmadillo_15.2.2-1 cachem_1.1.0           yaml_2.3.10           
     [28] tools_4.5.2            flexmix_2.3-20         dplyr_1.1.4           
     [31] vctrs_0.6.5            R6_2.6.1               stats4_4.5.2          
     [34] zoo_1.8-14             lifecycle_1.0.4        fs_1.6.6              
