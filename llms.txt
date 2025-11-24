@@ -421,7 +421,10 @@ $$F(x;\alpha,\beta,\gamma,\delta,\lambda) = I_{{\lbrack 1 - {(1 - x^{\alpha})}^{
 where $I_{z}(a,b)$ is the regularized incomplete beta function. The
 probability density function is:
 
-$$f(x;\alpha,\beta,\gamma,\delta,\lambda) = \frac{\lambda\alpha\beta x^{\alpha - 1}}{B(\gamma,\delta)}\left( 1 - x^{\alpha} \right)^{\beta - 1}\left\lbrack 1 - \left( 1 - x^{\alpha} \right)^{\beta} \right\rbrack^{\gamma\lambda - 1}\left\{ 1 - \left\lbrack 1 - \left( 1 - x^{\alpha} \right)^{\beta} \right\rbrack^{\lambda} \right\}^{\delta - 1}$$
+\$\$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha
+\beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1}
+\left\[1-(1-x^{\alpha})^{\beta}\right\]^{\gamma\lambda-1}
+\\{1-\left\[1-(1-x^{\alpha})^{\beta}\right\]^{\lambda}\\}^{\delta-1}\$\$
 
 **Parameter Roles**:
 

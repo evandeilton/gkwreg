@@ -110,20 +110,20 @@ anova(m1_0, m1_1, m1_2)
 #>      Resid. Df Resid. Dev Df  Deviance Pr(>Chi)    
 #> m1_0  30.00000  -57.02258                          
 #> m1_1  29.00000  -80.90259  1  23.88001  < 1e-04 ***
-#> m1_2  20.00000 -193.93698  9 113.03439  < 1e-04 ***
+#> m1_2  20.00000 -193.93742  9 113.03483  < 1e-04 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 AIC(m1_0, m1_1, m1_2, m1_3)
 #>      df        AIC
 #> m1_0  2  -53.02258
 #> m1_1  3  -74.90259
-#> m1_2 12 -169.93698
+#> m1_2 12 -169.93742
 #> m1_3 11  -42.93436
 BIC(m1_0, m1_1, m1_2, m1_3)
 #>      df        BIC
 #> m1_0  2  -50.09111
 #> m1_1  3  -70.50538
-#> m1_2 12 -152.34815
+#> m1_2 12 -152.34859
 #> m1_3 11  -26.81126
 
 # EXAMPLE 2: Two-part formulas (alpha | beta)
@@ -136,12 +136,12 @@ m2_1 <- update(m2_0, . ~ . + temp | .)
 
 # Add batch to beta
 m2_2 <- update(m2_1, . ~ . | . + batch)
+#> Warning: NaNs produced
 
 # Add batch to alpha too
 m2_3 <- update(m2_2, . ~ . + batch | .)
 
 anova(m2_0, m2_1, m2_2, m2_3)
-#> Warning: negative deviance change detected; models may not be nested
 #> Analysis of Deviance Table
 #> 
 #> Model 1: yield ~ 1 | 1
@@ -149,19 +149,19 @@ anova(m2_0, m2_1, m2_2, m2_3)
 #> Model 3: yield ~ temp | batch
 #> Model 4: yield ~ temp + batch | batch
 #> 
-#>      Resid. Df Resid. Dev Df  Deviance Pr(>Chi)    
-#> m2_0  30.00000  -57.02258                          
-#> m2_1  29.00000  -80.90259  1  23.88001  < 1e-04 ***
-#> m2_2  20.00000 -214.71632  9 133.81373  < 1e-04 ***
-#> m2_3  11.00000 -196.72830  9 -17.98802             
+#>      Resid. Df Resid. Dev Df  Deviance   Pr(>Chi)    
+#> m2_0  30.00000  -57.02258                            
+#> m2_1  29.00000  -80.90259  1  23.88001    < 1e-04 ***
+#> m2_2  20.00000 -183.27483  9 102.37224    < 1e-04 ***
+#> m2_3  11.00000 -215.08643  9  31.81161 0.00021462 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 AIC(m2_0, m2_1, m2_2, m2_3)
 #>      df        AIC
 #> m2_0  2  -53.02258
 #> m2_1  3  -74.90259
-#> m2_2 12 -190.71632
-#> m2_3 21 -154.72830
+#> m2_2 12 -159.27483
+#> m2_3 21 -173.08643
 
 # EXAMPLE 3: Three-part formulas (alpha | beta | gamma)
 
