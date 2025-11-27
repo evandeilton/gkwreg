@@ -27,7 +27,7 @@ betareg, making it immediately familiar to R users."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -930,6 +930,8 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="co"># Example 1.4: Beta model for comparison</span></span></span>
 <span class="r-in"><span><span class="co"># Default links: log for gamma and delta</span></span></span>
 <span class="r-in"><span><span class="va">fit_beta</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, data <span class="op">=</span> <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"beta"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Note: Using Makevars in /home/jlopes/.R/Makevars </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare models using AIC/BIC</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">fit_beta</span><span class="op">)</span></span></span>
@@ -1356,6 +1358,8 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Note: Using Makevars in /home/jlopes/.R/Makevars </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fits</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">families</span></span></span>
 <span class="r-in"><span></span></span>
