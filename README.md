@@ -490,7 +490,9 @@ optimized C++ code with automatic differentiation:
 ## Contributing
 
 Contributions are welcome! Please see our [Contributing
-Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
+Guidelines](https://github.com/evandeilton/gkwreg/blob/main/CONTRIBUTING.md)
+and [Code of
+Conduct](https://github.com/evandeilton/gkwreg/blob/main/CODE_OF_CONDUCT.md).
 
 ### How to Contribute
 
@@ -502,8 +504,9 @@ Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Community Guidelines
 
-This project follows a [Code of Conduct](CODE_OF_CONDUCT.md). Please
-read it before contributing.
+This project follows a [Code of
+Conduct](https://github.com/evandeilton/gkwreg/blob/main/CODE_OF_CONDUCT.md).
+Please read it before contributing.
 
 ------------------------------------------------------------------------
 
@@ -530,7 +533,8 @@ Or use the BibTeX entry:
 ## License
 
 This package is licensed under the **MIT License**. See the
-[LICENSE](LICENSE.md) file for details.
+[LICENSE](https://github.com/evandeilton/gkwreg/blob/main/LICENSE) file
+for details.
 
 ------------------------------------------------------------------------
 

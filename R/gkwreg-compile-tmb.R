@@ -266,7 +266,6 @@
 #'
 #' @description
 #' Creates version-specific cache directory for TMB DLLs.
-#' Structure: <cache_root>/<pkg_name>/tmb_cache/R<version>/<pkg_version>/
 #'
 #' @param pkg_name Package name
 #'

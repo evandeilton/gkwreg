@@ -7,7 +7,6 @@
 ^_pkgdown.yml$
 ^.o$
 ^.so$
-
 ^_pkgdown\.yml$
 ^pkgdown$
 ^CODE_OF_CONDUCT\.md$

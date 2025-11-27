@@ -14,6 +14,5 @@ Path to cache directory
 }
 \description{
 Creates version-specific cache directory for TMB DLLs.
-Structure: <cache_root>/<pkg_name>/tmb_cache/R\if{html}{\out{<version>}}/<pkg_version>/
 }
 \keyword{internal}
