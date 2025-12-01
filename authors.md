@@ -11,13 +11,13 @@ Source:
 [`DESCRIPTION`](https://github.com/evandeilton/gkwreg/blob/main/DESCRIPTION)
 
 Lopes J (2025). *gkwreg: Generalized Kumaraswamy Regression Models for
-Bounded Data*. R package version 2.1.6,
+Bounded Data*. R package version 2.1.7,
 <https://github.com/evandeilton/gkwreg>.
 
     @Manual{,
       title = {gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data},
       author = {José Evandeilton Lopes},
       year = {2025},
-      note = {R package version 2.1.6},
+      note = {R package version 2.1.7},
       url = {https://github.com/evandeilton/gkwreg},
     }

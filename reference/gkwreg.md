@@ -930,6 +930,7 @@ summary(fit_basic)
 # Example 1.2: Model with predictors (uses all defaults)
 # Default: family = "gkw", method = "nlminb", hessian = TRUE
 fit_default <- gkwreg(yield ~ batch + temp, data = GasolineYield)
+#> Warning: NaNs produced
 summary(fit_default)
 #> 
 #> Generalized Kumaraswamy Regression Model Summary
@@ -941,45 +942,45 @@ summary(fit_default)
 #> 
 #> Residuals:
 #>     Min  Q1.25%  Median    Mean  Q3.75%     Max 
-#> -0.0272 -0.0123 -0.0010 -0.0013  0.0079  0.0268 
+#> -0.0235 -0.0071 -0.0017 -0.0002  0.0072  0.0285 
 #> 
 #> Coefficients:
-#>                      Estimate Std. Error  z value Pr(>|z|)    
-#> alpha:(Intercept)  -3.381e+00  7.662e-01   -4.413 1.02e-05 ***
-#> alpha:batch1        9.204e-01  3.181e-02   28.930  < 2e-16 ***
-#> alpha:batch2        6.787e-01  3.407e-02   19.922  < 2e-16 ***
-#> alpha:batch3        7.832e-01  3.400e-02   23.039  < 2e-16 ***
-#> alpha:batch4        5.598e-01  3.185e-02   17.573  < 2e-16 ***
-#> alpha:batch5        5.632e-01  3.396e-02   16.582  < 2e-16 ***
-#> alpha:batch6        5.419e-01  3.403e-02   15.923  < 2e-16 ***
-#> alpha:batch7        3.113e-01  3.188e-02    9.767  < 2e-16 ***
-#> alpha:batch8        2.549e-01  3.394e-02    7.510 5.91e-14 ***
-#> alpha:batch9        1.990e-01  3.794e-02    5.246 1.55e-07 ***
-#> alpha:temp          5.408e-03  1.456e-06 3715.029  < 2e-16 ***
-#> beta:(Intercept)    2.622e+00  3.722e-01    7.043 1.88e-12 ***
-#> gamma:(Intercept)   2.261e+01  1.831e+00   12.346  < 2e-16 ***
-#> delta:(Intercept)  -1.457e-01  1.217e+00   -0.120    0.905    
-#> lambda:(Intercept) -9.556e+00  4.202e+00   -2.274    0.023 *  
+#>                     Estimate Std. Error z value Pr(>|z|)    
+#> alpha:(Intercept)  -1.419893   0.666514  -2.130   0.0331 *  
+#> alpha:batch1        0.918498   0.032368  28.377  < 2e-16 ***
+#> alpha:batch2        0.676328   0.034627  19.532  < 2e-16 ***
+#> alpha:batch3        0.781489   0.034587  22.595  < 2e-16 ***
+#> alpha:batch4        0.557260   0.032509  17.142  < 2e-16 ***
+#> alpha:batch5        0.562416   0.034498  16.303  < 2e-16 ***
+#> alpha:batch6        0.539377   0.034694  15.547  < 2e-16 ***
+#> alpha:batch7        0.308696   0.032499   9.499  < 2e-16 ***
+#> alpha:batch8        0.254507   0.034578   7.360 1.83e-13 ***
+#> alpha:batch9        0.198134   0.038561   5.138 2.77e-07 ***
+#> alpha:temp          0.005403        NaN     NaN      NaN    
+#> beta:(Intercept)    5.511544   2.754889   2.001   0.0454 *  
+#> gamma:(Intercept)   2.560940   2.294913   1.116   0.2645    
+#> delta:(Intercept)  -2.153490   2.535825  -0.849   0.3958    
+#> lambda:(Intercept)  2.190526   2.324758   0.942   0.3461    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Confidence intervals (95%):
-#>                          3%     98%
-#> alpha:(Intercept)   -4.8831 -1.8795
-#> alpha:batch1         0.8581  0.9828
-#> alpha:batch2         0.6120  0.7455
-#> alpha:batch3         0.7166  0.8499
-#> alpha:batch4         0.4973  0.6222
-#> alpha:batch5         0.4966  0.6298
-#> alpha:batch6         0.4752  0.6085
-#> alpha:batch7         0.2488  0.3738
-#> alpha:batch8         0.1884  0.3215
-#> alpha:batch9         0.1247  0.2734
-#> alpha:temp           0.0054  0.0054
-#> beta:(Intercept)     1.8922  3.3513
-#> gamma:(Intercept)   19.0207 26.1992
-#> delta:(Intercept)   -2.5311  2.2397
-#> lambda:(Intercept) -17.7927 -1.3201
+#>                         3%     98%
+#> alpha:(Intercept)  -2.7262 -0.1135
+#> alpha:batch1        0.8551  0.9819
+#> alpha:batch2        0.6085  0.7442
+#> alpha:batch3        0.7137  0.8493
+#> alpha:batch4        0.4935  0.6210
+#> alpha:batch5        0.4948  0.6300
+#> alpha:batch6        0.4714  0.6074
+#> alpha:batch7        0.2450  0.3724
+#> alpha:batch8        0.1867  0.3223
+#> alpha:batch9        0.1226  0.2737
+#> alpha:temp             NaN     NaN
+#> beta:(Intercept)    0.1121 10.9110
+#> gamma:(Intercept)  -1.9370  7.0589
+#> delta:(Intercept)  -7.1236  2.8166
+#> lambda:(Intercept) -2.3659  6.7470
 #> 
 #> Link functions:
 #> alpha: log
@@ -989,25 +990,25 @@ summary(fit_default)
 #> lambda: log
 #> 
 #> Fitted parameter means:
-#> alpha: 0.3603
-#> beta: 13.76
-#> gamma: 6.598e+09
-#> delta: 4.636
-#> lambda: 7.068e-05
+#> alpha: 2.552
+#> beta: 247.5
+#> gamma: 12.95
+#> delta: 1.04
+#> lambda: 8.931
 #> 
 #> Model fit statistics:
 #> Number of observations: 32 
 #> Number of parameters: 15 
 #> Residual degrees of freedom: 17 
-#> Log-likelihood: 96.5 
-#> AIC: -163 
-#> BIC: -141 
-#> RMSE: 0.01406 
-#> Efron's R2: 0.9822 
-#> Mean Absolute Error: 0.01129 
+#> Log-likelihood: 95.61 
+#> AIC: -161.2 
+#> BIC: -139.2 
+#> RMSE: 0.0139 
+#> Efron's R2: 0.9826 
+#> Mean Absolute Error: 0.01113 
 #> 
-#> Convergence status: Failed 
-#> Iterations: 146 
+#> Convergence status: Successful 
+#> Iterations: 145 
 #> 
 
 # Example 1.3: Kumaraswamy model (two-parameter family)
@@ -1523,6 +1524,7 @@ fits <- lapply(families, function(fam) {
 #> Warning: NaNs produced
 #> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’
 #> Warning: NaNs produced
+#> Warning: NaNs produced
 names(fits) <- families
 
 # Compare via information criteria
@@ -1539,7 +1541,7 @@ print(comparison)
 #> kw       kw 96.96932 -169.93865 -152.34982   12
 #> ekw     ekw 97.31460 -168.62921 -149.57464   13
 #> bkw     bkw 96.44294 -164.88587 -144.36557   14
-#> gkw     gkw 96.49831 -162.99661 -141.01058   15
+#> gkw     gkw 95.60590 -161.21180 -139.22576   15
 
 # Example 4.2: Formal nested model testing
 fit_kw <- gkwreg(yield ~ batch + temp, GasolineYield, family = "kw")
@@ -1547,6 +1549,7 @@ fit_kw <- gkwreg(yield ~ batch + temp, GasolineYield, family = "kw")
 fit_ekw <- gkwreg(yield ~ batch + temp, GasolineYield, family = "ekw")
 #> Warning: NaNs produced
 fit_gkw <- gkwreg(yield ~ batch + temp, GasolineYield, family = "gkw")
+#> Warning: NaNs produced
 anova(fit_kw, fit_ekw, fit_gkw)
 #> Warning: negative deviance change detected; models may not be nested
 #> Analysis of Deviance Table
@@ -1558,7 +1561,7 @@ anova(fit_kw, fit_ekw, fit_gkw)
 #>         Resid. Df Resid. Dev Df Deviance Pr(>Chi)  
 #> fit_kw   20.00000 -193.93865                       
 #> fit_ekw  19.00000 -194.62921  1  0.69056  0.40597  
-#> fit_gkw  17.00000 -192.99661  2 -1.63259           
+#> fit_gkw  17.00000 -191.21180  2 -3.41741           
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -1867,35 +1870,33 @@ summary(fit_gkw)
 #> 
 #> Residuals:
 #>     Min  Q1.25%  Median    Mean  Q3.75%     Max 
-#> -0.3455 -0.0929  0.0205  0.0337  0.1502  0.6360 
+#> -0.4611 -0.1656 -0.0594 -0.0454  0.0650  0.6181 
 #> 
 #> Coefficients:
-#>                    Estimate Std. Error z value Pr(>|z|)    
-#> alpha:(Intercept)   0.97085    0.61249   1.585   0.1129    
-#> alpha:x             0.75943    1.04259   0.728   0.4664    
-#> beta:(Intercept)   -0.43418    0.08793  -4.938  7.9e-07 ***
-#> beta:x             -0.42851    0.52143  -0.822   0.4112    
-#> gamma:(Intercept)   1.12970        NaN     NaN      NaN    
-#> gamma:x             1.16488    0.47263   2.465   0.0137 *  
-#> delta:(Intercept)  -0.19516        NaN     NaN      NaN    
-#> delta:x             0.61546    1.08639   0.567   0.5710    
-#> lambda:(Intercept) -1.00510    0.44824  -2.242   0.0249 *  
-#> lambda:x           -0.83449    1.49367  -0.559   0.5764    
-#> ---
-#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#>                    Estimate Std. Error z value Pr(>|z|)
+#> alpha:(Intercept)    0.6486     1.1164   0.581    0.561
+#> alpha:x              0.6769     0.7349   0.921    0.357
+#> beta:(Intercept)    -0.1854        NaN     NaN      NaN
+#> beta:x              -0.4238        NaN     NaN      NaN
+#> gamma:(Intercept)    1.3684        NaN     NaN      NaN
+#> gamma:x              1.2902        NaN     NaN      NaN
+#> delta:(Intercept)   -0.5532        NaN     NaN      NaN
+#> delta:x              0.6949        NaN     NaN      NaN
+#> lambda:(Intercept)  -0.9061     1.3832  -0.655    0.512
+#> lambda:x            -0.9115     1.2738  -0.716    0.474
 #> 
 #> Confidence intervals (95%):
-#>                         3%     98%
-#> alpha:(Intercept)  -0.2296  2.1713
-#> alpha:x            -1.2840  2.8029
-#> beta:(Intercept)   -0.6065 -0.2618
-#> beta:x             -1.4505  0.5935
-#> gamma:(Intercept)      NaN     NaN
-#> gamma:x             0.2385  2.0912
-#> delta:(Intercept)      NaN     NaN
-#> delta:x            -1.5138  2.7447
-#> lambda:(Intercept) -1.8836 -0.1266
-#> lambda:x           -3.7620  2.0930
+#>                         3%    98%
+#> alpha:(Intercept)  -1.5394 2.8366
+#> alpha:x            -0.7636 2.1173
+#> beta:(Intercept)       NaN    NaN
+#> beta:x                 NaN    NaN
+#> gamma:(Intercept)      NaN    NaN
+#> gamma:x                NaN    NaN
+#> delta:(Intercept)      NaN    NaN
+#> delta:x                NaN    NaN
+#> lambda:(Intercept) -3.6170 1.8049
+#> lambda:x           -3.4081 1.5850
 #> 
 #> Link functions:
 #> alpha: log
@@ -1905,22 +1906,22 @@ summary(fit_gkw)
 #> lambda: log
 #> 
 #> Fitted parameter means:
-#> alpha: 2.873
-#> beta: 0.6702
-#> gamma: 3.782
-#> delta: 4.513
-#> lambda: 0.4125
+#> alpha: 2.045
+#> beta: 0.8589
+#> gamma: 5.02
+#> delta: 3.683
+#> lambda: 0.4654
 #> 
 #> Model fit statistics:
 #> Number of observations: 2000 
 #> Number of parameters: 10 
 #> Residual degrees of freedom: 1990 
-#> Log-likelihood: 860.9 
-#> AIC: -1702 
-#> BIC: -1646 
-#> RMSE: 0.1708 
-#> Efron's R2: 0.3325 
-#> Mean Absolute Error: 0.1374 
+#> Log-likelihood: 860.6 
+#> AIC: -1701 
+#> BIC: -1645 
+#> RMSE: 0.1749 
+#> Efron's R2: 0.2997 
+#> Mean Absolute Error: 0.1429 
 #> 
 #> Convergence status: Failed 
 #> Iterations: 116 

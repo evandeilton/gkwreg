@@ -1,6 +1,9 @@
 # Get Cache Directory for Compiled Models
 
-Creates version-specific cache directory for TMB DLLs.
+Creates version-specific cache directory for TMB DLLs within tempdir().
+Uses temporary directory to comply with CRAN policies (no user directory
+access). Cache is session-specific and will not persist across R
+sessions.
 
 ## Usage
 
@@ -16,4 +19,4 @@ Creates version-specific cache directory for TMB DLLs.
 
 ## Value
 
-Path to cache directory
+Path to cache directory within tempdir()
