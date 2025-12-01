@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@
                         <h4 data-toc-skip class="author">Lopes, J.
 E.</h4>
             
-            <h4 data-toc-skip class="date">2025-11-27</h4>
+            <h4 data-toc-skip class="date">2025-12-01</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/evandeilton/gkwreg/blob/HEAD/vignettes/gkwreg-vs-betareg.Rmd" class="external-link"><code>vignettes/gkwreg-vs-betareg.Rmd</code></a></small>
       <div class="d-none name"><code>gkwreg-vs-betareg.Rmd</code></div>
@@ -385,9 +385,11 @@ Distributional Characteristics - Scenario 1 (Well-Specified Beta)
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="at">beta_phi =</span> <span class="fu">c</span>(<span class="fl">1.5</span>, <span class="fl">0.4</span>)</span>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  ),</span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">|</span> x1</span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>)</span>
-<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a></span>
-<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>comp_s1 <span class="ot">&lt;-</span> <span class="fu">make_comparison_table</span>(results_s1)</span></code></pre></div>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>)</span></code></pre></div>
+<pre><code>Note: Using Makevars in /home/jlopes/.R/Makevars </code></pre>
+<pre><code>Note: Using Makevars in /home/jlopes/.R/Makevars </code></pre>
+<pre><code>Note: Using Makevars in /home/jlopes/.R/Makevars </code></pre>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>comp_s1 <span class="ot">&lt;-</span> <span class="fu">make_comparison_table</span>(results_s1)</span></code></pre></div>
 </div>
 <div id="parameter-estimation-comparison" class="section level3">
 <h3>Parameter Estimation Comparison</h3>
@@ -395,53 +397,53 @@ Distributional Characteristics - Scenario 1 (Well-Specified Beta)
 models to a single representative dataset and compare parameter
 estimates. Table 1 presents the estimates, standard errors, and
 z-statistics.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Fit models to one dataset for coefficient comparison</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">456</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>data_coef_s1 <span class="ot">&lt;-</span> <span class="fu">dgp_beta</span>(<span class="dv">300</span>, <span class="fu">list</span>(</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">beta_mu =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="sc">-</span><span class="fl">0.8</span>, <span class="fl">0.6</span>),</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">beta_phi =</span> <span class="fu">c</span>(<span class="fl">1.5</span>, <span class="fl">0.4</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>))</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>fit_beta_s1 <span class="ot">&lt;-</span> <span class="fu">betareg</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">|</span> x1, <span class="at">data =</span> data_coef_s1)</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>fit_kw_s1 <span class="ot">&lt;-</span> <span class="fu">gkwreg</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">|</span> x1, <span class="at">data =</span> data_coef_s1, <span class="at">family =</span> <span class="st">&quot;kw&quot;</span>)</span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co"># Extract coefficients</span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>coef_beta_s1 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_beta_s1)</span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>se_beta_s1 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(fit_beta_s1)))</span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>coef_kw_s1 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_kw_s1)</span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>se_kw_s1 <span class="ot">&lt;-</span> fit_kw_s1<span class="sc">$</span>se</span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co"># Build comparison table</span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>coef_names <span class="ot">&lt;-</span> <span class="fu">names</span>(coef_beta_s1)</span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>true_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="sc">-</span><span class="fl">0.8</span>, <span class="fl">0.6</span>, <span class="fl">1.5</span>, <span class="fl">0.4</span>)</span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a>coef_comparison_s1 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a>  <span class="at">Parameter =</span> coef_names,</span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a>  <span class="at">True_Value =</span> true_values,</span>
-<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a>  <span class="at">Beta_Est =</span> <span class="fu">round</span>(coef_beta_s1, <span class="dv">4</span>),</span>
-<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a>  <span class="at">Beta_SE =</span> <span class="fu">round</span>(se_beta_s1, <span class="dv">4</span>),</span>
-<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a>  <span class="at">Beta_Z =</span> <span class="fu">round</span>(coef_beta_s1 <span class="sc">/</span> se_beta_s1, <span class="dv">2</span>),</span>
-<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a>  <span class="at">Kw_Est =</span> <span class="fu">round</span>(coef_kw_s1, <span class="dv">4</span>),</span>
-<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a>  <span class="at">Kw_SE =</span> <span class="fu">round</span>(se_kw_s1, <span class="dv">4</span>),</span>
-<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a>  <span class="at">Kw_Z =</span> <span class="fu">round</span>(coef_kw_s1 <span class="sc">/</span> se_kw_s1, <span class="dv">2</span>)</span>
-<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a>)</span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a></span>
-<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co"># Calculate differences</span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a>coef_comparison_s1<span class="sc">$</span>Bias_Beta <span class="ot">&lt;-</span> <span class="fu">round</span>(coef_comparison_s1<span class="sc">$</span>Beta_Est <span class="sc">-</span> true_values, <span class="dv">4</span>)</span>
-<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a>coef_comparison_s1<span class="sc">$</span>Bias_Kw <span class="ot">&lt;-</span> <span class="fu">round</span>(coef_comparison_s1<span class="sc">$</span>Kw_Est <span class="sc">-</span> true_values, <span class="dv">4</span>)</span>
-<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a>coef_comparison_s1<span class="sc">$</span>SE_Ratio <span class="ot">&lt;-</span> <span class="fu">round</span>(coef_comparison_s1<span class="sc">$</span>Kw_SE <span class="sc">/</span> coef_comparison_s1<span class="sc">$</span>Beta_SE, <span class="dv">3</span>)</span>
-<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a></span>
-<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
-<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a>  coef_comparison_s1,</span>
-<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Table 1: Parameter Estimates - Scenario 1 (Well-Specified Beta, n=300)&quot;</span>,</span>
-<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(</span>
-<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a>    <span class="st">&quot;Parameter&quot;</span>, <span class="st">&quot;True&quot;</span>, <span class="st">&quot;Est.&quot;</span>, <span class="st">&quot;SE&quot;</span>, <span class="st">&quot;z&quot;</span>, <span class="st">&quot;Est.&quot;</span>, <span class="st">&quot;SE&quot;</span>, <span class="st">&quot;z&quot;</span>,</span>
-<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a>    <span class="st">&quot;Bias&quot;</span>, <span class="st">&quot;Bias&quot;</span>, <span class="st">&quot;SE Ratio&quot;</span></span>
-<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a>  ),</span>
-<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a>  <span class="at">align =</span> <span class="fu">c</span>(<span class="st">&quot;l&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;r&quot;</span>, <span class="dv">10</span>))</span>
-<span id="cb6-47"><a href="#cb6-47" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Fit models to one dataset for coefficient comparison</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">456</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>data_coef_s1 <span class="ot">&lt;-</span> <span class="fu">dgp_beta</span>(<span class="dv">300</span>, <span class="fu">list</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">beta_mu =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="sc">-</span><span class="fl">0.8</span>, <span class="fl">0.6</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">beta_phi =</span> <span class="fu">c</span>(<span class="fl">1.5</span>, <span class="fl">0.4</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>))</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>fit_beta_s1 <span class="ot">&lt;-</span> <span class="fu">betareg</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">|</span> x1, <span class="at">data =</span> data_coef_s1)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>fit_kw_s1 <span class="ot">&lt;-</span> <span class="fu">gkwreg</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">|</span> x1, <span class="at">data =</span> data_coef_s1, <span class="at">family =</span> <span class="st">&quot;kw&quot;</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co"># Extract coefficients</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>coef_beta_s1 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_beta_s1)</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>se_beta_s1 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(fit_beta_s1)))</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>coef_kw_s1 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_kw_s1)</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>se_kw_s1 <span class="ot">&lt;-</span> fit_kw_s1<span class="sc">$</span>se</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co"># Build comparison table</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>coef_names <span class="ot">&lt;-</span> <span class="fu">names</span>(coef_beta_s1)</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>true_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="sc">-</span><span class="fl">0.8</span>, <span class="fl">0.6</span>, <span class="fl">1.5</span>, <span class="fl">0.4</span>)</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>coef_comparison_s1 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>  <span class="at">Parameter =</span> coef_names,</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>  <span class="at">True_Value =</span> true_values,</span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a>  <span class="at">Beta_Est =</span> <span class="fu">round</span>(coef_beta_s1, <span class="dv">4</span>),</span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a>  <span class="at">Beta_SE =</span> <span class="fu">round</span>(se_beta_s1, <span class="dv">4</span>),</span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a>  <span class="at">Beta_Z =</span> <span class="fu">round</span>(coef_beta_s1 <span class="sc">/</span> se_beta_s1, <span class="dv">2</span>),</span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a>  <span class="at">Kw_Est =</span> <span class="fu">round</span>(coef_kw_s1, <span class="dv">4</span>),</span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a>  <span class="at">Kw_SE =</span> <span class="fu">round</span>(se_kw_s1, <span class="dv">4</span>),</span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a>  <span class="at">Kw_Z =</span> <span class="fu">round</span>(coef_kw_s1 <span class="sc">/</span> se_kw_s1, <span class="dv">2</span>)</span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a>)</span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a></span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co"># Calculate differences</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a>coef_comparison_s1<span class="sc">$</span>Bias_Beta <span class="ot">&lt;-</span> <span class="fu">round</span>(coef_comparison_s1<span class="sc">$</span>Beta_Est <span class="sc">-</span> true_values, <span class="dv">4</span>)</span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a>coef_comparison_s1<span class="sc">$</span>Bias_Kw <span class="ot">&lt;-</span> <span class="fu">round</span>(coef_comparison_s1<span class="sc">$</span>Kw_Est <span class="sc">-</span> true_values, <span class="dv">4</span>)</span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a>coef_comparison_s1<span class="sc">$</span>SE_Ratio <span class="ot">&lt;-</span> <span class="fu">round</span>(coef_comparison_s1<span class="sc">$</span>Kw_SE <span class="sc">/</span> coef_comparison_s1<span class="sc">$</span>Beta_SE, <span class="dv">3</span>)</span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a></span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a>  coef_comparison_s1,</span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Table 1: Parameter Estimates - Scenario 1 (Well-Specified Beta, n=300)&quot;</span>,</span>
+<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(</span>
+<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a>    <span class="st">&quot;Parameter&quot;</span>, <span class="st">&quot;True&quot;</span>, <span class="st">&quot;Est.&quot;</span>, <span class="st">&quot;SE&quot;</span>, <span class="st">&quot;z&quot;</span>, <span class="st">&quot;Est.&quot;</span>, <span class="st">&quot;SE&quot;</span>, <span class="st">&quot;z&quot;</span>,</span>
+<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a>    <span class="st">&quot;Bias&quot;</span>, <span class="st">&quot;Bias&quot;</span>, <span class="st">&quot;SE Ratio&quot;</span></span>
+<span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a>  ),</span>
+<span id="cb10-46"><a href="#cb10-46" tabindex="-1"></a>  <span class="at">align =</span> <span class="fu">c</span>(<span class="st">&quot;l&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;r&quot;</span>, <span class="dv">10</span>))</span>
+<span id="cb10-47"><a href="#cb10-47" tabindex="-1"></a>)</span></code></pre></div>
 <table style="width:100%;">
 <caption>Table 1: Parameter Estimates - Scenario 1 (Well-Specified Beta,
 n=300)</caption>
@@ -575,24 +577,24 @@ distribution with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mn>300</mn></mrow><annotation encoding="application/x-tex">n = 300</annotation></semantics></math></p>
 <p>This scenario tests model robustness when the true distribution
 deviates from Beta assumptions.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>dgp_heavy_tails <span class="ot">&lt;-</span> <span class="cf">function</span>(n, params) {</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  x1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  x2 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.5</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  eta_alpha <span class="ot">&lt;-</span> params<span class="sc">$</span>beta_alpha[<span class="dv">1</span>] <span class="sc">+</span> params<span class="sc">$</span>beta_alpha[<span class="dv">2</span>] <span class="sc">*</span> x1</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  eta_beta <span class="ot">&lt;-</span> params<span class="sc">$</span>beta_beta[<span class="dv">1</span>] <span class="sc">+</span> params<span class="sc">$</span>beta_beta[<span class="dv">2</span>] <span class="sc">*</span> x2</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  eta_lambda <span class="ot">&lt;-</span> params<span class="sc">$</span>beta_lambda[<span class="dv">1</span>]</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> <span class="fu">exp</span>(eta_alpha)</span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  beta <span class="ot">&lt;-</span> <span class="fu">exp</span>(eta_beta)</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  lambda <span class="ot">&lt;-</span> <span class="fu">exp</span>(eta_lambda)</span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">runif</span>(n)</span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  y <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> u<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> beta))<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> alpha))<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> lambda)</span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="fu">pmin</span>(y, <span class="fl">0.9999</span>), <span class="fl">0.0001</span>)</span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">y =</span> y, <span class="at">x1 =</span> x1, <span class="at">x2 =</span> <span class="fu">factor</span>(x2))</span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>dgp_heavy_tails <span class="ot">&lt;-</span> <span class="cf">function</span>(n, params) {</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  x1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  x2 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.5</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  eta_alpha <span class="ot">&lt;-</span> params<span class="sc">$</span>beta_alpha[<span class="dv">1</span>] <span class="sc">+</span> params<span class="sc">$</span>beta_alpha[<span class="dv">2</span>] <span class="sc">*</span> x1</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  eta_beta <span class="ot">&lt;-</span> params<span class="sc">$</span>beta_beta[<span class="dv">1</span>] <span class="sc">+</span> params<span class="sc">$</span>beta_beta[<span class="dv">2</span>] <span class="sc">*</span> x2</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  eta_lambda <span class="ot">&lt;-</span> params<span class="sc">$</span>beta_lambda[<span class="dv">1</span>]</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> <span class="fu">exp</span>(eta_alpha)</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  beta <span class="ot">&lt;-</span> <span class="fu">exp</span>(eta_beta)</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>  lambda <span class="ot">&lt;-</span> <span class="fu">exp</span>(eta_lambda)</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">runif</span>(n)</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>  y <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> u<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> beta))<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> alpha))<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> lambda)</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="fu">pmin</span>(y, <span class="fl">0.9999</span>), <span class="fl">0.0001</span>)</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">y =</span> y, <span class="at">x1 =</span> x1, <span class="at">x2 =</span> <span class="fu">factor</span>(x2))</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>}</span></code></pre></div>
 <div id="visualizing-heavy-tailed-distributions" class="section level3">
 <h3>Visualizing Heavy-Tailed Distributions</h3>
 <p>Figure 2 reveals the critical feature distinguishing this scenario:
@@ -602,65 +604,65 @@ and 1, creating “fat tails” that Beta regression struggles to
 accommodate. The overlaid density curve exhibits slower decay rates,
 characteristic of the Exponentiated Kumaraswamy’s third shape
 parameter.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">789</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>vis_data_s2 <span class="ot">&lt;-</span> <span class="fu">dgp_heavy_tails</span>(<span class="dv">1500</span>, <span class="fu">list</span>(</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">beta_alpha =</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="sc">-</span><span class="fl">0.5</span>),</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">beta_beta =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.4</span>),</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">beta_lambda =</span> <span class="fu">c</span>(<span class="fl">0.6</span>)</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>))</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>), <span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">2</span>))</span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co"># Response distribution</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="fu">hist</span>(vis_data_s2<span class="sc">$</span>y,</span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="at">breaks =</span> <span class="dv">60</span>, <span class="at">col =</span> <span class="st">&quot;#7B1FA2&quot;</span>, <span class="at">border =</span> <span class="st">&quot;white&quot;</span>,</span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Heavy-Tailed Distribution&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">prob =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>)</span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">density</span>(vis_data_s2<span class="sc">$</span>y), <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co"># Add Beta approximation for comparison</span></span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>beta_approx <span class="ot">&lt;-</span> <span class="fu">rbeta</span>(<span class="dv">1500</span>, <span class="dv">2</span>, <span class="dv">2</span>)</span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">density</span>(beta_approx), <span class="at">col =</span> <span class="st">&quot;#1976D2&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;True density&quot;</span>, <span class="st">&quot;Beta approximation&quot;</span>),</span>
-<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;#D32F2F&quot;</span>, <span class="st">&quot;#1976D2&quot;</span>), <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
-<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>)</span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a></span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co"># QQ plot against Beta</span></span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="fu">qqplot</span>(<span class="fu">rbeta</span>(<span class="dv">1500</span>, <span class="dv">2</span>, <span class="dv">2</span>), vis_data_s2<span class="sc">$</span>y,</span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Q-Q Plot: EKw vs Beta(2,2)&quot;</span>,</span>
-<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">&quot;Beta(2,2) Quantiles&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Observed Quantiles&quot;</span>,</span>
-<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a>  <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">col =</span> <span class="fu">rgb</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.3</span>), <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
-<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a>)</span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.2</span>, <span class="fl">0.8</span>, <span class="st">&quot;Heavier tails</span><span class="sc">\n</span><span class="st">(departures)&quot;</span>, <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span>)</span>
-<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a></span>
-<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co"># Effect by group</span></span>
-<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="fu">boxplot</span>(y <span class="sc">~</span> x2,</span>
-<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a>  <span class="at">data =</span> vis_data_s2, <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;#388E3C&quot;</span>, <span class="st">&quot;#7B1FA2&quot;</span>),</span>
-<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Distribution by Group&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;x2&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Y&quot;</span>,</span>
-<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a>  <span class="at">names =</span> <span class="fu">c</span>(<span class="st">&quot;Group 0&quot;</span>, <span class="st">&quot;Group 1&quot;</span>), <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
-<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a>)</span>
-<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a></span>
-<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a><span class="co"># Tail behavior</span></span>
-<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">sort</span>(vis_data_s2<span class="sc">$</span>y)[<span class="dv">1</span><span class="sc">:</span><span class="dv">50</span>],</span>
-<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Order (Lower Tail)&quot;</span>,</span>
-<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Lower Tail Concentration&quot;</span>, <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">col =</span> <span class="st">&quot;#7B1FA2&quot;</span>,</span>
-<span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a>  <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
-<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a>)</span>
-<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a>beta_tail <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">rbeta</span>(<span class="dv">1500</span>, <span class="dv">2</span>, <span class="dv">2</span>))[<span class="dv">1</span><span class="sc">:</span><span class="dv">50</span>]</span>
-<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a><span class="fu">points</span>(beta_tail, <span class="at">pch =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;#1976D2&quot;</span>)</span>
-<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topleft&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;EKw&quot;</span>, <span class="st">&quot;Beta(2,2)&quot;</span>),</span>
-<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;#7B1FA2&quot;</span>, <span class="st">&quot;#1976D2&quot;</span>),</span>
-<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a>  <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">16</span>, <span class="dv">1</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span></span>
-<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">789</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>vis_data_s2 <span class="ot">&lt;-</span> <span class="fu">dgp_heavy_tails</span>(<span class="dv">1500</span>, <span class="fu">list</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">beta_alpha =</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="sc">-</span><span class="fl">0.5</span>),</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">beta_beta =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.4</span>),</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">beta_lambda =</span> <span class="fu">c</span>(<span class="fl">0.6</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>))</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>), <span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">2</span>))</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co"># Response distribution</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="fu">hist</span>(vis_data_s2<span class="sc">$</span>y,</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  <span class="at">breaks =</span> <span class="dv">60</span>, <span class="at">col =</span> <span class="st">&quot;#7B1FA2&quot;</span>, <span class="at">border =</span> <span class="st">&quot;white&quot;</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Heavy-Tailed Distribution&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">prob =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>)</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">density</span>(vis_data_s2<span class="sc">$</span>y), <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co"># Add Beta approximation for comparison</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>beta_approx <span class="ot">&lt;-</span> <span class="fu">rbeta</span>(<span class="dv">1500</span>, <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">density</span>(beta_approx), <span class="at">col =</span> <span class="st">&quot;#1976D2&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;True density&quot;</span>, <span class="st">&quot;Beta approximation&quot;</span>),</span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;#D32F2F&quot;</span>, <span class="st">&quot;#1976D2&quot;</span>), <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>)</span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co"># QQ plot against Beta</span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="fu">qqplot</span>(<span class="fu">rbeta</span>(<span class="dv">1500</span>, <span class="dv">2</span>, <span class="dv">2</span>), vis_data_s2<span class="sc">$</span>y,</span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Q-Q Plot: EKw vs Beta(2,2)&quot;</span>,</span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">&quot;Beta(2,2) Quantiles&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Observed Quantiles&quot;</span>,</span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a>  <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">col =</span> <span class="fu">rgb</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.3</span>), <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a>)</span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.2</span>, <span class="fl">0.8</span>, <span class="st">&quot;Heavier tails</span><span class="sc">\n</span><span class="st">(departures)&quot;</span>, <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span>)</span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a></span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a><span class="co"># Effect by group</span></span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a><span class="fu">boxplot</span>(y <span class="sc">~</span> x2,</span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a>  <span class="at">data =</span> vis_data_s2, <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;#388E3C&quot;</span>, <span class="st">&quot;#7B1FA2&quot;</span>),</span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Distribution by Group&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;x2&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Y&quot;</span>,</span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a>  <span class="at">names =</span> <span class="fu">c</span>(<span class="st">&quot;Group 0&quot;</span>, <span class="st">&quot;Group 1&quot;</span>), <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a>)</span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a></span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a><span class="co"># Tail behavior</span></span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">sort</span>(vis_data_s2<span class="sc">$</span>y)[<span class="dv">1</span><span class="sc">:</span><span class="dv">50</span>],</span>
+<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Order (Lower Tail)&quot;</span>,</span>
+<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Lower Tail Concentration&quot;</span>, <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">col =</span> <span class="st">&quot;#7B1FA2&quot;</span>,</span>
+<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a>  <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
+<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a>)</span>
+<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a>beta_tail <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">rbeta</span>(<span class="dv">1500</span>, <span class="dv">2</span>, <span class="dv">2</span>))[<span class="dv">1</span><span class="sc">:</span><span class="dv">50</span>]</span>
+<span id="cb12-47"><a href="#cb12-47" tabindex="-1"></a><span class="fu">points</span>(beta_tail, <span class="at">pch =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;#1976D2&quot;</span>)</span>
+<span id="cb12-48"><a href="#cb12-48" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topleft&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;EKw&quot;</span>, <span class="st">&quot;Beta(2,2)&quot;</span>),</span>
+<span id="cb12-49"><a href="#cb12-49" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;#7B1FA2&quot;</span>, <span class="st">&quot;#1976D2&quot;</span>),</span>
+<span id="cb12-50"><a href="#cb12-50" tabindex="-1"></a>  <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">16</span>, <span class="dv">1</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span></span>
+<span id="cb12-51"><a href="#cb12-51" tabindex="-1"></a>)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="/home/jlopes/Dropbox/Pacotes/Dev/gkwreg/docs/articles/gkwreg-vs-betareg_files/figure-html/scenario2_visualization-1.png" alt="Distributional Characteristics - Scenario 2 (Heavy Tails)" width="1500" />
 <p class="caption">
 Distributional Characteristics - Scenario 2 (Heavy Tails)
 </p>
 </div>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># mtext(&quot;Figure 2: Distributional Characteristics - Scenario 2 (Heavy Tails)&quot;,</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># mtext(&quot;Figure 2: Distributional Characteristics - Scenario 2 (Heavy Tails)&quot;,</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)</span></span></code></pre></div>
 <p>The Q-Q plot (top right panel) provides definitive evidence of tail
 divergence: observations systematically exceed Beta quantiles in both
 tails, with departures increasing toward the extremes. This pattern
@@ -670,19 +672,19 @@ forecasts.</p>
 </div>
 <div id="simulation-results-1" class="section level3">
 <h3>Simulation Results</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>results_s2 <span class="ot">&lt;-</span> <span class="fu">run_full_simulation</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">n_sim =</span> <span class="dv">200</span>,</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">300</span>,</span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">dgp_fun =</span> dgp_heavy_tails,</span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">params =</span> <span class="fu">list</span>(</span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>    <span class="at">beta_alpha =</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="sc">-</span><span class="fl">0.5</span>),</span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>    <span class="at">beta_beta =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.4</span>),</span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>    <span class="at">beta_lambda =</span> <span class="fu">c</span>(<span class="fl">0.6</span>)</span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  ),</span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> x1 <span class="sc">|</span> x2</span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>)</span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>comp_s2 <span class="ot">&lt;-</span> <span class="fu">make_comparison_table</span>(results_s2)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>results_s2 <span class="ot">&lt;-</span> <span class="fu">run_full_simulation</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="at">n_sim =</span> <span class="dv">200</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">300</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">dgp_fun =</span> dgp_heavy_tails,</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">params =</span> <span class="fu">list</span>(</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>    <span class="at">beta_alpha =</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="sc">-</span><span class="fl">0.5</span>),</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>    <span class="at">beta_beta =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.4</span>),</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>    <span class="at">beta_lambda =</span> <span class="fu">c</span>(<span class="fl">0.6</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  ),</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> x1 <span class="sc">|</span> x2</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>)</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>comp_s2 <span class="ot">&lt;-</span> <span class="fu">make_comparison_table</span>(results_s2)</span></code></pre></div>
 </div>
 <div id="parameter-estimation-under-misspecification"
 class="section level3">
@@ -690,43 +692,43 @@ class="section level3">
 <p>When the true distribution is Exponentiated Kumaraswamy but we fit
 Beta regression, parameter estimates become <strong>biased and inference
 unreliable</strong>. Table 2 quantifies these distortions.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Fit models to one dataset</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">101112</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>data_coef_s2 <span class="ot">&lt;-</span> <span class="fu">dgp_heavy_tails</span>(<span class="dv">300</span>, <span class="fu">list</span>(</span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">beta_alpha =</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="sc">-</span><span class="fl">0.5</span>),</span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">beta_beta =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.4</span>),</span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">beta_lambda =</span> <span class="fu">c</span>(<span class="fl">0.6</span>)</span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>))</span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a></span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>fit_beta_s2 <span class="ot">&lt;-</span> <span class="fu">betareg</span>(y <span class="sc">~</span> x1 <span class="sc">|</span> x2, <span class="at">data =</span> data_coef_s2)</span>
-<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>fit_kw_s2 <span class="ot">&lt;-</span> <span class="fu">gkwreg</span>(y <span class="sc">~</span> x1 <span class="sc">|</span> x2, <span class="at">data =</span> data_coef_s2, <span class="at">family =</span> <span class="st">&quot;kw&quot;</span>)</span>
-<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a></span>
-<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>coef_beta_s2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_beta_s2)</span>
-<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>se_beta_s2 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(fit_beta_s2)))</span>
-<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a></span>
-<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>coef_kw_s2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_kw_s2)</span>
-<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>se_kw_s2 <span class="ot">&lt;-</span> fit_kw_s2<span class="sc">$</span>se</span>
-<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a></span>
-<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co"># Note: True parameters are on different scale (α, β vs μ, φ)</span></span>
-<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co"># Focus on relative comparisons</span></span>
-<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>coef_comparison_s2 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>  <span class="at">Parameter =</span> <span class="fu">names</span>(coef_beta_s2),</span>
-<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>  <span class="at">Beta_Est =</span> <span class="fu">round</span>(coef_beta_s2, <span class="dv">4</span>),</span>
-<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>  <span class="at">Beta_SE =</span> <span class="fu">round</span>(se_beta_s2, <span class="dv">4</span>),</span>
-<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>  <span class="at">Beta_Z =</span> <span class="fu">round</span>(coef_beta_s2 <span class="sc">/</span> se_beta_s2, <span class="dv">2</span>),</span>
-<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>  <span class="at">Kw_Est =</span> <span class="fu">round</span>(coef_kw_s2, <span class="dv">4</span>),</span>
-<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a>  <span class="at">Kw_SE =</span> <span class="fu">round</span>(se_kw_s2, <span class="dv">4</span>),</span>
-<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a>  <span class="at">Kw_Z =</span> <span class="fu">round</span>(coef_kw_s2 <span class="sc">/</span> se_kw_s2, <span class="dv">2</span>),</span>
-<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a>  <span class="at">SE_Ratio =</span> <span class="fu">round</span>(se_kw_s2 <span class="sc">/</span> se_beta_s2, <span class="dv">3</span>)</span>
-<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a>)</span>
-<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a></span>
-<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
-<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>  coef_comparison_s2,</span>
-<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Table 2: Parameter Estimates - Scenario 2 (Heavy Tails, n=300)&quot;</span>,</span>
-<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a>  <span class="co"># col.names = c(&quot;Parameter&quot;, &quot;Est.&quot;, &quot;SE&quot;, &quot;z&quot;, &quot;Est.&quot;, &quot;SE&quot;, &quot;z&quot;, &quot;SE Ratio&quot;),</span></span>
-<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a>  <span class="at">align =</span> <span class="fu">c</span>(<span class="st">&quot;l&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;r&quot;</span>, <span class="dv">7</span>))</span>
-<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Fit models to one dataset</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">101112</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>data_coef_s2 <span class="ot">&lt;-</span> <span class="fu">dgp_heavy_tails</span>(<span class="dv">300</span>, <span class="fu">list</span>(</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">beta_alpha =</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="sc">-</span><span class="fl">0.5</span>),</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">beta_beta =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.4</span>),</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="at">beta_lambda =</span> <span class="fu">c</span>(<span class="fl">0.6</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>))</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>fit_beta_s2 <span class="ot">&lt;-</span> <span class="fu">betareg</span>(y <span class="sc">~</span> x1 <span class="sc">|</span> x2, <span class="at">data =</span> data_coef_s2)</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>fit_kw_s2 <span class="ot">&lt;-</span> <span class="fu">gkwreg</span>(y <span class="sc">~</span> x1 <span class="sc">|</span> x2, <span class="at">data =</span> data_coef_s2, <span class="at">family =</span> <span class="st">&quot;kw&quot;</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>coef_beta_s2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_beta_s2)</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>se_beta_s2 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(fit_beta_s2)))</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>coef_kw_s2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_kw_s2)</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>se_kw_s2 <span class="ot">&lt;-</span> fit_kw_s2<span class="sc">$</span>se</span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="co"># Note: True parameters are on different scale (α, β vs μ, φ)</span></span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a><span class="co"># Focus on relative comparisons</span></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a>coef_comparison_s2 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a>  <span class="at">Parameter =</span> <span class="fu">names</span>(coef_beta_s2),</span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a>  <span class="at">Beta_Est =</span> <span class="fu">round</span>(coef_beta_s2, <span class="dv">4</span>),</span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a>  <span class="at">Beta_SE =</span> <span class="fu">round</span>(se_beta_s2, <span class="dv">4</span>),</span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a>  <span class="at">Beta_Z =</span> <span class="fu">round</span>(coef_beta_s2 <span class="sc">/</span> se_beta_s2, <span class="dv">2</span>),</span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a>  <span class="at">Kw_Est =</span> <span class="fu">round</span>(coef_kw_s2, <span class="dv">4</span>),</span>
+<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a>  <span class="at">Kw_SE =</span> <span class="fu">round</span>(se_kw_s2, <span class="dv">4</span>),</span>
+<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a>  <span class="at">Kw_Z =</span> <span class="fu">round</span>(coef_kw_s2 <span class="sc">/</span> se_kw_s2, <span class="dv">2</span>),</span>
+<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a>  <span class="at">SE_Ratio =</span> <span class="fu">round</span>(se_kw_s2 <span class="sc">/</span> se_beta_s2, <span class="dv">3</span>)</span>
+<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a>)</span>
+<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a></span>
+<span id="cb15-31"><a href="#cb15-31" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb15-32"><a href="#cb15-32" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb15-33"><a href="#cb15-33" tabindex="-1"></a>  coef_comparison_s2,</span>
+<span id="cb15-34"><a href="#cb15-34" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Table 2: Parameter Estimates - Scenario 2 (Heavy Tails, n=300)&quot;</span>,</span>
+<span id="cb15-35"><a href="#cb15-35" tabindex="-1"></a>  <span class="co"># col.names = c(&quot;Parameter&quot;, &quot;Est.&quot;, &quot;SE&quot;, &quot;z&quot;, &quot;Est.&quot;, &quot;SE&quot;, &quot;z&quot;, &quot;SE Ratio&quot;),</span></span>
+<span id="cb15-36"><a href="#cb15-36" tabindex="-1"></a>  <span class="at">align =</span> <span class="fu">c</span>(<span class="st">&quot;l&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;r&quot;</span>, <span class="dv">7</span>))</span>
+<span id="cb15-37"><a href="#cb15-37" tabindex="-1"></a>)</span></code></pre></div>
 <table>
 <caption>Table 2: Parameter Estimates - Scenario 2 (Heavy Tails,
 n=300)</caption>
@@ -838,24 +840,24 @@ Kumaraswamy distributions: - J-shaped:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mn>400</mn></mrow><annotation encoding="application/x-tex">n = 400</annotation></semantics></math></p>
 <p>This challenging scenario assesses convergence reliability with
 extreme boundary concentration.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>dgp_extreme <span class="ot">&lt;-</span> <span class="cf">function</span>(n, params) {</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  x1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  group <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;J&quot;</span>, <span class="st">&quot;U&quot;</span>), n, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(</span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>    group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>,</span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>    <span class="fu">exp</span>(params<span class="sc">$</span>alpha_J[<span class="dv">1</span>] <span class="sc">+</span> params<span class="sc">$</span>alpha_J[<span class="dv">2</span>] <span class="sc">*</span> x1),</span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>    <span class="fu">exp</span>(params<span class="sc">$</span>alpha_U[<span class="dv">1</span>] <span class="sc">+</span> params<span class="sc">$</span>alpha_U[<span class="dv">2</span>] <span class="sc">*</span> x1)</span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  )</span>
-<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a></span>
-<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  beta <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>, <span class="fu">exp</span>(params<span class="sc">$</span>beta_J), <span class="fu">exp</span>(params<span class="sc">$</span>beta_U))</span>
-<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a></span>
-<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">runif</span>(n)</span>
-<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  y <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> u)<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> beta))<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> alpha)</span>
-<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="fu">pmin</span>(y, <span class="fl">0.9999</span>), <span class="fl">0.0001</span>)</span>
-<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a></span>
-<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">y =</span> y, <span class="at">x1 =</span> x1, <span class="at">group =</span> <span class="fu">factor</span>(group))</span>
-<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>dgp_extreme <span class="ot">&lt;-</span> <span class="cf">function</span>(n, params) {</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  x1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  group <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;J&quot;</span>, <span class="st">&quot;U&quot;</span>), n, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>    group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>    <span class="fu">exp</span>(params<span class="sc">$</span>alpha_J[<span class="dv">1</span>] <span class="sc">+</span> params<span class="sc">$</span>alpha_J[<span class="dv">2</span>] <span class="sc">*</span> x1),</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>    <span class="fu">exp</span>(params<span class="sc">$</span>alpha_U[<span class="dv">1</span>] <span class="sc">+</span> params<span class="sc">$</span>alpha_U[<span class="dv">2</span>] <span class="sc">*</span> x1)</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>  )</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>  beta <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>, <span class="fu">exp</span>(params<span class="sc">$</span>beta_J), <span class="fu">exp</span>(params<span class="sc">$</span>beta_U))</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">runif</span>(n)</span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>  y <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> u)<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> beta))<span class="sc">^</span>(<span class="dv">1</span> <span class="sc">/</span> alpha)</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="fu">pmin</span>(y, <span class="fl">0.9999</span>), <span class="fl">0.0001</span>)</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">y =</span> y, <span class="at">x1 =</span> x1, <span class="at">group =</span> <span class="fu">factor</span>(group))</span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>}</span></code></pre></div>
 <div id="visualizing-extreme-boundary-concentrations"
 class="section level3">
 <h3>Visualizing Extreme Boundary Concentrations</h3>
@@ -864,82 +866,82 @@ regression. The J-shaped distribution (left panel) concentrates 80% of
 mass below 0.2, while the U-shaped distribution (right panel) exhibits
 bimodality with peaks at both boundaries. These patterns violate Beta
 regression’s assumption of smooth, unimodal densities.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">131415</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>vis_data_s3 <span class="ot">&lt;-</span> <span class="fu">dgp_extreme</span>(<span class="dv">2000</span>, <span class="fu">list</span>(</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">alpha_J =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">0.2</span>),</span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">beta_J =</span> <span class="fl">2.0</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">alpha_U =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.8</span>, <span class="fl">0.1</span>),</span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">beta_U =</span> <span class="sc">-</span><span class="fl">0.8</span></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>))</span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a></span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>), <span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">2</span>))</span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a></span>
-<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co"># J-shaped distribution</span></span>
-<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="fu">hist</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>],</span>
-<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  <span class="at">breaks =</span> <span class="dv">50</span>,</span>
-<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#FF6F00&quot;</span>, <span class="at">border =</span> <span class="st">&quot;white&quot;</span>,</span>
-<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;J-Shaped Distribution&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">prob =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
-<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>)</span>
-<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">density</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>]),</span>
-<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span></span>
-<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>)</span>
-<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.5</span>, <span class="dv">15</span>, <span class="fu">sprintf</span>(</span>
-<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>  <span class="st">&quot;80%% of mass</span><span class="sc">\n</span><span class="st">&lt; %.2f&quot;</span>,</span>
-<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a>  <span class="fu">quantile</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>], <span class="fl">0.8</span>)</span>
-<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a>),</span>
-<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a><span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
-<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>)</span>
-<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a></span>
-<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a><span class="co"># U-shaped distribution</span></span>
-<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a><span class="fu">hist</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;U&quot;</span>],</span>
-<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>  <span class="at">breaks =</span> <span class="dv">50</span>,</span>
-<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#0277BD&quot;</span>, <span class="at">border =</span> <span class="st">&quot;white&quot;</span>,</span>
-<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;U-Shaped Distribution&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">prob =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
-<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>)</span>
-<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">density</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;U&quot;</span>]),</span>
-<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span></span>
-<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a>)</span>
-<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.5</span>, <span class="dv">3</span>, <span class="st">&quot;Bimodal:</span><span class="sc">\n</span><span class="st">concentration</span><span class="sc">\n</span><span class="st">at boundaries&quot;</span>,</span>
-<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
-<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a>)</span>
-<span id="cb13-41"><a href="#cb13-41" tabindex="-1"></a></span>
-<span id="cb13-42"><a href="#cb13-42" tabindex="-1"></a><span class="co"># Combined distribution</span></span>
-<span id="cb13-43"><a href="#cb13-43" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">density</span>(vis_data_s3<span class="sc">$</span>y),</span>
-<span id="cb13-44"><a href="#cb13-44" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Mixture Distribution&quot;</span>,</span>
-<span id="cb13-45"><a href="#cb13-45" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Density&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;#7B1FA2&quot;</span>,</span>
-<span id="cb13-46"><a href="#cb13-46" tabindex="-1"></a>  <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
-<span id="cb13-47"><a href="#cb13-47" tabindex="-1"></a>)</span>
-<span id="cb13-48"><a href="#cb13-48" tabindex="-1"></a><span class="fu">polygon</span>(<span class="fu">density</span>(vis_data_s3<span class="sc">$</span>y), <span class="at">col =</span> <span class="fu">rgb</span>(<span class="fl">0.48</span>, <span class="fl">0.12</span>, <span class="fl">0.63</span>, <span class="fl">0.3</span>), <span class="at">border =</span> <span class="cn">NA</span>)</span>
-<span id="cb13-49"><a href="#cb13-49" tabindex="-1"></a></span>
-<span id="cb13-50"><a href="#cb13-50" tabindex="-1"></a><span class="co"># Empirical CDF showing boundary concentration</span></span>
-<span id="cb13-51"><a href="#cb13-51" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">ecdf</span>(vis_data_s3<span class="sc">$</span>y),</span>
-<span id="cb13-52"><a href="#cb13-52" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Empirical CDF&quot;</span>,</span>
-<span id="cb13-53"><a href="#cb13-53" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;F(Y)&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;#388E3C&quot;</span>,</span>
-<span id="cb13-54"><a href="#cb13-54" tabindex="-1"></a>  <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
-<span id="cb13-55"><a href="#cb13-55" tabindex="-1"></a>)</span>
-<span id="cb13-56"><a href="#cb13-56" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>), <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;gray40&quot;</span>)</span>
-<span id="cb13-57"><a href="#cb13-57" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.05</span>, <span class="fl">0.5</span>, <span class="fu">sprintf</span>(</span>
-<span id="cb13-58"><a href="#cb13-58" tabindex="-1"></a>  <span class="st">&quot;%.0f%%</span><span class="sc">\n</span><span class="st">&lt; 0.1&quot;</span>,</span>
-<span id="cb13-59"><a href="#cb13-59" tabindex="-1"></a>  <span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(vis_data_s3<span class="sc">$</span>y <span class="sc">&lt;</span> <span class="fl">0.1</span>)</span>
-<span id="cb13-60"><a href="#cb13-60" tabindex="-1"></a>),</span>
-<span id="cb13-61"><a href="#cb13-61" tabindex="-1"></a><span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
-<span id="cb13-62"><a href="#cb13-62" tabindex="-1"></a>)</span>
-<span id="cb13-63"><a href="#cb13-63" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.95</span>, <span class="fl">0.5</span>, <span class="fu">sprintf</span>(</span>
-<span id="cb13-64"><a href="#cb13-64" tabindex="-1"></a>  <span class="st">&quot;%.0f%%</span><span class="sc">\n</span><span class="st">&gt; 0.9&quot;</span>,</span>
-<span id="cb13-65"><a href="#cb13-65" tabindex="-1"></a>  <span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(vis_data_s3<span class="sc">$</span>y <span class="sc">&gt;</span> <span class="fl">0.9</span>)</span>
-<span id="cb13-66"><a href="#cb13-66" tabindex="-1"></a>),</span>
-<span id="cb13-67"><a href="#cb13-67" tabindex="-1"></a><span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
-<span id="cb13-68"><a href="#cb13-68" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">131415</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>vis_data_s3 <span class="ot">&lt;-</span> <span class="fu">dgp_extreme</span>(<span class="dv">2000</span>, <span class="fu">list</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="at">alpha_J =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">0.2</span>),</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="at">beta_J =</span> <span class="fl">2.0</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  <span class="at">alpha_U =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.8</span>, <span class="fl">0.1</span>),</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>  <span class="at">beta_U =</span> <span class="sc">-</span><span class="fl">0.8</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>))</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>), <span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">2</span>))</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co"># J-shaped distribution</span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="fu">hist</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>],</span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>  <span class="at">breaks =</span> <span class="dv">50</span>,</span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#FF6F00&quot;</span>, <span class="at">border =</span> <span class="st">&quot;white&quot;</span>,</span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;J-Shaped Distribution&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">prob =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a>  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a>)</span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">density</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>]),</span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span></span>
+<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a>)</span>
+<span id="cb17-21"><a href="#cb17-21" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.5</span>, <span class="dv">15</span>, <span class="fu">sprintf</span>(</span>
+<span id="cb17-22"><a href="#cb17-22" tabindex="-1"></a>  <span class="st">&quot;80%% of mass</span><span class="sc">\n</span><span class="st">&lt; %.2f&quot;</span>,</span>
+<span id="cb17-23"><a href="#cb17-23" tabindex="-1"></a>  <span class="fu">quantile</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;J&quot;</span>], <span class="fl">0.8</span>)</span>
+<span id="cb17-24"><a href="#cb17-24" tabindex="-1"></a>),</span>
+<span id="cb17-25"><a href="#cb17-25" tabindex="-1"></a><span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
+<span id="cb17-26"><a href="#cb17-26" tabindex="-1"></a>)</span>
+<span id="cb17-27"><a href="#cb17-27" tabindex="-1"></a></span>
+<span id="cb17-28"><a href="#cb17-28" tabindex="-1"></a><span class="co"># U-shaped distribution</span></span>
+<span id="cb17-29"><a href="#cb17-29" tabindex="-1"></a><span class="fu">hist</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;U&quot;</span>],</span>
+<span id="cb17-30"><a href="#cb17-30" tabindex="-1"></a>  <span class="at">breaks =</span> <span class="dv">50</span>,</span>
+<span id="cb17-31"><a href="#cb17-31" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#0277BD&quot;</span>, <span class="at">border =</span> <span class="st">&quot;white&quot;</span>,</span>
+<span id="cb17-32"><a href="#cb17-32" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;U-Shaped Distribution&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">prob =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb17-33"><a href="#cb17-33" tabindex="-1"></a>  <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
+<span id="cb17-34"><a href="#cb17-34" tabindex="-1"></a>)</span>
+<span id="cb17-35"><a href="#cb17-35" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">density</span>(vis_data_s3<span class="sc">$</span>y[vis_data_s3<span class="sc">$</span>group <span class="sc">==</span> <span class="st">&quot;U&quot;</span>]),</span>
+<span id="cb17-36"><a href="#cb17-36" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span></span>
+<span id="cb17-37"><a href="#cb17-37" tabindex="-1"></a>)</span>
+<span id="cb17-38"><a href="#cb17-38" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.5</span>, <span class="dv">3</span>, <span class="st">&quot;Bimodal:</span><span class="sc">\n</span><span class="st">concentration</span><span class="sc">\n</span><span class="st">at boundaries&quot;</span>,</span>
+<span id="cb17-39"><a href="#cb17-39" tabindex="-1"></a>  <span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
+<span id="cb17-40"><a href="#cb17-40" tabindex="-1"></a>)</span>
+<span id="cb17-41"><a href="#cb17-41" tabindex="-1"></a></span>
+<span id="cb17-42"><a href="#cb17-42" tabindex="-1"></a><span class="co"># Combined distribution</span></span>
+<span id="cb17-43"><a href="#cb17-43" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">density</span>(vis_data_s3<span class="sc">$</span>y),</span>
+<span id="cb17-44"><a href="#cb17-44" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Mixture Distribution&quot;</span>,</span>
+<span id="cb17-45"><a href="#cb17-45" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Density&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;#7B1FA2&quot;</span>,</span>
+<span id="cb17-46"><a href="#cb17-46" tabindex="-1"></a>  <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
+<span id="cb17-47"><a href="#cb17-47" tabindex="-1"></a>)</span>
+<span id="cb17-48"><a href="#cb17-48" tabindex="-1"></a><span class="fu">polygon</span>(<span class="fu">density</span>(vis_data_s3<span class="sc">$</span>y), <span class="at">col =</span> <span class="fu">rgb</span>(<span class="fl">0.48</span>, <span class="fl">0.12</span>, <span class="fl">0.63</span>, <span class="fl">0.3</span>), <span class="at">border =</span> <span class="cn">NA</span>)</span>
+<span id="cb17-49"><a href="#cb17-49" tabindex="-1"></a></span>
+<span id="cb17-50"><a href="#cb17-50" tabindex="-1"></a><span class="co"># Empirical CDF showing boundary concentration</span></span>
+<span id="cb17-51"><a href="#cb17-51" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">ecdf</span>(vis_data_s3<span class="sc">$</span>y),</span>
+<span id="cb17-52"><a href="#cb17-52" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Empirical CDF&quot;</span>,</span>
+<span id="cb17-53"><a href="#cb17-53" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;F(Y)&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;#388E3C&quot;</span>,</span>
+<span id="cb17-54"><a href="#cb17-54" tabindex="-1"></a>  <span class="at">cex.main =</span> <span class="fl">1.2</span>, <span class="at">cex.lab =</span> <span class="fl">1.1</span></span>
+<span id="cb17-55"><a href="#cb17-55" tabindex="-1"></a>)</span>
+<span id="cb17-56"><a href="#cb17-56" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>), <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;gray40&quot;</span>)</span>
+<span id="cb17-57"><a href="#cb17-57" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.05</span>, <span class="fl">0.5</span>, <span class="fu">sprintf</span>(</span>
+<span id="cb17-58"><a href="#cb17-58" tabindex="-1"></a>  <span class="st">&quot;%.0f%%</span><span class="sc">\n</span><span class="st">&lt; 0.1&quot;</span>,</span>
+<span id="cb17-59"><a href="#cb17-59" tabindex="-1"></a>  <span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(vis_data_s3<span class="sc">$</span>y <span class="sc">&lt;</span> <span class="fl">0.1</span>)</span>
+<span id="cb17-60"><a href="#cb17-60" tabindex="-1"></a>),</span>
+<span id="cb17-61"><a href="#cb17-61" tabindex="-1"></a><span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
+<span id="cb17-62"><a href="#cb17-62" tabindex="-1"></a>)</span>
+<span id="cb17-63"><a href="#cb17-63" tabindex="-1"></a><span class="fu">text</span>(<span class="fl">0.95</span>, <span class="fl">0.5</span>, <span class="fu">sprintf</span>(</span>
+<span id="cb17-64"><a href="#cb17-64" tabindex="-1"></a>  <span class="st">&quot;%.0f%%</span><span class="sc">\n</span><span class="st">&gt; 0.9&quot;</span>,</span>
+<span id="cb17-65"><a href="#cb17-65" tabindex="-1"></a>  <span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(vis_data_s3<span class="sc">$</span>y <span class="sc">&gt;</span> <span class="fl">0.9</span>)</span>
+<span id="cb17-66"><a href="#cb17-66" tabindex="-1"></a>),</span>
+<span id="cb17-67"><a href="#cb17-67" tabindex="-1"></a><span class="at">col =</span> <span class="st">&quot;#D32F2F&quot;</span>, <span class="at">cex =</span> <span class="fl">0.9</span></span>
+<span id="cb17-68"><a href="#cb17-68" tabindex="-1"></a>)</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="/home/jlopes/Dropbox/Pacotes/Dev/gkwreg/docs/articles/gkwreg-vs-betareg_files/figure-html/scenario3_visualization-1.png" alt="Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)" width="1500" />
 <p class="caption">
 Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)
 </p>
 </div>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># mtext(&quot;Figure 3: Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)&quot;,</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># mtext(&quot;Figure 3: Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)&quot;,</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="co">#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)</span></span></code></pre></div>
 <p>The empirical CDF (bottom right) quantifies the severity: <strong>45%
 of observations fall below 0.1 or above 0.9</strong>. This extreme
 boundary concentration creates numerical instabilities in Beta
@@ -949,20 +951,20 @@ becomes ill-conditioned for shape parameters approaching zero.</p>
 </div>
 <div id="simulation-results-2" class="section level3">
 <h3>Simulation Results</h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>results_s3 <span class="ot">&lt;-</span> <span class="fu">run_full_simulation</span>(</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  <span class="at">n_sim =</span> <span class="dv">200</span>,</span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">400</span>,</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">dgp_fun =</span> dgp_extreme,</span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">params =</span> <span class="fu">list</span>(</span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>    <span class="at">alpha_J =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">0.2</span>),</span>
-<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>    <span class="at">beta_J =</span> <span class="fl">2.0</span>,</span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>    <span class="at">alpha_U =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.8</span>, <span class="fl">0.1</span>),</span>
-<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>    <span class="at">beta_U =</span> <span class="sc">-</span><span class="fl">0.8</span></span>
-<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>  ),</span>
-<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> x1 <span class="sc">*</span> group <span class="sc">|</span> group</span>
-<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>)</span>
-<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a></span>
-<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>comp_s3 <span class="ot">&lt;-</span> <span class="fu">make_comparison_table</span>(results_s3)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>results_s3 <span class="ot">&lt;-</span> <span class="fu">run_full_simulation</span>(</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>  <span class="at">n_sim =</span> <span class="dv">200</span>,</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">400</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>  <span class="at">dgp_fun =</span> dgp_extreme,</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>  <span class="at">params =</span> <span class="fu">list</span>(</span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>    <span class="at">alpha_J =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">0.2</span>),</span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>    <span class="at">beta_J =</span> <span class="fl">2.0</span>,</span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>    <span class="at">alpha_U =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.8</span>, <span class="fl">0.1</span>),</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>    <span class="at">beta_U =</span> <span class="sc">-</span><span class="fl">0.8</span></span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>  ),</span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> x1 <span class="sc">*</span> group <span class="sc">|</span> group</span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>)</span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a>comp_s3 <span class="ot">&lt;-</span> <span class="fu">make_comparison_table</span>(results_s3)</span></code></pre></div>
 </div>
 <div id="the-convergence-crisis" class="section level3">
 <h3>The Convergence Crisis</h3>
@@ -970,71 +972,71 @@ becomes ill-conditioned for shape parameters approaching zero.</p>
 failure</strong> when confronted with extreme shapes. Among 200
 simulation replicates, Beta regression successfully converged only 11
 times (5.5%), while Kumaraswamy achieved perfect reliability (100%).</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># For this scenario, we&#39;ll fit to a single J-shaped dataset where Beta converges</span></span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">161718</span>)</span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co"># Generate J-shaped only for better Beta convergence probability</span></span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>data_coef_s3 <span class="ot">&lt;-</span> <span class="fu">dgp_extreme</span>(<span class="dv">400</span>, <span class="fu">list</span>(</span>
-<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">alpha_J =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.2</span>, <span class="fl">0.15</span>), <span class="co"># Slightly less extreme for illustration</span></span>
-<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">beta_J =</span> <span class="fl">1.8</span>,</span>
-<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  <span class="at">alpha_U =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">0.1</span>),</span>
-<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>  <span class="at">beta_U =</span> <span class="sc">-</span><span class="fl">0.5</span></span>
-<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>))</span>
-<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a></span>
-<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co"># Try fitting - Beta may fail</span></span>
-<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>fit_beta_s3 <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(</span>
-<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>  {</span>
-<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>    <span class="fu">betareg</span>(y <span class="sc">~</span> x1 <span class="sc">*</span> group <span class="sc">|</span> group, <span class="at">data =</span> data_coef_s3)</span>
-<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>  },</span>
-<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>  <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span></span>
-<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>)</span>
-<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a></span>
-<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a>fit_kw_s3 <span class="ot">&lt;-</span> <span class="fu">gkwreg</span>(y <span class="sc">~</span> x1 <span class="sc">*</span> group <span class="sc">|</span> group, <span class="at">data =</span> data_coef_s3, <span class="at">family =</span> <span class="st">&quot;kw&quot;</span>)</span>
-<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a></span>
-<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(fit_beta_s3) <span class="sc">&amp;&amp;</span> fit_beta_s3<span class="sc">$</span>converged) {</span>
-<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a>  coef_beta_s3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_beta_s3)</span>
-<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a>  se_beta_s3 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(fit_beta_s3)))</span>
-<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a></span>
-<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a>  coef_kw_s3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_kw_s3)</span>
-<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a>  se_kw_s3 <span class="ot">&lt;-</span> fit_kw_s3<span class="sc">$</span>se</span>
-<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a></span>
-<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a>  coef_comparison_s3 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a>    <span class="at">Parameter =</span> <span class="fu">names</span>(coef_beta_s3),</span>
-<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a>    <span class="at">Beta_Est =</span> <span class="fu">round</span>(coef_beta_s3, <span class="dv">4</span>),</span>
-<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a>    <span class="at">Beta_SE =</span> <span class="fu">round</span>(se_beta_s3, <span class="dv">4</span>),</span>
-<span id="cb16-32"><a href="#cb16-32" tabindex="-1"></a>    <span class="at">Beta_Z =</span> <span class="fu">round</span>(coef_beta_s3 <span class="sc">/</span> se_beta_s3, <span class="dv">2</span>),</span>
-<span id="cb16-33"><a href="#cb16-33" tabindex="-1"></a>    <span class="at">Kw_Est =</span> <span class="fu">round</span>(coef_kw_s3, <span class="dv">4</span>),</span>
-<span id="cb16-34"><a href="#cb16-34" tabindex="-1"></a>    <span class="at">Kw_SE =</span> <span class="fu">round</span>(se_kw_s3, <span class="dv">4</span>),</span>
-<span id="cb16-35"><a href="#cb16-35" tabindex="-1"></a>    <span class="at">Kw_Z =</span> <span class="fu">round</span>(coef_kw_s3 <span class="sc">/</span> se_kw_s3, <span class="dv">2</span>),</span>
-<span id="cb16-36"><a href="#cb16-36" tabindex="-1"></a>    <span class="at">SE_Ratio =</span> <span class="fu">round</span>(se_kw_s3 <span class="sc">/</span> se_beta_s3, <span class="dv">3</span>)</span>
-<span id="cb16-37"><a href="#cb16-37" tabindex="-1"></a>  )</span>
-<span id="cb16-38"><a href="#cb16-38" tabindex="-1"></a></span>
-<span id="cb16-39"><a href="#cb16-39" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
-<span id="cb16-40"><a href="#cb16-40" tabindex="-1"></a>    coef_comparison_s3,</span>
-<span id="cb16-41"><a href="#cb16-41" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">&quot;Table 3: Parameter Estimates - Scenario 3 (Extreme Shapes, n=400, Beta Converged)&quot;</span>,</span>
-<span id="cb16-42"><a href="#cb16-42" tabindex="-1"></a>    <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;Parameter&quot;</span>, <span class="st">&quot;Est.&quot;</span>, <span class="st">&quot;SE&quot;</span>, <span class="st">&quot;z&quot;</span>, <span class="st">&quot;Est.&quot;</span>, <span class="st">&quot;SE&quot;</span>, <span class="st">&quot;z&quot;</span>, <span class="st">&quot;SE Ratio&quot;</span>),</span>
-<span id="cb16-43"><a href="#cb16-43" tabindex="-1"></a>    <span class="at">align =</span> <span class="fu">c</span>(<span class="st">&quot;l&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;r&quot;</span>, <span class="dv">7</span>))</span>
-<span id="cb16-44"><a href="#cb16-44" tabindex="-1"></a>  )</span>
-<span id="cb16-45"><a href="#cb16-45" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb16-46"><a href="#cb16-46" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;**Table 3: Parameter Estimates - Scenario 3**</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
-<span id="cb16-47"><a href="#cb16-47" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Beta regression failed to converge (as expected in 94.5% of cases).</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb16-48"><a href="#cb16-48" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Only Kumaraswamy estimates are available:</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
-<span id="cb16-49"><a href="#cb16-49" tabindex="-1"></a></span>
-<span id="cb16-50"><a href="#cb16-50" tabindex="-1"></a>  coef_kw_s3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_kw_s3)</span>
-<span id="cb16-51"><a href="#cb16-51" tabindex="-1"></a>  se_kw_s3 <span class="ot">&lt;-</span> fit_kw_s3<span class="sc">$</span>se</span>
-<span id="cb16-52"><a href="#cb16-52" tabindex="-1"></a></span>
-<span id="cb16-53"><a href="#cb16-53" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
-<span id="cb16-54"><a href="#cb16-54" tabindex="-1"></a>    <span class="at">digits =</span> <span class="dv">3</span>,</span>
-<span id="cb16-55"><a href="#cb16-55" tabindex="-1"></a>    <span class="fu">data.frame</span>(</span>
-<span id="cb16-56"><a href="#cb16-56" tabindex="-1"></a>      <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb16-57"><a href="#cb16-57" tabindex="-1"></a>      <span class="at">Parameter =</span> <span class="fu">names</span>(coef_kw_s3),</span>
-<span id="cb16-58"><a href="#cb16-58" tabindex="-1"></a>      <span class="at">Estimate =</span> <span class="fu">round</span>(coef_kw_s3, <span class="dv">4</span>),</span>
-<span id="cb16-59"><a href="#cb16-59" tabindex="-1"></a>      <span class="at">SE =</span> <span class="fu">round</span>(se_kw_s3, <span class="dv">4</span>),</span>
-<span id="cb16-60"><a href="#cb16-60" tabindex="-1"></a>      <span class="at">z_stat =</span> <span class="fu">round</span>(coef_kw_s3 <span class="sc">/</span> se_kw_s3, <span class="dv">2</span>),</span>
-<span id="cb16-61"><a href="#cb16-61" tabindex="-1"></a>      <span class="at">p_value =</span> <span class="fu">round</span>(<span class="dv">2</span> <span class="sc">*</span> <span class="fu">pnorm</span>(<span class="sc">-</span><span class="fu">abs</span>(coef_kw_s3 <span class="sc">/</span> se_kw_s3)), <span class="dv">4</span>)</span>
-<span id="cb16-62"><a href="#cb16-62" tabindex="-1"></a>    ),</span>
-<span id="cb16-63"><a href="#cb16-63" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">&quot;Kumaraswamy Parameter Estimates (Beta Failed)&quot;</span></span>
-<span id="cb16-64"><a href="#cb16-64" tabindex="-1"></a>  )</span>
-<span id="cb16-65"><a href="#cb16-65" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># For this scenario, we&#39;ll fit to a single J-shaped dataset where Beta converges</span></span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">161718</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co"># Generate J-shaped only for better Beta convergence probability</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>data_coef_s3 <span class="ot">&lt;-</span> <span class="fu">dgp_extreme</span>(<span class="dv">400</span>, <span class="fu">list</span>(</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>  <span class="at">alpha_J =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.2</span>, <span class="fl">0.15</span>), <span class="co"># Slightly less extreme for illustration</span></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a>  <span class="at">beta_J =</span> <span class="fl">1.8</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a>  <span class="at">alpha_U =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>, <span class="fl">0.1</span>),</span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>  <span class="at">beta_U =</span> <span class="sc">-</span><span class="fl">0.5</span></span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a>))</span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a><span class="co"># Try fitting - Beta may fail</span></span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a>fit_beta_s3 <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(</span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a>  {</span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a>    <span class="fu">betareg</span>(y <span class="sc">~</span> x1 <span class="sc">*</span> group <span class="sc">|</span> group, <span class="at">data =</span> data_coef_s3)</span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a>  },</span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a>  <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span></span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a>)</span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a></span>
+<span id="cb20-19"><a href="#cb20-19" tabindex="-1"></a>fit_kw_s3 <span class="ot">&lt;-</span> <span class="fu">gkwreg</span>(y <span class="sc">~</span> x1 <span class="sc">*</span> group <span class="sc">|</span> group, <span class="at">data =</span> data_coef_s3, <span class="at">family =</span> <span class="st">&quot;kw&quot;</span>)</span>
+<span id="cb20-20"><a href="#cb20-20" tabindex="-1"></a></span>
+<span id="cb20-21"><a href="#cb20-21" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(fit_beta_s3) <span class="sc">&amp;&amp;</span> fit_beta_s3<span class="sc">$</span>converged) {</span>
+<span id="cb20-22"><a href="#cb20-22" tabindex="-1"></a>  coef_beta_s3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_beta_s3)</span>
+<span id="cb20-23"><a href="#cb20-23" tabindex="-1"></a>  se_beta_s3 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(fit_beta_s3)))</span>
+<span id="cb20-24"><a href="#cb20-24" tabindex="-1"></a></span>
+<span id="cb20-25"><a href="#cb20-25" tabindex="-1"></a>  coef_kw_s3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_kw_s3)</span>
+<span id="cb20-26"><a href="#cb20-26" tabindex="-1"></a>  se_kw_s3 <span class="ot">&lt;-</span> fit_kw_s3<span class="sc">$</span>se</span>
+<span id="cb20-27"><a href="#cb20-27" tabindex="-1"></a></span>
+<span id="cb20-28"><a href="#cb20-28" tabindex="-1"></a>  coef_comparison_s3 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb20-29"><a href="#cb20-29" tabindex="-1"></a>    <span class="at">Parameter =</span> <span class="fu">names</span>(coef_beta_s3),</span>
+<span id="cb20-30"><a href="#cb20-30" tabindex="-1"></a>    <span class="at">Beta_Est =</span> <span class="fu">round</span>(coef_beta_s3, <span class="dv">4</span>),</span>
+<span id="cb20-31"><a href="#cb20-31" tabindex="-1"></a>    <span class="at">Beta_SE =</span> <span class="fu">round</span>(se_beta_s3, <span class="dv">4</span>),</span>
+<span id="cb20-32"><a href="#cb20-32" tabindex="-1"></a>    <span class="at">Beta_Z =</span> <span class="fu">round</span>(coef_beta_s3 <span class="sc">/</span> se_beta_s3, <span class="dv">2</span>),</span>
+<span id="cb20-33"><a href="#cb20-33" tabindex="-1"></a>    <span class="at">Kw_Est =</span> <span class="fu">round</span>(coef_kw_s3, <span class="dv">4</span>),</span>
+<span id="cb20-34"><a href="#cb20-34" tabindex="-1"></a>    <span class="at">Kw_SE =</span> <span class="fu">round</span>(se_kw_s3, <span class="dv">4</span>),</span>
+<span id="cb20-35"><a href="#cb20-35" tabindex="-1"></a>    <span class="at">Kw_Z =</span> <span class="fu">round</span>(coef_kw_s3 <span class="sc">/</span> se_kw_s3, <span class="dv">2</span>),</span>
+<span id="cb20-36"><a href="#cb20-36" tabindex="-1"></a>    <span class="at">SE_Ratio =</span> <span class="fu">round</span>(se_kw_s3 <span class="sc">/</span> se_beta_s3, <span class="dv">3</span>)</span>
+<span id="cb20-37"><a href="#cb20-37" tabindex="-1"></a>  )</span>
+<span id="cb20-38"><a href="#cb20-38" tabindex="-1"></a></span>
+<span id="cb20-39"><a href="#cb20-39" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb20-40"><a href="#cb20-40" tabindex="-1"></a>    coef_comparison_s3,</span>
+<span id="cb20-41"><a href="#cb20-41" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">&quot;Table 3: Parameter Estimates - Scenario 3 (Extreme Shapes, n=400, Beta Converged)&quot;</span>,</span>
+<span id="cb20-42"><a href="#cb20-42" tabindex="-1"></a>    <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;Parameter&quot;</span>, <span class="st">&quot;Est.&quot;</span>, <span class="st">&quot;SE&quot;</span>, <span class="st">&quot;z&quot;</span>, <span class="st">&quot;Est.&quot;</span>, <span class="st">&quot;SE&quot;</span>, <span class="st">&quot;z&quot;</span>, <span class="st">&quot;SE Ratio&quot;</span>),</span>
+<span id="cb20-43"><a href="#cb20-43" tabindex="-1"></a>    <span class="at">align =</span> <span class="fu">c</span>(<span class="st">&quot;l&quot;</span>, <span class="fu">rep</span>(<span class="st">&quot;r&quot;</span>, <span class="dv">7</span>))</span>
+<span id="cb20-44"><a href="#cb20-44" tabindex="-1"></a>  )</span>
+<span id="cb20-45"><a href="#cb20-45" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb20-46"><a href="#cb20-46" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;**Table 3: Parameter Estimates - Scenario 3**</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
+<span id="cb20-47"><a href="#cb20-47" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Beta regression failed to converge (as expected in 94.5% of cases).</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb20-48"><a href="#cb20-48" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Only Kumaraswamy estimates are available:</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
+<span id="cb20-49"><a href="#cb20-49" tabindex="-1"></a></span>
+<span id="cb20-50"><a href="#cb20-50" tabindex="-1"></a>  coef_kw_s3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit_kw_s3)</span>
+<span id="cb20-51"><a href="#cb20-51" tabindex="-1"></a>  se_kw_s3 <span class="ot">&lt;-</span> fit_kw_s3<span class="sc">$</span>se</span>
+<span id="cb20-52"><a href="#cb20-52" tabindex="-1"></a></span>
+<span id="cb20-53"><a href="#cb20-53" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb20-54"><a href="#cb20-54" tabindex="-1"></a>    <span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb20-55"><a href="#cb20-55" tabindex="-1"></a>    <span class="fu">data.frame</span>(</span>
+<span id="cb20-56"><a href="#cb20-56" tabindex="-1"></a>      <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb20-57"><a href="#cb20-57" tabindex="-1"></a>      <span class="at">Parameter =</span> <span class="fu">names</span>(coef_kw_s3),</span>
+<span id="cb20-58"><a href="#cb20-58" tabindex="-1"></a>      <span class="at">Estimate =</span> <span class="fu">round</span>(coef_kw_s3, <span class="dv">4</span>),</span>
+<span id="cb20-59"><a href="#cb20-59" tabindex="-1"></a>      <span class="at">SE =</span> <span class="fu">round</span>(se_kw_s3, <span class="dv">4</span>),</span>
+<span id="cb20-60"><a href="#cb20-60" tabindex="-1"></a>      <span class="at">z_stat =</span> <span class="fu">round</span>(coef_kw_s3 <span class="sc">/</span> se_kw_s3, <span class="dv">2</span>),</span>
+<span id="cb20-61"><a href="#cb20-61" tabindex="-1"></a>      <span class="at">p_value =</span> <span class="fu">round</span>(<span class="dv">2</span> <span class="sc">*</span> <span class="fu">pnorm</span>(<span class="sc">-</span><span class="fu">abs</span>(coef_kw_s3 <span class="sc">/</span> se_kw_s3)), <span class="dv">4</span>)</span>
+<span id="cb20-62"><a href="#cb20-62" tabindex="-1"></a>    ),</span>
+<span id="cb20-63"><a href="#cb20-63" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">&quot;Kumaraswamy Parameter Estimates (Beta Failed)&quot;</span></span>
+<span id="cb20-64"><a href="#cb20-64" tabindex="-1"></a>  )</span>
+<span id="cb20-65"><a href="#cb20-65" tabindex="-1"></a>}</span></code></pre></div>
 <table style="width:100%;">
 <caption>Table 3: Parameter Estimates - Scenario 3 (Extreme Shapes,
 n=400, Beta Converged)</caption>
@@ -1187,7 +1189,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-224.74</td>
 <td align="right">0.192</td>
-<td align="right">0.011</td>
+<td align="right">0.010</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1196,7 +1198,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-181.12</td>
 <td align="right">0.228</td>
-<td align="right">0.015</td>
+<td align="right">0.164</td>
 </tr>
 <tr class="odd">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1205,7 +1207,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-219.76</td>
 <td align="right">0.199</td>
-<td align="right">0.009</td>
+<td align="right">0.157</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1214,7 +1216,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-219.24</td>
 <td align="right">0.662</td>
-<td align="right">0.023</td>
+<td align="right">0.171</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1223,7 +1225,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-139.28</td>
 <td align="right">0.191</td>
-<td align="right">0.010</td>
+<td align="right">0.011</td>
 </tr>
 <tr class="even">
 <td align="left">S2: Heavy Tails</td>
@@ -1232,7 +1234,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-116.79</td>
 <td align="right">0.210</td>
-<td align="right">0.015</td>
+<td align="right">0.014</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1259,7 +1261,7 @@ Scenarios</caption>
 <td align="right">4.5</td>
 <td align="right">16677.68</td>
 <td align="right">0.405</td>
-<td align="right">0.248</td>
+<td align="right">0.246</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
@@ -1268,7 +1270,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-2007.68</td>
 <td align="right">0.292</td>
-<td align="right">0.024</td>
+<td align="right">0.025</td>
 </tr>
 <tr class="odd">
 <td align="left">S3: Extreme Shapes</td>
@@ -1286,7 +1288,7 @@ Scenarios</caption>
 <td align="right">80.0</td>
 <td align="right">-2331.45</td>
 <td align="right">0.365</td>
-<td align="right">0.033</td>
+<td align="right">0.032</td>
 </tr>
 </tbody>
 </table>
@@ -1354,18 +1356,18 @@ Beta Regression</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Kumaraswamy</td>
-<td align="right">0.009</td>
-<td align="right">9.849</td>
+<td align="right">0.058</td>
+<td align="right">1.529</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (gkwreg)</td>
-<td align="right">0.018</td>
-<td align="right">4.916</td>
+<td align="right">0.068</td>
+<td align="right">1.320</td>
 </tr>
 <tr class="odd">
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">0.026</td>
-<td align="right">3.426</td>
+<td align="right">0.076</td>
+<td align="right">1.180</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (betareg)</td>
@@ -1573,29 +1575,29 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] ggplot2_4.0.1 betareg_3.2-4 gkwreg_2.1.6 
+[1] ggplot2_4.0.1 betareg_3.2-4 gkwreg_2.1.7 
 
 loaded via a namespace (and not attached):
- [1] rappdirs_0.3.3         sandwich_3.1-1         sass_0.4.10           
- [4] generics_0.1.4         lattice_0.22-7         digest_0.6.37         
- [7] magrittr_2.0.4         evaluate_1.0.5         grid_4.5.1            
-[10] RColorBrewer_1.1-3     fastmap_1.2.0          jsonlite_2.0.0        
-[13] Matrix_1.7-4           nnet_7.3-20            Formula_1.2-5         
-[16] scales_1.4.0           codetools_0.2-20       numDeriv_2016.8-1.1   
-[19] modeltools_0.2-24      textshaping_1.0.4      jquerylib_0.1.4       
-[22] cli_3.6.5              rlang_1.1.6            withr_3.0.2           
-[25] RcppArmadillo_15.0.2-2 cachem_1.1.0           yaml_2.3.10           
-[28] tools_4.5.1            flexmix_2.3-20         dplyr_1.1.4           
-[31] vctrs_0.6.5            R6_2.6.1               stats4_4.5.1          
-[34] zoo_1.8-14             lifecycle_1.0.4        fs_1.6.6              
-[37] htmlwidgets_1.6.4      ragg_1.5.0             pkgconfig_2.0.3       
-[40] desc_1.4.3             pillar_1.11.1          pkgdown_2.1.3         
-[43] bslib_0.9.0            gtable_0.3.6           glue_1.8.0            
-[46] Rcpp_1.1.0             systemfonts_1.3.1      tidyselect_1.2.1      
-[49] tibble_3.3.0           xfun_0.53              lmtest_0.9-40         
-[52] rstudioapi_0.17.1      knitr_1.50             farver_2.1.2          
-[55] htmltools_0.5.8.1      rmarkdown_2.30         gkwdist_1.1.1         
-[58] TMB_1.9.18             compiler_4.5.1         S7_0.2.1              </code></pre>
+ [1] sandwich_3.1-1         sass_0.4.10            generics_0.1.4        
+ [4] lattice_0.22-7         digest_0.6.37          magrittr_2.0.4        
+ [7] evaluate_1.0.5         grid_4.5.1             RColorBrewer_1.1-3    
+[10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-4          
+[13] nnet_7.3-20            Formula_1.2-5          scales_1.4.0          
+[16] codetools_0.2-20       numDeriv_2016.8-1.1    modeltools_0.2-24     
+[19] textshaping_1.0.4      jquerylib_0.1.4        cli_3.6.5             
+[22] rlang_1.1.6            withr_3.0.2            RcppArmadillo_15.0.2-2
+[25] cachem_1.1.0           yaml_2.3.10            tools_4.5.1           
+[28] flexmix_2.3-20         dplyr_1.1.4            vctrs_0.6.5           
+[31] R6_2.6.1               stats4_4.5.1           zoo_1.8-14            
+[34] lifecycle_1.0.4        fs_1.6.6               htmlwidgets_1.6.4     
+[37] ragg_1.5.0             pkgconfig_2.0.3        desc_1.4.3            
+[40] pillar_1.11.1          pkgdown_2.1.3          bslib_0.9.0           
+[43] gtable_0.3.6           glue_1.8.0             Rcpp_1.1.0            
+[46] systemfonts_1.3.1      tidyselect_1.2.1       tibble_3.3.0          
+[49] xfun_0.53              lmtest_0.9-40          rstudioapi_0.17.1     
+[52] knitr_1.50             farver_2.1.2           htmltools_0.5.8.1     
+[55] rmarkdown_2.30         gkwdist_1.1.1          TMB_1.9.18            
+[58] compiler_4.5.1         S7_0.2.1              </code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

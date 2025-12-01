@@ -27,7 +27,7 @@ betareg, making it immediately familiar to R users."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -766,6 +766,7 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="co"># Example 1.2: Model with predictors (uses all defaults)</span></span></span>
 <span class="r-in"><span><span class="co"># Default: family = "gkw", method = "nlminb", hessian = TRUE</span></span></span>
 <span class="r-in"><span><span class="va">fit_default</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, data <span class="op">=</span> <span class="va">GasolineYield</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_default</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Generalized Kumaraswamy Regression Model Summary</span>
@@ -777,45 +778,45 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0272 -0.0123 -0.0010 -0.0013  0.0079  0.0268 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.0235 -0.0071 -0.0017 -0.0002  0.0072  0.0285 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                      Estimate Std. Error  z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -3.381e+00  7.662e-01   -4.413 1.02e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1        9.204e-01  3.181e-02   28.930  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2        6.787e-01  3.407e-02   19.922  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3        7.832e-01  3.400e-02   23.039  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4        5.598e-01  3.185e-02   17.573  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5        5.632e-01  3.396e-02   16.582  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6        5.419e-01  3.403e-02   15.923  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7        3.113e-01  3.188e-02    9.767  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8        2.549e-01  3.394e-02    7.510 5.91e-14 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9        1.990e-01  3.794e-02    5.246 1.55e-07 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp          5.408e-03  1.456e-06 3715.029  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    2.622e+00  3.722e-01    7.043 1.88e-12 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)   2.261e+01  1.831e+00   12.346  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -1.457e-01  1.217e+00   -0.120    0.905    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -9.556e+00  4.202e+00   -2.274    0.023 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     Estimate Std. Error z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -1.419893   0.666514  -2.130   0.0331 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1        0.918498   0.032368  28.377  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2        0.676328   0.034627  19.532  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3        0.781489   0.034587  22.595  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4        0.557260   0.032509  17.142  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5        0.562416   0.034498  16.303  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6        0.539377   0.034694  15.547  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7        0.308696   0.032499   9.499  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8        0.254507   0.034578   7.360 1.83e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9        0.198134   0.038561   5.138 2.77e-07 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp          0.005403        NaN     NaN      NaN    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    5.511544   2.754889   2.001   0.0454 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)   2.560940   2.294913   1.116   0.2645    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -2.153490   2.535825  -0.849   0.3958    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  2.190526   2.324758   0.942   0.3461    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                          3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   -4.8831 -1.8795</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1         0.8581  0.9828</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2         0.6120  0.7455</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3         0.7166  0.8499</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4         0.4973  0.6222</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5         0.4966  0.6298</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6         0.4752  0.6085</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7         0.2488  0.3738</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8         0.1884  0.3215</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9         0.1247  0.2734</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp           0.0054  0.0054</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)     1.8922  3.3513</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)   19.0207 26.1992</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)   -2.5311  2.2397</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -17.7927 -1.3201</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         3%     98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -2.7262 -0.1135</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch1        0.8551  0.9819</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch2        0.6085  0.7442</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch3        0.7137  0.8493</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch4        0.4935  0.6210</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch5        0.4948  0.6300</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch6        0.4714  0.6074</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch7        0.2450  0.3724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch8        0.1867  0.3223</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:batch9        0.1226  0.2737</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:temp             NaN     NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    0.1121 10.9110</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)  -1.9370  7.0589</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -7.1236  2.8166</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -2.3659  6.7470</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
@@ -825,25 +826,25 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 0.3603</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 13.76</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 6.598e+09</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta: 4.636</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 7.068e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 2.552</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 247.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 12.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta: 1.04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 8.931</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 32 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 15 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 17 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 96.5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -163 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.01406 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.9822 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.01129 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 95.61 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -161.2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -139.2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.0139 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.9826 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.01113 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 146 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Successful </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 145 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 1.3: Kumaraswamy model (two-parameter family)</span></span></span>
@@ -1361,6 +1362,7 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Note: Using Makevars in /home/jlopes/.R/Makevars </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fits</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">families</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare via information criteria</span></span></span>
@@ -1377,7 +1379,7 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> kw       kw 96.96932 -169.93865 -152.34982   12</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ekw     ekw 97.31460 -168.62921 -149.57464   13</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> bkw     bkw 96.44294 -164.88587 -144.36557   14</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gkw     gkw 96.49831 -162.99661 -141.01058   15</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gkw     gkw 95.60590 -161.21180 -139.22576   15</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example 4.2: Formal nested model testing</span></span></span>
 <span class="r-in"><span><span class="va">fit_kw</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"kw"</span><span class="op">)</span></span></span>
@@ -1385,6 +1387,7 @@ for the GKw distribution family functions</p>
 <span class="r-in"><span><span class="va">fit_ekw</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"ekw"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="va">fit_gkw</span> <span class="op">&lt;-</span> <span class="fu">gkwreg</span><span class="op">(</span><span class="va">yield</span> <span class="op">~</span> <span class="va">batch</span> <span class="op">+</span> <span class="va">temp</span>, <span class="va">GasolineYield</span>, family <span class="op">=</span> <span class="st">"gkw"</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">fit_ekw</span>, <span class="va">fit_gkw</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>negative deviance change detected; models may not be nested</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Analysis of Deviance Table</span>
@@ -1396,7 +1399,7 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit_kw   20.00000 -193.93865                       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> fit_ekw  19.00000 -194.62921  1  0.69056  0.40597  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> fit_gkw  17.00000 -192.99661  2 -1.63259           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_gkw  17.00000 -191.21180  2 -3.41741           </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
 <span class="r-in"><span></span></span>
@@ -1705,35 +1708,33 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Min  Q1.25%  Median    Mean  Q3.75%     Max </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -0.3455 -0.0929  0.0205  0.0337  0.1502  0.6360 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.4611 -0.1656 -0.0594 -0.0454  0.0650  0.6181 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)   0.97085    0.61249   1.585   0.1129    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:x             0.75943    1.04259   0.728   0.4664    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)   -0.43418    0.08793  -4.938  7.9e-07 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:x             -0.42851    0.52143  -0.822   0.4112    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)   1.12970        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:x             1.16488    0.47263   2.465   0.0137 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)  -0.19516        NaN     NaN      NaN    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:x             0.61546    1.08639   0.567   0.5710    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -1.00510    0.44824  -2.242   0.0249 *  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:x           -0.83449    1.49367  -0.559   0.5764    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    Estimate Std. Error z value Pr(&gt;|z|)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)    0.6486     1.1164   0.581    0.561</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:x              0.6769     0.7349   0.921    0.357</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)    -0.1854        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:x              -0.4238        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)    1.3684        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:x              1.2902        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)   -0.5532        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:x              0.6949        NaN     NaN      NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept)  -0.9061     1.3832  -0.655    0.512</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:x            -0.9115     1.2738  -0.716    0.474</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Confidence intervals (95%):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                         3%     98%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -0.2296  2.1713</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:x            -1.2840  2.8029</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)   -0.6065 -0.2618</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta:x             -1.4505  0.5935</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)      NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:x             0.2385  2.0912</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)      NaN     NaN</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta:x            -1.5138  2.7447</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -1.8836 -0.1266</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:x           -3.7620  2.0930</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         3%    98%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:(Intercept)  -1.5394 2.8366</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha:x            -0.7636 2.1173</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:(Intercept)       NaN    NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta:x                 NaN    NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:(Intercept)      NaN    NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma:x                NaN    NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:(Intercept)      NaN    NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta:x                NaN    NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:(Intercept) -3.6170 1.8049</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda:x           -3.4081 1.5850</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Link functions:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha: log</span>
@@ -1743,22 +1744,22 @@ for the GKw distribution family functions</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lambda: log</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fitted parameter means:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 2.873</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.6702</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 3.782</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> delta: 4.513</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 0.4125</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha: 2.045</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta: 0.8589</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gamma: 5.02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> delta: 3.683</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lambda: 0.4654</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model fit statistics:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 2000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters: 10 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residual degrees of freedom: 1990 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 860.9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -1702 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -1646 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.1708 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.3325 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.1374 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: 860.6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC: -1701 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC: -1645 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSE: 0.1749 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Efron's R2: 0.2997 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mean Absolute Error: 0.1429 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence status: Failed </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 116 </span>

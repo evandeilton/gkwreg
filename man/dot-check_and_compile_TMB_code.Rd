@@ -24,7 +24,7 @@
 Invisibly returns a list with DLL information
 }
 \description{
-Ensures a TMB model is compiled and loaded. Uses persistent cache to avoid
-recompilation across sessions.
+Ensures a TMB model is compiled and loaded. Uses session-specific cache
+within tempdir() to avoid recompilation during the same R session.
 }
 \keyword{internal}

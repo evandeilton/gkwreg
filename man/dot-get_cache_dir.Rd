@@ -10,9 +10,11 @@
 \item{pkg_name}{Package name}
 }
 \value{
-Path to cache directory
+Path to cache directory within tempdir()
 }
 \description{
-Creates version-specific cache directory for TMB DLLs.
+Creates version-specific cache directory for TMB DLLs within tempdir().
+Uses temporary directory to comply with CRAN policies (no user directory access).
+Cache is session-specific and will not persist across R sessions.
 }
 \keyword{internal}

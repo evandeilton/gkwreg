@@ -10,8 +10,8 @@
 #' Check and Compile TMB Model Code
 #'
 #' @description
-#' Ensures a TMB model is compiled and loaded. Uses persistent cache to avoid
-#' recompilation across sessions.
+#' Ensures a TMB model is compiled and loaded. Uses session-specific cache
+#' within tempdir() to avoid recompilation during the same R session.
 #'
 #' @param dll_name Character, base name of the C++ file (e.g., "kwreg", "ekwreg")
 #' @param pkg_name Character, package name (default: "gkwreg")
@@ -265,26 +265,20 @@
 #' Get Cache Directory for Compiled Models
 #'
 #' @description
-#' Creates version-specific cache directory for TMB DLLs.
+#' Creates version-specific cache directory for TMB DLLs within tempdir().
+#' Uses temporary directory to comply with CRAN policies (no user directory access).
+#' Cache is session-specific and will not persist across R sessions.
 #'
 #' @param pkg_name Package name
 #'
-#' @return Path to cache directory
+#' @return Path to cache directory within tempdir()
 #'
 #' @keywords internal
 .get_cache_dir <- function(pkg_name) {
   
-  # Determine cache root
-  if (requireNamespace("rappdirs", quietly = TRUE)) {
-    cache_root <- rappdirs::user_cache_dir(pkg_name)
-  } else {
-    if (.Platform$OS.type == "windows") {
-      base <- Sys.getenv("LOCALAPPDATA", Sys.getenv("TEMP"))
-    } else {
-      base <- Sys.getenv("XDG_CACHE_HOME", "~/.cache")
-    }
-    cache_root <- file.path(base, pkg_name, "tmb_cache")
-  }
+  # Use tempdir() to comply with CRAN policies
+  # Cache will be session-specific and cleaned up automatically
+  cache_root <- tempdir()
   
   # Add R version and package version subdirectories
   r_version <- paste(R.version$major, strsplit(R.version$minor, "\\.")[[1]][1], sep = ".")
@@ -293,7 +287,7 @@
     error = function(e) "dev"
   )
   
-  cache_dir <- file.path(cache_root, paste0("R", r_version), pkg_version)
+  cache_dir <- file.path(cache_root, pkg_name, "tmb_cache", paste0("R", r_version), pkg_version)
   
   # Create if needed
   if (!dir.exists(cache_dir)) {
