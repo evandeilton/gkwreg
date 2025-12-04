@@ -3,7 +3,7 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   gkwreg-vs-betareg: gkwreg-vs-betareg.html
-last_built: 2025-12-01T14:18Z
+last_built: 2025-12-04T17:18Z
 urls:
   reference: https://evandeilton.github.io/gkwreg/reference
   article: https://evandeilton.github.io/gkwreg/articles
