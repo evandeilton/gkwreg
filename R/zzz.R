@@ -29,7 +29,6 @@ NULL
 
 ## usethis namespace: start
 #' @importFrom Rcpp sourceCpp evalCpp
-#' @import RcppArmadillo
 #' @import graphics
 #' @import gkwdist
 ## usethis namespace: end
