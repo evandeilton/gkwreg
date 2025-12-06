@@ -1,5 +1,28 @@
 # Changelog
 
+## gkwreg 2.1.12
+
+### CRAN Compliance Fixes
+
+This release addresses all issues that led to package archival on
+2025-11-30.
+
+#### Fixed
+
+- **CRITICAL**: Removed `RcppArmadillo` and `RcppEigen` from `Imports`
+  field in DESCRIPTION (they remain in `LinkingTo` only, as they are
+  used solely for C++ compilation)
+- Added single quotes around technical term ‘Kumaraswamy’ in DESCRIPTION
+- Removed unnecessary `@import RcppArmadillo` roxygen directive
+- Regenerated NAMESPACE to reflect correct imports
+
+#### Note
+
+The cache policy violation (`~/.cache/gkwreg`) reported in version 2.1.6
+was already fixed in version 2.1.11. The package now uses ONLY
+[`tempdir()`](https://rdrr.io/r/base/tempfile.html) for session-specific
+temporary cache, fully complying with CRAN policies.
+
 ## gkwreg 2.1.4
 
 #### Minors and documentation

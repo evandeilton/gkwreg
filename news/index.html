@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,25 @@
       <small>Source: <a href="https://github.com/evandeilton/gkwreg/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.1.12" id="gkwreg-2112">gkwreg 2.1.12<a class="anchor" aria-label="anchor" href="#gkwreg-2112"></a></h2>
+<div class="section level3">
+<h3 id="cran-compliance-fixes-2-1-12">CRAN Compliance Fixes<a class="anchor" aria-label="anchor" href="#cran-compliance-fixes-2-1-12"></a></h3>
+<p>This release addresses all issues that led to package archival on 2025-11-30.</p>
+<div class="section level4">
+<h4 id="fixed-2-1-12">Fixed<a class="anchor" aria-label="anchor" href="#fixed-2-1-12"></a></h4>
+<ul><li>
+<strong>CRITICAL</strong>: Removed <code>RcppArmadillo</code> and <code>RcppEigen</code> from <code>Imports</code> field in DESCRIPTION (they remain in <code>LinkingTo</code> only, as they are used solely for C++ compilation)</li>
+<li>Added single quotes around technical term ‘Kumaraswamy’ in DESCRIPTION</li>
+<li>Removed unnecessary <code>@import RcppArmadillo</code> roxygen directive</li>
+<li>Regenerated NAMESPACE to reflect correct imports</li>
+</ul></div>
+<div class="section level4">
+<h4 id="note-2-1-12">Note<a class="anchor" aria-label="anchor" href="#note-2-1-12"></a></h4>
+<p>The cache policy violation (<code>~/.cache/gkwreg</code>) reported in version 2.1.6 was already fixed in version 2.1.11. The package now uses ONLY <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> for session-specific temporary cache, fully complying with CRAN policies.</p>
+</div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.1.4" id="gkwreg-214">gkwreg 2.1.4<a class="anchor" aria-label="anchor" href="#gkwreg-214"></a></h2>
 <div class="section level4">
