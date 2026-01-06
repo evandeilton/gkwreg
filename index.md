@@ -551,15 +551,8 @@ This package is licensed under the **MIT License**. See the
 [LICENSE](https://github.com/evandeilton/gkwreg/blob/main/LICENSE) file
 for details.
 
-------------------------------------------------------------------------
-
-## Author and Maintainer
-
-**José Evandeilton Lopes (Lopes, J. E.)** \| <evandeilton@gmail.com> \|
-[GitHub](https://github.com/evandeilton) \|
-[ORCID](https://orcid.org/0009-0007-5887-4084)
-
-LEG - Laboratório de Estatística e Geoinformação \| UFPR - Universidade
-Federal do Paraná, Brazil
-
-------------------------------------------------------------------------
+|                                                                                                                                                                    |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| \## Author and Maintainer                                                                                                                                          |
+| **José Evandeilton Lopes (Lopes, J. E.)** \| <evandeilton@gmail.com> \| [GitHub](https://github.com/evandeilton) \| [ORCID](https://orcid.org/0009-0007-5887-4084) |
+| LEG - Laboratório de Estatística e Geoinformação \| UFPR - Universidade Federal do Paraná, Brazil                                                                  |

@@ -883,17 +883,17 @@ practitioners.
 | Scenario                | Model            | N_Success | Conv_Rate |      AIC |  RMSE |  Time |
 |:------------------------|:-----------------|----------:|----------:|---------:|------:|------:|
 | S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.192 | 0.015 |
-| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.214 |
-| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.205 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.227 |
+| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.218 |
+| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.212 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.226 |
 | S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.191 | 0.014 |
-| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.021 |
-| S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.194 | 0.011 |
+| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.020 |
+| S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.194 | 0.012 |
 | S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.0 |  -213.45 | 0.618 | 0.032 |
-| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.346 |
-| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.035 |
+| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.349 |
+| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.034 |
 | S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.266 | 0.015 |
-| S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.044 |
+| S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.045 |
 
 Table 4: Comprehensive Model Comparison Across Three Simulation
 Scenarios
@@ -951,10 +951,10 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |           0.077 |          1.619 |
-| Beta (gkwreg)    |           0.090 |          1.390 |
-| Exp. Kumaraswamy |           0.101 |          1.237 |
-| Beta (betareg)   |           0.125 |          1.000 |
+| Kumaraswamy      |           0.080 |          1.581 |
+| Beta (gkwreg)    |           0.090 |          1.391 |
+| Exp. Kumaraswamy |           0.101 |          1.244 |
+| Beta (betareg)   |           0.126 |          1.000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
 Regression
@@ -1138,7 +1138,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [1] stats     graphics  grDevices utils     datasets  methods   base     
 
     other attached packages:
-    [1] ggplot2_4.0.1 betareg_3.2-4 gkwreg_2.1.12
+    [1] ggplot2_4.0.1 betareg_3.2-4 gkwreg_2.1.13
 
     loaded via a namespace (and not attached):
      [1] sandwich_3.1-1         sass_0.4.10            generics_0.1.4        
@@ -1148,15 +1148,15 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [13] nnet_7.3-20            Formula_1.2-5          scales_1.4.0          
     [16] codetools_0.2-20       numDeriv_2016.8-1.1    modeltools_0.2-24     
     [19] textshaping_1.0.4      jquerylib_0.1.4        cli_3.6.5             
-    [22] rlang_1.1.6            withr_3.0.2            RcppArmadillo_15.2.2-1
-    [25] cachem_1.1.0           yaml_2.3.11            tools_4.5.2           
+    [22] rlang_1.1.6            withr_3.0.2            RcppArmadillo_15.2.3-1
+    [25] cachem_1.1.0           yaml_2.3.12            tools_4.5.2           
     [28] flexmix_2.3-20         dplyr_1.1.4            vctrs_0.6.5           
-    [31] R6_2.6.1               stats4_4.5.2           zoo_1.8-14            
+    [31] R6_2.6.1               stats4_4.5.2           zoo_1.8-15            
     [34] lifecycle_1.0.4        fs_1.6.6               ragg_1.5.0            
     [37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
     [40] bslib_0.9.0            pillar_1.11.1          gtable_0.3.6          
     [43] glue_1.8.0             Rcpp_1.1.0             systemfonts_1.3.1     
-    [46] tidyselect_1.2.1       xfun_0.54              tibble_3.3.0          
-    [49] lmtest_0.9-40          knitr_1.50             farver_2.1.2          
+    [46] tidyselect_1.2.1       xfun_0.55              tibble_3.3.0          
+    [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
     [52] htmltools_0.5.9        rmarkdown_2.30         gkwdist_1.1.1         
-    [55] TMB_1.9.18             compiler_4.5.2         S7_0.2.1              
+    [55] TMB_1.9.19             compiler_4.5.2         S7_0.2.1              

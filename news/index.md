@@ -1,5 +1,30 @@
 # Changelog
 
+## gkwreg 2.1.13
+
+### CRAN Resubmission
+
+Addresses all remaining issues for CRAN acceptance after archival on
+2025-11-30.
+
+#### Fixed
+
+- Added `inst/WORDLIST` with ‘Kumaraswamy’ to resolve spelling NOTE
+- Added `skip_on_cran()` to all test files to reduce check time from
+  18min to ~9min
+- Added `cran-comments.md` documenting changes since archival (excluded
+  from build via .Rbuildignore)
+
+#### Confirmed
+
+- Cache policy now fully compliant: uses only
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) for
+  session-specific TMB DLL cache
+- All `~/.cache/gkwreg` usage completely removed (fixed in v2.1.11)
+- Check time now under 10 minutes
+
+------------------------------------------------------------------------
+
 ## gkwreg 2.1.12
 
 ### CRAN Compliance Fixes

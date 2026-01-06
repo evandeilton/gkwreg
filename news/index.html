@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.13</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,25 @@
       <small>Source: <a href="https://github.com/evandeilton/gkwreg/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.1.13" id="gkwreg-2113">gkwreg 2.1.13<a class="anchor" aria-label="anchor" href="#gkwreg-2113"></a></h2>
+<div class="section level3">
+<h3 id="cran-resubmission-2-1-13">CRAN Resubmission<a class="anchor" aria-label="anchor" href="#cran-resubmission-2-1-13"></a></h3>
+<p>Addresses all remaining issues for CRAN acceptance after archival on 2025-11-30.</p>
+<div class="section level4">
+<h4 id="fixed-2-1-13">Fixed<a class="anchor" aria-label="anchor" href="#fixed-2-1-13"></a></h4>
+<ul><li>Added <code>inst/WORDLIST</code> with ‘Kumaraswamy’ to resolve spelling NOTE</li>
+<li>Added <code>skip_on_cran()</code> to all test files to reduce check time from 18min to ~9min</li>
+<li>Added <code>cran-comments.md</code> documenting changes since archival (excluded from build via .Rbuildignore)</li>
+</ul></div>
+<div class="section level4">
+<h4 id="confirmed-2-1-13">Confirmed<a class="anchor" aria-label="anchor" href="#confirmed-2-1-13"></a></h4>
+<ul><li>Cache policy now fully compliant: uses only <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> for session-specific TMB DLL cache</li>
+<li>All <code>~/.cache/gkwreg</code> usage completely removed (fixed in v2.1.11)</li>
+<li>Check time now under 10 minutes</li>
+</ul><hr></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.1.12" id="gkwreg-2112">gkwreg 2.1.12<a class="anchor" aria-label="anchor" href="#gkwreg-2112"></a></h2>
 <div class="section level3">
