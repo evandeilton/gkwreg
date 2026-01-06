@@ -3,6 +3,9 @@
 # Description: Comprehensive tests for the predict() method for gkwreg objects
 #              covering different prediction types, newdata handling, and special features
 
+# Skip on CRAN to reduce check time
+skip_on_cran()
+
 library(testthat)
 library(gkwreg)
 library(gkwdist)

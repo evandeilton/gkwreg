@@ -55,7 +55,6 @@
 }
 
 
-
 #' Process Formula Parts from a Formula Object
 #'
 #' @param formula_obj Formula object created with the Formula package.
@@ -101,8 +100,6 @@
 
   return(formula_list)
 }
-
-
 
 
 #' Process Link Functions for GKw Regression
@@ -263,7 +260,6 @@
 }
 
 
-
 #' Convert Link Function Names to TMB Integers
 #'
 #' @param link_list List of link function names
@@ -293,7 +289,6 @@
 
   return(result)
 }
-
 
 
 #' Format Coefficient Names Based on Family and Model Matrices
@@ -329,7 +324,6 @@
   # Return coefficient names
   return(all_coef_names)
 }
-
 
 
 #' Extract Model Data for GKw Regression
@@ -399,7 +393,6 @@
 }
 
 
-
 #' Validate Data for GKw Regression
 #'
 #' @param data Numeric vector to validate.
@@ -455,7 +448,6 @@
 
   return(fixed_combined)
 }
-
 
 
 #' #' Map gkwreg parameter index to TMB parameter index

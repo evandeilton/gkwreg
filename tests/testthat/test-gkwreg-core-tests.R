@@ -3,6 +3,9 @@
 # Description: Comprehensive tests for the gkwreg() function covering
 #              basic functionality, different families, edge cases, and error handling
 
+# Skip on CRAN to reduce check time (tests take ~10min)
+skip_on_cran()
+
 library(testthat)
 library(gkwreg)
 library(gkwdist)

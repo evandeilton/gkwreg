@@ -5,6 +5,9 @@
 # Description: Tests for the diagnostic plotting function covering plot selection,
 #              residual types, customization options, and output validation
 
+# Skip on CRAN to reduce check time
+skip_on_cran()
+
 library(testthat)
 library(gkwreg)
 library(gkwdist)

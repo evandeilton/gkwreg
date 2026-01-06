@@ -1,3 +1,6 @@
+# Skip on CRAN to reduce check time
+skip_on_cran()
+
 library(testthat)
 library(gkwreg)
 

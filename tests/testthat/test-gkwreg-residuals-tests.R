@@ -3,6 +3,9 @@
 # Description: Comprehensive tests for the fitted() method for gkwreg objects
 #              covering value extraction, family specifications, and edge cases
 
+# Skip on CRAN to reduce check time
+skip_on_cran()
+
 library(testthat)
 library(gkwreg)
 library(gkwdist)

@@ -1,7 +1,8 @@
+# Skip on CRAN to reduce check time
+skip_on_cran()
+
 library(testthat)
 library(gkwreg)
-
-# Test data setup
 data("GasolineYield")
 
 test_that("Basic model update works for simple formulas", {

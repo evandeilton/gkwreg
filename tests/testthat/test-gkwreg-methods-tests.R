@@ -3,6 +3,9 @@
 # Description: Comprehensive tests covering all S3 methods: print, coef, summary,
 #              print.summary, vcov, nobs, and confint for gkwreg objects
 
+# Skip on CRAN to reduce check time
+skip_on_cran()
+
 library(testthat)
 library(gkwreg)
 library(gkwdist)
