@@ -77,10 +77,10 @@ Its complex likelihood function makes Maximum Likelihood Estimation (MLE)
 computationally demanding and unstable, necessitating efficient and user-friendly
 computational tools.
 
-The `R` package `gkwreg` [@gkwreg] addresses this need. Built on the Template
+This work introduces the `R` package `gkwreg`, which addresses this need. Built on the Template
 Model Builder (`TMB`) package [@Kristensen2016], it leverages automatic 
 differentiation (AD) in `C++` to efficiently compute gradients and Hessians,
-significantly enhancing speed, accuracy, and stability of MLE, especially when 
+enhancing speed, accuracy, and stability of MLE, especially when 
 distribution parameters vary with covariates. `gkwreg` offers an intuitive
 interface aligned with standard `R` modeling conventions. Its integration 
 with the multi-part formula syntax of the `Formula` package [@Zeileis2010] 
