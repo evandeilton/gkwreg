@@ -37,16 +37,14 @@ jobs:
           needs: check
           windows-path-include-mingw: true
 
-      # Configuração para macOS - força source quando binário falhar
+      # Configuração para macOS - desabilita sysreqs lookup que falha em ARM64
       - uses: r-lib/actions/setup-r-dependencies@v2
         if: runner.os == 'macOS'
         with:
           extra-packages: any::rcmdcheck
           needs: check
-          pak-version: devel
         env:
-          PKG_SYSREQS: true
-          R_PKG_TYPE: source
+          PKG_SYSREQS: false
 
       # Configuração para Linux
       - uses: r-lib/actions/setup-r-dependencies@v2
