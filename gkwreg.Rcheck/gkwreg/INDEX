@@ -1,0 +1,56 @@
+AIC.gkwreg              Akaike Information Criterion for GKw Regression
+                        Models
+BIC.gkwreg              Bayesian Information Criterion for GKw
+                        Regression Models
+CarTask                 Partition-Primed Probability Judgement Task for
+                        Car Dealership
+FoodExpenditure         Proportion of Household Income Spent on Food
+GasolineYield           Gasoline Yield from Crude Oil
+ImpreciseTask           Imprecise Probabilities for Sunday Weather and
+                        Boeing Stock Task
+LossAversion            (No) Myopic Loss Aversion in Adolescents
+MockJurors              Confidence of Mock Jurors in Their Verdicts
+ReadingSkills           Dyslexia and IQ Predicting Reading Accuracy
+StressAnxiety           Dependency of Anxiety on Stress
+WeatherTask             Weather Task with Priming and Precise and
+                        Imprecise Probabilities
+anova.gkwreg            Analysis of Deviance for GKw Regression Models
+coef.gkwreg             Extract Coefficients from a Fitted GKw
+                        Regression Model
+confint.gkwreg          Confidence Intervals for Generalized
+                        Kumaraswamy Regression Parameters
+family.gkwreg           Extract Family from GKw Regression Model
+fitted.gkwreg           Extract Fitted Values from a Generalized
+                        Kumaraswamy Regression Model
+formula.gkwreg          Extract Formula from GKw Regression Model
+getCall.gkwreg          Get Call from GKw Regression Model
+gkw_control             Control Parameters for Generalized Kumaraswamy
+                        Regression
+gkwreg                  Fit Generalized Kumaraswamy Regression Models
+logLik.gkwreg           Extract Log-Likelihood from Generalized
+                        Kumaraswamy Regression Models
+lrtest                  Likelihood Ratio Test for Nested GKw Models
+model.frame.gkwreg      Extract Model Frame from GKw Regression Model
+model.matrix.gkwreg     Extract Model Matrix from GKw Regression Model
+nobs.gkwreg             Number of Observations for GKw Regression
+                        Models
+plot.gkwreg             Diagnostic Plots for Generalized Kumaraswamy
+                        Regression Models
+predict.gkwreg          Predictions from a Fitted Generalized
+                        Kumaraswamy Regression Model
+print.anova.gkwreg      Print Method for ANOVA of GKw Models
+print.gkwreg            Print Method for Generalized Kumaraswamy
+                        Regression Models
+residuals.gkwreg        Extract Residuals from a Generalized
+                        Kumaraswamy Regression Model
+response                Extract Response Variable from GKw Regression
+                        Model
+retinal                 Intraocular Gas Decay in Retinal Surgery
+sdac                    Autologous Peripheral Blood Stem Cell
+                        Transplants Data
+summary.gkwreg          Summary Method for Generalized Kumaraswamy
+                        Regression Models
+terms.gkwreg            Extract Terms from GKw Regression Model
+update.gkwreg           Update and Re-fit a GKw Regression Model
+vcov.gkwreg             Extract Variance-Covariance Matrix from a
+                        Generalized Kumaraswamy Regression Model
