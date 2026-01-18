@@ -58,7 +58,7 @@ terms(fit)
 #> attr(,"response")
 #> [1] 1
 #> attr(,".Environment")
-#> <environment: 0x55b703d180c8>
+#> <environment: 0x5629133d1170>
 #> attr(,"predvars")
 #> list(yield, batch, temp)
 #> attr(,"dataClasses")

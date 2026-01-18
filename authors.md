@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/evandeilton/gkwreg/blob/v2.1.15/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/evandeilton/gkwreg/blob/v2.1.16/DESCRIPTION)
 
 Lopes J (2026). *gkwreg: Generalized Kumaraswamy Regression Models for
 Bounded Data*. R package version 2.1.14,
