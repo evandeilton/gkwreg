@@ -8,6 +8,7 @@ inst/doc
 .quarto
 src/*.o
 src/*.so
+src/*.dll
 .pdf
-
-
+..Rcheck
+Thumbs.db
