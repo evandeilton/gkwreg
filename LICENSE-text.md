@@ -1,4 +1,4 @@
 # License
 
-    YEAR: 2025
-    COPYRIGHT HOLDER: gkwreg authors
+    YEAR: 2026
+    COPYRIGHT HOLDER: José Evandeilton Lopes and Wagner Hugo Bonat

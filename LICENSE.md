@@ -1,6 +1,8 @@
-# MIT License
+# NA
 
-Copyright (c) 2025 gkwreg authors
+MIT License
+
+Copyright (c) 2026 José Evandeilton Lopes and Wagner Hugo Bonat
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
