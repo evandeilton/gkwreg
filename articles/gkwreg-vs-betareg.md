@@ -570,7 +570,7 @@ se_beta_s2 <- sqrt(diag(vcov(fit_beta_s2)))
 coef_kw_s2 <- coef(fit_kw_s2)
 se_kw_s2 <- fit_kw_s2$se
 
-# Note: True parameters are on different scale (α, β vs μ, φ)
+# Note: True parameters are on different scale (<U+03B1>, <U+03B2> vs <U+03BC>, <U+03C6>)
 # Focus on relative comparisons
 coef_comparison_s2 <- data.frame(
   Parameter = names(coef_beta_s2),
@@ -882,18 +882,18 @@ practitioners.
 
 | Scenario                | Model            | N_Success | Conv_Rate |      AIC |  RMSE |  Time |
 |:------------------------|:-----------------|----------:|----------:|---------:|------:|------:|
-| S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.192 | 0.014 |
-| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.212 |
-| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.201 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.221 |
-| S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.191 | 0.014 |
+| S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.192 | 0.015 |
+| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.218 |
+| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.204 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.231 |
+| S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.191 | 0.013 |
 | S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.020 |
 | S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.194 | 0.011 |
-| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.0 |  -213.45 | 0.618 | 0.031 |
-| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.347 |
-| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.034 |
-| S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.266 | 0.015 |
-| S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.044 |
+| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.5 |  -267.39 | 0.618 | 0.031 |
+| S3: Extreme Shapes      | Beta (betareg)   |       200 |       5.0 | 16614.42 | 0.405 | 0.414 |
+| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.050 |
+| S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.266 | 0.021 |
+| S3: Extreme Shapes      | Exp. Kumaraswamy |       112 |      76.8 | -2352.98 | 0.365 | 0.049 |
 
 Table 4: Comprehensive Model Comparison Across Three Simulation
 Scenarios
@@ -951,10 +951,10 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |           0.076 |          1.654 |
-| Beta (gkwreg)    |           0.088 |          1.419 |
-| Exp. Kumaraswamy |           0.099 |          1.269 |
-| Beta (betareg)   |           0.125 |          1.000 |
+| Kumaraswamy      |           0.079 |          1.864 |
+| Beta (gkwreg)    |           0.096 |          1.535 |
+| Exp. Kumaraswamy |           0.104 |          1.420 |
+| Beta (betareg)   |           0.147 |          1.000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
 Regression
@@ -1156,7 +1156,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
     [40] bslib_0.9.0            pillar_1.11.1          gtable_0.3.6          
     [43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.1     
-    [46] tidyselect_1.2.1       xfun_0.55              tibble_3.3.1          
+    [46] tidyselect_1.2.1       xfun_0.56              tibble_3.3.1          
     [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
     [52] htmltools_0.5.9        rmarkdown_2.30         gkwdist_1.1.2         
     [55] TMB_1.9.19             compiler_4.5.2         S7_0.2.1              

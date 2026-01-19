@@ -777,7 +777,7 @@ unreliable</strong>. Table 2 quantifies these distortions.</p>
 <span><span class="va">coef_kw_s2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_kw_s2</span><span class="op">)</span></span>
 <span><span class="va">se_kw_s2</span> <span class="op">&lt;-</span> <span class="va">fit_kw_s2</span><span class="op">$</span><span class="va">se</span></span>
 <span></span>
-<span><span class="co"># Note: True parameters are on different scale (α, β vs μ, φ)</span></span>
+<span><span class="co"># Note: True parameters are on different scale (&lt;U+03B1&gt;, &lt;U+03B2&gt; vs &lt;U+03BC&gt;, &lt;U+03C6&gt;)</span></span>
 <span><span class="co"># Focus on relative comparisons</span></span>
 <span><span class="va">coef_comparison_s2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  Parameter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">coef_beta_s2</span><span class="op">)</span>,</span>
@@ -1260,7 +1260,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-224.74</td>
 <td align="right">0.192</td>
-<td align="right">0.014</td>
+<td align="right">0.015</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1269,7 +1269,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-181.12</td>
 <td align="right">0.228</td>
-<td align="right">0.212</td>
+<td align="right">0.218</td>
 </tr>
 <tr class="odd">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1278,7 +1278,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-219.76</td>
 <td align="right">0.199</td>
-<td align="right">0.201</td>
+<td align="right">0.204</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1287,7 +1287,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-219.24</td>
 <td align="right">0.662</td>
-<td align="right">0.221</td>
+<td align="right">0.231</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1296,7 +1296,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-139.28</td>
 <td align="right">0.191</td>
-<td align="right">0.014</td>
+<td align="right">0.013</td>
 </tr>
 <tr class="even">
 <td align="left">S2: Heavy Tails</td>
@@ -1320,8 +1320,8 @@ Scenarios</caption>
 <td align="left">S2: Heavy Tails</td>
 <td align="left">Exp. Kumaraswamy</td>
 <td align="right">200</td>
-<td align="right">58.0</td>
-<td align="right">-213.45</td>
+<td align="right">58.5</td>
+<td align="right">-267.39</td>
 <td align="right">0.618</td>
 <td align="right">0.031</td>
 </tr>
@@ -1329,10 +1329,10 @@ Scenarios</caption>
 <td align="left">S3: Extreme Shapes</td>
 <td align="left">Beta (betareg)</td>
 <td align="right">200</td>
-<td align="right">4.5</td>
-<td align="right">16677.68</td>
+<td align="right">5.0</td>
+<td align="right">16614.42</td>
 <td align="right">0.405</td>
-<td align="right">0.347</td>
+<td align="right">0.414</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
@@ -1341,7 +1341,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-2007.68</td>
 <td align="right">0.292</td>
-<td align="right">0.034</td>
+<td align="right">0.050</td>
 </tr>
 <tr class="odd">
 <td align="left">S3: Extreme Shapes</td>
@@ -1350,16 +1350,16 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-2257.56</td>
 <td align="right">0.266</td>
-<td align="right">0.015</td>
+<td align="right">0.021</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">105</td>
-<td align="right">80.0</td>
-<td align="right">-2331.45</td>
+<td align="right">112</td>
+<td align="right">76.8</td>
+<td align="right">-2352.98</td>
 <td align="right">0.365</td>
-<td align="right">0.044</td>
+<td align="right">0.049</td>
 </tr>
 </tbody>
 </table>
@@ -1426,22 +1426,22 @@ Beta Regression</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Kumaraswamy</td>
-<td align="right">0.076</td>
-<td align="right">1.654</td>
+<td align="right">0.079</td>
+<td align="right">1.864</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (gkwreg)</td>
-<td align="right">0.088</td>
-<td align="right">1.419</td>
+<td align="right">0.096</td>
+<td align="right">1.535</td>
 </tr>
 <tr class="odd">
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">0.099</td>
-<td align="right">1.269</td>
+<td align="right">0.104</td>
+<td align="right">1.420</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (betareg)</td>
-<td align="right">0.125</td>
+<td align="right">0.147</td>
 <td align="right">1.000</td>
 </tr>
 </tbody>
@@ -1666,7 +1666,7 @@ loaded via a namespace (and not attached):
 [37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
 [40] bslib_0.9.0            pillar_1.11.1          gtable_0.3.6          
 [43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.1     
-[46] tidyselect_1.2.1       xfun_0.55              tibble_3.3.1          
+[46] tidyselect_1.2.1       xfun_0.56              tibble_3.3.1          
 [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
 [52] htmltools_0.5.9        rmarkdown_2.30         gkwdist_1.1.2         
 [55] TMB_1.9.19             compiler_4.5.2         S7_0.2.1              </code></pre>

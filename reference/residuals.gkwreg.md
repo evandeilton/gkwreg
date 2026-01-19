@@ -206,7 +206,7 @@ residual_summary <- data.frame(
 print(residual_summary)
 #>        Type          Mean         SD          Min       Max
 #> 1  Response  0.0001978698 0.07082919 -0.173565885 0.1546289
-#> 2   Pearson -0.0026568658 2.43575359 -6.277680405 5.7524149
+#> 2   Pearson -0.0026546844 2.43576048 -6.277689197 5.7524532
 #> 3  Deviance  0.2017937920 1.71709988 -2.169734396 2.1909681
 #> 4  Quantile -0.0052189130 1.02816180 -2.448661750 2.5380310
 #> 5 Cox-Snell  0.9964306145 0.97984715  0.007195225 5.1896594
@@ -439,7 +439,7 @@ if (length(outlier_idx) > 0) {
     lty = c(2, 1, 2), lwd = 2
   )
   legend("topright",
-    legend = c("Normal", "Outlier", "±2.5 SD"),
+    legend = c("Normal", "Outlier", "<U+00B1>2.5 SD"),
     col = c(rgb(0, 0, 1, 0.5), "red", "orange"),
     pch = c(19, 19, NA),
     lty = c(NA, NA, 2),

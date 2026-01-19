@@ -75,9 +75,9 @@ Cribari-Neto, F., and Zeileis, A. (2010). Beta Regression in R. *Journal
 of Statistical Software*, **34**(2), 1–24.
 [doi:10.18637/jss.v034.i02](https://doi.org/10.18637/jss.v034.i02)
 
-Grün, B., Kosmidis, I., and Zeileis, A. (2012). Extended Beta Regression
-in R: Shaken, Stirred, Mixed, and Partitioned. *Journal of Statistical
-Software*, **48**(11), 1–25.
+Gr\<U+00FC\>n, B., Kosmidis, I., and Zeileis, A. (2012). Extended Beta
+Regression in R: Shaken, Stirred, Mixed, and Partitioned. *Journal of
+Statistical Software*, **48**(11), 1–25.
 [doi:10.18637/jss.v048.i11](https://doi.org/10.18637/jss.v048.i11)
 
 Kosmidis, I., and Zeileis, A. (2024). Extended-Support Beta Regression
@@ -103,7 +103,7 @@ require(gkwdist)
 data(ReadingSkills)
 
 # Example 1: Standard Kumaraswamy with interaction and heteroscedasticity
-# Mean: Dyslexia × IQ interaction (do groups differ in IQ effect?)
+# Mean: Dyslexia <U+00D7> IQ interaction (do groups differ in IQ effect?)
 # Precision: Main effects (variability differs by group and IQ level)
 fit_kw <- gkwreg(
   accuracy ~ dyslexia * iq |
@@ -227,33 +227,33 @@ summary(fit_ekw)
 #> 
 #> Residuals:
 #>     Min  Q1.25%  Median    Mean  Q3.75%     Max 
-#> -0.2447 -0.0243  0.0120  0.0152  0.0686  0.2096 
+#> -0.2448 -0.0245  0.0118  0.0152  0.0686  0.2099 
 #> 
 #> Coefficients:
 #>                    Estimate Std. Error z value Pr(>|z|)  
-#> alpha:(Intercept)   -1.9487     4.6708  -0.417   0.6765  
-#> alpha:dyslexia       5.3238     5.0741   1.049   0.2941  
-#> alpha:iq             2.3183     1.0622   2.182   0.0291 *
-#> alpha:dyslexia:iq   -2.3858     1.1040  -2.161   0.0307 *
-#> beta:(Intercept)     6.0559    16.7532   0.361   0.7177  
-#> beta:dyslexia        6.3640    16.7322   0.380   0.7037  
-#> beta:iq              0.5124     0.2990   1.714   0.0866 .
-#> lambda:(Intercept)   2.6537     4.0631   0.653   0.5137  
-#> lambda:dyslexia     -3.9242     4.5629  -0.860   0.3898  
+#> alpha:(Intercept)   -1.9375     4.4607  -0.434   0.6640  
+#> alpha:dyslexia       5.3101     4.6178   1.150   0.2502  
+#> alpha:iq             2.3149     1.0256   2.257   0.0240 *
+#> alpha:dyslexia:iq   -2.3821     1.0518  -2.265   0.0235 *
+#> beta:(Intercept)     6.0410    10.6496   0.567   0.5705  
+#> beta:dyslexia        6.3493    10.6379   0.597   0.5506  
+#> beta:iq              0.5127     0.2861   1.792   0.0732 .
+#> lambda:(Intercept)   2.6467     3.8056   0.695   0.4868  
+#> lambda:dyslexia     -3.9111     4.0166  -0.974   0.3302  
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Confidence intervals (95%):
 #>                          3%     98%
-#> alpha:(Intercept)  -11.1033  7.2059
-#> alpha:dyslexia      -4.6212 15.2689
-#> alpha:iq             0.2364  4.4003
-#> alpha:dyslexia:iq   -4.5496 -0.2219
-#> beta:(Intercept)   -26.7797 38.8915
-#> beta:dyslexia      -26.4305 39.1585
-#> beta:iq             -0.0736  1.0984
-#> lambda:(Intercept)  -5.3098 10.6172
-#> lambda:dyslexia    -12.8673  5.0188
+#> alpha:(Intercept)  -10.6804  6.8054
+#> alpha:dyslexia      -3.7406 14.3608
+#> alpha:iq             0.3047  4.3251
+#> alpha:dyslexia:iq   -4.4436 -0.3206
+#> beta:(Intercept)   -14.8319 26.9139
+#> beta:dyslexia      -14.5006 27.1991
+#> beta:iq             -0.0481  1.0734
+#> lambda:(Intercept)  -4.8121 10.1054
+#> lambda:dyslexia    -11.7836  3.9613
 #> 
 #> Link functions:
 #> alpha: log
@@ -261,11 +261,11 @@ summary(fit_ekw)
 #> lambda: log
 #> 
 #> Fitted parameter means:
-#> alpha: 13.48
-#> beta: 84001
+#> alpha: 13.45
+#> beta: 81539
 #> gamma: 1
 #> delta: 0
-#> lambda: 409.1
+#> lambda: 400.9
 #> 
 #> Model fit statistics:
 #> Number of observations: 44 
@@ -274,12 +274,12 @@ summary(fit_ekw)
 #> Log-likelihood: 70.62 
 #> AIC: -123.2 
 #> BIC: -107.2 
-#> RMSE: 0.09653 
-#> Efron's R2: 0.7024 
+#> RMSE: 0.09657 
+#> Efron's R2: 0.7022 
 #> Mean Absolute Error: 0.07239 
 #> 
 #> Convergence status: Failed 
-#> Iterations: 118 
+#> Iterations: 116 
 #> 
 
 # Interpretation:
@@ -295,7 +295,7 @@ anova(fit_kw, fit_ekw)
 #> 
 #>         Resid. Df Resid. Dev Df Deviance Pr(>Chi)  
 #> fit_kw   37.00000 -136.89181                       
-#> fit_ekw  35.00000 -141.23391  2  4.34210  0.11406  
+#> fit_ekw  35.00000 -141.23408  2  4.34227  0.11405  
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -322,21 +322,21 @@ summary(fit_mc)
 #> 
 #> Residuals:
 #>     Min  Q1.25%  Median    Mean  Q3.75%     Max 
-#> -0.1259  0.0350  0.7058  0.5210  0.9899  0.9899 
+#> -0.1376  0.0291  0.7058  0.5174  0.9899  0.9899 
 #> 
 #> Coefficients:
 #>                    Estimate Std. Error z value Pr(>|z|)
-#> gamma:(Intercept)    7.8675        NaN     NaN      NaN
-#> gamma:dyslexia       9.1494        NaN     NaN      NaN
-#> gamma:iq             0.9036        NaN     NaN      NaN
-#> gamma:dyslexia:iq   -2.9325        NaN     NaN      NaN
-#> delta:(Intercept)  -23.0435        NaN     NaN      NaN
-#> delta:dyslexia      63.6331        NaN     NaN      NaN
-#> delta:iq            -1.2728        NaN     NaN      NaN
-#> lambda:(Intercept)  -5.4452        NaN     NaN      NaN
-#> lambda:dyslexia     -8.5214        NaN     NaN      NaN
-#> lambda:iq           -0.3551        NaN     NaN      NaN
-#> lambda:dyslexia:iq   2.3403        NaN     NaN      NaN
+#> gamma:(Intercept)    7.5706        NaN     NaN      NaN
+#> gamma:dyslexia       8.7744        NaN     NaN      NaN
+#> gamma:iq             0.8618        NaN     NaN      NaN
+#> gamma:dyslexia:iq   -2.8365        NaN     NaN      NaN
+#> delta:(Intercept)  -22.1613        NaN     NaN      NaN
+#> delta:dyslexia      61.0429        NaN     NaN      NaN
+#> delta:iq            -1.2393        NaN     NaN      NaN
+#> lambda:(Intercept)  -5.1483        NaN     NaN      NaN
+#> lambda:dyslexia     -8.1465        NaN     NaN      NaN
+#> lambda:iq           -0.3133        NaN     NaN      NaN
+#> lambda:dyslexia:iq   2.2443        NaN     NaN      NaN
 #> 
 #> Confidence intervals (95%):
 #>                     3% 98%
@@ -360,9 +360,9 @@ summary(fit_mc)
 #> Fitted parameter means:
 #> alpha: 1
 #> beta: 1
-#> gamma: 104076816
+#> gamma: 49207316
 #> delta: 4.318
-#> lambda: 19.5
+#> lambda: 16.66
 #> 
 #> Model fit statistics:
 #> Number of observations: 44 
@@ -371,18 +371,18 @@ summary(fit_mc)
 #> Log-likelihood: 60.78 
 #> AIC: -99.55 
 #> BIC: -79.93 
-#> RMSE: 0.6856 
-#> Efron's R2: -14.01 
-#> Mean Absolute Error: 0.5337 
+#> RMSE: 0.6855 
+#> Efron's R2: -14 
+#> Mean Absolute Error: 0.5327 
 #> 
 #> Convergence status: Failed 
-#> Iterations: 142 
+#> Iterations: 177 
 #> 
 
 # Compare 3-parameter models
 AIC(fit_ekw, fit_mc)
 #>         df        AIC
-#> fit_ekw  9 -123.23391
-#> fit_mc  11  -99.55191
+#> fit_ekw  9 -123.23408
+#> fit_mc  11  -99.55165
 # }
 ```

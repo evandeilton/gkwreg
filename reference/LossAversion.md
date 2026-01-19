@@ -47,17 +47,17 @@ A data frame with 570 observations on 7 variables:
 
 ## Source
 
-Data collected by Matthias Sutter and Daniela Glätzle-Rützler,
-Universität Innsbruck.
+Data collected by Matthias Sutter and Daniela
+Gl\<U+00E4\>tzle-R\<U+00FC\>tzler, Universit\<U+00E4\>t Innsbruck.
 
 ## Details
 
-The data were collected by Matthias Sutter and Daniela Glätzle-Rützler
-(Universität Innsbruck) in an experiment with high-school students in
-Tyrol, Austria (Schwaz and Innsbruck). The experiment tests the theory
-of myopic loss aversion, which proposes that investors with shorter
-evaluation periods are more loss-averse and thus invest less in risky
-assets.
+The data were collected by Matthias Sutter and Daniela
+Gl\<U+00E4\>tzle-R\<U+00FC\>tzler (Universit\<U+00E4\>t Innsbruck) in an
+experiment with high-school students in Tyrol, Austria (Schwaz and
+Innsbruck). The experiment tests the theory of myopic loss aversion,
+which proposes that investors with shorter evaluation periods are more
+loss-averse and thus invest less in risky assets.
 
 Classical theory predicts that players with short investment horizons
 (myopic view) should invest less due to loss aversion. However, Sutter
@@ -71,9 +71,10 @@ round, medium = every 3 rounds, long = only at the end).
 
 ## References
 
-Sutter, M., Kocher, M.G., Glätzle-Rützler, D., and Trautmann, S.T.
-(2015). No Myopic Loss Aversion in Adolescents? – An Experimental Note.
-*Journal of Economic Behavior & Organization*, **111**, 169–176.
+Sutter, M., Kocher, M.G., Gl\<U+00E4\>tzle-R\<U+00FC\>tzler, D., and
+Trautmann, S.T. (2015). No Myopic Loss Aversion in Adolescents?
+\<U+2013\> An Experimental Note. *Journal of Economic Behavior &
+Organization*, **111**, 169–176.
 [doi:10.1016/j.jebo.2014.12.021](https://doi.org/10.1016/j.jebo.2014.12.021)
 
 Kosmidis, I., and Zeileis, A. (2024). Extended-Support Beta Regression
@@ -249,7 +250,7 @@ summary(fit_kw_interact)
 #> 
 
 # Interpretation:
-# - Grade × arrangement interaction tests if myopic loss aversion
+# - Grade <U+00D7> arrangement interaction tests if myopic loss aversion
 #   emerges differently at different developmental stages
 
 # Example 3: Extended-support for boundary observations
