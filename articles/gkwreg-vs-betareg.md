@@ -883,14 +883,14 @@ practitioners.
 | Scenario                | Model            | N_Success | Conv_Rate |      AIC |  RMSE |  Time |
 |:------------------------|:-----------------|----------:|----------:|---------:|------:|------:|
 | S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.192 | 0.015 |
-| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.218 |
-| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.210 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.229 |
+| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.223 |
+| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.208 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.223 |
 | S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.191 | 0.015 |
-| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.021 |
+| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.020 |
 | S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.194 | 0.012 |
-| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.0 |  -213.45 | 0.618 | 0.033 |
-| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.355 |
+| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.0 |  -213.45 | 0.618 | 0.032 |
+| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.349 |
 | S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.034 |
 | S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.266 | 0.015 |
 | S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.044 |
@@ -951,10 +951,10 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |           0.079 |          1.622 |
-| Beta (gkwreg)    |           0.091 |          1.408 |
-| Exp. Kumaraswamy |           0.102 |          1.255 |
-| Beta (betareg)   |           0.128 |          1.000 |
+| Kumaraswamy      |           0.078 |          1.610 |
+| Beta (gkwreg)    |           0.092 |          1.361 |
+| Exp. Kumaraswamy |           0.100 |          1.260 |
+| Beta (betareg)   |           0.126 |          1.000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
 Regression
