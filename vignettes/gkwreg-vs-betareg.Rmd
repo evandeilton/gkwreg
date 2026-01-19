@@ -793,7 +793,7 @@ se_beta_s2 <- sqrt(diag(vcov(fit_beta_s2)))
 coef_kw_s2 <- coef(fit_kw_s2)
 se_kw_s2 <- fit_kw_s2$se
 
-# Note: True parameters are on different scale (α, β vs μ, φ)
+# Note: True parameters are on different scale (<U+03B1>, <U+03B2> vs <U+03BC>, <U+03C6>)
 # Focus on relative comparisons
 coef_comparison_s2 <- data.frame(
   Parameter = names(coef_beta_s2),

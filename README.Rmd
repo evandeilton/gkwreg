@@ -185,7 +185,7 @@ newdata <- data.frame(
 # Predict different quantities
 pred_mean <- predict(fit_kw, newdata, type = "response") # E(Y|X)
 pred_var <- predict(fit_kw, newdata, type = "variance") # Var(Y|X)
-pred_alpha <- predict(fit_kw, newdata, type = "alpha") # α parameter
+pred_alpha <- predict(fit_kw, newdata, type = "alpha") # <U+03B1> parameter
 pred_params <- predict(fit_kw, newdata, type = "parameter") # All parameters
 
 # Evaluate density at y = 0.5 for each observation

@@ -45,7 +45,7 @@
 #'   with the following columns:
 #'   \describe{
 #'     \item{\code{Resid. Df}}{Residual degrees of freedom}
-#'     \item{\code{Resid. Dev}}{Residual deviance (-2 × log-likelihood)}
+#'     \item{\code{Resid. Dev}}{Residual deviance (-2 <U+00D7> log-likelihood)}
 #'     \item{\code{Df}}{Change in degrees of freedom (for model comparisons)}
 #'     \item{\code{Deviance}}{Change in deviance (for model comparisons)}
 #'     \item{\code{Pr(>Chi)}}{P-value from the chi-squared test (if \code{test = "Chisq"})}

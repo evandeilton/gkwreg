@@ -530,7 +530,7 @@ See \code{\link{plot.gkwreg}} for detailed interpretation guidance.
 \itemize{
 \item Set \code{model = FALSE}, \code{x = FALSE}, \code{y = FALSE} to reduce
 object size (but limits some post-fitting capabilities)
-\item Hessian matrix scales as O(p²) where p = number of parameters
+\item Hessian matrix scales as O(p<U+00B2>) where p = number of parameters
 }
 }
 }

@@ -60,7 +60,7 @@ require(gkwdist)
 data(ReadingSkills)
 
 # Example 1: Standard Kumaraswamy with interaction and heteroscedasticity
-# Mean: Dyslexia × IQ interaction (do groups differ in IQ effect?)
+# Mean: Dyslexia <U+00D7> IQ interaction (do groups differ in IQ effect?)
 # Precision: Main effects (variability differs by group and IQ level)
 fit_kw <- gkwreg(
   accuracy ~ dyslexia * iq |
@@ -130,7 +130,7 @@ Cribari-Neto, F., and Zeileis, A. (2010). Beta Regression in R.
 \emph{Journal of Statistical Software}, \strong{34}(2), 1--24.
 \doi{10.18637/jss.v034.i02}
 
-Grün, B., Kosmidis, I., and Zeileis, A. (2012). Extended Beta Regression in R:
+Gr<U+00FC>n, B., Kosmidis, I., and Zeileis, A. (2012). Extended Beta Regression in R:
 Shaken, Stirred, Mixed, and Partitioned. \emph{Journal of Statistical Software},
 \strong{48}(11), 1--25.
 \doi{10.18637/jss.v048.i11}

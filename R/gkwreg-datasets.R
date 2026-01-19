@@ -350,8 +350,8 @@
 #' }
 #'
 #' @details
-#' The data were collected by Matthias Sutter and Daniela Glätzle-Rützler
-#' (Universität Innsbruck) in an experiment with high-school students in Tyrol,
+#' The data were collected by Matthias Sutter and Daniela Gl<U+00E4>tzle-R<U+00FC>tzler
+#' (Universit<U+00E4>t Innsbruck) in an experiment with high-school students in Tyrol,
 #' Austria (Schwaz and Innsbruck). The experiment tests the theory of myopic loss
 #' aversion, which proposes that investors with shorter evaluation periods are more
 #' loss-averse and thus invest less in risky assets.
@@ -367,12 +367,12 @@
 #' long = only at the end).
 #'
 #' @source
-#' Data collected by Matthias Sutter and Daniela Glätzle-Rützler, Universität
+#' Data collected by Matthias Sutter and Daniela Gl<U+00E4>tzle-R<U+00FC>tzler, Universit<U+00E4>t
 #' Innsbruck.
 #'
 #' @references
-#' Sutter, M., Kocher, M.G., Glätzle-Rützler, D., and Trautmann, S.T. (2015).
-#' No Myopic Loss Aversion in Adolescents? – An Experimental Note.
+#' Sutter, M., Kocher, M.G., Gl<U+00E4>tzle-R<U+00FC>tzler, D., and Trautmann, S.T. (2015).
+#' No Myopic Loss Aversion in Adolescents? <U+2013> An Experimental Note.
 #' \emph{Journal of Economic Behavior & Organization}, \strong{111}, 169--176.
 #' \doi{10.1016/j.jebo.2014.12.021}
 #'
@@ -421,7 +421,7 @@
 #' summary(fit_kw_interact)
 #'
 #' # Interpretation:
-#' # - Grade × arrangement interaction tests if myopic loss aversion
+#' # - Grade <U+00D7> arrangement interaction tests if myopic loss aversion
 #' #   emerges differently at different developmental stages
 #'
 #' # Example 3: Extended-support for boundary observations
@@ -627,7 +627,7 @@
 #' \emph{Journal of Statistical Software}, \strong{34}(2), 1--24.
 #' \doi{10.18637/jss.v034.i02}
 #'
-#' Grün, B., Kosmidis, I., and Zeileis, A. (2012). Extended Beta Regression in R:
+#' Gr<U+00FC>n, B., Kosmidis, I., and Zeileis, A. (2012). Extended Beta Regression in R:
 #' Shaken, Stirred, Mixed, and Partitioned. \emph{Journal of Statistical Software},
 #' \strong{48}(11), 1--25.
 #' \doi{10.18637/jss.v048.i11}
@@ -652,7 +652,7 @@
 #' data(ReadingSkills)
 #'
 #' # Example 1: Standard Kumaraswamy with interaction and heteroscedasticity
-#' # Mean: Dyslexia × IQ interaction (do groups differ in IQ effect?)
+#' # Mean: Dyslexia <U+00D7> IQ interaction (do groups differ in IQ effect?)
 #' # Precision: Main effects (variability differs by group and IQ level)
 #' fit_kw <- gkwreg(
 #'   accuracy ~ dyslexia * iq |

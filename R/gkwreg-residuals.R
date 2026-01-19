@@ -705,7 +705,7 @@ fitted.gkwreg <- function(object, family = NULL, ...) {
 #'     lty = c(2, 1, 2), lwd = 2
 #'   )
 #'   legend("topright",
-#'     legend = c("Normal", "Outlier", "±2.5 SD"),
+#'     legend = c("Normal", "Outlier", "<U+00B1>2.5 SD"),
 #'     col = c(rgb(0, 0, 1, 0.5), "red", "orange"),
 #'     pch = c(19, 19, NA),
 #'     lty = c(NA, NA, 2),

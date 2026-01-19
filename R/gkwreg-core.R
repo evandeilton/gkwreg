@@ -540,7 +540,7 @@
 #' \itemize{
 #'   \item Set \code{model = FALSE}, \code{x = FALSE}, \code{y = FALSE} to reduce
 #'     object size (but limits some post-fitting capabilities)
-#'   \item Hessian matrix scales as O(p²) where p = number of parameters
+#'   \item Hessian matrix scales as O(p<U+00B2>) where p = number of parameters
 #' }
 #' }
 #'
@@ -2115,7 +2115,7 @@ gkwreg <- function(formula,
 #' #'
 #' #' Smithson, M., & Verkuilen, J. (2006). A Better Lemon Squeezer? Maximum-Likelihood
 #' #' Regression with Beta-Distributed Dependent Variables. \emph{Psychological Methods},
-#' #' \strong{11}(1), 54–71.
+#' #' \strong{11}(1), 54<U+2013>71.
 #' #'
 #' #' @author Lopes, J. E.
 #' #'
