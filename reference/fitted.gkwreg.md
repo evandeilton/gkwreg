@@ -216,7 +216,7 @@ system.time({
   fitted_large <- fitted(fit_large)
 })
 #>    user  system elapsed 
-#>       0       0       0 
+#>   0.000   0.000   0.001 
 
 # Verify extraction
 length(fitted_large)
