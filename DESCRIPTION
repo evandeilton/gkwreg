@@ -1,11 +1,15 @@
 Package: gkwreg
 Title: Generalized Kumaraswamy Regression Models for Bounded Data
-Version: 2.1.14
+Version: 2.1.16
 Authors@R: c(person(given = "José Evandeilton",
                     family = "Lopes",
                     role = c("aut", "cre"),
                     email = "evandeilton@gmail.com",
-                    comment = c(ORCID = "0009-0007-5887-4084")))
+                    comment = c(ORCID = "0009-0007-5887-4084")),
+             person(given = "Wagner Hugo",
+                    family = "Bonat",
+                    role = "aut",
+                    comment = c(ORCID = "0000-0002-0349-7054")))
 Description:
     Implements regression models for bounded continuous data in the open interval (0,1) 
     using the five-parameter Generalized 'Kumaraswamy' distribution. Supports modeling 
