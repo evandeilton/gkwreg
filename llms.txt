@@ -2,8 +2,9 @@
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/gkwreg)](https://CRAN.R-project.org/package=gkwreg)
-[![R-CMD-check](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.08991/status.svg)](https://doi.org/10.21105/joss.08991)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/gkwreg)](https://cran.r-project.org/package=gkwreg)
+[![R-CMD-check](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -17,7 +18,7 @@ percentages, and bounded indices.
 While Beta regression is the traditional approach for such data,
 **gkwreg** focuses on the **Generalized Kumaraswamy (GKw)** distribution
 family. This offers exceptional flexibility by encompassing seven
-important bounded distributions—including Beta and Kumaraswamy—as
+important bounded distributions, including Beta and Kumaraswamy as
 special or limiting cases.
 
 The package enables full **distributional regression**, where *all*
