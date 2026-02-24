@@ -12,7 +12,7 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 
 The **gkwreg** package provides a comprehensive and computationally
 efficient framework for regression modeling of data restricted to the
-standard unit interval $(0,1)$, including proportions, rates, fractions,
+standard unit interval (0, 1), including proportions, rates, fractions,
 percentages, and bounded indices.
 
 While Beta regression is the traditional approach for such data,
@@ -52,15 +52,15 @@ speed, numerical accuracy, and optimization stability.
 Model bounded data using the **5-parameter Generalized Kumaraswamy
 (GKw)** distribution and its **seven nested subfamilies**:
 
-| Distribution              | Code   | Parameters Modeled                   | Fixed Parameters                    | \# Params |
-|:--------------------------|:-------|:-------------------------------------|:------------------------------------|:----------|
-| Generalized Kumaraswamy   | `gkw`  | $\alpha,\beta,\gamma,\delta,\lambda$ | None                                | 5         |
-| Beta-Kumaraswamy          | `bkw`  | $\alpha,\beta,\gamma,\delta$         | $\lambda = 1$                       | 4         |
-| Kumaraswamy-Kumaraswamy   | `kkw`  | $\alpha,\beta,\delta,\lambda$        | $\gamma = 1$                        | 4         |
-| Exponentiated Kumaraswamy | `ekw`  | $\alpha,\beta,\lambda$               | $\gamma = 1,\delta = 0$             | 3         |
-| McDonald (Beta Power)     | `mc`   | $\gamma,\delta,\lambda$              | $\alpha = 1,\beta = 1$              | 3         |
-| Kumaraswamy               | `kw`   | $\alpha,\beta$                       | $\gamma = 1,\delta = 0,\lambda = 1$ | 2         |
-| Beta                      | `beta` | $\gamma,\delta$                      | $\alpha = 1,\beta = 1,\lambda = 1$  | 2         |
+| Distribution              | Code   | Parameters Modeled                     | Fixed Parameters                    | \# Params |
+|:--------------------------|:-------|:---------------------------------------|:------------------------------------|:----------|
+| Generalized Kumaraswamy   | `gkw`  | \alpha, \beta, \gamma, \delta, \lambda | None                                | 5         |
+| Beta-Kumaraswamy          | `bkw`  | \alpha, \beta, \gamma, \delta          | \lambda = 1                         | 4         |
+| Kumaraswamy-Kumaraswamy   | `kkw`  | \alpha, \beta, \delta, \lambda         | \gamma = 1                          | 4         |
+| Exponentiated Kumaraswamy | `ekw`  | \alpha, \beta, \lambda                 | \gamma = 1, \delta = 0              | 3         |
+| McDonald (Beta Power)     | `mc`   | \gamma, \delta, \lambda                | \alpha = 1, \beta = 1               | 3         |
+| Kumaraswamy               | `kw`   | \alpha, \beta                          | \gamma = 1, \delta = 0, \lambda = 1 | 2         |
+| Beta                      | `beta` | \gamma, \delta                         | \alpha = 1, \beta = 1, \lambda = 1  | 2         |
 
 Each family offers distinct flexibility-parsimony tradeoffs. Start
 simple (`kw` or `beta`) and compare nested models using likelihood ratio
@@ -78,9 +78,9 @@ tests or information criteria.
 
 - **Multiple link functions** with optional scaling:
 
-  - **Positive parameters** ($\alpha,\beta,\gamma,\lambda$): `log`
+  - **Positive parameters** (\alpha, \beta, \gamma, \lambda): `log`
     (default), `sqrt`, `inverse`, `identity`
-  - **Probability parameters** ($\delta \in (0,1)$): `logit` (default),
+  - **Probability parameters** (\delta \in (0,1)): `logit` (default),
     `probit`, `cloglog`, `cauchy`
   - **Link scaling**: Control transformation intensity via `link_scale`
     (useful for numerical stability)
@@ -107,7 +107,7 @@ tests or information criteria.
 
   - Intelligent caching of intermediate calculations.
   - Vectorized operations via Eigen/Armadillo.
-  - Memory-efficient for large datasets ($n > 100,000$).
+  - Memory-efficient for large datasets (n \> 100,000).
 
 ### Comprehensive Inference Tools
 
@@ -414,39 +414,41 @@ plot(fit_large,
 
 ### The Generalized Kumaraswamy Distribution
 
-The GKw distribution is a five-parameter family for variables on $(0,1)$
+The GKw distribution is a five-parameter family for variables on (0, 1)
 with cumulative distribution function:
 
-$$F(x;\alpha,\beta,\gamma,\delta,\lambda) = I_{{\lbrack 1 - {(1 - x^{\alpha})}^{\beta}\rbrack}^{\lambda}}(\gamma,\delta)$$
+F(x; \alpha, \beta, \gamma, \delta, \lambda) =
+I\_{\[1-(1-x^{\alpha})^{\beta}\]^{\lambda}}(\gamma, \delta)
 
-where $I_{z}(a,b)$ is the regularized incomplete beta function. The
+where I_z(a,b) is the regularized incomplete beta function. The
 probability density function is:
 
-\$\$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha
+f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha
 \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1}
 \left\[1-(1-x^{\alpha})^{\beta}\right\]^{\gamma\lambda-1}
-\\{1-\left\[1-(1-x^{\alpha})^{\beta}\right\]^{\lambda}\\}^{\delta-1}\$\$
+\\{1-\left\[1-(1-x^{\alpha})^{\beta}\right\]^{\lambda}\\}^{\delta-1}
 
 **Parameter Roles**:
 
-- **$\alpha,\beta$**: Control basic shape (inherited from Kumaraswamy)
-- **$\gamma,\delta$**: Govern tail behavior and concentration
-- **$\lambda$**: Additional flexibility for skewness and peaks
+- **\alpha, \beta**: Control basic shape (inherited from Kumaraswamy)
+- **\gamma, \delta**: Govern tail behavior and concentration
+- **\lambda**: Additional flexibility for skewness and peaks
 
 ### Regression Framework
 
-For response $y_{i} \in (0,1)$ following a GKw family distribution, each
-parameter
-$\theta_{ip} \in \{\alpha_{i},\beta_{i},\gamma_{i},\delta_{i},\lambda_{i}\}$
-depends on covariates via link functions:
+For response y_i \in (0,1) following a GKw family distribution, each
+parameter \theta\_{ip} \in \\\alpha_i, \beta_i, \gamma_i, \delta_i,
+\lambda_i\\ depends on covariates via link functions:
 
-$$g_{p}\left( \theta_{ip} \right) = \eta_{ip} = \mathbf{x}_{ip}^{\top}{\mathbf{β}}_{p}$$
+g_p(\theta\_{ip}) = \eta\_{ip} = \mathbf{x}\_{ip}^\top
+\boldsymbol{\beta}\_p
 
 Maximum likelihood estimation maximizes:
 
-$$\ell(\Theta;\mathbf{y},\mathbf{X}) = \sum\limits_{i = 1}^{n}\log f\left( y_{i};\theta_{i}(\Theta) \right)$$
+\ell(\Theta; \mathbf{y}, \mathbf{X}) = \sum\_{i=1}^{n} \log f(y_i;
+\theta_i(\Theta))
 
-TMB computes exact gradients $\nabla\ell$ and Hessian $\mathbf{H}$ via
+TMB computes exact gradients \nabla \ell and Hessian \mathbf{H} via
 automatic differentiation, enabling fast and stable optimization.
 
 ------------------------------------------------------------------------

@@ -6,17 +6,21 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Beta Regression vs Kumaraswamy-Based Models for Bounded Data • gkwreg</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Ubuntu-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/Ubuntu_Mono-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Beta Regression vs Kumaraswamy-Based Models for Bounded Data">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
+<meta property="og:title" content="Beta Regression vs Kumaraswamy-Based Models for Bounded Data">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
@@ -60,7 +64,7 @@
                         <h4 data-toc-skip class="author">Lopes, J.
 E.</h4>
             
-            <h4 data-toc-skip class="date">2026-01-19</h4>
+            <h4 data-toc-skip class="date">2026-02-24</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/evandeilton/gkwreg/blob/main/vignettes/gkwreg-vs-betareg.Rmd" class="external-link"><code>vignettes/gkwreg-vs-betareg.Rmd</code></a></small>
       <div class="d-none name"><code>gkwreg-vs-betareg.Rmd</code></div>
@@ -103,19 +107,17 @@ bounded data, unit interval, computational efficiency</p>
 <h3 id="motivation-and-background">Motivation and Background<a class="anchor" aria-label="anchor" href="#motivation-and-background"></a>
 </h3>
 <p>Regression analysis for continuous responses restricted to the unit
-interval
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,1)</annotation></semantics></math>
-arises frequently across scientific disciplines. Applications include
-modeling proportions, rates, percentages, and other bounded measures in
-ecology, psychology, economics, and biostatistics (Ferrari &amp;
-Cribari-Neto, 2004; Smithson &amp; Verkuilen, 2006).</p>
+interval <span class="math inline">(0,1)</span> arises frequently across
+scientific disciplines. Applications include modeling proportions,
+rates, percentages, and other bounded measures in ecology, psychology,
+economics, and biostatistics (Ferrari &amp; Cribari-Neto, 2004; Smithson
+&amp; Verkuilen, 2006).</p>
 <p>Beta regression, introduced systematically by Ferrari &amp;
 Cribari-Neto (2004), has emerged as the predominant framework for such
 analyses. The Beta distribution’s flexibility in accommodating various
-shapes through its two-parameter family
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(α, β)</annotation></semantics></math>
-makes it attractive for modeling heterogeneous unit-interval data.
-However, several limitations warrant consideration:</p>
+shapes through its two-parameter family <span class="math inline">(α,
+β)</span> makes it attractive for modeling heterogeneous unit-interval
+data. However, several limitations warrant consideration:</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Computational burden</strong>: The Beta distribution lacks a
@@ -132,11 +134,9 @@ supports</li>
 <div class="section level3">
 <h3 id="the-kumaraswamy-alternative">The Kumaraswamy Alternative<a class="anchor" aria-label="anchor" href="#the-kumaraswamy-alternative"></a>
 </h3>
-<p>Kumaraswamy (1980) introduced a two-parameter distribution on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,1)</annotation></semantics></math>
-that closely mimics Beta distribution properties while offering a
-<strong>closed-form CDF</strong>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup></mrow><annotation encoding="application/x-tex">F(x; α, β) = 1 - (1-x^α)^β</annotation></semantics></math></p>
+<p>Kumaraswamy (1980) introduced a two-parameter distribution on <span class="math inline">(0,1)</span> that closely mimics Beta distribution
+properties while offering a <strong>closed-form CDF</strong>:</p>
+<p><span class="math display">F(x; α, β) = 1 - (1-x^α)^β</span></p>
 <p>This analytical tractability provides computational advantages while
 maintaining statistical flexibility comparable to the Beta distribution.
 Recent extensions have generalized the Kumaraswamy family to accommodate
@@ -167,22 +167,7 @@ Kumaraswamy distributions.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwreg" class="external-link">gkwreg</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://topmodels.R-Forge.R-project.org/betareg/" class="external-link">betareg</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Standardized color palette for all comparisons</span></span>
-<span><span class="va">MODEL_COLORS</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  <span class="st">"Beta (betareg)"</span> <span class="op">=</span> <span class="st">"#D32F2F"</span>, <span class="co"># Red</span></span>
-<span>  <span class="st">"Beta (gkwreg)"</span> <span class="op">=</span> <span class="st">"#1976D2"</span>, <span class="co"># Blue</span></span>
-<span>  <span class="st">"Kumaraswamy"</span> <span class="op">=</span> <span class="st">"#388E3C"</span>, <span class="co"># Green</span></span>
-<span>  <span class="st">"Exp. Kumaraswamy"</span> <span class="op">=</span> <span class="st">"#7B1FA2"</span> <span class="co"># Purple</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">MODEL_NAMES</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  betareg <span class="op">=</span> <span class="st">"Beta (betareg)"</span>,</span>
-<span>  gkw_beta <span class="op">=</span> <span class="st">"Beta (gkwreg)"</span>,</span>
-<span>  gkw_kw <span class="op">=</span> <span class="st">"Kumaraswamy"</span>,</span>
-<span>  gkw_ekw <span class="op">=</span> <span class="st">"Exp. Kumaraswamy"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -195,21 +180,21 @@ Kumaraswamy distributions.</p>
 <div class="section level4">
 <h4 id="beta-distribution">Beta Distribution<a class="anchor" aria-label="anchor" href="#beta-distribution"></a>
 </h4>
-<p>The Beta distribution with shape parameters
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">α, β &gt; 0</annotation></semantics></math>
-has probability density function:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><msup><mi>x</mi><mrow><mi>α</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><mo>,</mo><mspace width="1.0em"></mspace><mi>x</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">f(x; α, β) = \frac{x^{α-1}(1-x)^{β-1}}{B(α,β)}, \quad x \in (0,1)</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><msup><mi>t</mi><mrow><mi>α</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup><mi>d</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">B(α,β) = \int_0^1 t^{α-1}(1-t)^{β-1}dt</annotation></semantics></math>
-is the beta function. Key properties include:</p>
+<p>The Beta distribution with shape parameters <span class="math inline">α, β &gt; 0</span> has probability density
+function:</p>
+<p><span class="math display">f(x; α, β) =
+\frac{x^{α-1}(1-x)^{β-1}}{B(α,β)}, \quad x \in (0,1)</span></p>
+<p>where <span class="math inline">B(α,β) = \int_0^1
+t^{α-1}(1-t)^{β-1}dt</span> is the beta function. Key properties
+include:</p>
 <ul>
 <li>
-<strong>Mean</strong>:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>X</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mi>α</mi><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>+</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">E[X] = α/(α+β)</annotation></semantics></math>
+<strong>Mean</strong>: <span class="math inline">E[X] =
+α/(α+β)</span>
 </li>
 <li>
-<strong>Variance</strong>:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Var</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>α</mi><mi>β</mi><mi>/</mi><mrow><mo stretchy="true" form="prefix">[</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>+</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>+</mo><mi>β</mi><mo>+</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\text{Var}(X) = αβ/[(α+β)^2(α+β+1)]</annotation></semantics></math>
+<strong>Variance</strong>: <span class="math inline">\text{Var}(X) =
+αβ/[(α+β)^2(α+β+1)]</span>
 </li>
 <li>
 <strong>CDF</strong>: No closed form; requires numerical
@@ -220,15 +205,14 @@ integration</li>
 <h4 id="kumaraswamy-distribution">Kumaraswamy Distribution<a class="anchor" aria-label="anchor" href="#kumaraswamy-distribution"></a>
 </h4>
 <p>The Kumaraswamy distribution (Kumaraswamy, 1980) with parameters
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">α, β &gt; 0</annotation></semantics></math>
-has PDF:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>α</mi><mi>β</mi><msup><mi>x</mi><mrow><mi>α</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup><mo>,</mo><mspace width="1.0em"></mspace><mi>x</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">f(x; α, β) = αβx^{α-1}(1-x^α)^{β-1}, \quad x \in (0,1)</annotation></semantics></math></p>
+<span class="math inline">α, β &gt; 0</span> has PDF:</p>
+<p><span class="math display">f(x; α, β) = αβx^{α-1}(1-x^α)^{β-1}, \quad
+x \in (0,1)</span></p>
 <p>Distinguished by its <strong>closed-form CDF</strong>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup></mrow><annotation encoding="application/x-tex">F(x; α, β) = 1 - (1-x^α)^β</annotation></semantics></math></p>
+<p><span class="math display">F(x; α, β) = 1 - (1-x^α)^β</span></p>
 <p>This analytical expression enables: - Efficient quantile computation
-via
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>F</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mn>1</mn><mi>/</mi><mi>β</mi></mrow></msup><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mn>1</mn><mi>/</mi><mi>α</mi></mrow></msup></mrow><annotation encoding="application/x-tex">F^{-1}(u) = [1-(1-u)^{1/β}]^{1/α}</annotation></semantics></math>
-- Faster likelihood evaluations - Simplified asymptotic theory
+via <span class="math inline">F^{-1}(u) = [1-(1-u)^{1/β}]^{1/α}</span> -
+Faster likelihood evaluations - Simplified asymptotic theory
 development</p>
 <p>The Kumaraswamy distribution closely approximates the Beta
 distribution for most parameter combinations while offering superior
@@ -238,10 +222,10 @@ computational properties.</p>
 <h4 id="exponentiated-kumaraswamy-distribution">Exponentiated Kumaraswamy Distribution<a class="anchor" aria-label="anchor" href="#exponentiated-kumaraswamy-distribution"></a>
 </h4>
 <p>A three-parameter extension incorporating an additional shape
-parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">λ &gt; 0</annotation></semantics></math>
-to control tail behavior:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>f</mi><mrow><mi>E</mi><mi>K</mi><mi>w</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>∝</mo><msup><mi>x</mi><mrow><mi>λ</mi><mi>α</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>λ</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>α</mi><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>λ</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>α</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mi>β</mi><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">f_{EKw}(x; α, β, λ) \propto x^{λα-1}(1-x^λ)^{αβ-1}[1-(1-x^λ)^α]^{β-1}</annotation></semantics></math></p>
+parameter <span class="math inline">λ &gt; 0</span> to control tail
+behavior:</p>
+<p><span class="math display">f_{EKw}(x; α, β, λ) \propto
+x^{λα-1}(1-x^λ)^{αβ-1}[1-(1-x^λ)^α]^{β-1}</span></p>
 <p>This family accommodates heavier tails than the standard Kumaraswamy,
 providing greater flexibility for non-standard distributions while
 maintaining computational tractability.</p>
@@ -251,19 +235,15 @@ maintaining computational tractability.</p>
 <h3 id="regression-structures">Regression Structures<a class="anchor" aria-label="anchor" href="#regression-structures"></a>
 </h3>
 <p>Both Beta and Kumaraswamy regression frameworks model distributional
-parameters as functions of covariates. For a response
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">Y_i \in (0,1)</annotation></semantics></math>
-with covariate vector
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐱</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mathbf{x}_i</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>μ</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>𝐱</mi><mi>i</mi><mi>T</mi></msubsup><mi>𝛃</mi></mrow><annotation encoding="application/x-tex">g(\mu_i) = \mathbf{x}_i^T\boldsymbol{\beta}</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>⋅</mo><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">g(\cdot)</annotation></semantics></math>
-is a link function (typically logit) and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mu_i</annotation></semantics></math>
-represents the conditional mean. Additional parameters (precision,
-shape) may also depend on covariates through separate linear
-predictors:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ϕ</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>𝐳</mi><mi>i</mi><mi>T</mi></msubsup><mi>𝛄</mi></mrow><annotation encoding="application/x-tex">h(\phi_i) = \mathbf{z}_i^T\boldsymbol{\gamma}</annotation></semantics></math></p>
+parameters as functions of covariates. For a response <span class="math inline">Y_i \in (0,1)</span> with covariate vector <span class="math inline">\mathbf{x}_i</span>:</p>
+<p><span class="math display">g(\mu_i) =
+\mathbf{x}_i^T\boldsymbol{\beta}</span></p>
+<p>where <span class="math inline">g(\cdot)</span> is a link function
+(typically logit) and <span class="math inline">\mu_i</span> represents
+the conditional mean. Additional parameters (precision, shape) may also
+depend on covariates through separate linear predictors:</p>
+<p><span class="math display">h(\phi_i) =
+\mathbf{z}_i^T\boldsymbol{\gamma}</span></p>
 <p>Maximum likelihood estimation proceeds via numerical optimization of
 the log-likelihood. The closed-form CDF of Kumaraswamy-based models can
 substantially accelerate convergence, particularly for large datasets or
@@ -334,17 +314,8 @@ error accuracy</li>
 <div class="section level3">
 <h3 id="scenario-1-beta-distributed-data">Scenario 1: Beta-Distributed Data<a class="anchor" aria-label="anchor" href="#scenario-1-beta-distributed-data"></a>
 </h3>
-<p><strong>Data-generating process</strong>: Responses follow
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Beta</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mi>ϕ</mi><mo>,</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>μ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>ϕ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{Beta}(μ\phi, (1-μ)\phi)</annotation></semantics></math>
-where: -
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">logit</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>0.5</mn><mo>−</mo><mn>0.8</mn><msub><mi>x</mi><mn>1</mn></msub><mo>+</mo><mn>0.6</mn><msub><mi>x</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">\text{logit}(μ) = 0.5 - 0.8x_1 + 0.6x_2</annotation></semantics></math>
--
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>ϕ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1.5</mn><mo>+</mo><mn>0.4</mn><msub><mi>x</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">\log(\phi) = 1.5 + 0.4x_1</annotation></semantics></math>
--
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">x_1 \sim N(0,1)</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>2</mn></msub><mo>∼</mo><mi>U</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">x_2 \sim U(-1,1)</annotation></semantics></math>
-- Sample size:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mn>300</mn></mrow><annotation encoding="application/x-tex">n = 300</annotation></semantics></math></p>
+<p><strong>Data-generating process</strong>: Responses follow <span class="math inline">\text{Beta}(μ\phi, (1-μ)\phi)</span> where: - <span class="math inline">\text{logit}(μ) = 0.5 - 0.8x_1 + 0.6x_2</span> -
+<span class="math inline">\log(\phi) = 1.5 + 0.4x_1</span> - <span class="math inline">x_1 \sim N(0,1)</span>, <span class="math inline">x_2 \sim U(-1,1)</span> - Sample size: <span class="math inline">n = 300</span></p>
 <p>This scenario establishes baseline performance when Beta regression
 assumptions hold exactly.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -367,17 +338,13 @@ assumptions hold exactly.</p>
 <h4 id="visualizing-the-response-distribution">Visualizing the Response Distribution<a class="anchor" aria-label="anchor" href="#visualizing-the-response-distribution"></a>
 </h4>
 <p>Figure 1 illustrates the distributional characteristics of
-Beta-generated data. The response
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+Beta-generated data. The response <span class="math inline">Y</span>
 exhibits moderate skewness with smooth density across the unit interval.
-The scatter plots reveal clear covariate effects:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mn>1</mn></msub><annotation encoding="application/x-tex">x_1</annotation></semantics></math>
-demonstrates a strong negative relationship with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
-(coefficient β₁ = −0.8), while
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mn>2</mn></msub><annotation encoding="application/x-tex">x_2</annotation></semantics></math>
-shows a positive association (β₂ = 0.6). This well-behaved structure
-represents the “ideal case” for Beta regression.</p>
+The scatter plots reveal clear covariate effects: <span class="math inline">x_1</span> demonstrates a strong negative
+relationship with <span class="math inline">Y</span> (coefficient β₁ =
+−0.8), while <span class="math inline">x_2</span> shows a positive
+association (β₂ = 0.6). This well-behaved structure represents the
+“ideal case” for Beta regression.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">vis_data_s1</span> <span class="op">&lt;-</span> <span class="fu">dgp_beta</span><span class="op">(</span><span class="fl">1000</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -626,17 +593,9 @@ well-specified scenarios.</p>
 <h3 id="scenario-2-heavy-tailed-data">Scenario 2: Heavy-Tailed Data<a class="anchor" aria-label="anchor" href="#scenario-2-heavy-tailed-data"></a>
 </h3>
 <p><strong>Data-generating process</strong>: Exponentiated Kumaraswamy
-distribution with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo>=</mo><mn>1.82</mn></mrow><annotation encoding="application/x-tex">λ = 1.82</annotation></semantics></math>
-(exp(0.6)), inducing heavier tails than Beta can accommodate: -
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>0.8</mn><mo>−</mo><mn>0.5</mn><msub><mi>x</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">\log(α) = 0.8 - 0.5x_1</annotation></semantics></math>
--
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>0.3</mn><mo>+</mo><mn>0.4</mn><msub><mi>x</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">\log(β) = 0.3 + 0.4x_2</annotation></semantics></math>
--
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">x_1 \sim N(0,1)</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>2</mn></msub><mo>∼</mo><mtext mathvariant="normal">Bernoulli</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mn>0.5</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">x_2 \sim \text{Bernoulli}(0.5)</annotation></semantics></math>
-- Sample size:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mn>300</mn></mrow><annotation encoding="application/x-tex">n = 300</annotation></semantics></math></p>
+distribution with <span class="math inline">λ = 1.82</span> (exp(0.6)),
+inducing heavier tails than Beta can accommodate: - <span class="math inline">\log(α) = 0.8 - 0.5x_1</span> - <span class="math inline">\log(β) = 0.3 + 0.4x_2</span> - <span class="math inline">x_1 \sim N(0,1)</span>, <span class="math inline">x_2 \sim \text{Bernoulli}(0.5)</span> - Sample size:
+<span class="math inline">n = 300</span></p>
 <p>This scenario tests model robustness when the true distribution
 deviates from Beta assumptions.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -885,10 +844,9 @@ anti-conservative</strong> due to model misspecification. The
 Kumaraswamy family, including parameters to accommodate tail behavior,
 provides valid inference.</p>
 <p><strong>Magnitude interpretation</strong>: A 40% SE difference
-implies that 95% CIs from Beta regression are ~28% too narrow
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>1.4</mn><mo>≈</mo><mn>0.71</mn></mrow><annotation encoding="application/x-tex">1/1.4 ≈ 0.71</annotation></semantics></math>).
-In practical terms, researchers using Beta regression would report false
-precision, potentially leading to erroneous scientific conclusions.</p>
+implies that 95% CIs from Beta regression are ~28% too narrow (<span class="math inline">1/1.4 ≈ 0.71</span>). In practical terms,
+researchers using Beta regression would report false precision,
+potentially leading to erroneous scientific conclusions.</p>
 </div>
 </div>
 <div class="section level3">
@@ -896,16 +854,10 @@ precision, potentially leading to erroneous scientific conclusions.</p>
 </h3>
 <p><strong>Data-generating process</strong>: Mixture of J-shaped
 (concentrated near 0) and U-shaped (concentrated at boundaries)
-Kumaraswamy distributions: - J-shaped:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>−</mo><mn>1.5</mn><mo>+</mo><mn>0.2</mn><msub><mi>x</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">\log(α) = -1.5 + 0.2x_1</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>2.0</mn></mrow><annotation encoding="application/x-tex">\log(β) = 2.0</annotation></semantics></math>
-- U-shaped:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>−</mo><mn>1.8</mn><mo>+</mo><mn>0.1</mn><msub><mi>x</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">\log(α) = -1.8 + 0.1x_1</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>−</mo><mn>0.8</mn></mrow><annotation encoding="application/x-tex">\log(β) = -0.8</annotation></semantics></math>
--
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">x_1 \sim N(0,1)</annotation></semantics></math>
-- Sample size:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mn>400</mn></mrow><annotation encoding="application/x-tex">n = 400</annotation></semantics></math></p>
+Kumaraswamy distributions: - J-shaped: <span class="math inline">\log(α)
+= -1.5 + 0.2x_1</span>, <span class="math inline">\log(β) = 2.0</span> -
+U-shaped: <span class="math inline">\log(α) = -1.8 + 0.1x_1</span>,
+<span class="math inline">\log(β) = -0.8</span> - <span class="math inline">x_1 \sim N(0,1)</span> - Sample size: <span class="math inline">n = 400</span></p>
 <p>This challenging scenario assesses convergence reliability with
 extreme boundary concentration.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
@@ -1015,9 +967,8 @@ Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)
 <p>The empirical CDF (bottom right) quantifies the severity: <strong>45%
 of observations fall below 0.1 or above 0.9</strong>. This extreme
 boundary concentration creates numerical instabilities in Beta
-regression’s likelihood, where the beta function
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">B(α,β)</annotation></semantics></math>
-becomes ill-conditioned for shape parameters approaching zero.</p>
+regression’s likelihood, where the beta function <span class="math inline">B(α,β)</span> becomes ill-conditioned for shape
+parameters approaching zero.</p>
 </div>
 <div class="section level4">
 <h4 id="simulation-results-2">Simulation Results<a class="anchor" aria-label="anchor" href="#simulation-results-2"></a>
@@ -1260,7 +1211,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-224.74</td>
 <td align="right">0.192</td>
-<td align="right">0.014</td>
+<td align="right">0.016</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1269,7 +1220,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-181.12</td>
 <td align="right">0.228</td>
-<td align="right">0.214</td>
+<td align="right">0.212</td>
 </tr>
 <tr class="odd">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1278,7 +1229,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-219.76</td>
 <td align="right">0.199</td>
-<td align="right">0.207</td>
+<td align="right">0.203</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1287,7 +1238,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-219.24</td>
 <td align="right">0.662</td>
-<td align="right">0.220</td>
+<td align="right">0.224</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1305,7 +1256,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-116.79</td>
 <td align="right">0.210</td>
-<td align="right">0.019</td>
+<td align="right">0.020</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1332,7 +1283,7 @@ Scenarios</caption>
 <td align="right">4.5</td>
 <td align="right">16677.68</td>
 <td align="right">0.405</td>
-<td align="right">0.340</td>
+<td align="right">0.351</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
@@ -1341,7 +1292,7 @@ Scenarios</caption>
 <td align="right">100.0</td>
 <td align="right">-2007.68</td>
 <td align="right">0.292</td>
-<td align="right">0.034</td>
+<td align="right">0.035</td>
 </tr>
 <tr class="odd">
 <td align="left">S3: Extreme Shapes</td>
@@ -1359,7 +1310,7 @@ Scenarios</caption>
 <td align="right">80.0</td>
 <td align="right">-2331.45</td>
 <td align="right">0.365</td>
-<td align="right">0.043</td>
+<td align="right">0.044</td>
 </tr>
 </tbody>
 </table>
@@ -1426,22 +1377,22 @@ Beta Regression</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Kumaraswamy</td>
-<td align="right">0.078</td>
-<td align="right">1.578</td>
+<td align="right">0.076</td>
+<td align="right">1.663</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (gkwreg)</td>
 <td align="right">0.089</td>
-<td align="right">1.376</td>
+<td align="right">1.428</td>
 </tr>
 <tr class="odd">
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">0.098</td>
-<td align="right">1.250</td>
+<td align="right">0.100</td>
+<td align="right">1.271</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (betareg)</td>
-<td align="right">0.123</td>
+<td align="right">0.127</td>
 <td align="right">1.000</td>
 </tr>
 </tbody>
@@ -1570,15 +1521,16 @@ alternative</strong> for routine application.</p>
 <h3 id="theoretical-implications">Theoretical Implications<a class="anchor" aria-label="anchor" href="#theoretical-implications"></a>
 </h3>
 <p>The Kumaraswamy distribution’s analytical tractability—specifically
-its closed-form CDF
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup></mrow><annotation encoding="application/x-tex">F(x) = 1-(1-x^α)^β</annotation></semantics></math>—demonstrates
-that mathematical elegance and computational efficiency need not be
-sacrificed for statistical flexibility. This contrasts with the false
-dichotomy often assumed between “simple but fast” versus “complex but
-accurate” models.</p>
+its closed-form CDF <span class="math inline">F(x) =
+1-(1-x^α)^β</span>—demonstrates that mathematical elegance and
+computational efficiency need not be sacrificed for statistical
+flexibility. This contrasts with the false dichotomy often assumed
+between “simple but fast” versus “complex but accurate” models.</p>
 <p>The Generalized Kumaraswamy family’s hierarchical structure provides
 a principled framework for model selection:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Beta</mtext><mo>⊂</mo><mtext mathvariant="normal">Kumaraswamy</mtext><mo>⊂</mo><mtext mathvariant="normal">Exp. Kumaraswamy</mtext><mo>⊂</mo><mtext mathvariant="normal">Gen. Kumaraswamy</mtext></mrow><annotation encoding="application/x-tex">\text{Beta} \subset \text{Kumaraswamy} \subset \text{Exp. Kumaraswamy} \subset \text{Gen. Kumaraswamy}</annotation></semantics></math></p>
+<p><span class="math display">\text{Beta} \subset \text{Kumaraswamy}
+\subset \text{Exp. Kumaraswamy} \subset \text{Gen.
+Kumaraswamy}</span></p>
 <p>This nesting enables likelihood ratio tests and information
 criteria-based selection, analogous to the GLMM hierarchy, while
 maintaining computational feasibility throughout.</p>
@@ -1648,7 +1600,7 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] ggplot2_4.0.1 betareg_3.2-4 gkwreg_2.1.16
+[1] ggplot2_4.0.2 betareg_3.2-4 gkwreg_2.1.16
 
 loaded via a namespace (and not attached):
  [1] sandwich_3.1-1         sass_0.4.10            generics_0.1.4        
@@ -1660,11 +1612,11 @@ loaded via a namespace (and not attached):
 [19] textshaping_1.0.4      jquerylib_0.1.4        cli_3.6.5             
 [22] rlang_1.1.7            withr_3.0.2            RcppArmadillo_15.2.3-1
 [25] cachem_1.1.0           yaml_2.3.12            tools_4.5.2           
-[28] flexmix_2.3-20         dplyr_1.1.4            vctrs_0.7.0           
+[28] flexmix_2.3-20         dplyr_1.2.0            vctrs_0.7.1           
 [31] R6_2.6.1               stats4_4.5.2           zoo_1.8-15            
 [34] lifecycle_1.0.5        fs_1.6.6               ragg_1.5.0            
 [37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
-[40] bslib_0.9.0            pillar_1.11.1          gtable_0.3.6          
+[40] bslib_0.10.0           pillar_1.11.1          gtable_0.3.6          
 [43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.1     
 [46] tidyselect_1.2.1       xfun_0.56              tibble_3.3.1          
 [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          

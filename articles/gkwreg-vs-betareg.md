@@ -36,7 +36,7 @@ unit interval, computational efficiency
 ### Motivation and Background
 
 Regression analysis for continuous responses restricted to the unit
-interval $(0,1)$ arises frequently across scientific disciplines.
+interval (0,1) arises frequently across scientific disciplines.
 Applications include modeling proportions, rates, percentages, and other
 bounded measures in ecology, psychology, economics, and biostatistics
 (Ferrari & Cribari-Neto, 2004; Smithson & Verkuilen, 2006).
@@ -44,9 +44,9 @@ bounded measures in ecology, psychology, economics, and biostatistics
 Beta regression, introduced systematically by Ferrari & Cribari-Neto
 (2004), has emerged as the predominant framework for such analyses. The
 Beta distribution’s flexibility in accommodating various shapes through
-its two-parameter family $(\alpha,\beta)$ makes it attractive for
-modeling heterogeneous unit-interval data. However, several limitations
-warrant consideration:
+its two-parameter family (α, β) makes it attractive for modeling
+heterogeneous unit-interval data. However, several limitations warrant
+consideration:
 
 1.  **Computational burden**: The Beta distribution lacks a closed-form
     CDF, requiring numerical integration
@@ -57,11 +57,11 @@ warrant consideration:
 
 ### The Kumaraswamy Alternative
 
-Kumaraswamy (1980) introduced a two-parameter distribution on $(0,1)$
-that closely mimics Beta distribution properties while offering a
+Kumaraswamy (1980) introduced a two-parameter distribution on (0,1) that
+closely mimics Beta distribution properties while offering a
 **closed-form CDF**:
 
-$$F(x;\alpha,\beta) = 1 - \left( 1 - x^{\alpha} \right)^{\beta}$$
+F(x; α, β) = 1 - (1-x^α)^β
 
 This analytical tractability provides computational advantages while
 maintaining statistical flexibility comparable to the Beta distribution.
@@ -96,21 +96,6 @@ distributions.
 library(gkwreg)
 library(betareg)
 library(ggplot2)
-
-# Standardized color palette for all comparisons
-MODEL_COLORS <- c(
-  "Beta (betareg)" = "#D32F2F", # Red
-  "Beta (gkwreg)" = "#1976D2", # Blue
-  "Kumaraswamy" = "#388E3C", # Green
-  "Exp. Kumaraswamy" = "#7B1FA2" # Purple
-)
-
-MODEL_NAMES <- c(
-  betareg = "Beta (betareg)",
-  gkw_beta = "Beta (gkwreg)",
-  gkw_kw = "Kumaraswamy",
-  gkw_ekw = "Exp. Kumaraswamy"
-)
 ```
 
 ------------------------------------------------------------------------
@@ -121,34 +106,32 @@ MODEL_NAMES <- c(
 
 #### Beta Distribution
 
-The Beta distribution with shape parameters $\alpha,\beta > 0$ has
-probability density function:
+The Beta distribution with shape parameters α, β \> 0 has probability
+density function:
 
-$$f(x;\alpha,\beta) = \frac{x^{\alpha - 1}(1 - x)^{\beta - 1}}{B(\alpha,\beta)},\quad x \in (0,1)$$
+f(x; α, β) = \frac{x^{α-1}(1-x)^{β-1}}{B(α,β)}, \quad x \in (0,1)
 
-where
-$B(\alpha,\beta) = \int_{0}^{1}t^{\alpha - 1}(1 - t)^{\beta - 1}dt$ is
-the beta function. Key properties include:
+where B(α,β) = \int_0^1 t^{α-1}(1-t)^{β-1}dt is the beta function. Key
+properties include:
 
-- **Mean**: $E\lbrack X\rbrack = \alpha/(\alpha + \beta)$
-- **Variance**:
-  $\text{Var}(X) = \alpha\beta/\left\lbrack (\alpha + \beta)^{2}(\alpha + \beta + 1) \right\rbrack$
+- **Mean**: E\[X\] = α/(α+β)
+- **Variance**: \text{Var}(X) = αβ/\[(α+β)^2(α+β+1)\]
 - **CDF**: No closed form; requires numerical integration
 
 #### Kumaraswamy Distribution
 
-The Kumaraswamy distribution (Kumaraswamy, 1980) with parameters
-$\alpha,\beta > 0$ has PDF:
+The Kumaraswamy distribution (Kumaraswamy, 1980) with parameters α, β \>
+0 has PDF:
 
-$$f(x;\alpha,\beta) = \alpha\beta x^{\alpha - 1}\left( 1 - x^{\alpha} \right)^{\beta - 1},\quad x \in (0,1)$$
+f(x; α, β) = αβx^{α-1}(1-x^α)^{β-1}, \quad x \in (0,1)
 
 Distinguished by its **closed-form CDF**:
 
-$$F(x;\alpha,\beta) = 1 - \left( 1 - x^{\alpha} \right)^{\beta}$$
+F(x; α, β) = 1 - (1-x^α)^β
 
 This analytical expression enables: - Efficient quantile computation via
-$F^{- 1}(u) = \left\lbrack 1 - (1 - u)^{1/\beta} \right\rbrack^{1/\alpha}$ -
-Faster likelihood evaluations - Simplified asymptotic theory development
+F^{-1}(u) = \[1-(1-u)^{1/β}\]^{1/α} - Faster likelihood evaluations -
+Simplified asymptotic theory development
 
 The Kumaraswamy distribution closely approximates the Beta distribution
 for most parameter combinations while offering superior computational
@@ -157,9 +140,9 @@ properties.
 #### Exponentiated Kumaraswamy Distribution
 
 A three-parameter extension incorporating an additional shape parameter
-$\lambda > 0$ to control tail behavior:
+λ \> 0 to control tail behavior:
 
-$$f_{EKw}(x;\alpha,\beta,\lambda) \propto x^{\lambda\alpha - 1}\left( 1 - x^{\lambda} \right)^{\alpha\beta - 1}\left\lbrack 1 - \left( 1 - x^{\lambda} \right)^{\alpha} \right\rbrack^{\beta - 1}$$
+f\_{EKw}(x; α, β, λ) \propto x^{λα-1}(1-x^λ)^{αβ-1}\[1-(1-x^λ)^α\]^{β-1}
 
 This family accommodates heavier tails than the standard Kumaraswamy,
 providing greater flexibility for non-standard distributions while
@@ -168,16 +151,16 @@ maintaining computational tractability.
 ### Regression Structures
 
 Both Beta and Kumaraswamy regression frameworks model distributional
-parameters as functions of covariates. For a response $Y_{i} \in (0,1)$
-with covariate vector $\mathbf{x}_{i}$:
+parameters as functions of covariates. For a response Y_i \in (0,1) with
+covariate vector \mathbf{x}\_i:
 
-$$g\left( \mu_{i} \right) = \mathbf{x}_{i}^{T}{\mathbf{β}}$$
+g(\mu_i) = \mathbf{x}\_i^T\boldsymbol{\beta}
 
-where $g( \cdot )$ is a link function (typically logit) and $\mu_{i}$
-represents the conditional mean. Additional parameters (precision,
-shape) may also depend on covariates through separate linear predictors:
+where g(\cdot) is a link function (typically logit) and \mu_i represents
+the conditional mean. Additional parameters (precision, shape) may also
+depend on covariates through separate linear predictors:
 
-$$h\left( \phi_{i} \right) = \mathbf{z}_{i}^{T}{\mathbf{γ}}$$
+h(\phi_i) = \mathbf{z}\_i^T\boldsymbol{\gamma}
 
 Maximum likelihood estimation proceeds via numerical optimization of the
 log-likelihood. The closed-form CDF of Kumaraswamy-based models can
@@ -223,11 +206,10 @@ Model comparison employed multiple criteria:
 
 ### Scenario 1: Beta-Distributed Data
 
-**Data-generating process**: Responses follow
-$\text{Beta}\left( \mu\phi,(1 - \mu)\phi \right)$ where: -
-$\text{logit}(\mu) = 0.5 - 0.8x_{1} + 0.6x_{2}$ -
-$\log(\phi) = 1.5 + 0.4x_{1}$ - $x_{1} \sim N(0,1)$,
-$x_{2} \sim U( - 1,1)$ - Sample size: $n = 300$
+**Data-generating process**: Responses follow \text{Beta}(μ\phi,
+(1-μ)\phi) where: - \text{logit}(μ) = 0.5 - 0.8x_1 + 0.6x_2 - \log(\phi)
+= 1.5 + 0.4x_1 - x_1 \sim N(0,1), x_2 \sim U(-1,1) - Sample size: n =
+300
 
 This scenario establishes baseline performance when Beta regression
 assumptions hold exactly.
@@ -253,12 +235,12 @@ dgp_beta <- function(n, params) {
 #### Visualizing the Response Distribution
 
 Figure 1 illustrates the distributional characteristics of
-Beta-generated data. The response $Y$ exhibits moderate skewness with
+Beta-generated data. The response Y exhibits moderate skewness with
 smooth density across the unit interval. The scatter plots reveal clear
-covariate effects: $x_{1}$ demonstrates a strong negative relationship
-with $Y$ (coefficient β₁ = −0.8), while $x_{2}$ shows a positive
-association (β₂ = 0.6). This well-behaved structure represents the
-“ideal case” for Beta regression.
+covariate effects: x_1 demonstrates a strong negative relationship with
+Y (coefficient β₁ = −0.8), while x_2 shows a positive association (β₂ =
+0.6). This well-behaved structure represents the “ideal case” for Beta
+regression.
 
 ``` r
 set.seed(123)
@@ -420,10 +402,9 @@ scenarios.
 ### Scenario 2: Heavy-Tailed Data
 
 **Data-generating process**: Exponentiated Kumaraswamy distribution with
-$\lambda = 1.82$ (exp(0.6)), inducing heavier tails than Beta can
-accommodate: - $\log(\alpha) = 0.8 - 0.5x_{1}$ -
-$\log(\beta) = 0.3 + 0.4x_{2}$ - $x_{1} \sim N(0,1)$,
-$x_{2} \sim \text{Bernoulli}(0.5)$ - Sample size: $n = 300$
+λ = 1.82 (exp(0.6)), inducing heavier tails than Beta can accommodate: -
+\log(α) = 0.8 - 0.5x_1 - \log(β) = 0.3 + 0.4x_2 - x_1 \sim N(0,1), x_2
+\sim \text{Bernoulli}(0.5) - Sample size: n = 300
 
 This scenario tests model robustness when the true distribution deviates
 from Beta assumptions.
@@ -619,17 +600,16 @@ model misspecification. The Kumaraswamy family, including parameters to
 accommodate tail behavior, provides valid inference.
 
 **Magnitude interpretation**: A 40% SE difference implies that 95% CIs
-from Beta regression are ~28% too narrow ($1/1.4 \approx 0.71$). In
-practical terms, researchers using Beta regression would report false
-precision, potentially leading to erroneous scientific conclusions.
+from Beta regression are ~28% too narrow (1/1.4 ≈ 0.71). In practical
+terms, researchers using Beta regression would report false precision,
+potentially leading to erroneous scientific conclusions.
 
 ### Scenario 3: Extreme Distributional Shapes
 
 **Data-generating process**: Mixture of J-shaped (concentrated near 0)
 and U-shaped (concentrated at boundaries) Kumaraswamy distributions: -
-J-shaped: $\log(\alpha) = - 1.5 + 0.2x_{1}$, $\log(\beta) = 2.0$ -
-U-shaped: $\log(\alpha) = - 1.8 + 0.1x_{1}$, $\log(\beta) = - 0.8$ -
-$x_{1} \sim N(0,1)$ - Sample size: $n = 400$
+J-shaped: \log(α) = -1.5 + 0.2x_1, \log(β) = 2.0 - U-shaped: \log(α) =
+-1.8 + 0.1x_1, \log(β) = -0.8 - x_1 \sim N(0,1) - Sample size: n = 400
 
 This challenging scenario assesses convergence reliability with extreme
 boundary concentration.
@@ -747,8 +727,8 @@ Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)
 The empirical CDF (bottom right) quantifies the severity: **45% of
 observations fall below 0.1 or above 0.9**. This extreme boundary
 concentration creates numerical instabilities in Beta regression’s
-likelihood, where the beta function $B(\alpha,\beta)$ becomes
-ill-conditioned for shape parameters approaching zero.
+likelihood, where the beta function B(α,β) becomes ill-conditioned for
+shape parameters approaching zero.
 
 #### Simulation Results
 
@@ -882,18 +862,18 @@ practitioners.
 
 | Scenario                | Model            | N_Success | Conv_Rate |      AIC |  RMSE |  Time |
 |:------------------------|:-----------------|----------:|----------:|---------:|------:|------:|
-| S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.192 | 0.014 |
-| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.214 |
-| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.207 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.220 |
+| S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.192 | 0.016 |
+| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.212 |
+| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.203 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.224 |
 | S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.191 | 0.013 |
-| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.019 |
+| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.020 |
 | S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.194 | 0.011 |
 | S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.0 |  -213.45 | 0.618 | 0.031 |
-| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.340 |
-| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.034 |
+| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.351 |
+| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.035 |
 | S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.266 | 0.015 |
-| S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.043 |
+| S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.044 |
 
 Table 4: Comprehensive Model Comparison Across Three Simulation
 Scenarios
@@ -951,10 +931,10 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |           0.078 |          1.578 |
-| Beta (gkwreg)    |           0.089 |          1.376 |
-| Exp. Kumaraswamy |           0.098 |          1.250 |
-| Beta (betareg)   |           0.123 |          1.000 |
+| Kumaraswamy      |           0.076 |          1.663 |
+| Beta (gkwreg)    |           0.089 |          1.428 |
+| Exp. Kumaraswamy |           0.100 |          1.271 |
+| Beta (betareg)   |           0.127 |          1.000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
 Regression
@@ -1054,17 +1034,16 @@ routine application.
 ### Theoretical Implications
 
 The Kumaraswamy distribution’s analytical tractability—specifically its
-closed-form CDF
-$F(x) = 1 - \left( 1 - x^{\alpha} \right)^{\beta}$—demonstrates that
-mathematical elegance and computational efficiency need not be
-sacrificed for statistical flexibility. This contrasts with the false
-dichotomy often assumed between “simple but fast” versus “complex but
-accurate” models.
+closed-form CDF F(x) = 1-(1-x^α)^β—demonstrates that mathematical
+elegance and computational efficiency need not be sacrificed for
+statistical flexibility. This contrasts with the false dichotomy often
+assumed between “simple but fast” versus “complex but accurate” models.
 
 The Generalized Kumaraswamy family’s hierarchical structure provides a
 principled framework for model selection:
 
-$$\text{Beta} \subset \text{Kumaraswamy} \subset \text{Exp. Kumaraswamy} \subset \text{Gen. Kumaraswamy}$$
+\text{Beta} \subset \text{Kumaraswamy} \subset \text{Exp. Kumaraswamy}
+\subset \text{Gen. Kumaraswamy}
 
 This nesting enables likelihood ratio tests and information
 criteria-based selection, analogous to the GLMM hierarchy, while
@@ -1138,7 +1117,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [1] stats     graphics  grDevices utils     datasets  methods   base     
 
     other attached packages:
-    [1] ggplot2_4.0.1 betareg_3.2-4 gkwreg_2.1.16
+    [1] ggplot2_4.0.2 betareg_3.2-4 gkwreg_2.1.16
 
     loaded via a namespace (and not attached):
      [1] sandwich_3.1-1         sass_0.4.10            generics_0.1.4        
@@ -1150,11 +1129,11 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [19] textshaping_1.0.4      jquerylib_0.1.4        cli_3.6.5             
     [22] rlang_1.1.7            withr_3.0.2            RcppArmadillo_15.2.3-1
     [25] cachem_1.1.0           yaml_2.3.12            tools_4.5.2           
-    [28] flexmix_2.3-20         dplyr_1.1.4            vctrs_0.7.0           
+    [28] flexmix_2.3-20         dplyr_1.2.0            vctrs_0.7.1           
     [31] R6_2.6.1               stats4_4.5.2           zoo_1.8-15            
     [34] lifecycle_1.0.5        fs_1.6.6               ragg_1.5.0            
     [37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
-    [40] bslib_0.9.0            pillar_1.11.1          gtable_0.3.6          
+    [40] bslib_0.10.0           pillar_1.11.1          gtable_0.3.6          
     [43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.1     
     [46] tidyselect_1.2.1       xfun_0.56              tibble_3.3.1          
     [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
