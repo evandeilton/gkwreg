@@ -1,8 +1,16 @@
+# gkwreg — pkgdown: tema claro, fonte Ubuntu
+
 url: https://evandeilton.github.io/gkwreg/
 
 template:
   bootstrap: 5
-  bootswatch: flatly #slate #minty
+  bootswatch: litera
+  theme: breeze-light
+  math-rendering: katex
+  bslib:
+    base_font: {google: "Ubuntu"}
+    heading_font: {google: "Ubuntu"}
+    code_font: {google: "Ubuntu Mono"}
 
 navbar:
   structure:
@@ -13,6 +21,13 @@ navbar:
       icon: fab fa-github fa-lg
       href: https://github.com/evandeilton/gkwreg
       aria-label: GitHub
+  bg: light
+  type: light
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
 
 logo:
   src: man/figures/gkwreg.png

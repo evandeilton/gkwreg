@@ -32,6 +32,21 @@ knitr::opts_chunk$set(
 )
 
 set.seed(2024)
+
+# Standardized color palette for all comparisons
+MODEL_COLORS <- c(
+  "Beta (betareg)" = "#D32F2F", # Red
+  "Beta (gkwreg)" = "#1976D2", # Blue
+  "Kumaraswamy" = "#388E3C", # Green
+  "Exp. Kumaraswamy" = "#7B1FA2" # Purple
+)
+
+MODEL_NAMES <- c(
+  betareg = "Beta (betareg)",
+  gkw_beta = "Beta (gkwreg)",
+  gkw_kw = "Kumaraswamy",
+  gkw_ekw = "Exp. Kumaraswamy"
+)
 ```
 
 ---
@@ -82,21 +97,6 @@ We address these questions through rigorous Monte Carlo simulations comparing th
 library(gkwreg)
 library(betareg)
 library(ggplot2)
-
-# Standardized color palette for all comparisons
-MODEL_COLORS <- c(
-  "Beta (betareg)" = "#D32F2F", # Red
-  "Beta (gkwreg)" = "#1976D2", # Blue
-  "Kumaraswamy" = "#388E3C", # Green
-  "Exp. Kumaraswamy" = "#7B1FA2" # Purple
-)
-
-MODEL_NAMES <- c(
-  betareg = "Beta (betareg)",
-  gkw_beta = "Beta (gkwreg)",
-  gkw_kw = "Kumaraswamy",
-  gkw_ekw = "Exp. Kumaraswamy"
-)
 ```
 
 ---

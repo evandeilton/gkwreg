@@ -1,0 +1,102 @@
+/*
+ * gkwreg pkgdown — refinamentos UX
+ * Leitura confortável, hierarquia clara, acessibilidade
+ */
+
+/* ----- Tipografia e ritmo vertical ----- */
+.main-content {
+  line-height: 1.7;
+  max-width: 75ch;
+}
+
+/* Títulos de seção sem caixa alta (override do tema) */
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content h4,
+.page-header h1,
+#toc .nav-link,
+nav[aria-label="Table of contents"] .nav-link {
+  text-transform: none;
+}
+
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content h4 {
+  letter-spacing: 0.02em;
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+  font-weight: 600;
+}
+
+.main-content h1 { font-size: 1.95rem; }
+.main-content h2 { font-size: 1.5rem; border-bottom: 1px solid rgba(0,0,0,.08); padding-bottom: .25em; }
+.main-content h3 { font-size: 1.2rem; }
+
+.main-content p {
+  margin-bottom: 1em;
+}
+
+.main-content pre {
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  line-height: 1.5;
+}
+
+.main-content code {
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+}
+
+/* ----- Tabelas legíveis ----- */
+.main-content table {
+  font-size: 0.95rem;
+}
+
+.main-content thead th {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ----- Links e foco (acessibilidade) ----- */
+.main-content a {
+  text-underline-offset: 2px;
+}
+
+.main-content a:focus-visible,
+.navbar a:focus-visible,
+footer a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* ----- Navbar elegante ----- */
+.navbar {
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+/* ----- Footer discreto ----- */
+footer {
+  font-size: 0.9rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0,0,0,.08);
+}
+
+/* ----- Referência: lista de funções ----- */
+.ref-list .ref-name {
+  font-family: "Ubuntu Mono", monospace;
+  font-weight: 500;
+}
+
+.ref-list .ref-desc {
+  color: inherit;
+  opacity: .9;
+}

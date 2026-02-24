@@ -6,11 +6,15 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Generalized Kumaraswamy Regression Models for Bounded Data • gkwreg</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="katex-auto.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/Ubuntu-0.4.10/font.css" rel="stylesheet">
+<link href="deps/Ubuntu_Mono-0.4.10/font.css" rel="stylesheet">
+<link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Generalized Kumaraswamy Regression Models for Bounded Data">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
+<meta property="og:title" content="Generalized Kumaraswamy Regression Models for Bounded Data">
 <meta name="description" content="Implements regression models for bounded continuous data in the open interval (0,1) using the five-parameter Generalized Kumaraswamy distribution. Supports modeling all distribution parameters (alpha, beta, gamma, delta, lambda) as functions of predictors through various link functions. Provides efficient maximum likelihood estimation via Template Model Builder (TMB), offering comprehensive diagnostics, model comparison tools, and simulation methods. Particularly useful for analyzing proportions, rates, indices, and other bounded response data with complex distributional features not adequately captured by simpler models.">
 <meta property="og:description" content="Implements regression models for bounded continuous data in the open interval (0,1) using the five-parameter Generalized Kumaraswamy distribution. Supports modeling all distribution parameters (alpha, beta, gamma, delta, lambda) as functions of predictors through various link functions. Provides efficient maximum likelihood estimation via Template Model Builder (TMB), offering comprehensive diagnostics, model comparison tools, and simulation methods. Particularly useful for analyzing proportions, rates, indices, and other bounded response data with complex distributional features not adequately captured by simpler models.">
 </head>
@@ -18,11 +22,11 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,12 +59,12 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="gkwreg-generalized-kumaraswamy-regression-models-for-bounded-data-">gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data <img src="reference/figures/gkwreg.png" align="right" height="138"><a class="anchor" aria-label="anchor" href="#gkwreg-generalized-kumaraswamy-regression-models-for-bounded-data-"></a>
 </h1></div>
-<p><a href="https://CRAN.R-project.org/package=gkwreg" class="external-link"><img src="https://www.r-pkg.org/badges/version/gkwreg" alt="CRAN status"></a> <a href="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://cran.r-project.org/package=gkwreg" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/gkwreg" alt="Downloads"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
+<p><a href="https://CRAN.R-project.org/package=gkwreg" class="external-link"><img src="https://www.r-pkg.org/badges/version/gkwreg" alt="CRAN status"></a> <a href="https://doi.org/10.21105/joss.08991" class="external-link"><img src="https://joss.theoj.org/papers/10.21105/joss.08991/status.svg" alt="DOI"></a> <a href="https://cran.r-project.org/package=gkwreg" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/gkwreg" alt="Downloads"></a> <a href="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/evandeilton/gkwreg/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The <strong>gkwreg</strong> package provides a comprehensive and computationally efficient framework for regression modeling of data restricted to the standard unit interval <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0, 1)</annotation></semantics></math>, including proportions, rates, fractions, percentages, and bounded indices.</p>
-<p>While Beta regression is the traditional approach for such data, <strong>gkwreg</strong> focuses on the <strong>Generalized Kumaraswamy (GKw)</strong> distribution family. This offers exceptional flexibility by encompassing seven important bounded distributions—including Beta and Kumaraswamy—as special or limiting cases.</p>
+<p>The <strong>gkwreg</strong> package provides a comprehensive and computationally efficient framework for regression modeling of data restricted to the standard unit interval <span class="math inline">(0, 1)</span>, including proportions, rates, fractions, percentages, and bounded indices.</p>
+<p>While Beta regression is the traditional approach for such data, <strong>gkwreg</strong> focuses on the <strong>Generalized Kumaraswamy (GKw)</strong> distribution family. This offers exceptional flexibility by encompassing seven important bounded distributions, including Beta and Kumaraswamy as special or limiting cases.</p>
 <p>The package enables full <strong>distributional regression</strong>, where <em>all</em> relevant parameters can be modeled as functions of covariates through flexible link functions. Maximum Likelihood estimation is performed efficiently via the <strong>Template Model Builder (TMB)</strong> framework, leveraging <strong>Automatic Differentiation (AD)</strong> for superior computational speed, numerical accuracy, and optimization stability.</p>
 </div>
 <div class="section level2">
@@ -104,50 +108,50 @@
 <tr>
 <td align="left">Generalized Kumaraswamy</td>
 <td align="left"><code>gkw</code></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta, \gamma, \delta, \lambda</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\alpha, \beta, \gamma, \delta, \lambda</span></td>
 <td align="left">None</td>
 <td align="left">5</td>
 </tr>
 <tr>
 <td align="left">Beta-Kumaraswamy</td>
 <td align="left"><code>bkw</code></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta, \gamma, \delta</annotation></semantics></math></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\lambda = 1</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\alpha, \beta, \gamma, \delta</span></td>
+<td align="left"><span class="math inline">\lambda = 1</span></td>
 <td align="left">4</td>
 </tr>
 <tr>
 <td align="left">Kumaraswamy-Kumaraswamy</td>
 <td align="left"><code>kkw</code></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta, \delta, \lambda</annotation></semantics></math></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma = 1</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\alpha, \beta, \delta, \lambda</span></td>
+<td align="left"><span class="math inline">\gamma = 1</span></td>
 <td align="left">4</td>
 </tr>
 <tr>
 <td align="left">Exponentiated Kumaraswamy</td>
 <td align="left"><code>ekw</code></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>λ</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta, \lambda</annotation></semantics></math></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>δ</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\gamma = 1, \delta = 0</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\alpha, \beta, \lambda</span></td>
+<td align="left"><span class="math inline">\gamma = 1, \delta = 0</span></td>
 <td align="left">3</td>
 </tr>
 <tr>
 <td align="left">McDonald (Beta Power)</td>
 <td align="left"><code>mc</code></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi></mrow><annotation encoding="application/x-tex">\gamma, \delta, \lambda</annotation></semantics></math></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>β</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1, \beta = 1</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\gamma, \delta, \lambda</span></td>
+<td align="left"><span class="math inline">\alpha = 1, \beta = 1</span></td>
 <td align="left">3</td>
 </tr>
 <tr>
 <td align="left">Kumaraswamy</td>
 <td align="left"><code>kw</code></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta</annotation></semantics></math></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>δ</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>λ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma = 1, \delta = 0, \lambda = 1</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\alpha, \beta</span></td>
+<td align="left"><span class="math inline">\gamma = 1, \delta = 0, \lambda = 1</span></td>
 <td align="left">2</td>
 </tr>
 <tr>
 <td align="left">Beta</td>
 <td align="left"><code>beta</code></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>,</mo><mi>δ</mi></mrow><annotation encoding="application/x-tex">\gamma, \delta</annotation></semantics></math></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>β</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>λ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1, \beta = 1, \lambda = 1</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\gamma, \delta</span></td>
+<td align="left"><span class="math inline">\alpha = 1, \beta = 1, \lambda = 1</span></td>
 <td align="left">2</td>
 </tr>
 </tbody>
@@ -168,10 +172,10 @@
 <p><strong>Multiple link functions</strong> with optional scaling:</p>
 <ul>
 <li>
-<strong>Positive parameters</strong> (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>λ</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta, \gamma, \lambda</annotation></semantics></math>): <code>log</code> (default), <code>sqrt</code>, <code>inverse</code>, <code>identity</code>
+<strong>Positive parameters</strong> (<span class="math inline">\alpha, \beta, \gamma, \lambda</span>): <code>log</code> (default), <code>sqrt</code>, <code>inverse</code>, <code>identity</code>
 </li>
 <li>
-<strong>Probability parameters</strong> (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>δ</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\delta \in (0,1)</annotation></semantics></math>): <code>logit</code> (default), <code>probit</code>, <code>cloglog</code>, <code>cauchy</code>
+<strong>Probability parameters</strong> (<span class="math inline">\delta \in (0,1)</span>): <code>logit</code> (default), <code>probit</code>, <code>cloglog</code>, <code>cauchy</code>
 </li>
 <li>
 <strong>Link scaling</strong>: Control transformation intensity via <code>link_scale</code> (useful for numerical stability)</li>
@@ -206,7 +210,7 @@
 <ul>
 <li>Intelligent caching of intermediate calculations.</li>
 <li>Vectorized operations via Eigen/Armadillo.</li>
-<li>Memory-efficient for large datasets (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>&gt;</mo><mn>100</mn><mo>,</mo><mn>000</mn></mrow><annotation encoding="application/x-tex">n &gt; 100,000</annotation></semantics></math>).</li>
+<li>Memory-efficient for large datasets (<span class="math inline">n &gt; 100,000</span>).</li>
 </ul>
 </li>
 </ul>
@@ -317,7 +321,7 @@
 <span><span class="co"># Predict different quantities</span></span>
 <span><span class="va">pred_mean</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span> <span class="co"># E(Y|X)</span></span>
 <span><span class="va">pred_var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"variance"</span><span class="op">)</span> <span class="co"># Var(Y|X)</span></span>
-<span><span class="va">pred_alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span> <span class="co"># α parameter</span></span>
+<span><span class="va">pred_alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span> <span class="co"># &lt;U+03B1&gt; parameter</span></span>
 <span><span class="va">pred_params</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"parameter"</span><span class="op">)</span> <span class="co"># All parameters</span></span>
 <span></span>
 <span><span class="co"># Evaluate density at y = 0.5 for each observation</span></span>
@@ -521,30 +525,32 @@
 <div class="section level3">
 <h3 id="the-generalized-kumaraswamy-distribution">The Generalized Kumaraswamy Distribution<a class="anchor" aria-label="anchor" href="#the-generalized-kumaraswamy-distribution"></a>
 </h3>
-<p>The GKw distribution is a five-parameter family for variables on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0, 1)</annotation></semantics></math> with cumulative distribution function:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>I</mi><msup><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>x</mi><mi>α</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo stretchy="true" form="postfix">]</mo></mrow><mi>λ</mi></msup></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)</annotation></semantics></math></p>
-<p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>z</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">I_z(a,b)</annotation></semantics></math> is the regularized incomplete beta function. The probability density function is:</p>
-<!-- $$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \left\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda} \right \}^{\delta-1}$$ -->
-<!-- $$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \left\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda} \right\}^{\delta-1}$$ -->
-<p><span class="math display">$$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda}\\}^{\delta-1}$$</span></p>
+<p>The GKw distribution is a five-parameter family for variables on <span class="math inline">(0, 1)</span> with cumulative distribution function:</p>
+<p><span class="math display">
+F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)
+</span></p>
+<p>where <span class="math inline">I_z(a,b)</span> is the regularized incomplete beta function. The probability density function is:</p>
+<p><span class="math display">
+f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda}\\}^{\delta-1}
+</span></p>
 <p><strong>Parameter Roles</strong>:</p>
 <ul>
 <li>
-<strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta</annotation></semantics></math></strong>: Control basic shape (inherited from Kumaraswamy)</li>
+<strong><span class="math inline">\alpha, \beta</span></strong>: Control basic shape (inherited from Kumaraswamy)</li>
 <li>
-<strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>,</mo><mi>δ</mi></mrow><annotation encoding="application/x-tex">\gamma, \delta</annotation></semantics></math></strong>: Govern tail behavior and concentration</li>
+<strong><span class="math inline">\gamma, \delta</span></strong>: Govern tail behavior and concentration</li>
 <li>
-<strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math></strong>: Additional flexibility for skewness and peaks</li>
+<strong><span class="math inline">\lambda</span></strong>: Additional flexibility for skewness and peaks</li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="regression-framework">Regression Framework<a class="anchor" aria-label="anchor" href="#regression-framework"></a>
 </h3>
-<p>For response <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">y_i \in (0,1)</annotation></semantics></math> following a GKw family distribution, each parameter <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>θ</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>α</mi><mi>i</mi></msub><mo>,</mo><msub><mi>β</mi><mi>i</mi></msub><mo>,</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>,</mo><msub><mi>δ</mi><mi>i</mi></msub><mo>,</mo><msub><mi>λ</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\theta_{ip} \in \{\alpha_i, \beta_i, \gamma_i, \delta_i, \lambda_i\}</annotation></semantics></math> depends on covariates via link functions:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>p</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>θ</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>η</mi><mrow><mi>i</mi><mi>p</mi></mrow></msub><mo>=</mo><msubsup><mi>𝐱</mi><mrow><mi>i</mi><mi>p</mi></mrow><mi>⊤</mi></msubsup><msub><mi>𝛃</mi><mi>p</mi></msub></mrow><annotation encoding="application/x-tex">g_p(\theta_{ip}) = \eta_{ip} = \mathbf{x}_{ip}^\top \boldsymbol{\beta}_p</annotation></semantics></math></p>
+<p>For response <span class="math inline">y_i \in (0,1)</span> following a GKw family distribution, each parameter <span class="math inline">\theta_{ip} \in \{\alpha_i, \beta_i, \gamma_i, \delta_i, \lambda_i\}</span> depends on covariates via link functions:</p>
+<p><span class="math display">g_p(\theta_{ip}) = \eta_{ip} = \mathbf{x}_{ip}^\top \boldsymbol{\beta}_p</span></p>
 <p>Maximum likelihood estimation maximizes:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>Θ</mi><mo>;</mo><mi>𝐲</mi><mo>,</mo><mi>𝐗</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mo>log</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mi>i</mi></msub><mo>;</mo><msub><mi>θ</mi><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>Θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\ell(\Theta; \mathbf{y}, \mathbf{X}) = \sum_{i=1}^{n} \log f(y_i; \theta_i(\Theta))</annotation></semantics></math></p>
-<p>TMB computes exact gradients <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>∇</mi><mo>ℓ</mo></mrow><annotation encoding="application/x-tex">\nabla \ell</annotation></semantics></math> and Hessian <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐇</mi><annotation encoding="application/x-tex">\mathbf{H}</annotation></semantics></math> via automatic differentiation, enabling fast and stable optimization.</p>
+<p><span class="math display">\ell(\Theta; \mathbf{y}, \mathbf{X}) = \sum_{i=1}^{n} \log f(y_i; \theta_i(\Theta))</span></p>
+<p>TMB computes exact gradients <span class="math inline">\nabla \ell</span> and Hessian <span class="math inline">\mathbf{H}</span> via automatic differentiation, enabling fast and stable optimization.</p>
 <hr>
 </div>
 </div>
@@ -705,14 +711,22 @@
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
 <p>This package is licensed under the <strong>MIT License</strong>. See the <a href="https://github.com/evandeilton/gkwreg/blob/main/LICENSE" class="external-link">LICENSE</a> file for details.</p>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="author-and-maintainer">Author and Maintainer<a class="anchor" aria-label="anchor" href="#author-and-maintainer"></a>
-</h2>
-<p><strong>José Evandeilton Lopes (Lopes, J. E.)</strong> | <a href="mailto:evandeilton@gmail.com" class="email">evandeilton@gmail.com</a> | <a href="https://github.com/evandeilton" class="external-link">GitHub</a> | <a href="https://orcid.org/0009-0007-5887-4084" class="external-link">ORCID</a></p>
-<p>LEG - Laboratório de Estatística e Geoinformação | UFPR - Universidade Federal do Paraná, Brazil</p>
-<hr>
+<table class="table">
+<colgroup><col width="100%"></colgroup>
+<tbody>
+<tr>
+<td>## Author and Maintainer</td>
+</tr>
+<tr>
+<td>
+<strong>José Evandeilton Lopes (Lopes, J. E.)</strong> | <a href="mailto:evandeilton@gmail.com" class="email">evandeilton@gmail.com</a> | <a href="https://github.com/evandeilton" class="external-link">GitHub</a> | <a href="https://orcid.org/0009-0007-5887-4084" class="external-link">ORCID</a>
+</td>
+</tr>
+<tr>
+<td>LEG - Laboratório de Estatística e Geoinformação | UFPR - Universidade Federal do Paraná, Brazil</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -727,9 +741,8 @@
 <div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
-<li>
-<a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a>
-</li>
+<li><a href="LICENSE.html">Full license</a></li>
+<li><small><a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
 </ul>
 </div>
 
@@ -752,6 +765,7 @@
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>José Evandeilton Lopes <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0009-0007-5887-4084" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>Wagner Hugo Bonat <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0002-0349-7054" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 </ul>
 </div>
 
@@ -762,11 +776,11 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by José Evandeilton Lopes.</p>
+  <p>Developed by José Evandeilton Lopes, Wagner Hugo Bonat.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
