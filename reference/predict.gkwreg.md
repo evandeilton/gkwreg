@@ -426,7 +426,7 @@ cat("Kumaraswamy:", mse_kw, "\n")
 cat("Beta:", mse_beta, "\n")
 #> Beta: 0.06684878 
 cat("GKw:", mse_gkw, "\n")
-#> GKw: 0.03221942 
+#> GKw: 0.03222017 
 
 # Compare predictions from different families visually
 plot(test_data$y, pred_kw,

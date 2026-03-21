@@ -64,7 +64,7 @@
                         <h4 data-toc-skip class="author">Lopes, J.
 E.</h4>
             
-            <h4 data-toc-skip class="date">2026-02-24</h4>
+            <h4 data-toc-skip class="date">2026-03-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/evandeilton/gkwreg/blob/main/vignettes/gkwreg-vs-betareg.Rmd" class="external-link"><code>vignettes/gkwreg-vs-betareg.Rmd</code></a></small>
       <div class="d-none name"><code>gkwreg-vs-betareg.Rmd</code></div>
@@ -248,6 +248,36 @@ depend on covariates through separate linear predictors:</p>
 the log-likelihood. The closed-form CDF of Kumaraswamy-based models can
 substantially accelerate convergence, particularly for large datasets or
 complex model structures.</p>
+</div>
+<div class="section level3">
+<h3 id="parameter-correspondence-and-interpretation">Parameter Correspondence and Interpretation<a class="anchor" aria-label="anchor" href="#parameter-correspondence-and-interpretation"></a>
+</h3>
+<p><strong>Important note on parameter comparisons</strong>: Beta and
+Kumaraswamy regression use different parameterizations, making direct
+coefficient comparisons inappropriate:</p>
+<p><strong>Beta Regression (betareg package)</strong>: Uses
+mean-precision parameterization - <span class="math inline">\mu \in
+(0,1)</span>: conditional mean - <span class="math inline">\phi &gt;
+0</span>: precision parameter - Typically: <span class="math inline">\text{logit}(\mu_i) =
+\mathbf{x}_i^T\boldsymbol{\beta}</span> and <span class="math inline">\log(\phi_i) =
+\mathbf{z}_i^T\boldsymbol{\gamma}</span></p>
+<p><strong>Kumaraswamy Regression (gkwreg package)</strong>: Uses shape
+parameterization - <span class="math inline">\alpha, \beta &gt;
+0</span>: shape parameters (controls distributional shape directly) -
+Typically: <span class="math inline">\log(\alpha_i) =
+\mathbf{x}_i^T\boldsymbol{\beta}_\alpha</span> and <span class="math inline">\log(\beta_i) =
+\mathbf{z}_i^T\boldsymbol{\beta}_\beta</span></p>
+<p><strong>Implication for this study</strong>: When comparing models in
+the simulations below: - <strong>Do not expect coefficient values to
+match</strong> between Beta and Kumaraswamy—they represent different
+parameterizations - <strong>Focus instead on</strong>: model fit (AIC,
+BIC), predictive accuracy (RMSE), convergence reliability, and
+computational efficiency - <strong>Standard error ratios</strong> are
+still meaningful as they reflect relative precision of inference, though
+the coefficients themselves differ</p>
+<p>This distinction is analogous to comparing probit vs. logit
+regression: both model the same relationship but use different link
+functions, yielding non-comparable coefficient magnitudes.</p>
 <hr>
 </div>
 </div>
@@ -396,14 +426,11 @@ association (β₂ = 0.6). This well-behaved structure represents the
 Distributional Characteristics - Scenario 1 (Well-Specified Beta)
 </p>
 </div>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># mtext("Figure 1: Distributional Characteristics - Scenario 1 (Well-Specified Beta)",</span></span>
-<span><span class="co">#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="simulation-results">Simulation Results<a class="anchor" aria-label="anchor" href="#simulation-results"></a>
 </h4>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">results_s1</span> <span class="op">&lt;-</span> <span class="fu">run_full_simulation</span><span class="op">(</span></span>
 <span>  n_sim <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  n <span class="op">=</span> <span class="fl">300</span>,</span>
@@ -424,7 +451,7 @@ Distributional Characteristics - Scenario 1 (Well-Specified Beta)
 models to a single representative dataset and compare parameter
 estimates. Table 1 presents the estimates, standard errors, and
 z-statistics.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit models to one dataset for coefficient comparison</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">456</span><span class="op">)</span></span>
 <span><span class="va">data_coef_s1</span> <span class="op">&lt;-</span> <span class="fu">dgp_beta</span><span class="op">(</span><span class="fl">300</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -463,14 +490,15 @@ z-statistics.</p>
 <span><span class="va">coef_comparison_s1</span><span class="op">$</span><span class="va">SE_Ratio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">coef_comparison_s1</span><span class="op">$</span><span class="va">Kw_SE</span> <span class="op">/</span> <span class="va">coef_comparison_s1</span><span class="op">$</span><span class="va">Beta_SE</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>  row.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">coef_comparison_s1</span>,</span>
+<span>  row.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  caption <span class="op">=</span> <span class="st">"Table 1: Parameter Estimates - Scenario 1 (Well-Specified Beta, n=300)"</span>,</span>
 <span>  col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Parameter"</span>, <span class="st">"True"</span>, <span class="st">"Est."</span>, <span class="st">"SE"</span>, <span class="st">"z"</span>, <span class="st">"Est."</span>, <span class="st">"SE"</span>, <span class="st">"z"</span>,</span>
 <span>    <span class="st">"Bias"</span>, <span class="st">"Bias"</span>, <span class="st">"SE Ratio"</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span>  align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  digits <span class="op">=</span> <span class="fl">4</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table style="width:100%;" class="table">
 <caption>Table 1: Parameter Estimates - Scenario 1 (Well-Specified Beta,
@@ -572,21 +600,24 @@ n=300)</caption>
 <p><strong>Interpretation of coefficient estimates</strong>: Both models
 recover parameters with minimal bias (all biases &lt; 0.05 in absolute
 value). The key finding is in the <strong>standard error
-comparison</strong> (SE Ratio column):</p>
+comparison</strong> (SE Ratio column, which represents Kumaraswamy SE /
+Beta SE):</p>
 <ul>
 <li>
-<strong>Mean parameters</strong> (Intercept, x1, x2): Standard
-errors differ by only 2-5%, indicating equivalent precision for
-inference on covariate effects</li>
+<strong>Mean parameters</strong> (Intercept, x1, x2): SE Ratio ≈
+1.02-1.05, indicating Kumaraswamy standard errors are 2-5% larger,
+reflecting equivalent precision for inference on covariate effects</li>
 <li>
 <strong>Precision parameters</strong> (φ components): SE Ratio ≈
-1.02-1.08, showing nearly identical uncertainty quantification</li>
+1.02-1.08, showing Kumaraswamy SEs are 2-8% larger but still nearly
+identical uncertainty quantification</li>
 </ul>
 <p>When the Beta model is correctly specified, both approaches provide
 statistically equivalent inference. The z-statistics (Est./SE) yield
 essentially identical conclusions about parameter significance. This
 validates Kumaraswamy as a <strong>drop-in replacement</strong> for
-well-specified scenarios.</p>
+well-specified scenarios, with negligible differences in statistical
+efficiency.</p>
 </div>
 </div>
 <div class="section level3">
@@ -598,7 +629,7 @@ inducing heavier tails than Beta can accommodate: - <span class="math inline">\l
 <span class="math inline">n = 300</span></p>
 <p>This scenario tests model robustness when the true distribution
 deviates from Beta assumptions.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dgp_heavy_tails</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span>, <span class="va">params</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">x1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span>  <span class="va">x2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fl">0.5</span><span class="op">)</span></span>
@@ -627,7 +658,7 @@ and 1, creating “fat tails” that Beta regression struggles to
 accommodate. The overlaid density curve exhibits slower decay rates,
 characteristic of the Exponentiated Kumaraswamy’s third shape
 parameter.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">789</span><span class="op">)</span></span>
 <span><span class="va">vis_data_s2</span> <span class="op">&lt;-</span> <span class="fu">dgp_heavy_tails</span><span class="op">(</span><span class="fl">1500</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  beta_alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="op">-</span><span class="fl">0.5</span><span class="op">)</span>,</span>
@@ -684,9 +715,6 @@ parameter.</p>
 Distributional Characteristics - Scenario 2 (Heavy Tails)
 </p>
 </div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># mtext("Figure 2: Distributional Characteristics - Scenario 2 (Heavy Tails)",</span></span>
-<span><span class="co">#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)</span></span></code></pre></div>
 <p>The Q-Q plot (top right panel) provides definitive evidence of tail
 divergence: observations systematically exceed Beta quantiles in both
 tails, with departures increasing toward the extremes. This pattern
@@ -697,7 +725,7 @@ forecasts.</p>
 <div class="section level4">
 <h4 id="simulation-results-1">Simulation Results<a class="anchor" aria-label="anchor" href="#simulation-results-1"></a>
 </h4>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">results_s2</span> <span class="op">&lt;-</span> <span class="fu">run_full_simulation</span><span class="op">(</span></span>
 <span>  n_sim <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  n <span class="op">=</span> <span class="fl">300</span>,</span>
@@ -718,7 +746,7 @@ forecasts.</p>
 <p>When the true distribution is Exponentiated Kumaraswamy but we fit
 Beta regression, parameter estimates become <strong>biased and inference
 unreliable</strong>. Table 2 quantifies these distortions.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit models to one dataset</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">101112</span><span class="op">)</span></span>
 <span><span class="va">data_coef_s2</span> <span class="op">&lt;-</span> <span class="fu">dgp_heavy_tails</span><span class="op">(</span><span class="fl">300</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -750,34 +778,35 @@ unreliable</strong>. Table 2 quantifies these distortions.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>  row.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">coef_comparison_s2</span>,</span>
+<span>  row.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  caption <span class="op">=</span> <span class="st">"Table 2: Parameter Estimates - Scenario 2 (Heavy Tails, n=300)"</span>,</span>
-<span>  <span class="co"># col.names = c("Parameter", "Est.", "SE", "z", "Est.", "SE", "z", "SE Ratio"),</span></span>
-<span>  align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span></span>
+<span>  col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Parameter"</span>, <span class="st">"Est."</span>, <span class="st">"SE"</span>, <span class="st">"z"</span>, <span class="st">"Est."</span>, <span class="st">"SE"</span>, <span class="st">"z"</span>, <span class="st">"SE Ratio"</span><span class="op">)</span>,</span>
+<span>  align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  digits <span class="op">=</span> <span class="fl">4</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
 <caption>Table 2: Parameter Estimates - Scenario 2 (Heavy Tails,
 n=300)</caption>
 <colgroup>
-<col width="25%">
-<col width="12%">
-<col width="11%">
-<col width="9%">
-<col width="9%">
-<col width="9%">
+<col width="26%">
+<col width="10%">
+<col width="10%">
 <col width="8%">
-<col width="12%">
+<col width="10%">
+<col width="10%">
+<col width="8%">
+<col width="13%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">Parameter</th>
-<th align="right">Beta_Est</th>
-<th align="right">Beta_SE</th>
-<th align="right">Beta_Z</th>
-<th align="right">Kw_Est</th>
-<th align="right">Kw_SE</th>
-<th align="right">Kw_Z</th>
-<th align="right">SE_Ratio</th>
+<th align="right">Est.</th>
+<th align="right">SE</th>
+<th align="right">z</th>
+<th align="right">Est.</th>
+<th align="right">SE</th>
+<th align="right">z</th>
+<th align="right">SE Ratio</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -823,30 +852,33 @@ n=300)</caption>
 </tbody>
 </table>
 <p><strong>Critical finding on standard errors</strong>: The SE Ratio
-column reveals <strong>15-40% inflation in Kumaraswamy standard
-errors</strong> relative to Beta. This is not a deficiency—it reflects
-<strong>honest uncertainty quantification</strong> when Beta is
-misspecified:</p>
+column (Kumaraswamy SE / Beta SE) shows values of 1.15-1.40, meaning
+<strong>Kumaraswamy standard errors are 15-40% larger</strong> than
+Beta’s. This is not a deficiency—it reflects <strong>honest uncertainty
+quantification</strong> when Beta is misspecified:</p>
 <ul>
 <li>
-<strong>Beta regression underestimates uncertainty</strong>: With SE
-artificially small, confidence intervals achieve &lt; 95% coverage, and
-hypothesis tests have inflated Type I error</li>
+<strong>Beta regression underestimates uncertainty</strong>: With
+artificially small SEs due to model misspecification, confidence
+intervals achieve &lt; 95% coverage, and hypothesis tests have inflated
+Type I error rates</li>
 <li>
 <strong>Kumaraswamy appropriately accounts for tail
-variation</strong>: Larger SE reflects the additional variability in
-heavy-tailed data</li>
+variation</strong>: Larger SEs correctly reflect the additional
+variability present in heavy-tailed data that Beta cannot capture</li>
 </ul>
-<p>The z-statistics tell the story: Beta regression declares x1 “highly
+<p>The z-statistics illustrate this: Beta regression declares x1 “highly
 significant” (z = −14.31) while Kumaraswamy provides a more conservative
 z = −10.98. In truth, <strong>Beta’s inference is
 anti-conservative</strong> due to model misspecification. The
-Kumaraswamy family, including parameters to accommodate tail behavior,
+Kumaraswamy family, with parameters to accommodate tail behavior,
 provides valid inference.</p>
-<p><strong>Magnitude interpretation</strong>: A 40% SE difference
-implies that 95% CIs from Beta regression are ~28% too narrow (<span class="math inline">1/1.4 ≈ 0.71</span>). In practical terms,
-researchers using Beta regression would report false precision,
-potentially leading to erroneous scientific conclusions.</p>
+<p><strong>Magnitude interpretation</strong>: SE Ratio = 1.40 means
+Kumaraswamy SEs are 40% larger than Beta’s, implying that 95% CIs from
+misspecified Beta regression are ~29% too narrow (1/1.4 ≈ 0.71). In
+practical terms, researchers using Beta regression for heavy-tailed data
+would report falsely inflated precision, potentially leading to
+erroneous scientific conclusions and reproducibility failures.</p>
 </div>
 </div>
 <div class="section level3">
@@ -860,7 +892,7 @@ U-shaped: <span class="math inline">\log(α) = -1.8 + 0.1x_1</span>,
 <span class="math inline">\log(β) = -0.8</span> - <span class="math inline">x_1 \sim N(0,1)</span> - Sample size: <span class="math inline">n = 400</span></p>
 <p>This challenging scenario assesses convergence reliability with
 extreme boundary concentration.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dgp_extreme</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span>, <span class="va">params</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">x1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span>  <span class="va">group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"J"</span>, <span class="st">"U"</span><span class="op">)</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -887,7 +919,7 @@ regression. The J-shaped distribution (left panel) concentrates 80% of
 mass below 0.2, while the U-shaped distribution (right panel) exhibits
 bimodality with peaks at both boundaries. These patterns violate Beta
 regression’s assumption of smooth, unimodal densities.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">131415</span><span class="op">)</span></span>
 <span><span class="va">vis_data_s3</span> <span class="op">&lt;-</span> <span class="fu">dgp_extreme</span><span class="op">(</span><span class="fl">2000</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  alpha_J <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1.5</span>, <span class="fl">0.2</span><span class="op">)</span>,</span>
@@ -961,9 +993,6 @@ regression’s assumption of smooth, unimodal densities.</p>
 Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)
 </p>
 </div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># mtext("Figure 3: Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)",</span></span>
-<span><span class="co">#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)</span></span></code></pre></div>
 <p>The empirical CDF (bottom right) quantifies the severity: <strong>45%
 of observations fall below 0.1 or above 0.9</strong>. This extreme
 boundary concentration creates numerical instabilities in Beta
@@ -973,7 +1002,7 @@ parameters approaching zero.</p>
 <div class="section level4">
 <h4 id="simulation-results-2">Simulation Results<a class="anchor" aria-label="anchor" href="#simulation-results-2"></a>
 </h4>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">results_s3</span> <span class="op">&lt;-</span> <span class="fu">run_full_simulation</span><span class="op">(</span></span>
 <span>  n_sim <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  n <span class="op">=</span> <span class="fl">400</span>,</span>
@@ -996,7 +1025,7 @@ parameters approaching zero.</p>
 failure</strong> when confronted with extreme shapes. Among 200
 simulation replicates, Beta regression successfully converged only 11
 times (5.5%), while Kumaraswamy achieved perfect reliability (100%).</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For this scenario, we'll fit to a single J-shaped dataset where Beta converges</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">161718</span><span class="op">)</span></span>
 <span><span class="co"># Generate J-shaped only for better Beta convergence probability</span></span>
@@ -1037,9 +1066,11 @@ times (5.5%), while Kumaraswamy achieved perfect reliability (100%).</p>
 <span></span>
 <span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
 <span>    <span class="va">coef_comparison_s3</span>,</span>
+<span>    row.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>    caption <span class="op">=</span> <span class="st">"Table 3: Parameter Estimates - Scenario 3 (Extreme Shapes, n=400, Beta Converged)"</span>,</span>
 <span>    col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Parameter"</span>, <span class="st">"Est."</span>, <span class="st">"SE"</span>, <span class="st">"z"</span>, <span class="st">"Est."</span>, <span class="st">"SE"</span>, <span class="st">"z"</span>, <span class="st">"SE Ratio"</span><span class="op">)</span>,</span>
-<span>    align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span></span>
+<span>    align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    digits <span class="op">=</span> <span class="fl">4</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"**Table 3: Parameter Estimates - Scenario 3**\n\n"</span><span class="op">)</span></span>
@@ -1050,34 +1081,34 @@ times (5.5%), while Kumaraswamy achieved perfect reliability (100%).</p>
 <span>  <span class="va">se_kw_s3</span> <span class="op">&lt;-</span> <span class="va">fit_kw_s3</span><span class="op">$</span><span class="va">se</span></span>
 <span></span>
 <span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>    digits <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>      row.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>      Parameter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">coef_kw_s3</span><span class="op">)</span>,</span>
 <span>      Estimate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">coef_kw_s3</span>, <span class="fl">4</span><span class="op">)</span>,</span>
 <span>      SE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">se_kw_s3</span>, <span class="fl">4</span><span class="op">)</span>,</span>
 <span>      z_stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">coef_kw_s3</span> <span class="op">/</span> <span class="va">se_kw_s3</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span>      p_value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">coef_kw_s3</span> <span class="op">/</span> <span class="va">se_kw_s3</span><span class="op">)</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span></span>
 <span>    <span class="op">)</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Kumaraswamy Parameter Estimates (Beta Failed)"</span></span>
+<span>    row.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Table 3: Kumaraswamy Parameter Estimates - Scenario 3 (Beta Failed to Converge)"</span>,</span>
+<span>    col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Parameter"</span>, <span class="st">"Estimate"</span>, <span class="st">"SE"</span>, <span class="st">"z"</span>, <span class="st">"p-value"</span><span class="op">)</span>,</span>
+<span>    align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    digits <span class="op">=</span> <span class="fl">4</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<table style="width:100%;" class="table">
+<table class="table">
 <caption>Table 3: Parameter Estimates - Scenario 3 (Extreme Shapes,
 n=400, Beta Converged)</caption>
 <colgroup>
-<col width="20%">
-<col width="20%">
-<col width="8%">
-<col width="7%">
-<col width="7%">
-<col width="8%">
-<col width="7%">
-<col width="7%">
-<col width="10%">
+<col width="25%">
+<col width="11%">
+<col width="9%">
+<col width="9%">
+<col width="11%">
+<col width="9%">
+<col width="9%">
+<col width="12%">
 </colgroup>
 <thead><tr class="header">
-<th align="left"></th>
 <th align="left">Parameter</th>
 <th align="right">Est.</th>
 <th align="right">SE</th>
@@ -1090,7 +1121,6 @@ n=400, Beta Converged)</caption>
 <tbody>
 <tr class="odd">
 <td align="left">(Intercept)</td>
-<td align="left">(Intercept)</td>
 <td align="right">-4.5966</td>
 <td align="right">0.1256</td>
 <td align="right">-36.60</td>
@@ -1100,7 +1130,6 @@ n=400, Beta Converged)</caption>
 <td align="right">0.454</td>
 </tr>
 <tr class="even">
-<td align="left">x1</td>
 <td align="left">x1</td>
 <td align="right">0.1797</td>
 <td align="right">0.0771</td>
@@ -1112,7 +1141,6 @@ n=400, Beta Converged)</caption>
 </tr>
 <tr class="odd">
 <td align="left">groupU</td>
-<td align="left">groupU</td>
 <td align="right">3.8442</td>
 <td align="right">0.1608</td>
 <td align="right">23.91</td>
@@ -1122,7 +1150,6 @@ n=400, Beta Converged)</caption>
 <td align="right">0.754</td>
 </tr>
 <tr class="even">
-<td align="left">x1:groupU</td>
 <td align="left">x1:groupU</td>
 <td align="right">-0.0568</td>
 <td align="right">0.1201</td>
@@ -1134,7 +1161,6 @@ n=400, Beta Converged)</caption>
 </tr>
 <tr class="odd">
 <td align="left">(phi)_(Intercept)</td>
-<td align="left">(phi)_(Intercept)</td>
 <td align="right">3.4007</td>
 <td align="right">0.1458</td>
 <td align="right">23.33</td>
@@ -1144,7 +1170,6 @@ n=400, Beta Converged)</caption>
 <td align="right">0.979</td>
 </tr>
 <tr class="even">
-<td align="left">(phi)_groupU</td>
 <td align="left">(phi)_groupU</td>
 <td align="right">-3.6037</td>
 <td align="right">0.1691</td>
@@ -1182,17 +1207,18 @@ ad-hoc data transformations, both scientifically problematic.</p>
 <p>Table 4 synthesizes key performance metrics across all three
 simulation scenarios. The patterns reveal clear, actionable insights for
 practitioners.</p>
-<table style="width:100%;" class="table">
+<table class="table">
 <caption>Table 4: Comprehensive Model Comparison Across Three Simulation
-Scenarios</caption>
+Scenarios. Note: Scenario 3 Beta statistics are based on only 5.5%
+successful fits; metrics may not be representative.</caption>
 <colgroup>
-<col width="29%">
+<col width="28%">
 <col width="20%">
-<col width="12%">
-<col width="12%">
+<col width="11%">
+<col width="11%">
 <col width="10%">
-<col width="7%">
-<col width="7%">
+<col width="8%">
+<col width="8%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">Scenario</th>
@@ -1210,8 +1236,8 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-224.74</td>
-<td align="right">0.192</td>
-<td align="right">0.016</td>
+<td align="right">0.1924</td>
+<td align="right">0.0149</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1219,8 +1245,8 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-181.12</td>
-<td align="right">0.228</td>
-<td align="right">0.212</td>
+<td align="right">0.2276</td>
+<td align="right">0.2260</td>
 </tr>
 <tr class="odd">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1228,8 +1254,8 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-219.76</td>
-<td align="right">0.199</td>
-<td align="right">0.203</td>
+<td align="right">0.1989</td>
+<td align="right">0.2135</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1237,8 +1263,8 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-219.24</td>
-<td align="right">0.662</td>
-<td align="right">0.224</td>
+<td align="right">0.6619</td>
+<td align="right">0.2396</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1246,8 +1272,8 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-139.28</td>
-<td align="right">0.191</td>
-<td align="right">0.013</td>
+<td align="right">0.1909</td>
+<td align="right">0.0138</td>
 </tr>
 <tr class="even">
 <td align="left">S2: Heavy Tails</td>
@@ -1255,8 +1281,8 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-116.79</td>
-<td align="right">0.210</td>
-<td align="right">0.020</td>
+<td align="right">0.2105</td>
+<td align="right">0.0206</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1264,26 +1290,26 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-115.77</td>
-<td align="right">0.194</td>
-<td align="right">0.011</td>
+<td align="right">0.1940</td>
+<td align="right">0.0120</td>
 </tr>
 <tr class="even">
 <td align="left">S2: Heavy Tails</td>
 <td align="left">Exp. Kumaraswamy</td>
 <td align="right">200</td>
-<td align="right">58.0</td>
-<td align="right">-213.45</td>
-<td align="right">0.618</td>
-<td align="right">0.031</td>
+<td align="right">58.5</td>
+<td align="right">-267.39</td>
+<td align="right">0.6184</td>
+<td align="right">0.0329</td>
 </tr>
 <tr class="odd">
 <td align="left">S3: Extreme Shapes</td>
 <td align="left">Beta (betareg)</td>
 <td align="right">200</td>
-<td align="right">4.5</td>
-<td align="right">16677.68</td>
-<td align="right">0.405</td>
-<td align="right">0.351</td>
+<td align="right">5.0</td>
+<td align="right">16614.42</td>
+<td align="right">0.4052</td>
+<td align="right">0.4246</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
@@ -1291,8 +1317,8 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-2007.68</td>
-<td align="right">0.292</td>
-<td align="right">0.035</td>
+<td align="right">0.2921</td>
+<td align="right">0.0501</td>
 </tr>
 <tr class="odd">
 <td align="left">S3: Extreme Shapes</td>
@@ -1300,17 +1326,17 @@ Scenarios</caption>
 <td align="right">200</td>
 <td align="right">100.0</td>
 <td align="right">-2257.56</td>
-<td align="right">0.266</td>
-<td align="right">0.015</td>
+<td align="right">0.2660</td>
+<td align="right">0.0227</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">105</td>
-<td align="right">80.0</td>
-<td align="right">-2331.45</td>
-<td align="right">0.365</td>
-<td align="right">0.044</td>
+<td align="right">112</td>
+<td align="right">76.8</td>
+<td align="right">-2352.98</td>
+<td align="right">0.3649</td>
+<td align="right">0.0504</td>
 </tr>
 </tbody>
 </table>
@@ -1377,23 +1403,23 @@ Beta Regression</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Kumaraswamy</td>
-<td align="right">0.076</td>
-<td align="right">1.663</td>
+<td align="right">0.0827</td>
+<td align="right">1.8263</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (gkwreg)</td>
-<td align="right">0.089</td>
-<td align="right">1.428</td>
+<td align="right">0.0989</td>
+<td align="right">1.5278</td>
 </tr>
 <tr class="odd">
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">0.100</td>
-<td align="right">1.271</td>
+<td align="right">0.1076</td>
+<td align="right">1.4038</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (betareg)</td>
-<td align="right">0.127</td>
-<td align="right">1.000</td>
+<td align="right">0.1511</td>
+<td align="right">1.0000</td>
 </tr>
 </tbody>
 </table>
@@ -1579,7 +1605,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<pre><code>R version 4.5.2 (2025-10-31)
+<pre><code>R version 4.5.3 (2026-03-11)
 Platform: x86_64-pc-linux-gnu
 Running under: Ubuntu 24.04.3 LTS
 
@@ -1604,24 +1630,24 @@ other attached packages:
 
 loaded via a namespace (and not attached):
  [1] sandwich_3.1-1         sass_0.4.10            generics_0.1.4        
- [4] lattice_0.22-7         digest_0.6.39          magrittr_2.0.4        
- [7] evaluate_1.0.5         grid_4.5.2             RColorBrewer_1.1-3    
+ [4] lattice_0.22-9         digest_0.6.39          magrittr_2.0.4        
+ [7] evaluate_1.0.5         grid_4.5.3             RColorBrewer_1.1-3    
 [10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-4          
 [13] nnet_7.3-20            Formula_1.2-5          scales_1.4.0          
 [16] codetools_0.2-20       numDeriv_2016.8-1.1    modeltools_0.2-24     
-[19] textshaping_1.0.4      jquerylib_0.1.4        cli_3.6.5             
-[22] rlang_1.1.7            withr_3.0.2            RcppArmadillo_15.2.3-1
-[25] cachem_1.1.0           yaml_2.3.12            tools_4.5.2           
+[19] textshaping_1.0.5      jquerylib_0.1.4        cli_3.6.5             
+[22] rlang_1.1.7            withr_3.0.2            RcppArmadillo_15.2.4-1
+[25] cachem_1.1.0           yaml_2.3.12            tools_4.5.3           
 [28] flexmix_2.3-20         dplyr_1.2.0            vctrs_0.7.1           
-[31] R6_2.6.1               stats4_4.5.2           zoo_1.8-15            
-[34] lifecycle_1.0.5        fs_1.6.6               ragg_1.5.0            
+[31] R6_2.6.1               stats4_4.5.3           zoo_1.8-15            
+[34] lifecycle_1.0.5        fs_1.6.7               ragg_1.5.1            
 [37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
 [40] bslib_0.10.0           pillar_1.11.1          gtable_0.3.6          
-[43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.1     
+[43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.2     
 [46] tidyselect_1.2.1       xfun_0.56              tibble_3.3.1          
 [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
 [52] htmltools_0.5.9        rmarkdown_2.30         gkwdist_1.1.2         
-[55] TMB_1.9.19             compiler_4.5.2         S7_0.2.1              </code></pre>
+[55] TMB_1.9.20             compiler_4.5.3         S7_0.2.1              </code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

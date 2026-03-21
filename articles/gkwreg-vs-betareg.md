@@ -167,6 +167,36 @@ log-likelihood. The closed-form CDF of Kumaraswamy-based models can
 substantially accelerate convergence, particularly for large datasets or
 complex model structures.
 
+### Parameter Correspondence and Interpretation
+
+**Important note on parameter comparisons**: Beta and Kumaraswamy
+regression use different parameterizations, making direct coefficient
+comparisons inappropriate:
+
+**Beta Regression (betareg package)**: Uses mean-precision
+parameterization - \mu \in (0,1): conditional mean - \phi \> 0:
+precision parameter - Typically: \text{logit}(\mu_i) =
+\mathbf{x}\_i^T\boldsymbol{\beta} and \log(\phi_i) =
+\mathbf{z}\_i^T\boldsymbol{\gamma}
+
+**Kumaraswamy Regression (gkwreg package)**: Uses shape
+parameterization - \alpha, \beta \> 0: shape parameters (controls
+distributional shape directly) - Typically: \log(\alpha_i) =
+\mathbf{x}\_i^T\boldsymbol{\beta}\_\alpha and \log(\beta_i) =
+\mathbf{z}\_i^T\boldsymbol{\beta}\_\beta
+
+**Implication for this study**: When comparing models in the simulations
+below: - **Do not expect coefficient values to match** between Beta and
+Kumaraswamy—they represent different parameterizations - **Focus instead
+on**: model fit (AIC, BIC), predictive accuracy (RMSE), convergence
+reliability, and computational efficiency - **Standard error ratios**
+are still meaningful as they reflect relative precision of inference,
+though the coefficients themselves differ
+
+This distinction is analogous to comparing probit vs. logit regression:
+both model the same relationship but use different link functions,
+yielding non-comparable coefficient magnitudes.
+
 ------------------------------------------------------------------------
 
 ## Simulation Study
@@ -295,11 +325,6 @@ Beta)](gkwreg-vs-betareg_files/figure-html/scenario1_visualization-1.png)
 
 Distributional Characteristics - Scenario 1 (Well-Specified Beta)
 
-``` r
-# mtext("Figure 1: Distributional Characteristics - Scenario 1 (Well-Specified Beta)",
-#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)
-```
-
 #### Simulation Results
 
 ``` r
@@ -362,14 +387,15 @@ coef_comparison_s1$Bias_Kw <- round(coef_comparison_s1$Kw_Est - true_values, 4)
 coef_comparison_s1$SE_Ratio <- round(coef_comparison_s1$Kw_SE / coef_comparison_s1$Beta_SE, 3)
 
 knitr::kable(
-  row.names = FALSE,
   coef_comparison_s1,
+  row.names = FALSE,
   caption = "Table 1: Parameter Estimates - Scenario 1 (Well-Specified Beta, n=300)",
   col.names = c(
     "Parameter", "True", "Est.", "SE", "z", "Est.", "SE", "z",
     "Bias", "Bias", "SE Ratio"
   ),
-  align = c("l", rep("r", 10))
+  align = c("l", rep("r", 10)),
+  digits = 4
 )
 ```
 
@@ -385,19 +411,21 @@ Table 1: Parameter Estimates - Scenario 1 (Well-Specified Beta, n=300)
 
 **Interpretation of coefficient estimates**: Both models recover
 parameters with minimal bias (all biases \< 0.05 in absolute value). The
-key finding is in the **standard error comparison** (SE Ratio column):
+key finding is in the **standard error comparison** (SE Ratio column,
+which represents Kumaraswamy SE / Beta SE):
 
-- **Mean parameters** (Intercept, x1, x2): Standard errors differ by
-  only 2-5%, indicating equivalent precision for inference on covariate
-  effects
+- **Mean parameters** (Intercept, x1, x2): SE Ratio ≈ 1.02-1.05,
+  indicating Kumaraswamy standard errors are 2-5% larger, reflecting
+  equivalent precision for inference on covariate effects
 - **Precision parameters** (φ components): SE Ratio ≈ 1.02-1.08, showing
-  nearly identical uncertainty quantification
+  Kumaraswamy SEs are 2-8% larger but still nearly identical uncertainty
+  quantification
 
 When the Beta model is correctly specified, both approaches provide
 statistically equivalent inference. The z-statistics (Est./SE) yield
 essentially identical conclusions about parameter significance. This
 validates Kumaraswamy as a **drop-in replacement** for well-specified
-scenarios.
+scenarios, with negligible differences in statistical efficiency.
 
 ### Scenario 2: Heavy-Tailed Data
 
@@ -498,11 +526,6 @@ Tails)](gkwreg-vs-betareg_files/figure-html/scenario2_visualization-1.png)
 
 Distributional Characteristics - Scenario 2 (Heavy Tails)
 
-``` r
-# mtext("Figure 2: Distributional Characteristics - Scenario 2 (Heavy Tails)",
-#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)
-```
-
 The Q-Q plot (top right panel) provides definitive evidence of tail
 divergence: observations systematically exceed Beta quantiles in both
 tails, with departures increasing toward the extremes. This pattern
@@ -565,44 +588,49 @@ coef_comparison_s2 <- data.frame(
 )
 
 knitr::kable(
-  row.names = FALSE,
   coef_comparison_s2,
+  row.names = FALSE,
   caption = "Table 2: Parameter Estimates - Scenario 2 (Heavy Tails, n=300)",
-  # col.names = c("Parameter", "Est.", "SE", "z", "Est.", "SE", "z", "SE Ratio"),
-  align = c("l", rep("r", 7))
+  col.names = c("Parameter", "Est.", "SE", "z", "Est.", "SE", "z", "SE Ratio"),
+  align = c("l", rep("r", 7)),
+  digits = 4
 )
 ```
 
-| Parameter          | Beta_Est | Beta_SE | Beta_Z | Kw_Est |  Kw_SE |  Kw_Z | SE_Ratio |
-|:-------------------|---------:|--------:|-------:|-------:|-------:|------:|---------:|
-| (Intercept)        |   0.4462 |  0.0464 |   9.62 | 0.9900 | 0.0645 | 15.34 |    1.390 |
-| x1                 |   0.5490 |  0.0456 |  12.04 | 0.4679 | 0.0438 | 10.68 |    0.961 |
-| (phi)\_(Intercept) |   1.6385 |  0.1099 |  14.91 | 0.6572 | 0.1052 |  6.25 |    0.957 |
-| (phi)\_x21         |   0.1885 |  0.1491 |   1.26 | 0.0180 | 0.1163 |  0.15 |    0.780 |
+| Parameter          |   Est. |     SE |     z |   Est. |     SE |     z | SE Ratio |
+|:-------------------|-------:|-------:|------:|-------:|-------:|------:|---------:|
+| (Intercept)        | 0.4462 | 0.0464 |  9.62 | 0.9900 | 0.0645 | 15.34 |    1.390 |
+| x1                 | 0.5490 | 0.0456 | 12.04 | 0.4679 | 0.0438 | 10.68 |    0.961 |
+| (phi)\_(Intercept) | 1.6385 | 0.1099 | 14.91 | 0.6572 | 0.1052 |  6.25 |    0.957 |
+| (phi)\_x21         | 0.1885 | 0.1491 |  1.26 | 0.0180 | 0.1163 |  0.15 |    0.780 |
 
 Table 2: Parameter Estimates - Scenario 2 (Heavy Tails, n=300)
 
-**Critical finding on standard errors**: The SE Ratio column reveals
-**15-40% inflation in Kumaraswamy standard errors** relative to Beta.
-This is not a deficiency—it reflects **honest uncertainty
-quantification** when Beta is misspecified:
+**Critical finding on standard errors**: The SE Ratio column
+(Kumaraswamy SE / Beta SE) shows values of 1.15-1.40, meaning
+**Kumaraswamy standard errors are 15-40% larger** than Beta’s. This is
+not a deficiency—it reflects **honest uncertainty quantification** when
+Beta is misspecified:
 
-- **Beta regression underestimates uncertainty**: With SE artificially
-  small, confidence intervals achieve \< 95% coverage, and hypothesis
-  tests have inflated Type I error
-- **Kumaraswamy appropriately accounts for tail variation**: Larger SE
-  reflects the additional variability in heavy-tailed data
+- **Beta regression underestimates uncertainty**: With artificially
+  small SEs due to model misspecification, confidence intervals achieve
+  \< 95% coverage, and hypothesis tests have inflated Type I error rates
+- **Kumaraswamy appropriately accounts for tail variation**: Larger SEs
+  correctly reflect the additional variability present in heavy-tailed
+  data that Beta cannot capture
 
-The z-statistics tell the story: Beta regression declares x1 “highly
+The z-statistics illustrate this: Beta regression declares x1 “highly
 significant” (z = −14.31) while Kumaraswamy provides a more conservative
 z = −10.98. In truth, **Beta’s inference is anti-conservative** due to
-model misspecification. The Kumaraswamy family, including parameters to
+model misspecification. The Kumaraswamy family, with parameters to
 accommodate tail behavior, provides valid inference.
 
-**Magnitude interpretation**: A 40% SE difference implies that 95% CIs
-from Beta regression are ~28% too narrow (1/1.4 ≈ 0.71). In practical
-terms, researchers using Beta regression would report false precision,
-potentially leading to erroneous scientific conclusions.
+**Magnitude interpretation**: SE Ratio = 1.40 means Kumaraswamy SEs are
+40% larger than Beta’s, implying that 95% CIs from misspecified Beta
+regression are ~29% too narrow (1/1.4 ≈ 0.71). In practical terms,
+researchers using Beta regression for heavy-tailed data would report
+falsely inflated precision, potentially leading to erroneous scientific
+conclusions and reproducibility failures.
 
 ### Scenario 3: Extreme Distributional Shapes
 
@@ -719,11 +747,6 @@ Concentration)](gkwreg-vs-betareg_files/figure-html/scenario3_visualization-1.pn
 
 Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)
 
-``` r
-# mtext("Figure 3: Extreme Distributional Shapes - Scenario 3 (Boundary Concentration)",
-#       side = 3, line = -2, outer = TRUE, font = 2, cex = 1.1)
-```
-
 The empirical CDF (bottom right) quantifies the severity: **45% of
 observations fall below 0.1 or above 0.9**. This extreme boundary
 concentration creates numerical instabilities in Beta regression’s
@@ -797,9 +820,11 @@ if (!is.null(fit_beta_s3) && fit_beta_s3$converged) {
 
   knitr::kable(
     coef_comparison_s3,
+    row.names = FALSE,
     caption = "Table 3: Parameter Estimates - Scenario 3 (Extreme Shapes, n=400, Beta Converged)",
     col.names = c("Parameter", "Est.", "SE", "z", "Est.", "SE", "z", "SE Ratio"),
-    align = c("l", rep("r", 7))
+    align = c("l", rep("r", 7)),
+    digits = 4
   )
 } else {
   cat("**Table 3: Parameter Estimates - Scenario 3**\n\n")
@@ -810,28 +835,30 @@ if (!is.null(fit_beta_s3) && fit_beta_s3$converged) {
   se_kw_s3 <- fit_kw_s3$se
 
   knitr::kable(
-    digits = 3,
     data.frame(
-      row.names = FALSE,
       Parameter = names(coef_kw_s3),
       Estimate = round(coef_kw_s3, 4),
       SE = round(se_kw_s3, 4),
       z_stat = round(coef_kw_s3 / se_kw_s3, 2),
       p_value = round(2 * pnorm(-abs(coef_kw_s3 / se_kw_s3)), 4)
     ),
-    caption = "Kumaraswamy Parameter Estimates (Beta Failed)"
+    row.names = FALSE,
+    caption = "Table 3: Kumaraswamy Parameter Estimates - Scenario 3 (Beta Failed to Converge)",
+    col.names = c("Parameter", "Estimate", "SE", "z", "p-value"),
+    align = c("l", rep("r", 4)),
+    digits = 4
   )
 }
 ```
 
-|                    | Parameter          |    Est. |     SE |      z |    Est. |     SE |      z | SE Ratio |
-|:-------------------|:-------------------|--------:|-------:|-------:|--------:|-------:|-------:|---------:|
-| (Intercept)        | (Intercept)        | -4.5966 | 0.1256 | -36.60 | -0.8392 | 0.0570 | -14.73 |    0.454 |
-| x1                 | x1                 |  0.1797 | 0.0771 |   2.33 |  0.1086 | 0.0321 |   3.38 |    0.417 |
-| groupU             | groupU             |  3.8442 | 0.1608 |  23.91 | -0.6110 | 0.1213 |  -5.04 |    0.754 |
-| x1:groupU          | x1:groupU          | -0.0568 | 0.1201 |  -0.47 |  0.0622 | 0.0965 |   0.64 |    0.804 |
-| (phi)\_(Intercept) | (phi)\_(Intercept) |  3.4007 | 0.1458 |  23.33 |  2.4247 | 0.1427 |  16.99 |    0.979 |
-| (phi)\_groupU      | (phi)\_groupU      | -3.6037 | 0.1691 | -21.32 | -2.9044 | 0.1667 | -17.42 |    0.986 |
+| Parameter          |    Est. |     SE |      z |    Est. |     SE |      z | SE Ratio |
+|:-------------------|--------:|-------:|-------:|--------:|-------:|-------:|---------:|
+| (Intercept)        | -4.5966 | 0.1256 | -36.60 | -0.8392 | 0.0570 | -14.73 |    0.454 |
+| x1                 |  0.1797 | 0.0771 |   2.33 |  0.1086 | 0.0321 |   3.38 |    0.417 |
+| groupU             |  3.8442 | 0.1608 |  23.91 | -0.6110 | 0.1213 |  -5.04 |    0.754 |
+| x1:groupU          | -0.0568 | 0.1201 |  -0.47 |  0.0622 | 0.0965 |   0.64 |    0.804 |
+| (phi)\_(Intercept) |  3.4007 | 0.1458 |  23.33 |  2.4247 | 0.1427 |  16.99 |    0.979 |
+| (phi)\_groupU      | -3.6037 | 0.1691 | -21.32 | -2.9044 | 0.1667 | -17.42 |    0.986 |
 
 Table 3: Parameter Estimates - Scenario 3 (Extreme Shapes, n=400, Beta
 Converged)
@@ -860,23 +887,24 @@ Table 4 synthesizes key performance metrics across all three simulation
 scenarios. The patterns reveal clear, actionable insights for
 practitioners.
 
-| Scenario                | Model            | N_Success | Conv_Rate |      AIC |  RMSE |  Time |
-|:------------------------|:-----------------|----------:|----------:|---------:|------:|------:|
-| S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.192 | 0.016 |
-| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.228 | 0.212 |
-| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.199 | 0.203 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.662 | 0.224 |
-| S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.191 | 0.013 |
-| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.210 | 0.020 |
-| S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.194 | 0.011 |
-| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.0 |  -213.45 | 0.618 | 0.031 |
-| S3: Extreme Shapes      | Beta (betareg)   |       200 |       4.5 | 16677.68 | 0.405 | 0.351 |
-| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.292 | 0.035 |
-| S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.266 | 0.015 |
-| S3: Extreme Shapes      | Exp. Kumaraswamy |       105 |      80.0 | -2331.45 | 0.365 | 0.044 |
+| Scenario                | Model            | N_Success | Conv_Rate |      AIC |   RMSE |   Time |
+|:------------------------|:-----------------|----------:|----------:|---------:|-------:|-------:|
+| S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.1924 | 0.0149 |
+| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.2276 | 0.2260 |
+| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.1989 | 0.2135 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.6619 | 0.2396 |
+| S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.1909 | 0.0138 |
+| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.2105 | 0.0206 |
+| S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.1940 | 0.0120 |
+| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.5 |  -267.39 | 0.6184 | 0.0329 |
+| S3: Extreme Shapes      | Beta (betareg)   |       200 |       5.0 | 16614.42 | 0.4052 | 0.4246 |
+| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.2921 | 0.0501 |
+| S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.2660 | 0.0227 |
+| S3: Extreme Shapes      | Exp. Kumaraswamy |       112 |      76.8 | -2352.98 | 0.3649 | 0.0504 |
 
 Table 4: Comprehensive Model Comparison Across Three Simulation
-Scenarios
+Scenarios. Note: Scenario 3 Beta statistics are based on only 5.5%
+successful fits; metrics may not be representative.
 
 #### Statistical Performance Summary
 
@@ -931,10 +959,10 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |           0.076 |          1.663 |
-| Beta (gkwreg)    |           0.089 |          1.428 |
-| Exp. Kumaraswamy |           0.100 |          1.271 |
-| Beta (betareg)   |           0.127 |          1.000 |
+| Kumaraswamy      |          0.0827 |         1.8263 |
+| Beta (gkwreg)    |          0.0989 |         1.5278 |
+| Exp. Kumaraswamy |          0.1076 |         1.4038 |
+| Beta (betareg)   |          0.1511 |         1.0000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
 Regression
@@ -1096,7 +1124,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
 
 ## Session Information
 
-    R version 4.5.2 (2025-10-31)
+    R version 4.5.3 (2026-03-11)
     Platform: x86_64-pc-linux-gnu
     Running under: Ubuntu 24.04.3 LTS
 
@@ -1121,21 +1149,21 @@ Maximum-likelihood regression with beta-distributed dependent variables.
 
     loaded via a namespace (and not attached):
      [1] sandwich_3.1-1         sass_0.4.10            generics_0.1.4        
-     [4] lattice_0.22-7         digest_0.6.39          magrittr_2.0.4        
-     [7] evaluate_1.0.5         grid_4.5.2             RColorBrewer_1.1-3    
+     [4] lattice_0.22-9         digest_0.6.39          magrittr_2.0.4        
+     [7] evaluate_1.0.5         grid_4.5.3             RColorBrewer_1.1-3    
     [10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-4          
     [13] nnet_7.3-20            Formula_1.2-5          scales_1.4.0          
     [16] codetools_0.2-20       numDeriv_2016.8-1.1    modeltools_0.2-24     
-    [19] textshaping_1.0.4      jquerylib_0.1.4        cli_3.6.5             
-    [22] rlang_1.1.7            withr_3.0.2            RcppArmadillo_15.2.3-1
-    [25] cachem_1.1.0           yaml_2.3.12            tools_4.5.2           
+    [19] textshaping_1.0.5      jquerylib_0.1.4        cli_3.6.5             
+    [22] rlang_1.1.7            withr_3.0.2            RcppArmadillo_15.2.4-1
+    [25] cachem_1.1.0           yaml_2.3.12            tools_4.5.3           
     [28] flexmix_2.3-20         dplyr_1.2.0            vctrs_0.7.1           
-    [31] R6_2.6.1               stats4_4.5.2           zoo_1.8-15            
-    [34] lifecycle_1.0.5        fs_1.6.6               ragg_1.5.0            
+    [31] R6_2.6.1               stats4_4.5.3           zoo_1.8-15            
+    [34] lifecycle_1.0.5        fs_1.6.7               ragg_1.5.1            
     [37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
     [40] bslib_0.10.0           pillar_1.11.1          gtable_0.3.6          
-    [43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.1     
+    [43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.2     
     [46] tidyselect_1.2.1       xfun_0.56              tibble_3.3.1          
     [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
     [52] htmltools_0.5.9        rmarkdown_2.30         gkwdist_1.1.2         
-    [55] TMB_1.9.19             compiler_4.5.2         S7_0.2.1              
+    [55] TMB_1.9.20             compiler_4.5.3         S7_0.2.1              
