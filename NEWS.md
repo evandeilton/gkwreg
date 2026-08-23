@@ -1,7 +1,10 @@
-# gkwreg 2.1.16
+# gkwreg 2.1.17
 
 Maintenance release. No changes to the statistical methods or to the exported
 API.
+
+Version 2.1.16 was used for the JOSS review archive on Zenodo and was never
+released on CRAN; 2.1.17 is the CRAN update that follows 2.1.14.
 
 ## Publication
 

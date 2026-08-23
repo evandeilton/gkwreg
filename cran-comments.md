@@ -1,8 +1,12 @@
 ## Submission summary
 
 This is a maintenance update of **gkwreg**, currently on CRAN as version 2.1.14
-(published 2026-01-09). Version 2.1.16 contains no changes to the statistical
+(published 2026-01-09). Version 2.1.17 contains no changes to the statistical
 methods and no changes to the exported API.
+
+Note on the version number: 2.1.16 was used for the JOSS review archive on
+Zenodo and was never submitted to CRAN, so this update goes from 2.1.14 to
+2.1.17.
 
 Changes relevant to CRAN:
 
