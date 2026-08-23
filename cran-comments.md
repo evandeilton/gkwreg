@@ -14,8 +14,9 @@ illustrative single-dataset fits stay live, so the vignette still runs the
 package, but they use one distribution family instead of three, which cuts the
 run-time TMB compilation accordingly.
 
-Local vignette build time drops from about 3m30s to 35s; the full
-`R CMD check --as-cran` now takes about 5 minutes on our machine.
+On our machine `checking re-building of vignette outputs` drops from 205s to
+38s, and the full `R CMD check --as-cran` from 8m25s to 5m16s. `R CMD build`
+drops from 3m32s to 48s.
 
 We also fixed a timing artefact this exposed: the one-off TMB compilation was
 being counted inside the first replicate's fit time and averaged over all 200.
