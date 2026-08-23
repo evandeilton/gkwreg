@@ -35,17 +35,24 @@ Changes relevant to CRAN:
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes
 
-The NOTE concerns the installed size, which is expected for a package with
-compiled C++/TMB code and one HTML vignette.
+The only NOTE seen locally is `checking HTML version of manual`, raised because
+`tidy` and the `V8` package are unavailable on the test machine; it is an
+artefact of the local setup, not of the package.
+
+The full test suite was run separately with `NOT_CRAN=true`:
+`FAIL 0 | WARN 0 | SKIP 0 | PASS 1177`. The tests carry `skip_on_cran()` to keep
+the check time down, so they are skipped during `R CMD check` itself.
 
 ## Vignette check time
 
-The single vignette runs a Monte Carlo study and dominates the check time
-(roughly 6-12 minutes on the CRAN Linux flavours for the previous version). Its
-content is unchanged in this release. Please let us know if a shorter vignette
-is preferred, and we will pre-compute the simulation results.
+The single vignette runs a Monte Carlo study and dominates the check time. On
+this machine the full check takes 8m25s, of which the vignette rebuild is 3m25s
+and the `--run-donttest` examples are 3m56s. For the previous version the CRAN
+Linux flavours reported 6-12 minutes for the vignette alone. Its content is
+unchanged in this release; please let us know if a shorter vignette is
+preferred, and we will pre-compute the simulation results.
 
 ## Downstream dependencies
 
