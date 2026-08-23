@@ -201,7 +201,7 @@ newdata <- data.frame(
 # Predict different quantities
 pred_mean <- predict(fit_kw, newdata, type = "response") # E(Y|X)
 pred_var <- predict(fit_kw, newdata, type = "variance") # Var(Y|X)
-pred_alpha <- predict(fit_kw, newdata, type = "alpha") # <U+03B1> parameter
+pred_alpha <- predict(fit_kw, newdata, type = "alpha") # α parameter
 pred_params <- predict(fit_kw, newdata, type = "parameter") # All parameters
 
 # Evaluate density at y = 0.5 for each observation
@@ -407,16 +407,12 @@ plot(fit_large,
 The GKw distribution is a five-parameter family for variables on
 $(0, 1)$ with cumulative distribution function:
 
-$$
-F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)
-$$
+$$F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)$$
 
 where $I_z(a,b)$ is the regularized incomplete beta function. The
 probability density function is:
 
-$$
-f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda}\\}^{\delta-1}
-$$
+$$f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda}\\}^{\delta-1}$$
 
 **Parameter Roles**:
 
@@ -519,26 +515,22 @@ If you use **gkwreg** in your research, please cite:
 citation("gkwreg")
 ```
 
-Or use the BibTeX entry:
-
-``` bibtex
-@Manual{,
-  title = {gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data},
-  author = {José Evandeilton Lopes},
-  year = {2025},
-  note = {R package version 2.1.4},
-  url = {https://github.com/evandeilton/gkwreg},
-}
-```
-
 ## License
 
 This package is licensed under the **MIT License**. See the
 [LICENSE](https://github.com/evandeilton/gkwreg/blob/main/LICENSE) file
 for details.
 
-|  |
-|----|
-| \## Author and Maintainer |
-| **José Evandeilton Lopes (Lopes, J. E.)** \| <evandeilton@gmail.com> \| [GitHub](https://github.com/evandeilton) \| [ORCID](https://orcid.org/0009-0007-5887-4084) |
-| LEG - Laboratório de Estatística e Geoinformação \| UFPR - Universidade Federal do Paraná, Brazil |
+------------------------------------------------------------------------
+
+## Authors
+
+**José Evandeilton Lopes** (author, maintainer) —
+<evandeilton@gmail.com> — [GitHub](https://github.com/evandeilton) —
+[ORCID](https://orcid.org/0009-0007-5887-4084)
+
+**Wagner Hugo Bonat** (author) —
+[ORCID](https://orcid.org/0000-0002-0349-7054)
+
+LEG — Laboratório de Estatística e Geoinformação, UFPR — Universidade
+Federal do Paraná, Brazil

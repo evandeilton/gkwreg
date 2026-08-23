@@ -1,3 +1,43 @@
+# gkwreg 2.1.16
+
+## Publication
+
+* The methodology and software are now published in the *Journal of Open Source
+  Software*: Lopes and Bonat (2026), <https://doi.org/10.21105/joss.08991>.
+* Added `inst/CITATION` so that `citation("gkwreg")` returns the JOSS reference.
+* Added the JOSS reference to the `Description` field in `DESCRIPTION`.
+
+## Fixed
+
+* Restored proper UTF-8 characters in documentation and examples. Several
+  accented names and mathematical symbols had been replaced by literal
+  `<U+XXXX>` escape sequences (affecting `LossAversion`, `ReadingSkills`,
+  `gkwreg`, `anova.gkwreg` and `residuals.gkwreg` help pages).
+* Normalised all package sources to LF line endings.
+* Removed the knitr cache directory of the vignette from version control and
+  from the source tarball; the vignette is now always rebuilt from scratch.
+* Tidied `.Rbuildignore` and `.gitignore` so that build artefacts, session
+  files and cache directories can no longer leak into the tarball.
+
+## Documentation
+
+* Updated `README` (JOSS badge, display equations, minor wording).
+* Reworked the `pkgdown` site (light theme, KaTeX math rendering).
+
+---
+
+# gkwreg 2.1.14
+
+## Fixed
+
+* **clang-san runtime error (integer overflow).** Fixed a `static_cast<int>`
+  overflow in the cache-key generation used by the TMB models. A
+  `safe_int_cast()` helper now prevents undefined behaviour when distribution
+  parameters reach extreme values during optimisation. Affects `gkwreg.cpp`,
+  `bkwreg.cpp`, `kkwreg.cpp`, `ekwreg.cpp`, `mcreg.cpp` and `kwreg.cpp`.
+
+---
+
 # gkwreg 2.1.13
 
 ## CRAN Resubmission

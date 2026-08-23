@@ -245,7 +245,7 @@ test_that("Predict with interaction terms works correctly", {
 })
 
 test_that("Predict CDF and quantile are inverse operations", {
-  # Test that quantile(CDF(y)) <U+2248> y
+  # Test that quantile(CDF(y)) ≈ y
   setup <- setup_predict_data()
 
   fit <- gkwreg(y ~ x1, data = setup$data, family = "kw")

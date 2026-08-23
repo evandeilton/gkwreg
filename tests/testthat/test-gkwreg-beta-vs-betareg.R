@@ -9,6 +9,9 @@
 # Skip on CRAN to reduce check time
 skip_on_cran()
 
+# betareg is only in Suggests
+skip_if_not_installed("betareg")
+
 library(testthat)
 library(gkwreg)
 library(gkwdist)
