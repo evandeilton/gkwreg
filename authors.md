@@ -11,16 +11,20 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/evandeilton/gkwreg/blob/main/DESCRIPTION)
+[`inst/CITATION`](https://github.com/evandeilton/gkwreg/blob/main/inst/CITATION)
 
-Lopes J, Bonat W (2026). *gkwreg: Generalized Kumaraswamy Regression
-Models for Bounded Data*. R package version 2.1.16,
-<https://github.com/evandeilton/gkwreg>.
+Lopes J, Bonat W (2026). “gkwreg: An R Package for Generalized
+Kumaraswamy Regression Models for Bounded Data.” *Journal of Open Source
+Software*, **11**(117), 8991.
+[doi:10.21105/joss.08991](https://doi.org/10.21105/joss.08991).
 
-    @Manual{,
-      title = {gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data},
+    @Article{,
+      title = {{gkwreg}: An {R} Package for Generalized Kumaraswamy Regression Models for Bounded Data},
       author = {José Evandeilton Lopes and Wagner Hugo Bonat},
+      journal = {Journal of Open Source Software},
       year = {2026},
-      note = {R package version 2.1.16},
-      url = {https://github.com/evandeilton/gkwreg},
+      volume = {11},
+      number = {117},
+      pages = {8991},
+      doi = {10.21105/joss.08991},
     }

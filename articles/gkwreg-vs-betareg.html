@@ -8,8 +8,8 @@
 <title>Beta Regression vs Kumaraswamy-Based Models for Bounded Data • gkwreg</title>
 <!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Ubuntu-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Ubuntu-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Ubuntu_Mono-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.16</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.17</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,7 @@
                         <h4 data-toc-skip class="author">Lopes, J.
 E.</h4>
             
-            <h4 data-toc-skip class="date">2026-03-21</h4>
+            <h4 data-toc-skip class="date">2026-08-23</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/evandeilton/gkwreg/blob/main/vignettes/gkwreg-vs-betareg.Rmd" class="external-link"><code>vignettes/gkwreg-vs-betareg.Rmd</code></a></small>
       <div class="d-none name"><code>gkwreg-vs-betareg.Rmd</code></div>
@@ -165,8 +165,17 @@ comparing the <code>betareg</code> package (Cribari-Neto &amp; Zeileis,
 models for the Kumaraswamy, Exponentiated Kumaraswamy, and Generalized
 Kumaraswamy distributions.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwreg" class="external-link">gkwreg</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://topmodels.R-Forge.R-project.org/betareg/" class="external-link">betareg</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># betareg is only in Suggests: skip the whole vignette when unavailable</span></span>
+<span><span class="co"># (CRAN policy on the conditional use of suggested packages).</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"betareg"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu">knitr</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/knitr/man/opts_chunk.html" class="external-link">opts_chunk</a></span><span class="op">$</span><span class="fu">set</span><span class="op">(</span>eval <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/asis_output.html" class="external-link">asis_output</a></span><span class="op">(</span></span>
+<span>    <span class="st">"&gt; **Note**: this vignette requires the **betareg** package, which is not\n&gt; installed. All code below is shown but not evaluated.\n"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://topmodels.R-Forge.R-project.org/betareg/" class="external-link">betareg</a></span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/evandeilton/gkwreg" class="external-link">gkwreg</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
@@ -764,7 +773,7 @@ unreliable</strong>. Table 2 quantifies these distortions.</p>
 <span><span class="va">coef_kw_s2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_kw_s2</span><span class="op">)</span></span>
 <span><span class="va">se_kw_s2</span> <span class="op">&lt;-</span> <span class="va">fit_kw_s2</span><span class="op">$</span><span class="va">se</span></span>
 <span></span>
-<span><span class="co"># Note: True parameters are on different scale (&lt;U+03B1&gt;, &lt;U+03B2&gt; vs &lt;U+03BC&gt;, &lt;U+03C6&gt;)</span></span>
+<span><span class="co"># Note: True parameters are on different scale (α, β vs μ, φ)</span></span>
 <span><span class="co"># Focus on relative comparisons</span></span>
 <span><span class="va">coef_comparison_s2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  Parameter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">coef_beta_s2</span><span class="op">)</span>,</span>
@@ -1237,7 +1246,7 @@ successful fits; metrics may not be representative.</caption>
 <td align="right">100.0</td>
 <td align="right">-224.74</td>
 <td align="right">0.1924</td>
-<td align="right">0.0149</td>
+<td align="right">0.0151</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1246,7 +1255,7 @@ successful fits; metrics may not be representative.</caption>
 <td align="right">100.0</td>
 <td align="right">-181.12</td>
 <td align="right">0.2276</td>
-<td align="right">0.2260</td>
+<td align="right">0.2211</td>
 </tr>
 <tr class="odd">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1255,7 +1264,7 @@ successful fits; metrics may not be representative.</caption>
 <td align="right">100.0</td>
 <td align="right">-219.76</td>
 <td align="right">0.1989</td>
-<td align="right">0.2135</td>
+<td align="right">0.2129</td>
 </tr>
 <tr class="even">
 <td align="left">S1: Well-Specified Beta</td>
@@ -1264,7 +1273,7 @@ successful fits; metrics may not be representative.</caption>
 <td align="right">100.0</td>
 <td align="right">-219.24</td>
 <td align="right">0.6619</td>
-<td align="right">0.2396</td>
+<td align="right">0.2357</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1282,7 +1291,7 @@ successful fits; metrics may not be representative.</caption>
 <td align="right">100.0</td>
 <td align="right">-116.79</td>
 <td align="right">0.2105</td>
-<td align="right">0.0206</td>
+<td align="right">0.0201</td>
 </tr>
 <tr class="odd">
 <td align="left">S2: Heavy Tails</td>
@@ -1291,25 +1300,25 @@ successful fits; metrics may not be representative.</caption>
 <td align="right">100.0</td>
 <td align="right">-115.77</td>
 <td align="right">0.1940</td>
-<td align="right">0.0120</td>
+<td align="right">0.0126</td>
 </tr>
 <tr class="even">
 <td align="left">S2: Heavy Tails</td>
 <td align="left">Exp. Kumaraswamy</td>
 <td align="right">200</td>
-<td align="right">58.5</td>
-<td align="right">-267.39</td>
+<td align="right">58.0</td>
+<td align="right">-213.45</td>
 <td align="right">0.6184</td>
-<td align="right">0.0329</td>
+<td align="right">0.0322</td>
 </tr>
 <tr class="odd">
 <td align="left">S3: Extreme Shapes</td>
 <td align="left">Beta (betareg)</td>
 <td align="right">200</td>
-<td align="right">5.0</td>
-<td align="right">16614.42</td>
+<td align="right">4.5</td>
+<td align="right">16677.68</td>
 <td align="right">0.4052</td>
-<td align="right">0.4246</td>
+<td align="right">0.3713</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
@@ -1318,7 +1327,7 @@ successful fits; metrics may not be representative.</caption>
 <td align="right">100.0</td>
 <td align="right">-2007.68</td>
 <td align="right">0.2921</td>
-<td align="right">0.0501</td>
+<td align="right">0.0347</td>
 </tr>
 <tr class="odd">
 <td align="left">S3: Extreme Shapes</td>
@@ -1327,16 +1336,16 @@ successful fits; metrics may not be representative.</caption>
 <td align="right">100.0</td>
 <td align="right">-2257.56</td>
 <td align="right">0.2660</td>
-<td align="right">0.0227</td>
+<td align="right">0.0155</td>
 </tr>
 <tr class="even">
 <td align="left">S3: Extreme Shapes</td>
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">112</td>
-<td align="right">76.8</td>
-<td align="right">-2352.98</td>
+<td align="right">105</td>
+<td align="right">80.0</td>
+<td align="right">-2331.45</td>
 <td align="right">0.3649</td>
-<td align="right">0.0504</td>
+<td align="right">0.0460</td>
 </tr>
 </tbody>
 </table>
@@ -1403,22 +1412,22 @@ Beta Regression</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Kumaraswamy</td>
-<td align="right">0.0827</td>
-<td align="right">1.8263</td>
+<td align="right">0.0803</td>
+<td align="right">1.6606</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (gkwreg)</td>
-<td align="right">0.0989</td>
-<td align="right">1.5278</td>
+<td align="right">0.0920</td>
+<td align="right">1.4505</td>
 </tr>
 <tr class="odd">
 <td align="left">Exp. Kumaraswamy</td>
-<td align="right">0.1076</td>
-<td align="right">1.4038</td>
+<td align="right">0.1046</td>
+<td align="right">1.2749</td>
 </tr>
 <tr class="even">
 <td align="left">Beta (betareg)</td>
-<td align="right">0.1511</td>
+<td align="right">0.1334</td>
 <td align="right">1.0000</td>
 </tr>
 </tbody>
@@ -1605,9 +1614,9 @@ Maximum-likelihood regression with beta-distributed dependent variables.
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<pre><code>R version 4.5.3 (2026-03-11)
+<pre><code>R version 4.6.1 (2026-06-24)
 Platform: x86_64-pc-linux-gnu
-Running under: Ubuntu 24.04.3 LTS
+Running under: Ubuntu 24.04.4 LTS
 
 Matrix products: default
 BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -1626,28 +1635,29 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] ggplot2_4.0.2 betareg_3.2-4 gkwreg_2.1.16
+[1] ggplot2_4.0.3 gkwreg_2.1.17 betareg_3.2-5
 
 loaded via a namespace (and not attached):
- [1] sandwich_3.1-1         sass_0.4.10            generics_0.1.4        
- [4] lattice_0.22-9         digest_0.6.39          magrittr_2.0.4        
- [7] evaluate_1.0.5         grid_4.5.3             RColorBrewer_1.1-3    
-[10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-4          
-[13] nnet_7.3-20            Formula_1.2-5          scales_1.4.0          
+ [1] generics_0.1.4         sandwich_3.1-3         sass_0.4.10           
+ [4] lattice_0.22-9         digest_0.6.39          magrittr_2.0.5        
+ [7] evaluate_1.0.5         grid_4.6.1             RColorBrewer_1.1-3    
+[10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-5          
+[13] nnet_7.3-20            Formula_1.2-6          scales_1.4.0          
 [16] codetools_0.2-20       numDeriv_2016.8-1.1    modeltools_0.2-24     
-[19] textshaping_1.0.5      jquerylib_0.1.4        cli_3.6.5             
-[22] rlang_1.1.7            withr_3.0.2            RcppArmadillo_15.2.4-1
-[25] cachem_1.1.0           yaml_2.3.12            tools_4.5.3           
-[28] flexmix_2.3-20         dplyr_1.2.0            vctrs_0.7.1           
-[31] R6_2.6.1               stats4_4.5.3           zoo_1.8-15            
-[34] lifecycle_1.0.5        fs_1.6.7               ragg_1.5.1            
-[37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
-[40] bslib_0.10.0           pillar_1.11.1          gtable_0.3.6          
-[43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.2     
-[46] tidyselect_1.2.1       xfun_0.56              tibble_3.3.1          
-[49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
-[52] htmltools_0.5.9        rmarkdown_2.30         gkwdist_1.1.2         
-[55] TMB_1.9.20             compiler_4.5.3         S7_0.2.1              </code></pre>
+[19] textshaping_1.0.5      jquerylib_0.1.4        cli_3.6.6             
+[22] rlang_1.3.0            withr_3.0.3            RcppArmadillo_15.4.2-1
+[25] cachem_1.1.0           yaml_2.3.12            otel_0.2.0            
+[28] tools_4.6.1            flexmix_2.3-20         dplyr_1.2.1           
+[31] vctrs_0.7.3            R6_2.6.1               stats4_4.6.1          
+[34] zoo_1.9-0              lifecycle_1.0.5        fs_2.1.0              
+[37] ragg_1.5.2             pkgconfig_2.0.3        desc_1.4.3            
+[40] pillar_1.11.1          pkgdown_2.2.1          bslib_0.12.0          
+[43] gtable_0.3.6           glue_1.8.1             Rcpp_1.1.2            
+[46] systemfonts_1.3.2      tidyselect_1.2.1       tibble_3.3.1          
+[49] xfun_0.60              lmtest_0.9-40          knitr_1.51            
+[52] farver_2.1.2           htmltools_0.5.9        rmarkdown_2.31        
+[55] gkwdist_1.1.4          TMB_1.9.23             compiler_4.6.1        
+[58] S7_0.2.2              </code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -1660,7 +1670,7 @@ loaded via a namespace (and not attached):
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

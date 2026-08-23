@@ -52,15 +52,15 @@ speed, numerical accuracy, and optimization stability.
 Model bounded data using the **5-parameter Generalized Kumaraswamy
 (GKw)** distribution and its **seven nested subfamilies**:
 
-| Distribution              | Code   | Parameters Modeled                     | Fixed Parameters                    | \# Params |
-|:--------------------------|:-------|:---------------------------------------|:------------------------------------|:----------|
-| Generalized Kumaraswamy   | `gkw`  | \alpha, \beta, \gamma, \delta, \lambda | None                                | 5         |
-| Beta-Kumaraswamy          | `bkw`  | \alpha, \beta, \gamma, \delta          | \lambda = 1                         | 4         |
-| Kumaraswamy-Kumaraswamy   | `kkw`  | \alpha, \beta, \delta, \lambda         | \gamma = 1                          | 4         |
-| Exponentiated Kumaraswamy | `ekw`  | \alpha, \beta, \lambda                 | \gamma = 1, \delta = 0              | 3         |
-| McDonald (Beta Power)     | `mc`   | \gamma, \delta, \lambda                | \alpha = 1, \beta = 1               | 3         |
-| Kumaraswamy               | `kw`   | \alpha, \beta                          | \gamma = 1, \delta = 0, \lambda = 1 | 2         |
-| Beta                      | `beta` | \gamma, \delta                         | \alpha = 1, \beta = 1, \lambda = 1  | 2         |
+| Distribution | Code | Parameters Modeled | Fixed Parameters | \# Params |
+|:---|:---|:---|:---|:---|
+| Generalized Kumaraswamy | `gkw` | \alpha, \beta, \gamma, \delta, \lambda | None | 5 |
+| Beta-Kumaraswamy | `bkw` | \alpha, \beta, \gamma, \delta | \lambda = 1 | 4 |
+| Kumaraswamy-Kumaraswamy | `kkw` | \alpha, \beta, \delta, \lambda | \gamma = 1 | 4 |
+| Exponentiated Kumaraswamy | `ekw` | \alpha, \beta, \lambda | \gamma = 1, \delta = 0 | 3 |
+| McDonald (Beta Power) | `mc` | \gamma, \delta, \lambda | \alpha = 1, \beta = 1 | 3 |
+| Kumaraswamy | `kw` | \alpha, \beta | \gamma = 1, \delta = 0, \lambda = 1 | 2 |
+| Beta | `beta` | \gamma, \delta | \alpha = 1, \beta = 1, \lambda = 1 | 2 |
 
 Each family offers distinct flexibility-parsimony tradeoffs. Start
 simple (`kw` or `beta`) and compare nested models using likelihood ratio
@@ -71,6 +71,7 @@ tests or information criteria.
 - **Extended formula syntax** for parameter-specific linear predictors:
 
   ``` r
+
   y ~ alpha_predictors | beta_predictors | gamma_predictors | delta_predictors | lambda_predictors
   ```
 
@@ -154,6 +155,7 @@ You can install the stable version from CRAN (once accepted) or the
 development version from GitHub.
 
 ``` r
+
 # Install from CRAN (stable release):
 install.packages("gkwreg")
 
@@ -173,6 +175,7 @@ remotes::install_github("evandeilton/gkwreg")
 ### Basic Regression
 
 ``` r
+
 library(gkwreg)
 library(gkwdist)
 
@@ -202,6 +205,7 @@ summary(fit_kw)
 ### Advanced Prediction
 
 ``` r
+
 # Create prediction grid
 newdata <- data.frame(
   x1 = seq(-2, 2, length.out = 100),
@@ -211,7 +215,7 @@ newdata <- data.frame(
 # Predict different quantities
 pred_mean <- predict(fit_kw, newdata, type = "response") # E(Y|X)
 pred_var <- predict(fit_kw, newdata, type = "variance") # Var(Y|X)
-pred_alpha <- predict(fit_kw, newdata, type = "alpha") # <U+03B1> parameter
+pred_alpha <- predict(fit_kw, newdata, type = "alpha") # α parameter
 pred_params <- predict(fit_kw, newdata, type = "parameter") # All parameters
 
 # Evaluate density at y = 0.5 for each observation
@@ -227,6 +231,7 @@ quantiles <- predict(fit_kw, newdata,
 ### Model Comparison
 
 ``` r
+
 # Fit nested models
 fit0 <- gkwreg(y ~ 1, data = df, family = "kw") # Null model
 fit1 <- gkwreg(y ~ x1, data = df, family = "kw") # + x1
@@ -242,6 +247,7 @@ anova(fit0, fit1, fit2, test = "Chisq")
 ### Diagnostic Plots
 
 ``` r
+
 # All diagnostic plots (base R graphics)
 par(mfrow = c(3, 2))
 plot(fit_kw, ask = FALSE)
@@ -275,6 +281,7 @@ head(diag$data) # Access Cook's distance, leverage, residuals, etc.
 ## Real Data Example
 
 ``` r
+
 # Food Expenditure Data (proportion spent on food)
 data("FoodExpenditure")
 food <- FoodExpenditure
@@ -312,6 +319,7 @@ lines(income_seq, predict(best_fit, pred_df), col = "red", lwd = 2)
 ### Custom Optimization Control
 
 ``` r
+
 library(gkwreg)
 library(gkwdist)
 
@@ -368,6 +376,7 @@ fit_custom <- gkwreg(y ~ x1 + x2 | x3,
 ### Link Functions and Scaling
 
 ``` r
+
 # Default: log link for all parameters
 fit_default <- gkwreg(y ~ x | x, data = df, family = "kw")
 
@@ -388,6 +397,7 @@ fit_scaled <- gkwreg(y ~ x | x,
 ### Working with Large Datasets
 
 ``` r
+
 # Large dataset example
 set.seed(456)
 n_large <- 100000
@@ -470,16 +480,16 @@ Standard Errors (Hessian inversion)
 
 ## Comparison with Other Packages
 
-| Feature                 | gkwreg                                                                                      | betareg         | gamlss         | brms           |
-|:------------------------|:--------------------------------------------------------------------------------------------|:----------------|:---------------|:---------------|
-| **Distribution Family** | GKw hierarchy (7)                                                                           | Beta            | 100+           | 50+            |
-| **Estimation**          | MLE (TMB/AD)                                                                                | MLE             | GAMLSS         | Bayesian MCMC  |
-| **Parameter Modeling**  | All parameters                                                                              | Mean, precision | All parameters | All parameters |
-| **Speed (n=10k)**       | **Fast (~1s)**                                                                              | Fast (~1s)      | Moderate (~5s) | Slow (~5min)   |
-| **Link Functions**      | 9 options + scaling                                                                         | Fixed           | Many           | Many           |
-| **Optimization**        | [`gkw_control()`](https://evandeilton.github.io/gkwreg/reference/gkw_control.md) (detailed) | Basic           | Moderate       | Extensive      |
-| **Diagnostic Plots**    | 6 types, dual graphics                                                                      | 4 types         | Extensive      | Via bayesplot  |
-| **Dependencies**        | gkwdist, TMB, Formula                                                                       | Minimal         | Many           | Stan, many     |
+| Feature | gkwreg | betareg | gamlss | brms |
+|:---|:---|:---|:---|:---|
+| **Distribution Family** | GKw hierarchy (7) | Beta | 100+ | 50+ |
+| **Estimation** | MLE (TMB/AD) | MLE | GAMLSS | Bayesian MCMC |
+| **Parameter Modeling** | All parameters | Mean, precision | All parameters | All parameters |
+| **Speed (n=10k)** | **Fast (~1s)** | Fast (~1s) | Moderate (~5s) | Slow (~5min) |
+| **Link Functions** | 9 options + scaling | Fixed | Many | Many |
+| **Optimization** | [`gkw_control()`](https://evandeilton.github.io/gkwreg/reference/gkw_control.md) (detailed) | Basic | Moderate | Extensive |
+| **Diagnostic Plots** | 6 types, dual graphics | 4 types | Extensive | Via bayesplot |
+| **Dependencies** | gkwdist, TMB, Formula | Minimal | Many | Stan, many |
 
 **When to use gkwreg**:
 
@@ -533,19 +543,8 @@ Please read it before contributing.
 If you use **gkwreg** in your research, please cite:
 
 ``` r
+
 citation("gkwreg")
-```
-
-Or use the BibTeX entry:
-
-``` bibtex
-@Manual{,
-  title = {gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data},
-  author = {José Evandeilton Lopes},
-  year = {2025},
-  note = {R package version 2.1.4},
-  url = {https://github.com/evandeilton/gkwreg},
-}
 ```
 
 ## License
@@ -554,8 +553,16 @@ This package is licensed under the **MIT License**. See the
 [LICENSE](https://github.com/evandeilton/gkwreg/blob/main/LICENSE) file
 for details.
 
-|                                                                                                                                                                    |
-|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| \## Author and Maintainer                                                                                                                                          |
-| **José Evandeilton Lopes (Lopes, J. E.)** \| <evandeilton@gmail.com> \| [GitHub](https://github.com/evandeilton) \| [ORCID](https://orcid.org/0009-0007-5887-4084) |
-| LEG - Laboratório de Estatística e Geoinformação \| UFPR - Universidade Federal do Paraná, Brazil                                                                  |
+------------------------------------------------------------------------
+
+## Authors
+
+**José Evandeilton Lopes** (author, maintainer) —
+<evandeilton@gmail.com> — [GitHub](https://github.com/evandeilton) —
+[ORCID](https://orcid.org/0009-0007-5887-4084)
+
+**Wagner Hugo Bonat** (author) —
+[ORCID](https://orcid.org/0000-0002-0349-7054)
+
+LEG — Laboratório de Estatística e Geoinformação, UFPR — Universidade
+Federal do Paraná, Brazil

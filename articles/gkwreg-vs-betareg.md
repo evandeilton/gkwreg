@@ -93,8 +93,18 @@ Kumaraswamy, Exponentiated Kumaraswamy, and Generalized Kumaraswamy
 distributions.
 
 ``` r
+
+# betareg is only in Suggests: skip the whole vignette when unavailable
+# (CRAN policy on the conditional use of suggested packages).
+if (!requireNamespace("betareg", quietly = TRUE)) {
+  knitr::opts_chunk$set(eval = FALSE)
+  knitr::asis_output(
+    "> **Note**: this vignette requires the **betareg** package, which is not\n> installed. All code below is shown but not evaluated.\n"
+  )
+} else {
+  library(betareg)
+}
 library(gkwreg)
-library(betareg)
 library(ggplot2)
 ```
 
@@ -245,6 +255,7 @@ This scenario establishes baseline performance when Beta regression
 assumptions hold exactly.
 
 ``` r
+
 dgp_beta <- function(n, params) {
   x1 <- rnorm(n, 0, 1)
   x2 <- runif(n, -1, 1)
@@ -273,6 +284,7 @@ Y (coefficient β₁ = −0.8), while x_2 shows a positive association (β₂ =
 regression.
 
 ``` r
+
 set.seed(123)
 vis_data_s1 <- dgp_beta(1000, list(
   beta_mu = c(0.5, -0.8, 0.6),
@@ -328,6 +340,7 @@ Distributional Characteristics - Scenario 1 (Well-Specified Beta)
 #### Simulation Results
 
 ``` r
+
 results_s1 <- run_full_simulation(
   n_sim = 200,
   n = 300,
@@ -349,6 +362,7 @@ to a single representative dataset and compare parameter estimates.
 Table 1 presents the estimates, standard errors, and z-statistics.
 
 ``` r
+
 # Fit models to one dataset for coefficient comparison
 set.seed(456)
 data_coef_s1 <- dgp_beta(300, list(
@@ -399,15 +413,16 @@ knitr::kable(
 )
 ```
 
-| Parameter          | True |    Est. |     SE |      z |    Est. |     SE |     z |    Bias |    Bias | SE Ratio |
-|:-------------------|-----:|--------:|-------:|-------:|--------:|-------:|------:|--------:|--------:|---------:|
-| (Intercept)        |  0.5 |  0.5319 | 0.0541 |   9.84 |  0.9170 | 0.0703 | 13.04 |  0.0319 |  0.4170 |    1.299 |
-| x1                 | -0.8 | -0.8332 | 0.0555 | -15.02 | -0.2153 | 0.0605 | -3.56 | -0.0332 |  0.5847 |    1.090 |
-| x2                 |  0.6 |  0.6612 | 0.0853 |   7.75 |  0.4679 | 0.0740 |  6.32 |  0.0612 | -0.1321 |    0.868 |
-| (phi)\_(Intercept) |  1.5 |  1.5892 | 0.0784 |  20.27 |  0.4620 | 0.0841 |  5.49 |  0.0892 | -1.0380 |    1.073 |
-| (phi)\_x1          |  0.4 |  0.2245 | 0.0770 |   2.91 |  0.7872 | 0.0837 |  9.41 | -0.1755 |  0.3872 |    1.087 |
+| Parameter | True | Est. | SE | z | Est. | SE | z | Bias | Bias | SE Ratio |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| (Intercept) | 0.5 | 0.5319 | 0.0541 | 9.84 | 0.9170 | 0.0703 | 13.04 | 0.0319 | 0.4170 | 1.299 |
+| x1 | -0.8 | -0.8332 | 0.0555 | -15.02 | -0.2153 | 0.0605 | -3.56 | -0.0332 | 0.5847 | 1.090 |
+| x2 | 0.6 | 0.6612 | 0.0853 | 7.75 | 0.4679 | 0.0740 | 6.32 | 0.0612 | -0.1321 | 0.868 |
+| (phi)\_(Intercept) | 1.5 | 1.5892 | 0.0784 | 20.27 | 0.4620 | 0.0841 | 5.49 | 0.0892 | -1.0380 | 1.073 |
+| (phi)\_x1 | 0.4 | 0.2245 | 0.0770 | 2.91 | 0.7872 | 0.0837 | 9.41 | -0.1755 | 0.3872 | 1.087 |
 
 Table 1: Parameter Estimates - Scenario 1 (Well-Specified Beta, n=300)
+{.table style="width:100%;"}
 
 **Interpretation of coefficient estimates**: Both models recover
 parameters with minimal bias (all biases \< 0.05 in absolute value). The
@@ -438,6 +453,7 @@ This scenario tests model robustness when the true distribution deviates
 from Beta assumptions.
 
 ``` r
+
 dgp_heavy_tails <- function(n, params) {
   x1 <- rnorm(n, 0, 1)
   x2 <- rbinom(n, 1, 0.5)
@@ -468,6 +484,7 @@ density curve exhibits slower decay rates, characteristic of the
 Exponentiated Kumaraswamy’s third shape parameter.
 
 ``` r
+
 set.seed(789)
 vis_data_s2 <- dgp_heavy_tails(1500, list(
   beta_alpha = c(0.8, -0.5),
@@ -535,6 +552,7 @@ probabilities**, leading to poor probabilistic forecasts.
 #### Simulation Results
 
 ``` r
+
 results_s2 <- run_full_simulation(
   n_sim = 200,
   n = 300,
@@ -557,6 +575,7 @@ regression, parameter estimates become **biased and inference
 unreliable**. Table 2 quantifies these distortions.
 
 ``` r
+
 # Fit models to one dataset
 set.seed(101112)
 data_coef_s2 <- dgp_heavy_tails(300, list(
@@ -574,7 +593,7 @@ se_beta_s2 <- sqrt(diag(vcov(fit_beta_s2)))
 coef_kw_s2 <- coef(fit_kw_s2)
 se_kw_s2 <- fit_kw_s2$se
 
-# Note: True parameters are on different scale (<U+03B1>, <U+03B2> vs <U+03BC>, <U+03C6>)
+# Note: True parameters are on different scale (α, β vs μ, φ)
 # Focus on relative comparisons
 coef_comparison_s2 <- data.frame(
   Parameter = names(coef_beta_s2),
@@ -604,7 +623,7 @@ knitr::kable(
 | (phi)\_(Intercept) | 1.6385 | 0.1099 | 14.91 | 0.6572 | 0.1052 |  6.25 |    0.957 |
 | (phi)\_x21         | 0.1885 | 0.1491 |  1.26 | 0.0180 | 0.1163 |  0.15 |    0.780 |
 
-Table 2: Parameter Estimates - Scenario 2 (Heavy Tails, n=300)
+Table 2: Parameter Estimates - Scenario 2 (Heavy Tails, n=300) {.table}
 
 **Critical finding on standard errors**: The SE Ratio column
 (Kumaraswamy SE / Beta SE) shows values of 1.15-1.40, meaning
@@ -643,6 +662,7 @@ This challenging scenario assesses convergence reliability with extreme
 boundary concentration.
 
 ``` r
+
 dgp_extreme <- function(n, params) {
   x1 <- rnorm(n, 0, 1)
   group <- sample(c("J", "U"), n, replace = TRUE)
@@ -672,6 +692,7 @@ peaks at both boundaries. These patterns violate Beta regression’s
 assumption of smooth, unimodal densities.
 
 ``` r
+
 set.seed(131415)
 vis_data_s3 <- dgp_extreme(2000, list(
   alpha_J = c(-1.5, 0.2),
@@ -756,6 +777,7 @@ shape parameters approaching zero.
 #### Simulation Results
 
 ``` r
+
 results_s3 <- run_full_simulation(
   n_sim = 200,
   n = 400,
@@ -780,6 +802,7 @@ regression successfully converged only 11 times (5.5%), while
 Kumaraswamy achieved perfect reliability (100%).
 
 ``` r
+
 # For this scenario, we'll fit to a single J-shaped dataset where Beta converges
 set.seed(161718)
 # Generate J-shaped only for better Beta convergence probability
@@ -861,7 +884,7 @@ if (!is.null(fit_beta_s3) && fit_beta_s3$converged) {
 | (phi)\_groupU      | -3.6037 | 0.1691 | -21.32 | -2.9044 | 0.1667 | -17.42 |    0.986 |
 
 Table 3: Parameter Estimates - Scenario 3 (Extreme Shapes, n=400, Beta
-Converged)
+Converged) {.table}
 
 **When Beta does converge** (the rare 5.5% of cases), the SE Ratio
 analysis reveals instability:
@@ -887,24 +910,24 @@ Table 4 synthesizes key performance metrics across all three simulation
 scenarios. The patterns reveal clear, actionable insights for
 practitioners.
 
-| Scenario                | Model            | N_Success | Conv_Rate |      AIC |   RMSE |   Time |
-|:------------------------|:-----------------|----------:|----------:|---------:|-------:|-------:|
-| S1: Well-Specified Beta | Beta (betareg)   |       200 |     100.0 |  -224.74 | 0.1924 | 0.0149 |
-| S1: Well-Specified Beta | Beta (gkwreg)    |       200 |     100.0 |  -181.12 | 0.2276 | 0.2260 |
-| S1: Well-Specified Beta | Kumaraswamy      |       200 |     100.0 |  -219.76 | 0.1989 | 0.2135 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy |       200 |     100.0 |  -219.24 | 0.6619 | 0.2396 |
-| S2: Heavy Tails         | Beta (betareg)   |       200 |     100.0 |  -139.28 | 0.1909 | 0.0138 |
-| S2: Heavy Tails         | Beta (gkwreg)    |       200 |     100.0 |  -116.79 | 0.2105 | 0.0206 |
-| S2: Heavy Tails         | Kumaraswamy      |       200 |     100.0 |  -115.77 | 0.1940 | 0.0120 |
-| S2: Heavy Tails         | Exp. Kumaraswamy |       200 |      58.5 |  -267.39 | 0.6184 | 0.0329 |
-| S3: Extreme Shapes      | Beta (betareg)   |       200 |       5.0 | 16614.42 | 0.4052 | 0.4246 |
-| S3: Extreme Shapes      | Beta (gkwreg)    |       200 |     100.0 | -2007.68 | 0.2921 | 0.0501 |
-| S3: Extreme Shapes      | Kumaraswamy      |       200 |     100.0 | -2257.56 | 0.2660 | 0.0227 |
-| S3: Extreme Shapes      | Exp. Kumaraswamy |       112 |      76.8 | -2352.98 | 0.3649 | 0.0504 |
+| Scenario | Model | N_Success | Conv_Rate | AIC | RMSE | Time |
+|:---|:---|---:|---:|---:|---:|---:|
+| S1: Well-Specified Beta | Beta (betareg) | 200 | 100.0 | -224.74 | 0.1924 | 0.0151 |
+| S1: Well-Specified Beta | Beta (gkwreg) | 200 | 100.0 | -181.12 | 0.2276 | 0.2211 |
+| S1: Well-Specified Beta | Kumaraswamy | 200 | 100.0 | -219.76 | 0.1989 | 0.2129 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy | 200 | 100.0 | -219.24 | 0.6619 | 0.2357 |
+| S2: Heavy Tails | Beta (betareg) | 200 | 100.0 | -139.28 | 0.1909 | 0.0138 |
+| S2: Heavy Tails | Beta (gkwreg) | 200 | 100.0 | -116.79 | 0.2105 | 0.0201 |
+| S2: Heavy Tails | Kumaraswamy | 200 | 100.0 | -115.77 | 0.1940 | 0.0126 |
+| S2: Heavy Tails | Exp. Kumaraswamy | 200 | 58.0 | -213.45 | 0.6184 | 0.0322 |
+| S3: Extreme Shapes | Beta (betareg) | 200 | 4.5 | 16677.68 | 0.4052 | 0.3713 |
+| S3: Extreme Shapes | Beta (gkwreg) | 200 | 100.0 | -2007.68 | 0.2921 | 0.0347 |
+| S3: Extreme Shapes | Kumaraswamy | 200 | 100.0 | -2257.56 | 0.2660 | 0.0155 |
+| S3: Extreme Shapes | Exp. Kumaraswamy | 105 | 80.0 | -2331.45 | 0.3649 | 0.0460 |
 
 Table 4: Comprehensive Model Comparison Across Three Simulation
 Scenarios. Note: Scenario 3 Beta statistics are based on only 5.5%
-successful fits; metrics may not be representative.
+successful fits; metrics may not be representative. {.table}
 
 #### Statistical Performance Summary
 
@@ -959,13 +982,13 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |          0.0827 |         1.8263 |
-| Beta (gkwreg)    |          0.0989 |         1.5278 |
-| Exp. Kumaraswamy |          0.1076 |         1.4038 |
-| Beta (betareg)   |          0.1511 |         1.0000 |
+| Kumaraswamy      |          0.0803 |         1.6606 |
+| Beta (gkwreg)    |          0.0920 |         1.4505 |
+| Exp. Kumaraswamy |          0.1046 |         1.2749 |
+| Beta (betareg)   |          0.1334 |         1.0000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
-Regression
+Regression {.table}
 
 The **2-9× speedup range** for Kumaraswamy reflects scenario
 complexity: - Simple models (Scenario 1): 2.5× faster - Complex models
@@ -1124,9 +1147,9 @@ Maximum-likelihood regression with beta-distributed dependent variables.
 
 ## Session Information
 
-    R version 4.5.3 (2026-03-11)
+    R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.3 LTS
+    Running under: Ubuntu 24.04.4 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -1145,25 +1168,26 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [1] stats     graphics  grDevices utils     datasets  methods   base     
 
     other attached packages:
-    [1] ggplot2_4.0.2 betareg_3.2-4 gkwreg_2.1.16
+    [1] ggplot2_4.0.3 gkwreg_2.1.17 betareg_3.2-5
 
     loaded via a namespace (and not attached):
-     [1] sandwich_3.1-1         sass_0.4.10            generics_0.1.4        
-     [4] lattice_0.22-9         digest_0.6.39          magrittr_2.0.4        
-     [7] evaluate_1.0.5         grid_4.5.3             RColorBrewer_1.1-3    
-    [10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-4          
-    [13] nnet_7.3-20            Formula_1.2-5          scales_1.4.0          
+     [1] generics_0.1.4         sandwich_3.1-3         sass_0.4.10           
+     [4] lattice_0.22-9         digest_0.6.39          magrittr_2.0.5        
+     [7] evaluate_1.0.5         grid_4.6.1             RColorBrewer_1.1-3    
+    [10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-5          
+    [13] nnet_7.3-20            Formula_1.2-6          scales_1.4.0          
     [16] codetools_0.2-20       numDeriv_2016.8-1.1    modeltools_0.2-24     
-    [19] textshaping_1.0.5      jquerylib_0.1.4        cli_3.6.5             
-    [22] rlang_1.1.7            withr_3.0.2            RcppArmadillo_15.2.4-1
-    [25] cachem_1.1.0           yaml_2.3.12            tools_4.5.3           
-    [28] flexmix_2.3-20         dplyr_1.2.0            vctrs_0.7.1           
-    [31] R6_2.6.1               stats4_4.5.3           zoo_1.8-15            
-    [34] lifecycle_1.0.5        fs_1.6.7               ragg_1.5.1            
-    [37] pkgconfig_2.0.3        desc_1.4.3             pkgdown_2.2.0         
-    [40] bslib_0.10.0           pillar_1.11.1          gtable_0.3.6          
-    [43] glue_1.8.0             Rcpp_1.1.1             systemfonts_1.3.2     
-    [46] tidyselect_1.2.1       xfun_0.56              tibble_3.3.1          
-    [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
-    [52] htmltools_0.5.9        rmarkdown_2.30         gkwdist_1.1.2         
-    [55] TMB_1.9.20             compiler_4.5.3         S7_0.2.1              
+    [19] textshaping_1.0.5      jquerylib_0.1.4        cli_3.6.6             
+    [22] rlang_1.3.0            withr_3.0.3            RcppArmadillo_15.4.2-1
+    [25] cachem_1.1.0           yaml_2.3.12            otel_0.2.0            
+    [28] tools_4.6.1            flexmix_2.3-20         dplyr_1.2.1           
+    [31] vctrs_0.7.3            R6_2.6.1               stats4_4.6.1          
+    [34] zoo_1.9-0              lifecycle_1.0.5        fs_2.1.0              
+    [37] ragg_1.5.2             pkgconfig_2.0.3        desc_1.4.3            
+    [40] pillar_1.11.1          pkgdown_2.2.1          bslib_0.12.0          
+    [43] gtable_0.3.6           glue_1.8.1             Rcpp_1.1.2            
+    [46] systemfonts_1.3.2      tidyselect_1.2.1       tibble_3.3.1          
+    [49] xfun_0.60              lmtest_0.9-40          knitr_1.51            
+    [52] farver_2.1.2           htmltools_0.5.9        rmarkdown_2.31        
+    [55] gkwdist_1.1.4          TMB_1.9.23             compiler_4.6.1        
+    [58] S7_0.2.2              

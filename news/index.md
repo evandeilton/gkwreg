@@ -1,5 +1,84 @@
 # Changelog
 
+## gkwreg 2.1.17
+
+Maintenance release. No changes to the statistical methods or to the
+exported API.
+
+Version 2.1.16 was used for the JOSS review archive on Zenodo and was
+never released on CRAN; 2.1.17 is the CRAN update that follows 2.1.14.
+
+### Publication
+
+- The methodology and software are now published in the *Journal of Open
+  Source Software*: Lopes and Bonat (2026),
+  <https://doi.org/10.21105/joss.08991>.
+- Added `inst/CITATION`, so that `citation("gkwreg")` returns the
+  peer-reviewed reference, and added that reference to the `Description`
+  field.
+
+### Dependencies
+
+- `utils` and `grDevices` are now declared in `Imports`. Both were
+  already used via `::`
+  ([`utils::modifyList`](https://rdrr.io/r/utils/modifyList.html),
+  [`utils::globalVariables`](https://rdrr.io/r/utils/globalVariables.html),
+  [`grDevices::dev.hold`](https://rdrr.io/r/grDevices/dev.flush.html),
+  [`grDevices::devAskNewPage`](https://rdrr.io/r/grDevices/devAskNewPage.html))
+  without being declared.
+- The suggested package **betareg** is now used conditionally in the
+  vignette and in the comparative test file, as required by the CRAN
+  policy on packages listed in `Suggests`.
+
+### Fixed
+
+- Restored genuine UTF-8 characters in the documentation and examples.
+  Accented author names and mathematical symbols had regressed to
+  literal `<U+XXXX>` escape sequences, affecting the `LossAversion`,
+  `ReadingSkills`, `gkwreg`, `anova.gkwreg` and `residuals.gkwreg` help
+  pages, the README and the vignette.
+- Normalised `DESCRIPTION`, `LICENSE`, `NAMESPACE` and all package
+  sources to LF line endings.
+- Restored `LICENSE` to the two-line DCF stub that
+  `License: MIT + file LICENSE` requires. It had been replaced by the
+  full MIT text, which `R CMD check` reports as “License stub is invalid
+  DCF”. The full text remains in `LICENSE.md` for GitHub.
+- Fixed a typo in
+  [`utils::globalVariables()`](https://rdrr.io/r/utils/globalVariables.html),
+  where `"dkw dmc"` was a single string instead of two separate entries.
+
+### Packaging
+
+- The knitr cache directory of the vignette is no longer under version
+  control and no longer reaches the source tarball; the vignette is
+  always rebuilt from scratch.
+- Tightened `.Rbuildignore` and `.gitignore` so that build artefacts,
+  session files and cache directories cannot leak into the tarball.
+
+### Documentation
+
+- README: added the JOSS badge, removed a stale BibTeX block that
+  advertised an outdated version and omitted the second author, and
+  fixed the author footer, which was being rendered as a broken table.
+- Reworked the `pkgdown` site (light theme, KaTeX math rendering).
+
+------------------------------------------------------------------------
+
+## gkwreg 2.1.14
+
+CRAN release: 2026-01-09
+
+### Fixed
+
+- **clang-san runtime error (integer overflow).** Fixed a
+  `static_cast<int>` overflow in the cache-key generation used by the
+  TMB models. A `safe_int_cast()` helper now prevents undefined
+  behaviour when distribution parameters reach extreme values during
+  optimisation. Affects `gkwreg.cpp`, `bkwreg.cpp`, `kkwreg.cpp`,
+  `ekwreg.cpp`, `mcreg.cpp` and `kwreg.cpp`.
+
+------------------------------------------------------------------------
+
 ## gkwreg 2.1.13
 
 ### CRAN Resubmission

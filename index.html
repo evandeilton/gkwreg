@@ -8,15 +8,15 @@
 <title>Generalized Kumaraswamy Regression Models for Bounded Data • gkwreg</title>
 <!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="katex-auto.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/Ubuntu-0.4.10/font.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/Ubuntu-0.4.10/font.css" rel="stylesheet">
 <link href="deps/Ubuntu_Mono-0.4.10/font.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
 <meta property="og:title" content="Generalized Kumaraswamy Regression Models for Bounded Data">
-<meta name="description" content="Implements regression models for bounded continuous data in the open interval (0,1) using the five-parameter Generalized Kumaraswamy distribution. Supports modeling all distribution parameters (alpha, beta, gamma, delta, lambda) as functions of predictors through various link functions. Provides efficient maximum likelihood estimation via Template Model Builder (TMB), offering comprehensive diagnostics, model comparison tools, and simulation methods. Particularly useful for analyzing proportions, rates, indices, and other bounded response data with complex distributional features not adequately captured by simpler models.">
-<meta property="og:description" content="Implements regression models for bounded continuous data in the open interval (0,1) using the five-parameter Generalized Kumaraswamy distribution. Supports modeling all distribution parameters (alpha, beta, gamma, delta, lambda) as functions of predictors through various link functions. Provides efficient maximum likelihood estimation via Template Model Builder (TMB), offering comprehensive diagnostics, model comparison tools, and simulation methods. Particularly useful for analyzing proportions, rates, indices, and other bounded response data with complex distributional features not adequately captured by simpler models.">
+<meta name="description" content="Implements regression models for bounded continuous data in the open interval (0,1) using the five-parameter Generalized Kumaraswamy distribution. Supports modeling all distribution parameters (alpha, beta, gamma, delta, lambda) as functions of predictors through various link functions. Provides efficient maximum likelihood estimation via Template Model Builder (TMB), offering comprehensive diagnostics, model comparison tools, and simulation methods. Particularly useful for analyzing proportions, rates, indices, and other bounded response data with complex distributional features not adequately captured by simpler models. Methods are described in Lopes and Bonat (2026) &lt;doi:10.21105/joss.08991&gt;.">
+<meta property="og:description" content="Implements regression models for bounded continuous data in the open interval (0,1) using the five-parameter Generalized Kumaraswamy distribution. Supports modeling all distribution parameters (alpha, beta, gamma, delta, lambda) as functions of predictors through various link functions. Provides efficient maximum likelihood estimation via Template Model Builder (TMB), offering comprehensive diagnostics, model comparison tools, and simulation methods. Particularly useful for analyzing proportions, rates, indices, and other bounded response data with complex distributional features not adequately captured by simpler models. Methods are described in Lopes and Bonat (2026) &lt;doi:10.21105/joss.08991&gt;.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.16</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.17</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,7 +97,7 @@
 <col width="20%">
 <col width="20%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Distribution</th>
 <th align="left">Code</th>
 <th align="left">Parameters Modeled</th>
@@ -105,49 +105,49 @@
 <th align="left"># Params</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">Generalized Kumaraswamy</td>
 <td align="left"><code>gkw</code></td>
 <td align="left"><span class="math inline">\alpha, \beta, \gamma, \delta, \lambda</span></td>
 <td align="left">None</td>
 <td align="left">5</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Beta-Kumaraswamy</td>
 <td align="left"><code>bkw</code></td>
 <td align="left"><span class="math inline">\alpha, \beta, \gamma, \delta</span></td>
 <td align="left"><span class="math inline">\lambda = 1</span></td>
 <td align="left">4</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">Kumaraswamy-Kumaraswamy</td>
 <td align="left"><code>kkw</code></td>
 <td align="left"><span class="math inline">\alpha, \beta, \delta, \lambda</span></td>
 <td align="left"><span class="math inline">\gamma = 1</span></td>
 <td align="left">4</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Exponentiated Kumaraswamy</td>
 <td align="left"><code>ekw</code></td>
 <td align="left"><span class="math inline">\alpha, \beta, \lambda</span></td>
 <td align="left"><span class="math inline">\gamma = 1, \delta = 0</span></td>
 <td align="left">3</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">McDonald (Beta Power)</td>
 <td align="left"><code>mc</code></td>
 <td align="left"><span class="math inline">\gamma, \delta, \lambda</span></td>
 <td align="left"><span class="math inline">\alpha = 1, \beta = 1</span></td>
 <td align="left">3</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">Kumaraswamy</td>
 <td align="left"><code>kw</code></td>
 <td align="left"><span class="math inline">\alpha, \beta</span></td>
 <td align="left"><span class="math inline">\gamma = 1, \delta = 0, \lambda = 1</span></td>
 <td align="left">2</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">Beta</td>
 <td align="left"><code>beta</code></td>
 <td align="left"><span class="math inline">\gamma, \delta</span></td>
@@ -321,7 +321,7 @@
 <span><span class="co"># Predict different quantities</span></span>
 <span><span class="va">pred_mean</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span> <span class="co"># E(Y|X)</span></span>
 <span><span class="va">pred_var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"variance"</span><span class="op">)</span> <span class="co"># Var(Y|X)</span></span>
-<span><span class="va">pred_alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span> <span class="co"># &lt;U+03B1&gt; parameter</span></span>
+<span><span class="va">pred_alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span> <span class="co"># α parameter</span></span>
 <span><span class="va">pred_params</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_kw</span>, <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"parameter"</span><span class="op">)</span> <span class="co"># All parameters</span></span>
 <span></span>
 <span><span class="co"># Evaluate density at y = 0.5 for each observation</span></span>
@@ -526,13 +526,9 @@
 <h3 id="the-generalized-kumaraswamy-distribution">The Generalized Kumaraswamy Distribution<a class="anchor" aria-label="anchor" href="#the-generalized-kumaraswamy-distribution"></a>
 </h3>
 <p>The GKw distribution is a five-parameter family for variables on <span class="math inline">(0, 1)</span> with cumulative distribution function:</p>
-<p><span class="math display">
-F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)
-</span></p>
+<p><span class="math display">F(x; \alpha, \beta, \gamma, \delta, \lambda) = I_{[1-(1-x^{\alpha})^{\beta}]^{\lambda}}(\gamma, \delta)</span></p>
 <p>where <span class="math inline">I_z(a,b)</span> is the regularized incomplete beta function. The probability density function is:</p>
-<p><span class="math display">
-f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda}\\}^{\delta-1}
-</span></p>
+<p><span class="math display">f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\alpha-1}}{B(\gamma, \delta)} (1-x^{\alpha})^{\beta-1} \left[1-(1-x^{\alpha})^{\beta}\right]^{\gamma\lambda-1} \\{1-\left[1-(1-x^{\alpha})^{\beta}\right]^{\lambda}\\}^{\delta-1}</span></p>
 <p><strong>Parameter Roles</strong>:</p>
 <ul>
 <li>
@@ -575,7 +571,7 @@ f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\al
 <col width="20%">
 <col width="20%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Feature</th>
 <th align="left">gkwreg</th>
 <th align="left">betareg</th>
@@ -583,42 +579,42 @@ f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\al
 <th align="left">brms</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left"><strong>Distribution Family</strong></td>
 <td align="left">GKw hierarchy (7)</td>
 <td align="left">Beta</td>
 <td align="left">100+</td>
 <td align="left">50+</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><strong>Estimation</strong></td>
 <td align="left">MLE (TMB/AD)</td>
 <td align="left">MLE</td>
 <td align="left">GAMLSS</td>
 <td align="left">Bayesian MCMC</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><strong>Parameter Modeling</strong></td>
 <td align="left">All parameters</td>
 <td align="left">Mean, precision</td>
 <td align="left">All parameters</td>
 <td align="left">All parameters</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><strong>Speed (n=10k)</strong></td>
 <td align="left"><strong>Fast (~1s)</strong></td>
 <td align="left">Fast (~1s)</td>
 <td align="left">Moderate (~5s)</td>
 <td align="left">Slow (~5min)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><strong>Link Functions</strong></td>
 <td align="left">9 options + scaling</td>
 <td align="left">Fixed</td>
 <td align="left">Many</td>
 <td align="left">Many</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><strong>Optimization</strong></td>
 <td align="left">
 <code><a href="reference/gkw_control.html">gkw_control()</a></code> (detailed)</td>
@@ -626,14 +622,14 @@ f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\al
 <td align="left">Moderate</td>
 <td align="left">Extensive</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left"><strong>Diagnostic Plots</strong></td>
 <td align="left">6 types, dual graphics</td>
 <td align="left">4 types</td>
 <td align="left">Extensive</td>
 <td align="left">Via bayesplot</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left"><strong>Dependencies</strong></td>
 <td align="left">gkwdist, TMB, Formula</td>
 <td align="left">Minimal</td>
@@ -698,35 +694,19 @@ f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\al
 <p>If you use <strong>gkwreg</strong> in your research, please cite:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"gkwreg"</span><span class="op">)</span></span></code></pre></div>
-<p>Or use the BibTeX entry:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="va">@Manual</span>{,</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="dt">title</span> = {gkwreg: Generalized Kumaraswamy Regression Models for Bounded Data},</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="dt">author</span> = {José Evandeilton Lopes},</span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="dt">year</span> = {2025},</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="dt">note</span> = {R package version 2.1.4},</span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="dt">url</span> = {https://github.com/evandeilton/gkwreg},</span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
 <p>This package is licensed under the <strong>MIT License</strong>. See the <a href="https://github.com/evandeilton/gkwreg/blob/main/LICENSE" class="external-link">LICENSE</a> file for details.</p>
-<table class="table">
-<colgroup><col width="100%"></colgroup>
-<tbody>
-<tr class="odd">
-<td>## Author and Maintainer</td>
-</tr>
-<tr class="even">
-<td>
-<strong>José Evandeilton Lopes (Lopes, J. E.)</strong> | <a href="mailto:evandeilton@gmail.com" class="email">evandeilton@gmail.com</a> | <a href="https://github.com/evandeilton" class="external-link">GitHub</a> | <a href="https://orcid.org/0009-0007-5887-4084" class="external-link">ORCID</a>
-</td>
-</tr>
-<tr class="odd">
-<td>LEG - Laboratório de Estatística e Geoinformação | UFPR - Universidade Federal do Paraná, Brazil</td>
-</tr>
-</tbody>
-</table>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="authors">Authors<a class="anchor" aria-label="anchor" href="#authors"></a>
+</h2>
+<p><strong>José Evandeilton Lopes</strong> (author, maintainer) — <a href="mailto:evandeilton@gmail.com" class="email">evandeilton@gmail.com</a> — <a href="https://github.com/evandeilton" class="external-link">GitHub</a> — <a href="https://orcid.org/0009-0007-5887-4084" class="external-link">ORCID</a></p>
+<p><strong>Wagner Hugo Bonat</strong> (author) — <a href="https://orcid.org/0000-0002-0349-7054" class="external-link">ORCID</a></p>
+<p>LEG — Laboratório de Estatística e Geoinformação, UFPR — Universidade Federal do Paraná, Brazil</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -780,7 +760,7 @@ f(x; \alpha, \beta, \gamma, \delta, \lambda) = \frac{\lambda \alpha \beta x^{\al
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

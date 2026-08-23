@@ -243,6 +243,7 @@ Invisibly returns either:
 The function is primarily called for its side effect of generating
 diagnostic plots. The invisible return allows:
 
+
     # Silent plotting
     plot(model)
 
@@ -359,6 +360,7 @@ diagnostic goal:
 The new **named list interface** for `caption` allows elegant partial
 customization:
 
+
     # OLD WAY (still supported): Must repeat all 6 titles
     plot(model, caption = c(
       "Residuals vs. Observation Indices",
@@ -397,6 +399,7 @@ behavior:
   `use_ggplot = TRUE`
 
 You can override these by explicitly setting values:
+
 
     plot(model, sub.caption = "")           # Disable subtitle
     plot(model, ask = FALSE)                # Never prompt
