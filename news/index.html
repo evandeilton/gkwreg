@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gkwreg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.17</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,25 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/evandeilton/gkwreg/blob/v2.1.17/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/evandeilton/gkwreg/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.1.18" id="gkwreg-2118">gkwreg 2.1.18<a class="anchor" aria-label="anchor" href="#gkwreg-2118"></a></h2>
+<p>Resubmission addressing the CRAN pre-test feedback on 2.1.17: the vignette took about 11 minutes to rebuild, which is more than CRAN can afford to run regularly.</p>
+<div class="section level3">
+<h3 id="vignette-build-time-2-1-18">Vignette build time<a class="anchor" aria-label="anchor" href="#vignette-build-time-2-1-18"></a></h3>
+<ul><li>The Monte Carlo study is now precomputed. The study itself is unchanged – still 3 scenarios x 200 replications x 4 models – but the summaries are stored in <code>inst/extdata/vignette-simulations.rds</code> and read by the vignette instead of being recomputed on every build. The generating script is <code>data-raw/vignette-simulations.R</code>.</li>
+<li>The illustrative model fits stay live, so the vignette still exercises the package; they use a single family, which cuts the run-time TMB compilation from three models to one.</li>
+<li>Dropped <code>cache = TRUE</code> from the vignette: with the study precomputed it buys nothing, and it was what produced the stray cache directory removed in 2.1.17.</li>
+</ul><p>Local vignette build time drops from about 3m30s to 35s.</p>
+</div>
+<div class="section level3">
+<h3 id="fixed-2-1-18">Fixed<a class="anchor" aria-label="anchor" href="#fixed-2-1-18"></a></h3>
+<ul><li>Corrected a measurement artefact in the simulation study. Timings were taken around each fitting call, so the one-off TMB compilation (~30s per family) fell inside the first replicate and was then averaged over all 200, inflating every reported <code>gkwreg</code> timing by roughly 0.15s. Scenario 1 consequently reported Kumaraswamy as slower than <code>betareg</code> while the text claimed it was faster. The models are now compiled before the timed loops.</li>
+<li>Figures quoted in the vignette prose (speed-ups, convergence rates, AIC) are now computed inline from the result tables rather than written out by hand, so the narrative cannot drift away from the results it describes.</li>
+</ul><hr></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.1.17" id="gkwreg-2117">gkwreg 2.1.17<a class="anchor" aria-label="anchor" href="#gkwreg-2117"></a></h2>
 <p>Maintenance release. No changes to the statistical methods or to the exported API.</p>

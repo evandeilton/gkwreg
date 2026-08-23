@@ -45,13 +45,14 @@ fit1 <- gkwreg(yield ~ batch + temp, data = GasolineYield, family = "kw")
 #> Warning: NaNs produced
 formula(fit1)
 #> yield ~ batch + temp
-#> <environment: 0x561beba7cf00>
+#> <environment: 0x560706801f18>
 
 # Two-part formula
 fit2 <- gkwreg(yield ~ temp | batch, data = GasolineYield, family = "kw")
+#> Warning: NaNs produced
 formula(fit2)
 #> yield ~ temp | batch
-#> <environment: 0x561beba7cf00>
+#> <environment: 0x560706801f18>
 
 # Five-part formula
 fit3 <- gkwreg(yield ~ temp | batch | temp | 1 | 1,
@@ -60,6 +61,6 @@ fit3 <- gkwreg(yield ~ temp | batch | temp | 1 | 1,
 #> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0’
 formula(fit3)
 #> yield ~ temp | batch | temp | 1 | 1
-#> <environment: 0x561beba7cf00>
+#> <environment: 0x560706801f18>
 # }
 ```

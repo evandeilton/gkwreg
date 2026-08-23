@@ -72,11 +72,11 @@ fit <- gkwreg(yield ~ batch + temp, data = GasolineYield, family = "kw")
 # Extract log-likelihood
 ll <- logLik(fit)
 print(ll)
-#> 'log Lik.' 96.96932 (df=12)
+#> 'log Lik.' 96.96892 (df=12)
 
 # Access attributes
 cat("Log-likelihood:", as.numeric(ll), "\n")
-#> Log-likelihood: 96.96932 
+#> Log-likelihood: 96.96892 
 cat("Parameters:", attr(ll, "df"), "\n")
 #> Parameters: 12 
 cat("Observations:", attr(ll, "nobs"), "\n")

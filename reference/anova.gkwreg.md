@@ -129,7 +129,7 @@ anova(fit3)
 #> Model:     family = "kw")
 #> 
 #>   Resid. Df Resid. Dev
-#> 1  20.00000 -193.93865
+#> 1  20.00000 -193.93784
 
 # Compare nested models using likelihood ratio tests
 anova(fit1, fit2, fit3)
@@ -142,7 +142,7 @@ anova(fit1, fit2, fit3)
 #>      Resid. Df Resid. Dev Df  Deviance Pr(>Chi)    
 #> fit1  30.00000  -57.02258                          
 #> fit2  29.00000  -80.90259  1  23.88001  < 1e-04 ***
-#> fit3  20.00000 -193.93865  9 113.03606  < 1e-04 ***
+#> fit3  20.00000 -193.93784  9 113.03525  < 1e-04 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> Model 1 vs 2: Adding temperature is highly significant (p < 0.001)
@@ -157,7 +157,7 @@ anova(fit2, fit3, test = "Chisq")
 #> 
 #>      Resid. Df Resid. Dev Df  Deviance Pr(>Chi)    
 #> fit2  29.00000  -80.90259                          
-#> fit3  20.00000 -193.93865  9 113.03606  < 1e-04 ***
+#> fit3  20.00000 -193.93784  9 113.03525  < 1e-04 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -172,6 +172,6 @@ anova(fit1, fit2, fit3, test = "none")
 #>      Resid. Df Resid. Dev Df  Deviance
 #> fit1  30.00000  -57.02258             
 #> fit2  29.00000  -80.90259  1  23.88001
-#> fit3  20.00000 -193.93865  9 113.03606
+#> fit3  20.00000 -193.93784  9 113.03525
 # }
 ```

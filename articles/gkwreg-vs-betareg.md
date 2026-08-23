@@ -18,7 +18,7 @@ Through Monte Carlo simulations across three distinct data-generating
 mechanisms—well-specified Beta data, heavy-tailed distributions, and
 extreme boundary-concentrated patterns—we demonstrate that
 Kumaraswamy-based models provide substantial computational advantages
-(2-9× faster) with equivalent or superior statistical performance.
+(1.3-25.9× faster) with equivalent or superior statistical performance.
 Parameter estimation analysis reveals that coefficient estimates remain
 consistent across models, but standard errors can differ by 15-40%
 depending on distributional misspecification. Notably, for non-standard
@@ -341,18 +341,8 @@ Distributional Characteristics - Scenario 1 (Well-Specified Beta)
 
 ``` r
 
-results_s1 <- run_full_simulation(
-  n_sim = 200,
-  n = 300,
-  dgp_fun = dgp_beta,
-  params = list(
-    beta_mu = c(0.5, -0.8, 0.6),
-    beta_phi = c(1.5, 0.4)
-  ),
-  formula = y ~ x1 + x2 | x1
-)
-
-comp_s1 <- make_comparison_table(results_s1)
+# Precomputed; see data-raw/vignette-simulations.R
+comp_s1 <- sim_results$comp_s1
 ```
 
 #### Parameter Estimation Comparison
@@ -553,19 +543,8 @@ probabilities**, leading to poor probabilistic forecasts.
 
 ``` r
 
-results_s2 <- run_full_simulation(
-  n_sim = 200,
-  n = 300,
-  dgp_fun = dgp_heavy_tails,
-  params = list(
-    beta_alpha = c(0.8, -0.5),
-    beta_beta = c(0.3, 0.4),
-    beta_lambda = c(0.6)
-  ),
-  formula = y ~ x1 | x2
-)
-
-comp_s2 <- make_comparison_table(results_s2)
+# Precomputed; see data-raw/vignette-simulations.R
+comp_s2 <- sim_results$comp_s2
 ```
 
 #### Parameter Estimation Under Misspecification
@@ -778,28 +757,16 @@ shape parameters approaching zero.
 
 ``` r
 
-results_s3 <- run_full_simulation(
-  n_sim = 200,
-  n = 400,
-  dgp_fun = dgp_extreme,
-  params = list(
-    alpha_J = c(-1.5, 0.2),
-    beta_J = 2.0,
-    alpha_U = c(-1.8, 0.1),
-    beta_U = -0.8
-  ),
-  formula = y ~ x1 * group | group
-)
-
-comp_s3 <- make_comparison_table(results_s3)
+# Precomputed; see data-raw/vignette-simulations.R
+comp_s3 <- sim_results$comp_s3
 ```
 
 #### The Convergence Crisis
 
 Table 3 documents Beta regression’s **catastrophic failure** when
 confronted with extreme shapes. Among 200 simulation replicates, Beta
-regression successfully converged only 11 times (5.5%), while
-Kumaraswamy achieved perfect reliability (100%).
+regression converged only 11 times (5.5%), while Kumaraswamy achieved
+perfect reliability (100%).
 
 ``` r
 
@@ -912,22 +879,23 @@ practitioners.
 
 | Scenario | Model | N_Success | Conv_Rate | AIC | RMSE | Time |
 |:---|:---|---:|---:|---:|---:|---:|
-| S1: Well-Specified Beta | Beta (betareg) | 200 | 100.0 | -224.74 | 0.1924 | 0.0157 |
-| S1: Well-Specified Beta | Beta (gkwreg) | 200 | 100.0 | -181.12 | 0.2276 | 0.2232 |
-| S1: Well-Specified Beta | Kumaraswamy | 200 | 100.0 | -219.76 | 0.1989 | 0.2142 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy | 200 | 100.0 | -219.24 | 0.6619 | 0.2367 |
-| S2: Heavy Tails | Beta (betareg) | 200 | 100.0 | -139.28 | 0.1909 | 0.0144 |
-| S2: Heavy Tails | Beta (gkwreg) | 200 | 100.0 | -116.79 | 0.2105 | 0.0213 |
-| S2: Heavy Tails | Kumaraswamy | 200 | 100.0 | -115.77 | 0.1940 | 0.0138 |
-| S2: Heavy Tails | Exp. Kumaraswamy | 200 | 58.0 | -213.45 | 0.6184 | 0.0338 |
-| S3: Extreme Shapes | Beta (betareg) | 200 | 4.5 | 16677.68 | 0.4052 | 0.3866 |
-| S3: Extreme Shapes | Beta (gkwreg) | 200 | 100.0 | -2007.68 | 0.2921 | 0.0361 |
-| S3: Extreme Shapes | Kumaraswamy | 200 | 100.0 | -2257.56 | 0.2660 | 0.0161 |
-| S3: Extreme Shapes | Exp. Kumaraswamy | 105 | 80.0 | -2331.45 | 0.3649 | 0.0476 |
+| S1: Well-Specified Beta | Beta (betareg) | 200 | 100.0 | -225.18 | 0.1944 | 0.0112 |
+| S1: Well-Specified Beta | Beta (gkwreg) | 200 | 100.0 | -180.37 | 0.2294 | 0.0149 |
+| S1: Well-Specified Beta | Kumaraswamy | 200 | 100.0 | -219.39 | 0.2005 | 0.0084 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy | 200 | 100.0 | -219.02 | 0.6619 | 0.0226 |
+| S2: Heavy Tails | Beta (betareg) | 200 | 100.0 | -136.17 | 0.1922 | 0.0103 |
+| S2: Heavy Tails | Beta (gkwreg) | 200 | 100.0 | -114.63 | 0.2115 | 0.0134 |
+| S2: Heavy Tails | Kumaraswamy | 200 | 100.0 | -113.69 | 0.1959 | 0.0074 |
+| S2: Heavy Tails | Exp. Kumaraswamy | 200 | 53.0 | -310.44 | 0.6159 | 0.0234 |
+| S3: Extreme Shapes | Beta (betareg) | 200 | 5.5 | 16218.49 | 0.4020 | 0.2721 |
+| S3: Extreme Shapes | Beta (gkwreg) | 200 | 100.0 | -2009.91 | 0.2960 | 0.0229 |
+| S3: Extreme Shapes | Kumaraswamy | 200 | 100.0 | -2267.16 | 0.2696 | 0.0105 |
+| S3: Extreme Shapes | Exp. Kumaraswamy | 124 | 75.8 | -2347.27 | 0.3803 | 0.0336 |
 
 Table 4: Comprehensive Model Comparison Across Three Simulation
-Scenarios. Note: Scenario 3 Beta statistics are based on only 5.5%
-successful fits; metrics may not be representative. {.table}
+Scenarios. Note: Scenario 3 Beta statistics are based on only
+`r conv_beta_s3`% successful fits; metrics may not be representative.
+{.table}
 
 #### Statistical Performance Summary
 
@@ -943,15 +911,16 @@ Comparative Performance Across Scenarios
 **Key takeaways from Figure 4**:
 
 1.  **Scenario 1 (Well-specified)**: Beta achieves marginally better AIC
-    (−224 vs −220), but Kumaraswamy is 2.5× faster with perfect
-    convergence
+    (-225 vs -219), but Kumaraswamy is 1.3× faster, with both converging
+    in every replicate
 
 2.  **Scenario 2 (Heavy tails)**: Kumaraswamy maintains competitive fit
     while Beta becomes severely misspecified; both converge reliably
 
 3.  **Scenario 3 (Extreme shapes)**: Beta’s AIC becomes uninformative
-    due to convergence failure; Kumaraswamy provides sole viable
-    solution with 20× speedup (comparing only successful fits)
+    due to convergence failure; Kumaraswamy provides the sole viable
+    solution, with a 25.9× speedup (note that betareg’s mean time counts
+    its many futile optimisations)
 
 #### Parameter Estimation: Magnitude and Precision
 
@@ -982,22 +951,28 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |          0.0814 |         1.7071 |
-| Beta (gkwreg)    |          0.0935 |         1.4850 |
-| Exp. Kumaraswamy |          0.1060 |         1.3100 |
-| Beta (betareg)   |          0.1389 |         1.0000 |
+| Kumaraswamy      |          0.0088 |        11.1635 |
+| Beta (gkwreg)    |          0.0171 |         5.7344 |
+| Exp. Kumaraswamy |          0.0265 |         3.6884 |
+| Beta (betareg)   |          0.0979 |         1.0000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
 Regression {.table}
 
-The **2-9× speedup range** for Kumaraswamy reflects scenario
-complexity: - Simple models (Scenario 1): 2.5× faster - Complex models
-with interactions (Scenario 3): 9× faster
+The speedup for Kumaraswamy ranges from 1.3× to 25.9× and depends far
+more on whether Beta regression is *able* to fit the data than on model
+complexity:
 
-This scaling behavior arises from the closed-form CDF’s advantage
-compounding with model complexity. Each additional parameter requires
-more likelihood evaluations during optimization, amplifying the
-per-evaluation efficiency gain.
+- Scenarios 1 and 2, where both families converge everywhere: 1.3× and
+  1.4× – a modest edge from the closed-form CDF.
+- Scenario 3, where Beta converges in only 5.5% of replicates: 25.9×.
+  Most of that gap is Beta’s optimiser iterating at length before
+  failing, so it measures the cost of misspecification rather than a
+  like-for-like speed comparison.
+
+Timings come from the precomputed run recorded in the object above (R
+version 4.6.1 (2026-06-24), 2026-08-23); absolute values are
+machine-dependent, the ratios much less so.
 
 **Practical implications by application**:
 
@@ -1028,7 +1003,7 @@ We propose an evidence-based decision tree for practitioners:
     ├─ STEP 2: Assess computational constraints  
     │  │
     │  ├─ Q: Require intensive computation? (CV, bootstrap, >100 models)
-    │  │  YES → Use Kumaraswamy [Reason: 2-9× speedup]
+    │  │  YES → Use Kumaraswamy [Reason: faster, and converges]
     │  │  NO → Continue to Step 3
     │
     ├─ STEP 3: Evaluate distributional assumptions
@@ -1058,8 +1033,9 @@ This comprehensive simulation study establishes that Kumaraswamy-based
 regression models offer compelling advantages over traditional Beta
 regression across multiple performance dimensions:
 
-1.  **Computational efficiency**: 2-9× faster estimation across
-    scenarios, with advantages scaling with model complexity
+1.  **Computational efficiency**: 1.3-25.9× faster estimation, with the
+    large end of that range driven by Beta regression’s failure to
+    converge rather than by raw speed
 
 2.  **Numerical stability**: 100% vs. 5.5% convergence success for
     extreme distributions, representing a **qualitative reliability
@@ -1113,9 +1089,10 @@ This study contributes three methodological insights:
     concentration (\>30% of observations within 0.1 of boundaries) as a
     critical predictor of Beta regression numerical instability
 
-3.  **Computational scaling laws**: Established that Kumaraswamy’s
-    speedup advantage grows with model complexity, from 2.5× for simple
-    models to 9× for complex interactions
+3.  **Computational cost of misspecification**: Quantified how Beta
+    regression’s advantage disappears once its assumptions fail, from a
+    1.3× difference under a well-specified Beta to 25.9× when
+    convergence breaks down
 
 These quantitative benchmarks provide practitioners with concrete
 decision rules rather than vague guidance.
@@ -1168,7 +1145,7 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [1] stats     graphics  grDevices utils     datasets  methods   base     
 
     other attached packages:
-    [1] ggplot2_4.0.3 gkwreg_2.1.17 betareg_3.2-5
+    [1] ggplot2_4.0.3 gkwreg_2.1.18 betareg_3.2-5
 
     loaded via a namespace (and not attached):
      [1] generics_0.1.4         sandwich_3.1-3         sass_0.4.10           
@@ -1176,18 +1153,17 @@ Maximum-likelihood regression with beta-distributed dependent variables.
      [7] evaluate_1.0.5         grid_4.6.1             RColorBrewer_1.1-3    
     [10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-5          
     [13] nnet_7.3-20            Formula_1.2-6          scales_1.4.0          
-    [16] codetools_0.2-20       numDeriv_2016.8-1.1    modeltools_0.2-24     
-    [19] textshaping_1.0.5      jquerylib_0.1.4        cli_3.6.6             
-    [22] rlang_1.3.0            withr_3.0.3            RcppArmadillo_15.4.2-1
-    [25] cachem_1.1.0           yaml_2.3.12            otel_0.2.0            
-    [28] tools_4.6.1            flexmix_2.3-20         dplyr_1.2.1           
-    [31] vctrs_0.7.3            R6_2.6.1               stats4_4.6.1          
-    [34] zoo_1.9-0              lifecycle_1.0.5        fs_2.1.0              
-    [37] ragg_1.5.2             pkgconfig_2.0.3        desc_1.4.3            
-    [40] pillar_1.11.1          pkgdown_2.2.1          bslib_0.12.0          
-    [43] gtable_0.3.6           glue_1.8.1             Rcpp_1.1.2            
-    [46] systemfonts_1.3.2      tidyselect_1.2.1       tibble_3.3.1          
-    [49] xfun_0.60              lmtest_0.9-40          knitr_1.51            
-    [52] farver_2.1.2           htmltools_0.5.9        rmarkdown_2.31        
-    [55] gkwdist_1.1.4          TMB_1.9.23             compiler_4.6.1        
-    [58] S7_0.2.2              
+    [16] numDeriv_2016.8-1.1    modeltools_0.2-24      textshaping_1.0.5     
+    [19] jquerylib_0.1.4        cli_3.6.6              rlang_1.3.0           
+    [22] withr_3.0.3            RcppArmadillo_15.4.2-1 cachem_1.1.0          
+    [25] yaml_2.3.12            otel_0.2.0             tools_4.6.1           
+    [28] flexmix_2.3-20         dplyr_1.2.1            vctrs_0.7.3           
+    [31] R6_2.6.1               stats4_4.6.1           zoo_1.9-0             
+    [34] lifecycle_1.0.5        fs_2.1.0               ragg_1.5.2            
+    [37] pkgconfig_2.0.3        desc_1.4.3             pillar_1.11.1         
+    [40] pkgdown_2.2.1          bslib_0.12.0           gtable_0.3.6          
+    [43] glue_1.8.1             Rcpp_1.1.2             systemfonts_1.3.2     
+    [46] tidyselect_1.2.1       tibble_3.3.1           xfun_0.60             
+    [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
+    [52] htmltools_0.5.9        rmarkdown_2.31         gkwdist_1.1.4         
+    [55] TMB_1.9.25             compiler_4.6.1         S7_0.2.2              

@@ -11,7 +11,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/evandeilton/gkwreg/blob/v2.1.17/inst/CITATION)
+[`inst/CITATION`](https://github.com/evandeilton/gkwreg/blob/main/inst/CITATION)
 
 Lopes J, Bonat W (2026). “gkwreg: An R Package for Generalized
 Kumaraswamy Regression Models for Bounded Data.” *Journal of Open Source
