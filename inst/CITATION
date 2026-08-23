@@ -1,0 +1,15 @@
+citHeader("To cite gkwreg in publications use:")
+
+bibentry(
+  bibtype  = "Article",
+  title    = "{gkwreg}: An {R} Package for Generalized Kumaraswamy Regression Models for Bounded Data",
+  author   = c(person(given = "José Evandeilton", family = "Lopes"),
+               person(given = "Wagner Hugo",        family = "Bonat")),
+  journal  = "Journal of Open Source Software",
+  year     = "2026",
+  volume   = "11",
+  number   = "117",
+  pages    = "8991",
+  doi      = "10.21105/joss.08991",
+  header   = "Package reference:"
+)

@@ -6,7 +6,7 @@ utils::globalVariables(c(
   "linpred", "resid", "model_label", "metric", "y", "Type", "Deviation", "object",
   "p_empirical", "p_theoretical", "statistic", "type", "Residual", "Family",
   "Value", "Criterion", "Parameter", "dbeta_", "dbkw", "dekw", "dgkw", "dkkw",
-  "dkw dmc", "pbeta_", "pbkw", "pekw", "pgkw", "pkkw", "pkw", "pmc", "qbeta_",
+  "dkw", "dmc", "pbeta_", "pbkw", "pekw", "pgkw", "pkkw", "pkw", "pmc", "qbeta_",
   "qbkw", "qekw", "qgkw", "qkkw", "qkw", "qmc", "rbeta_", "rbkw", "rekw", "rgkw",
   "rkkw", "rkw", "rmc", "modifyList", "quantile", "rnorm", "setNames"
 ))

@@ -98,8 +98,17 @@ This article addresses three research questions:
 We address these questions through rigorous Monte Carlo simulations comparing the `betareg` package (Cribari-Neto & Zeileis, 2010) with the `gkwreg` package, which implements regression models for the Kumaraswamy, Exponentiated Kumaraswamy, and Generalized Kumaraswamy distributions.
 
 ```{r packages}
+# betareg is only in Suggests: skip the whole vignette when unavailable
+# (CRAN policy on the conditional use of suggested packages).
+if (!requireNamespace("betareg", quietly = TRUE)) {
+  knitr::opts_chunk$set(eval = FALSE)
+  knitr::asis_output(
+    "> **Note**: this vignette requires the **betareg** package, which is not\n> installed. All code below is shown but not evaluated.\n"
+  )
+} else {
+  library(betareg)
+}
 library(gkwreg)
-library(betareg)
 library(ggplot2)
 ```
 
@@ -733,7 +742,7 @@ se_beta_s2 <- sqrt(diag(vcov(fit_beta_s2)))
 coef_kw_s2 <- coef(fit_kw_s2)
 se_kw_s2 <- fit_kw_s2$se
 
-# Note: True parameters are on different scale (<U+03B1>, <U+03B2> vs <U+03BC>, <U+03C6>)
+# Note: True parameters are on different scale (α, β vs μ, φ)
 # Focus on relative comparisons
 coef_comparison_s2 <- data.frame(
   Parameter = names(coef_beta_s2),
