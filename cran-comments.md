@@ -52,9 +52,12 @@ Changes relevant to CRAN:
 ## Test environments
 
 * Local: Linux x86_64 (Ubuntu-based), R 4.6.1 -- `R CMD check --as-cran`
-* <!-- TODO before submitting: run win-builder (R-devel and R-release) and the
-  GitHub Actions matrix (Ubuntu R-release/R-devel/R-oldrel-1, macOS R-release,
-  Windows R-release), then list them here. Remove this comment. -->
+* GitHub Actions, all passing:
+  - Ubuntu 24.04, R-release
+  - Ubuntu 24.04, R-devel
+  - Ubuntu 24.04, R-oldrel-1
+  - macOS 26 (arm64), R-release
+  - Windows Server 2025, R-release
 
 ## R CMD check results
 
