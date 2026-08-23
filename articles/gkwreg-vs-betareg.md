@@ -912,18 +912,18 @@ practitioners.
 
 | Scenario | Model | N_Success | Conv_Rate | AIC | RMSE | Time |
 |:---|:---|---:|---:|---:|---:|---:|
-| S1: Well-Specified Beta | Beta (betareg) | 200 | 100.0 | -224.74 | 0.1924 | 0.0151 |
-| S1: Well-Specified Beta | Beta (gkwreg) | 200 | 100.0 | -181.12 | 0.2276 | 0.2211 |
-| S1: Well-Specified Beta | Kumaraswamy | 200 | 100.0 | -219.76 | 0.1989 | 0.2129 |
-| S1: Well-Specified Beta | Exp. Kumaraswamy | 200 | 100.0 | -219.24 | 0.6619 | 0.2357 |
-| S2: Heavy Tails | Beta (betareg) | 200 | 100.0 | -139.28 | 0.1909 | 0.0138 |
-| S2: Heavy Tails | Beta (gkwreg) | 200 | 100.0 | -116.79 | 0.2105 | 0.0201 |
-| S2: Heavy Tails | Kumaraswamy | 200 | 100.0 | -115.77 | 0.1940 | 0.0126 |
-| S2: Heavy Tails | Exp. Kumaraswamy | 200 | 58.0 | -213.45 | 0.6184 | 0.0322 |
-| S3: Extreme Shapes | Beta (betareg) | 200 | 4.5 | 16677.68 | 0.4052 | 0.3713 |
-| S3: Extreme Shapes | Beta (gkwreg) | 200 | 100.0 | -2007.68 | 0.2921 | 0.0347 |
-| S3: Extreme Shapes | Kumaraswamy | 200 | 100.0 | -2257.56 | 0.2660 | 0.0155 |
-| S3: Extreme Shapes | Exp. Kumaraswamy | 105 | 80.0 | -2331.45 | 0.3649 | 0.0460 |
+| S1: Well-Specified Beta | Beta (betareg) | 200 | 100.0 | -224.74 | 0.1924 | 0.0157 |
+| S1: Well-Specified Beta | Beta (gkwreg) | 200 | 100.0 | -181.12 | 0.2276 | 0.2232 |
+| S1: Well-Specified Beta | Kumaraswamy | 200 | 100.0 | -219.76 | 0.1989 | 0.2142 |
+| S1: Well-Specified Beta | Exp. Kumaraswamy | 200 | 100.0 | -219.24 | 0.6619 | 0.2367 |
+| S2: Heavy Tails | Beta (betareg) | 200 | 100.0 | -139.28 | 0.1909 | 0.0144 |
+| S2: Heavy Tails | Beta (gkwreg) | 200 | 100.0 | -116.79 | 0.2105 | 0.0213 |
+| S2: Heavy Tails | Kumaraswamy | 200 | 100.0 | -115.77 | 0.1940 | 0.0138 |
+| S2: Heavy Tails | Exp. Kumaraswamy | 200 | 58.0 | -213.45 | 0.6184 | 0.0338 |
+| S3: Extreme Shapes | Beta (betareg) | 200 | 4.5 | 16677.68 | 0.4052 | 0.3866 |
+| S3: Extreme Shapes | Beta (gkwreg) | 200 | 100.0 | -2007.68 | 0.2921 | 0.0361 |
+| S3: Extreme Shapes | Kumaraswamy | 200 | 100.0 | -2257.56 | 0.2660 | 0.0161 |
+| S3: Extreme Shapes | Exp. Kumaraswamy | 105 | 80.0 | -2331.45 | 0.3649 | 0.0476 |
 
 Table 4: Comprehensive Model Comparison Across Three Simulation
 Scenarios. Note: Scenario 3 Beta statistics are based on only 5.5%
@@ -982,10 +982,10 @@ Table 5 aggregates computational performance across scenarios:
 
 | Model            | Mean Time (sec) | Speedup Factor |
 |:-----------------|----------------:|---------------:|
-| Kumaraswamy      |          0.0803 |         1.6606 |
-| Beta (gkwreg)    |          0.0920 |         1.4505 |
-| Exp. Kumaraswamy |          0.1046 |         1.2749 |
-| Beta (betareg)   |          0.1334 |         1.0000 |
+| Kumaraswamy      |          0.0814 |         1.7071 |
+| Beta (gkwreg)    |          0.0935 |         1.4850 |
+| Exp. Kumaraswamy |          0.1060 |         1.3100 |
+| Beta (betareg)   |          0.1389 |         1.0000 |
 
 Table 5: Average Computational Time and Speedup Relative to Beta
 Regression {.table}
