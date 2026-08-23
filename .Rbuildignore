@@ -20,3 +20,4 @@
 ^src/.*\.(o|so|dll)$
 ^Thumbs\.db$
 ^\.DS_Store$
+^data-raw$

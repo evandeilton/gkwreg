@@ -22,8 +22,6 @@ knitr::opts_chunk$set(
   echo = TRUE,
   message = FALSE,
   warning = FALSE,
-  cache = TRUE,
-  cache.lazy = TRUE,
   fig.align = "center",
   comment = "",
   fig.width = 10,
@@ -32,9 +30,10 @@ knitr::opts_chunk$set(
 )
 
 # SEED STRATEGY:
-# - Global seed (2024) for reproducibility and cache stability
+# - Global seed (2024) for reproducibility
 # - Local seeds (123, 456, etc.) used for specific data visualizations
-# - Simulation replicates use independent random draws
+# - The Monte Carlo study is precomputed and seeded in
+#   data-raw/vignette-simulations.R
 set.seed(2024)
 
 # Standardized color palette for all comparisons
@@ -53,13 +52,49 @@ MODEL_NAMES <- c(
 )
 ```
 
+```{r load_precomputed, include=FALSE}
+# The Monte Carlo study below (3 scenarios x 200 replications x 4 models) is
+# precomputed. Running it live made the vignette take about 11 minutes to
+# rebuild on the CRAN check machines, which is more than CRAN can afford to run
+# regularly. The study itself is unchanged -- still 200 replications -- but the
+# summaries are read from a stored object instead of being recomputed here.
+#
+# Regenerate with: Rscript data-raw/vignette-simulations.R
+sim_results <- readRDS(
+  system.file("extdata", "vignette-simulations.rds", package = "gkwreg")
+)
+
+# Quantities quoted in the prose below. They are derived from the tables rather
+# than written out by hand, so the narrative cannot drift away from the results
+# when the study is regenerated.
+.pick <- function(tab, model, col) tab[[col]][tab$Model == model]
+.speedup <- function(tab) {
+  .pick(tab, "Beta (betareg)", "Time") / .pick(tab, "Kumaraswamy", "Time")
+}
+
+speedup_s1 <- .speedup(sim_results$comp_s1)
+speedup_s2 <- .speedup(sim_results$comp_s2)
+speedup_s3 <- .speedup(sim_results$comp_s3)
+speedup_lo <- min(speedup_s1, speedup_s2, speedup_s3)
+speedup_hi <- max(speedup_s1, speedup_s2, speedup_s3)
+
+conv_beta_s3 <- .pick(sim_results$comp_s3, "Beta (betareg)", "Conv_Rate")
+conv_kw_s3 <- .pick(sim_results$comp_s3, "Kumaraswamy", "Conv_Rate")
+n_conv_beta_s3 <- round(conv_beta_s3 / 100 * sim_results$n_sim)
+
+aic_beta_s1 <- .pick(sim_results$comp_s1, "Beta (betareg)", "AIC")
+aic_kw_s1 <- .pick(sim_results$comp_s1, "Kumaraswamy", "AIC")
+
+fmt_x <- function(x) sprintf("%.1f", x)
+```
+
 ---
 
 # Abstract
 
 Beta regression has become the standard approach for modeling continuous responses bounded in the unit interval. However, its reliance on the incomplete beta function for the cumulative distribution function (CDF) presents computational challenges, and the distribution may inadequately represent data with heavy tails or extreme concentrations near boundaries. This study presents a comprehensive comparison between traditional Beta regression and alternative approaches based on the Kumaraswamy distribution family, which offers analytical tractability through a closed-form CDF while maintaining comparable flexibility.
 
-Through Monte Carlo simulations across three distinct data-generating mechanisms—well-specified Beta data, heavy-tailed distributions, and extreme boundary-concentrated patterns—we demonstrate that Kumaraswamy-based models provide substantial computational advantages (2-9× faster) with equivalent or superior statistical performance. Parameter estimation analysis reveals that coefficient estimates remain consistent across models, but standard errors can differ by 15-40% depending on distributional misspecification. Notably, for non-standard distributional shapes, Kumaraswamy models achieve dramatically higher convergence rates (100% vs. 5.5% for extreme U-shaped data) and improved model fit metrics.
+Through Monte Carlo simulations across three distinct data-generating mechanisms—well-specified Beta data, heavy-tailed distributions, and extreme boundary-concentrated patterns—we demonstrate that Kumaraswamy-based models provide substantial computational advantages (`r fmt_x(speedup_lo)`-`r fmt_x(speedup_hi)`× faster) with equivalent or superior statistical performance. Parameter estimation analysis reveals that coefficient estimates remain consistent across models, but standard errors can differ by 15-40% depending on distributional misspecification. Notably, for non-standard distributional shapes, Kumaraswamy models achieve dramatically higher convergence rates (`r conv_kw_s3`% vs. `r conv_beta_s3`% for extreme U-shaped data) and improved model fit metrics.
 
 **Keywords:** Beta regression, Kumaraswamy distribution, bounded data, unit interval, computational efficiency
 
@@ -187,242 +222,6 @@ Maximum likelihood estimation proceeds via numerical optimization of the log-lik
 
 This distinction is analogous to comparing probit vs. logit regression: both model the same relationship but use different link functions, yielding non-comparable coefficient magnitudes.
 
-```{r helper_functions, include=FALSE}
-# ==============================================================================
-# SIMULATION INFRASTRUCTURE
-# ==============================================================================
-
-# Unified simulation function (refactored to eliminate code duplication)
-run_single_sim <- function(n, dgp_fun, params, formula, test_prop = 0.2,
-                           return_fits = FALSE) {
-  data_full <- tryCatch(
-    {
-      dgp_fun(n, params)
-    },
-    error = function(e) NULL
-  )
-
-  if (is.null(data_full)) {
-    return(list(
-      betareg = list(success = FALSE),
-      gkw_beta = list(success = FALSE),
-      gkw_kw = list(success = FALSE),
-      gkw_ekw = list(success = FALSE)
-    ))
-  }
-
-  n_test <- floor(n * test_prop)
-  test_idx <- sample(seq_len(n), n_test)
-  train_data <- data_full[-test_idx, ]
-  test_data <- data_full[test_idx, ]
-
-  results <- list()
-
-  safe_fit <- function(fit_fun, name) {
-    tryCatch(
-      {
-        t0 <- proc.time()[3]
-        fit <- fit_fun()
-        time_elapsed <- proc.time()[3] - t0
-
-        if (name == "betareg") {
-          loglik <- as.numeric(logLik(fit))
-          aic <- AIC(fit)
-          bic <- BIC(fit)
-          converged <- isTRUE(fit$converged)
-          se <- sqrt(diag(vcov(fit)))
-        } else {
-          loglik <- fit$loglik
-          aic <- fit$aic
-          bic <- fit$bic
-          converged <- isTRUE(fit$convergence)
-          se <- fit$se
-        }
-
-        pred <- predict(fit, newdata = test_data, type = "response")
-
-        if (any(is.na(pred)) || any(is.infinite(pred))) {
-          return(list(success = FALSE))
-        }
-
-        rmse <- sqrt(mean((test_data$y - pred)^2))
-
-        if (!is.finite(loglik)) loglik <- NA_real_
-        if (!is.finite(aic)) aic <- NA_real_
-        if (!is.finite(bic)) bic <- NA_real_
-        if (!is.finite(rmse)) rmse <- NA_real_
-        if (!is.finite(time_elapsed)) time_elapsed <- NA_real_
-
-        result <- list(
-          loglik = as.numeric(loglik),
-          aic = as.numeric(aic),
-          bic = as.numeric(bic),
-          rmse = as.numeric(rmse),
-          time = as.numeric(time_elapsed),
-          converged = converged,
-          success = TRUE
-        )
-
-        # Optionally include full fit object and coefficients
-        if (return_fits) {
-          result$fit <- fit
-          result$coef <- coef(fit)
-          result$se <- se
-        }
-
-        result
-      },
-      error = function(e) {
-        list(success = FALSE)
-      }
-    )
-  }
-
-  results$betareg <- safe_fit(
-    function() betareg(formula, data = train_data),
-    "betareg"
-  )
-
-  results$gkw_beta <- safe_fit(
-    function() gkwreg(formula, data = train_data, family = "beta"),
-    "gkwreg"
-  )
-
-  results$gkw_kw <- safe_fit(
-    function() gkwreg(formula, data = train_data, family = "kw"),
-    "gkwreg"
-  )
-
-  results$gkw_ekw <- safe_fit(
-    function() gkwreg(formula, data = train_data, family = "ekw"),
-    "gkwreg"
-  )
-
-  results
-}
-
-run_full_simulation <- function(n_sim, n, dgp_fun, params, formula, verbose = FALSE) {
-  all_results <- vector("list", n_sim)
-
-  for (i in seq_len(n_sim)) {
-    all_results[[i]] <- run_single_sim(n, dgp_fun, params, formula)
-  }
-
-  models <- c("betareg", "gkw_beta", "gkw_kw", "gkw_ekw")
-  summary_stats <- list()
-
-  for (model in models) {
-    success_idx <- sapply(all_results, function(x) {
-      !is.null(x[[model]]) && isTRUE(x[[model]]$success)
-    })
-
-    n_success <- sum(success_idx)
-
-    if (n_success == 0) {
-      summary_stats[[model]] <- list(
-        n_success = 0,
-        conv_rate = 0,
-        loglik_mean = NA_real_,
-        aic_mean = NA_real_,
-        bic_mean = NA_real_,
-        rmse_mean = NA_real_,
-        time_mean = NA_real_
-      )
-      next
-    }
-
-    successful <- all_results[success_idx]
-
-    extract_metric <- function(metric_name) {
-      vals <- sapply(successful, function(x) {
-        val <- x[[model]][[metric_name]]
-        if (is.null(val) || !is.numeric(val)) {
-          return(NA_real_)
-        }
-        as.numeric(val)
-      })
-      if (all(is.na(vals))) {
-        return(NA_real_)
-      }
-      vals
-    }
-
-    converged_vals <- sapply(successful, function(x) {
-      val <- x[[model]]$converged
-      if (is.null(val)) {
-        return(FALSE)
-      }
-      if (is.logical(val)) {
-        return(val)
-      }
-      if (is.numeric(val)) {
-        return(val > 0)
-      }
-      FALSE
-    })
-
-    summary_stats[[model]] <- list(
-      n_success = n_success,
-      conv_rate = mean(converged_vals, na.rm = TRUE),
-      loglik_mean = mean(extract_metric("loglik"), na.rm = TRUE),
-      aic_mean = mean(extract_metric("aic"), na.rm = TRUE),
-      bic_mean = mean(extract_metric("bic"), na.rm = TRUE),
-      rmse_mean = mean(extract_metric("rmse"), na.rm = TRUE),
-      time_mean = mean(extract_metric("time"), na.rm = TRUE)
-    )
-  }
-
-  list(
-    raw = all_results,
-    summary = summary_stats,
-    n = n,
-    n_sim = n_sim,
-    formula = formula
-  )
-}
-
-make_comparison_table <- function(sim_results) {
-  models <- names(sim_results$summary)
-
-  safe_format <- function(x, digits = 2) {
-    if (is.null(x) || is.na(x)) {
-      return(NA_real_)
-    }
-    round(as.numeric(x), digits)
-  }
-
-  df_list <- lapply(models, function(model) {
-    s <- sim_results$summary[[model]]
-
-    if (is.null(s) || s$n_success == 0) {
-      return(data.frame(
-        Model = MODEL_NAMES[model],
-        N_Success = 0,
-        Conv_Rate = NA_real_,
-        AIC = NA_real_,
-        RMSE = NA_real_,
-        Time = NA_real_,
-        stringsAsFactors = FALSE
-      ))
-    }
-
-    data.frame(
-      Model = MODEL_NAMES[model],
-      N_Success = s$n_success,
-      Conv_Rate = safe_format(s$conv_rate * 100, 1),
-      AIC = safe_format(s$aic_mean, 2),
-      RMSE = safe_format(s$rmse_mean, 4),
-      Time = safe_format(s$time_mean, 4),
-      stringsAsFactors = FALSE
-    )
-  })
-
-  df <- do.call(rbind, df_list)
-  rownames(df) <- NULL
-  df
-}
-```
-
 ---
 
 # Simulation Study
@@ -534,26 +333,16 @@ lines(lowess(abs(vis_data_s1$x1), (vis_data_s1$y - vis_data_s1$mu)^2),
 
 ### Simulation Results
 
-```{r scenario1_sim, cache=TRUE}
-results_s1 <- run_full_simulation(
-  n_sim = 200,
-  n = 300,
-  dgp_fun = dgp_beta,
-  params = list(
-    beta_mu = c(0.5, -0.8, 0.6),
-    beta_phi = c(1.5, 0.4)
-  ),
-  formula = y ~ x1 + x2 | x1
-)
-
-comp_s1 <- make_comparison_table(results_s1)
+```{r scenario1_sim}
+# Precomputed; see data-raw/vignette-simulations.R
+comp_s1 <- sim_results$comp_s1
 ```
 
 ### Parameter Estimation Comparison
 
 To assess coefficient recovery, we fit both Beta and Kumaraswamy models to a single representative dataset and compare parameter estimates. Table 1 presents the estimates, standard errors, and z-statistics.
 
-```{r scenario1_coef_comparison, cache=TRUE}
+```{r scenario1_coef_comparison}
 # Fit models to one dataset for coefficient comparison
 set.seed(456)
 data_coef_s1 <- dgp_beta(300, list(
@@ -704,27 +493,16 @@ The Q-Q plot (top right panel) provides definitive evidence of tail divergence: 
 
 ### Simulation Results
 
-```{r scenario2_sim, cache=TRUE}
-results_s2 <- run_full_simulation(
-  n_sim = 200,
-  n = 300,
-  dgp_fun = dgp_heavy_tails,
-  params = list(
-    beta_alpha = c(0.8, -0.5),
-    beta_beta = c(0.3, 0.4),
-    beta_lambda = c(0.6)
-  ),
-  formula = y ~ x1 | x2
-)
-
-comp_s2 <- make_comparison_table(results_s2)
+```{r scenario2_sim}
+# Precomputed; see data-raw/vignette-simulations.R
+comp_s2 <- sim_results$comp_s2
 ```
 
 ### Parameter Estimation Under Misspecification
 
 When the true distribution is Exponentiated Kumaraswamy but we fit Beta regression, parameter estimates become **biased and inference unreliable**. Table 2 quantifies these distortions.
 
-```{r scenario2_coef_comparison, cache=TRUE}
+```{r scenario2_coef_comparison}
 # Fit models to one dataset
 set.seed(101112)
 data_coef_s2 <- dgp_heavy_tails(300, list(
@@ -884,28 +662,16 @@ The empirical CDF (bottom right) quantifies the severity: **45% of observations 
 
 ### Simulation Results
 
-```{r scenario3_sim, cache=TRUE}
-results_s3 <- run_full_simulation(
-  n_sim = 200,
-  n = 400,
-  dgp_fun = dgp_extreme,
-  params = list(
-    alpha_J = c(-1.5, 0.2),
-    beta_J = 2.0,
-    alpha_U = c(-1.8, 0.1),
-    beta_U = -0.8
-  ),
-  formula = y ~ x1 * group | group
-)
-
-comp_s3 <- make_comparison_table(results_s3)
+```{r scenario3_sim}
+# Precomputed; see data-raw/vignette-simulations.R
+comp_s3 <- sim_results$comp_s3
 ```
 
 ### The Convergence Crisis
 
-Table 3 documents Beta regression's **catastrophic failure** when confronted with extreme shapes. Among 200 simulation replicates, Beta regression successfully converged only 11 times (5.5%), while Kumaraswamy achieved perfect reliability (100%).
+Table 3 documents Beta regression's **catastrophic failure** when confronted with extreme shapes. Among `r sim_results$n_sim` simulation replicates, Beta regression converged only `r n_conv_beta_s3` times (`r conv_beta_s3`%), while Kumaraswamy achieved perfect reliability (`r conv_kw_s3`%).
 
-```{r scenario3_coef_comparison, cache=TRUE}
+```{r scenario3_coef_comparison}
 # For this scenario, we'll fit to a single J-shaped dataset where Beta converges
 set.seed(161718)
 # Generate J-shaped only for better Beta convergence probability
@@ -977,7 +743,7 @@ if (!is.null(fit_beta_s3) && fit_beta_s3$converged) {
 }
 ```
 
-**When Beta does converge** (the rare 5.5% of cases), the SE Ratio analysis reveals instability:
+**When Beta does converge** (the rare `r conv_beta_s3`% of cases), the SE Ratio analysis reveals instability:
 
 - Standard errors for boundary-proximate parameters can be **2-3× larger** in Beta regression, indicating the optimizer is operating near a numerical cliff
 - Conversely, some SEs may be artificially small due to premature convergence, yielding anti-conservative inference
@@ -1002,7 +768,7 @@ all_scenarios <- rbind(
 knitr::kable(
   all_scenarios,
   row.names = FALSE,
-  caption = "Table 4: Comprehensive Model Comparison Across Three Simulation Scenarios. Note: Scenario 3 Beta statistics are based on only 5.5% successful fits; metrics may not be representative.",
+  caption = "Table 4: Comprehensive Model Comparison Across Three Simulation Scenarios. Note: Scenario 3 Beta statistics are based on only `r conv_beta_s3`% successful fits; metrics may not be representative.",
   digits = c(0, 0, 0, 1, 2, 4, 4),
   align = c("l", "l", "r", "r", "r", "r", "r")
 )
@@ -1100,11 +866,11 @@ text(1:3, speedup + 0.5, sprintf("%.1fx", speedup), cex = 1.1, font = 2)
 
 **Key takeaways from Figure 4**:
 
-1. **Scenario 1 (Well-specified)**: Beta achieves marginally better AIC (−224 vs −220), but Kumaraswamy is 2.5× faster with perfect convergence
+1. **Scenario 1 (Well-specified)**: Beta achieves marginally better AIC (`r round(aic_beta_s1)` vs `r round(aic_kw_s1)`), but Kumaraswamy is `r fmt_x(speedup_s1)`× faster, with both converging in every replicate
 
 2. **Scenario 2 (Heavy tails)**: Kumaraswamy maintains competitive fit while Beta becomes severely misspecified; both converge reliably
 
-3. **Scenario 3 (Extreme shapes)**: Beta's AIC becomes uninformative due to convergence failure; Kumaraswamy provides sole viable solution with 20× speedup (comparing only successful fits)
+3. **Scenario 3 (Extreme shapes)**: Beta's AIC becomes uninformative due to convergence failure; Kumaraswamy provides the sole viable solution, with a `r fmt_x(speedup_s3)`× speedup (note that betareg's mean time counts its many futile optimisations)
 
 ### Parameter Estimation: Magnitude and Precision
 
@@ -1148,11 +914,12 @@ knitr::kable(
 )
 ```
 
-The **2-9× speedup range** for Kumaraswamy reflects scenario complexity:
-- Simple models (Scenario 1): 2.5× faster
-- Complex models with interactions (Scenario 3): 9× faster
+The speedup for Kumaraswamy ranges from `r fmt_x(speedup_lo)`× to `r fmt_x(speedup_hi)`× and depends far more on whether Beta regression is *able* to fit the data than on model complexity:
 
-This scaling behavior arises from the closed-form CDF's advantage compounding with model complexity. Each additional parameter requires more likelihood evaluations during optimization, amplifying the per-evaluation efficiency gain.
+- Scenarios 1 and 2, where both families converge everywhere: `r fmt_x(speedup_s1)`× and `r fmt_x(speedup_s2)`× -- a modest edge from the closed-form CDF.
+- Scenario 3, where Beta converges in only `r conv_beta_s3`% of replicates: `r fmt_x(speedup_s3)`×. Most of that gap is Beta's optimiser iterating at length before failing, so it measures the cost of misspecification rather than a like-for-like speed comparison.
+
+Timings come from the precomputed run recorded in the object above (`r sim_results$r_version`, `r format(sim_results$generated_on)`); absolute values are machine-dependent, the ratios much less so.
 
 **Practical implications by application**:
 
@@ -1182,7 +949,7 @@ START: Bounded response data Y ∈ (0,1)
 ├─ STEP 2: Assess computational constraints  
 │  │
 │  ├─ Q: Require intensive computation? (CV, bootstrap, >100 models)
-│  │  YES → Use Kumaraswamy [Reason: 2-9× speedup]
+│  │  YES → Use Kumaraswamy [Reason: faster, and converges]
 │  │  NO → Continue to Step 3
 │
 ├─ STEP 3: Evaluate distributional assumptions
@@ -1208,9 +975,9 @@ START: Bounded response data Y ∈ (0,1)
 
 This comprehensive simulation study establishes that Kumaraswamy-based regression models offer compelling advantages over traditional Beta regression across multiple performance dimensions:
 
-1. **Computational efficiency**: 2-9× faster estimation across scenarios, with advantages scaling with model complexity
+1. **Computational efficiency**: `r fmt_x(speedup_lo)`-`r fmt_x(speedup_hi)`× faster estimation, with the large end of that range driven by Beta regression's failure to converge rather than by raw speed
 
-2. **Numerical stability**: 100% vs. 5.5% convergence success for extreme distributions, representing a **qualitative reliability difference**
+2. **Numerical stability**: `r conv_kw_s3`% vs. `r conv_beta_s3`% convergence success for extreme distributions, representing a **qualitative reliability difference**
 
 3. **Distributional flexibility**: Superior accommodation of heavy tails through hierarchical extensions (Exponentiated Kumaraswamy)
 
@@ -1238,7 +1005,7 @@ This study contributes three methodological insights:
 
 2. **Convergence failure predictors**: Identified boundary concentration (>30% of observations within 0.1 of boundaries) as a critical predictor of Beta regression numerical instability
 
-3. **Computational scaling laws**: Established that Kumaraswamy's speedup advantage grows with model complexity, from 2.5× for simple models to 9× for complex interactions
+3. **Computational cost of misspecification**: Quantified how Beta regression's advantage disappears once its assumptions fail, from a `r fmt_x(speedup_s1)`× difference under a well-specified Beta to `r fmt_x(speedup_s3)`× when convergence breaks down
 
 These quantitative benchmarks provide practitioners with concrete decision rules rather than vague guidance.
 

@@ -1,3 +1,38 @@
+# gkwreg 2.1.18
+
+Resubmission addressing the CRAN pre-test feedback on 2.1.17: the vignette took
+about 11 minutes to rebuild, which is more than CRAN can afford to run
+regularly.
+
+## Vignette build time
+
+* The Monte Carlo study is now precomputed. The study itself is unchanged --
+  still 3 scenarios x 200 replications x 4 models -- but the summaries are
+  stored in `inst/extdata/vignette-simulations.rds` and read by the vignette
+  instead of being recomputed on every build. The generating script is
+  `data-raw/vignette-simulations.R`.
+* The illustrative model fits stay live, so the vignette still exercises the
+  package; they use a single family, which cuts the run-time TMB compilation
+  from three models to one.
+* Dropped `cache = TRUE` from the vignette: with the study precomputed it buys
+  nothing, and it was what produced the stray cache directory removed in 2.1.17.
+
+Local vignette build time drops from about 3m30s to 35s.
+
+## Fixed
+
+* Corrected a measurement artefact in the simulation study. Timings were taken
+  around each fitting call, so the one-off TMB compilation (~30s per family)
+  fell inside the first replicate and was then averaged over all 200, inflating
+  every reported `gkwreg` timing by roughly 0.15s. Scenario 1 consequently
+  reported Kumaraswamy as slower than `betareg` while the text claimed it was
+  faster. The models are now compiled before the timed loops.
+* Figures quoted in the vignette prose (speed-ups, convergence rates, AIC) are
+  now computed inline from the result tables rather than written out by hand,
+  so the narrative cannot drift away from the results it describes.
+
+---
+
 # gkwreg 2.1.17
 
 Maintenance release. No changes to the statistical methods or to the exported

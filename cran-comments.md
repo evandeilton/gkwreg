@@ -1,12 +1,34 @@
+## Resubmission
+
+This is a resubmission of 2.1.17, addressing your pre-test feedback:
+
+> * checking re-building of vignette outputs ... [11m] OK
+> Please reduce the vignette build timings by using small toy data only, few
+> iterations, or by providing precomputed results for the most lengthy parts.
+
+We took the third option. The vignette's Monte Carlo study (3 scenarios x 200
+replications x 4 models) is now precomputed into
+`inst/extdata/vignette-simulations.rds` by `data-raw/vignette-simulations.R`,
+and the vignette reads the summaries instead of recomputing them. The
+illustrative single-dataset fits stay live, so the vignette still runs the
+package, but they use one distribution family instead of three, which cuts the
+run-time TMB compilation accordingly.
+
+Local vignette build time drops from about 3m30s to 35s; the full
+`R CMD check --as-cran` now takes about 5 minutes on our machine.
+
+We also fixed a timing artefact this exposed: the one-off TMB compilation was
+being counted inside the first replicate's fit time and averaged over all 200.
+
 ## Submission summary
 
 This is a maintenance update of **gkwreg**, currently on CRAN as version 2.1.14
-(published 2026-01-09). Version 2.1.17 contains no changes to the statistical
+(published 2026-01-09). Version 2.1.18 contains no changes to the statistical
 methods and no changes to the exported API.
 
 Note on the version number: 2.1.16 was used for the JOSS review archive on
 Zenodo and was never submitted to CRAN, so this update goes from 2.1.14 to
-2.1.17.
+2.1.18.
 
 Changes relevant to CRAN:
 
