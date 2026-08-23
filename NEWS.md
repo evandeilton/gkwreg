@@ -1,27 +1,48 @@
 # gkwreg 2.1.16
 
+Maintenance release. No changes to the statistical methods or to the exported
+API.
+
 ## Publication
 
 * The methodology and software are now published in the *Journal of Open Source
   Software*: Lopes and Bonat (2026), <https://doi.org/10.21105/joss.08991>.
-* Added `inst/CITATION` so that `citation("gkwreg")` returns the JOSS reference.
-* Added the JOSS reference to the `Description` field in `DESCRIPTION`.
+* Added `inst/CITATION`, so that `citation("gkwreg")` returns the peer-reviewed
+  reference, and added that reference to the `Description` field.
+
+## Dependencies
+
+* `utils` and `grDevices` are now declared in `Imports`. Both were already used
+  via `::` (`utils::modifyList`, `utils::globalVariables`, `grDevices::dev.hold`,
+  `grDevices::devAskNewPage`) without being declared.
+* The suggested package **betareg** is now used conditionally in the vignette
+  and in the comparative test file, as required by the CRAN policy on packages
+  listed in `Suggests`.
 
 ## Fixed
 
-* Restored proper UTF-8 characters in documentation and examples. Several
-  accented names and mathematical symbols had been replaced by literal
-  `<U+XXXX>` escape sequences (affecting `LossAversion`, `ReadingSkills`,
-  `gkwreg`, `anova.gkwreg` and `residuals.gkwreg` help pages).
-* Normalised all package sources to LF line endings.
-* Removed the knitr cache directory of the vignette from version control and
-  from the source tarball; the vignette is now always rebuilt from scratch.
-* Tidied `.Rbuildignore` and `.gitignore` so that build artefacts, session
-  files and cache directories can no longer leak into the tarball.
+* Restored genuine UTF-8 characters in the documentation and examples. Accented
+  author names and mathematical symbols had regressed to literal `<U+XXXX>`
+  escape sequences, affecting the `LossAversion`, `ReadingSkills`, `gkwreg`,
+  `anova.gkwreg` and `residuals.gkwreg` help pages, the README and the vignette.
+* Normalised `DESCRIPTION`, `LICENSE`, `NAMESPACE` and all package sources to LF
+  line endings.
+* Fixed a typo in `utils::globalVariables()`, where `"dkw dmc"` was a single
+  string instead of two separate entries.
+
+## Packaging
+
+* The knitr cache directory of the vignette is no longer under version control
+  and no longer reaches the source tarball; the vignette is always rebuilt from
+  scratch.
+* Tightened `.Rbuildignore` and `.gitignore` so that build artefacts, session
+  files and cache directories cannot leak into the tarball.
 
 ## Documentation
 
-* Updated `README` (JOSS badge, display equations, minor wording).
+* README: added the JOSS badge, removed a stale BibTeX block that advertised an
+  outdated version and omitted the second author, and fixed the author footer,
+  which was being rendered as a broken table.
 * Reworked the `pkgdown` site (light theme, KaTeX math rendering).
 
 ---
