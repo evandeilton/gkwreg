@@ -1,12 +1,35 @@
+## Resubmission
+
+This is a resubmission of 2.1.17, addressing your pre-test feedback:
+
+> * checking re-building of vignette outputs ... [11m] OK
+> Please reduce the vignette build timings by using small toy data only, few
+> iterations, or by providing precomputed results for the most lengthy parts.
+
+We took the third option. The vignette's Monte Carlo study (3 scenarios x 200
+replications x 4 models) is now precomputed into
+`inst/extdata/vignette-simulations.rds` by `data-raw/vignette-simulations.R`,
+and the vignette reads the summaries instead of recomputing them. The
+illustrative single-dataset fits stay live, so the vignette still runs the
+package, but they use one distribution family instead of three, which cuts the
+run-time TMB compilation accordingly.
+
+On our machine `checking re-building of vignette outputs` drops from 205s to
+38s, and the full `R CMD check --as-cran` from 8m25s to 5m16s. `R CMD build`
+drops from 3m32s to 48s.
+
+We also fixed a timing artefact this exposed: the one-off TMB compilation was
+being counted inside the first replicate's fit time and averaged over all 200.
+
 ## Submission summary
 
 This is a maintenance update of **gkwreg**, currently on CRAN as version 2.1.14
-(published 2026-01-09). Version 2.1.17 contains no changes to the statistical
+(published 2026-01-09). Version 2.1.18 contains no changes to the statistical
 methods and no changes to the exported API.
 
 Note on the version number: 2.1.16 was used for the JOSS review archive on
 Zenodo and was never submitted to CRAN, so this update goes from 2.1.14 to
-2.1.17.
+2.1.18.
 
 Changes relevant to CRAN:
 
@@ -29,9 +52,12 @@ Changes relevant to CRAN:
 ## Test environments
 
 * Local: Linux x86_64 (Ubuntu-based), R 4.6.1 -- `R CMD check --as-cran`
-* <!-- TODO before submitting: run win-builder (R-devel and R-release) and the
-  GitHub Actions matrix (Ubuntu R-release/R-devel/R-oldrel-1, macOS R-release,
-  Windows R-release), then list them here. Remove this comment. -->
+* GitHub Actions, all passing:
+  - Ubuntu 24.04, R-release
+  - Ubuntu 24.04, R-devel
+  - Ubuntu 24.04, R-oldrel-1
+  - macOS 26 (arm64), R-release
+  - Windows Server 2025, R-release
 
 ## R CMD check results
 
