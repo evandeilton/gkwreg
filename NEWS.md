@@ -30,6 +30,10 @@ released on CRAN; 2.1.17 is the CRAN update that follows 2.1.14.
   `anova.gkwreg` and `residuals.gkwreg` help pages, the README and the vignette.
 * Normalised `DESCRIPTION`, `LICENSE`, `NAMESPACE` and all package sources to LF
   line endings.
+* Restored `LICENSE` to the two-line DCF stub that `License: MIT + file
+  LICENSE` requires. It had been replaced by the full MIT text, which
+  `R CMD check` reports as "License stub is invalid DCF". The full text
+  remains in `LICENSE.md` for GitHub.
 * Fixed a typo in `utils::globalVariables()`, where `"dkw dmc"` was a single
   string instead of two separate entries.
 
