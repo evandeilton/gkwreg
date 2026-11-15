@@ -1,3 +1,9 @@
+# gkwreg (development version)
+
+* For `family = "gkw"`, `fit$parameter_vectors` now holds the fitted
+  per-observation parameters. They previously repeated the sample mean of each
+  parameter, which affected `predict()` and `residuals()` for that family.
+
 # gkwreg 2.1.18
 
 Resubmission addressing the CRAN pre-test feedback on 2.1.17: the vignette took

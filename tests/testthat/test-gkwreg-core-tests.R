@@ -693,3 +693,16 @@ test_that("Offset vector is accepted", {
     fit <- gkwreg(y ~ x1, data = data, family = "kw", offset = offset_vec)
   )
 })
+
+test_that("gkw family returns per-observation parameter vectors", {
+  # alphaVec must follow the alpha linear predictor, not repeat its mean
+  data <- setup_test_data()
+  fit <- gkwreg(y ~ x1, data = data, family = "gkw")
+  cf <- coef(fit)
+  alpha_hat <- exp(cf[["alpha:(Intercept)"]] + cf[["alpha:x1"]] * data$x1)
+
+  expect_length(fit$parameter_vectors$alphaVec, nrow(data))
+  expect_gt(stats::sd(fit$parameter_vectors$alphaVec), 0)
+  expect_equal(as.vector(fit$parameter_vectors$alphaVec), alpha_hat,
+               tolerance = 1e-8)
+})
