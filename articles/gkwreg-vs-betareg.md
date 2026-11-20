@@ -1124,13 +1124,13 @@ Maximum-likelihood regression with beta-distributed dependent variables.
 
 ## Session Information
 
-    R version 4.6.1 (2026-06-24)
+    R version 4.6.2 (2026-10-29)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.4 LTS
+    Running under: Ubuntu 26.04.1 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
 
     locale:
      [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -1145,25 +1145,25 @@ Maximum-likelihood regression with beta-distributed dependent variables.
     [1] stats     graphics  grDevices utils     datasets  methods   base     
 
     other attached packages:
-    [1] ggplot2_4.0.3 gkwreg_2.1.18 betareg_3.2-5
+    [1] ggplot2_4.0.4 gkwreg_2.1.18 betareg_3.2-6
 
     loaded via a namespace (and not attached):
-     [1] generics_0.1.4         sandwich_3.1-3         sass_0.4.10           
-     [4] lattice_0.22-9         digest_0.6.39          magrittr_2.0.5        
-     [7] evaluate_1.0.5         grid_4.6.1             RColorBrewer_1.1-3    
-    [10] fastmap_1.2.0          jsonlite_2.0.0         Matrix_1.7-5          
-    [13] nnet_7.3-20            Formula_1.2-6          scales_1.4.0          
-    [16] numDeriv_2016.8-1.1    modeltools_0.2-24      textshaping_1.0.5     
-    [19] jquerylib_0.1.4        cli_3.6.6              rlang_1.3.0           
-    [22] withr_3.0.3            RcppArmadillo_15.4.2-1 cachem_1.1.0          
-    [25] yaml_2.3.12            otel_0.2.0             tools_4.6.1           
-    [28] flexmix_2.3-20         dplyr_1.2.1            vctrs_0.7.3           
-    [31] R6_2.6.1               stats4_4.6.1           zoo_1.9-0             
-    [34] lifecycle_1.0.5        fs_2.1.0               ragg_1.5.2            
-    [37] pkgconfig_2.0.3        desc_1.4.3             pillar_1.11.1         
-    [40] pkgdown_2.2.1          bslib_0.12.0           gtable_0.3.6          
-    [43] glue_1.8.1             Rcpp_1.1.2             systemfonts_1.3.2     
-    [46] tidyselect_1.2.1       tibble_3.3.1           xfun_0.60             
-    [49] lmtest_0.9-40          knitr_1.51             farver_2.1.2          
-    [52] htmltools_0.5.9        rmarkdown_2.31         gkwdist_1.1.4         
-    [55] TMB_1.9.25             compiler_4.6.1         S7_0.2.2              
+     [1] sandwich_3.1-3      sass_0.4.10         generics_0.1.4     
+     [4] lattice_0.23-1      digest_0.6.39       magrittr_2.0.5     
+     [7] evaluate_1.0.5      grid_4.6.2          RColorBrewer_1.1-3 
+    [10] fastmap_1.2.0       jsonlite_2.0.0      Matrix_1.7-6       
+    [13] nnet_7.3-21         Formula_1.2-6       scales_1.4.0       
+    [16] numDeriv_2016.8-1.1 modeltools_0.2-25   textshaping_1.0.5  
+    [19] jquerylib_0.1.4     cli_3.6.6           rlang_1.3.0        
+    [22] withr_3.0.3         cachem_1.1.0        yaml_2.3.12        
+    [25] otel_0.3.0          tools_4.6.2         flexmix_2.3-21     
+    [28] dplyr_1.2.1         vctrs_0.7.3         R6_2.6.1           
+    [31] stats4_4.6.2        zoo_1.9-1           lifecycle_1.0.5    
+    [34] fs_2.1.0            ragg_1.5.2          pkgconfig_2.0.3    
+    [37] desc_1.4.3          pillar_1.11.1       pkgdown_2.2.1      
+    [40] bslib_0.12.0        gtable_0.3.6        glue_1.8.1         
+    [43] Rcpp_1.1.2          systemfonts_1.3.3   tidyselect_1.2.1   
+    [46] tibble_3.3.1        xfun_0.62           lmtest_0.9-40      
+    [49] knitr_1.52          farver_2.1.2        htmltools_0.5.9    
+    [52] rmarkdown_2.32      gkwdist_1.1.7       TMB_1.9.25         
+    [55] compiler_4.6.2      S7_1.0.0           

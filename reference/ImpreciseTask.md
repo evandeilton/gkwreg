@@ -228,7 +228,7 @@ fit_mc <- gkwreg(
     maxit = 1500
   )
 )
-#> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0’
+#> using C++ compiler: ‘g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0’
 #> Warning: NaNs produced
 summary(fit_mc)
 #> 

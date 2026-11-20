@@ -72,46 +72,46 @@ fit <- gkwreg(yield ~ batch + temp, data = GasolineYield, family = "kw")
 confint(fit)
 #> Warning: some standard errors are NA or infinite; intervals may be unreliable
 #>                         2.5 %     97.5 %
-#> alpha:(Intercept)  0.61309049  0.7255762
-#> alpha:batch1       0.78581980  0.8904463
-#> alpha:batch2       0.53531608  0.6472063
-#> alpha:batch3       0.65446611  0.7660917
-#> alpha:batch4       0.41447097  0.5190488
-#> alpha:batch5       0.46459924  0.5759595
-#> alpha:batch6       0.39388604  0.5056496
-#> alpha:batch7       0.17258723  0.2769559
-#> alpha:batch8       0.14773407  0.2586001
-#> alpha:batch9       0.07935147  0.2043948
+#> alpha:(Intercept)  0.61360892  0.7261721
+#> alpha:batch1       0.78583358  0.8904055
+#> alpha:batch2       0.53532330  0.6471204
+#> alpha:batch3       0.65443679  0.7659146
+#> alpha:batch4       0.41441364  0.5188438
+#> alpha:batch5       0.46463674  0.5758602
+#> alpha:batch6       0.39394438  0.5056469
+#> alpha:batch7       0.17260900  0.2768690
+#> alpha:batch8       0.14783914  0.2586511
+#> alpha:batch9       0.07933947  0.2041538
 #> alpha:temp                NaN        NaN
-#> beta:(Intercept)  28.03819235 29.7240822
+#> beta:(Intercept)  28.04744330 29.7373164
 
 # 90 percent confidence intervals
 confint(fit, level = 0.90)
 #> Warning: some standard errors are NA or infinite; intervals may be unreliable
-#>                          5 %       95 %
-#> alpha:(Intercept)  0.6221328  0.7165338
-#> alpha:batch1       0.7942304  0.8820357
-#> alpha:batch2       0.5443106  0.6382118
-#> alpha:batch3       0.6634393  0.7571185
-#> alpha:batch4       0.4228776  0.5106421
-#> alpha:batch5       0.4735511  0.5670076
-#> alpha:batch6       0.4028704  0.4966653
-#> alpha:batch7       0.1809771  0.2685661
-#> alpha:batch8       0.1566462  0.2496880
-#> alpha:batch9       0.0894033  0.1943430
-#> alpha:temp               NaN        NaN
-#> beta:(Intercept)  28.1737156 29.5885589
+#>                           5 %       95 %
+#> alpha:(Intercept)  0.62265751  0.7171235
+#> alpha:batch1       0.79423978  0.8819993
+#> alpha:batch2       0.54431031  0.6381334
+#> alpha:batch3       0.66339813  0.7569532
+#> alpha:batch4       0.42280844  0.5104490
+#> alpha:batch5       0.47357764  0.5669193
+#> alpha:batch6       0.40292379  0.4966675
+#> alpha:batch7       0.18099013  0.2684879
+#> alpha:batch8       0.15674695  0.2497433
+#> alpha:batch9       0.08937289  0.1941204
+#> alpha:temp                NaN        NaN
+#> beta:(Intercept)  28.18328674 29.6014730
 
 # Specific parameters
 confint(fit, parm = "alpha:(Intercept)")
 #> Warning: some standard errors are NA or infinite; intervals may be unreliable
 #>                       2.5 %    97.5 %
-#> alpha:(Intercept) 0.6130905 0.7255762
+#> alpha:(Intercept) 0.6136089 0.7261721
 confint(fit, parm = 1:3)
 #> Warning: some standard errors are NA or infinite; intervals may be unreliable
 #>                       2.5 %    97.5 %
-#> alpha:(Intercept) 0.6130905 0.7255762
-#> alpha:batch1      0.7858198 0.8904463
-#> alpha:batch2      0.5353161 0.6472063
+#> alpha:(Intercept) 0.6136089 0.7261721
+#> alpha:batch1      0.7858336 0.8904055
+#> alpha:batch2      0.5353233 0.6471204
 # }
 ```

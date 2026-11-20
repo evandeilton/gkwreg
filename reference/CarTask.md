@@ -224,8 +224,7 @@ fit_ekw <- gkwreg(
   data = CarTask,
   family = "ekw"
 )
-#> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0’
-#> Warning: NaNs produced
+#> using C++ compiler: ‘g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0’
 summary(fit_ekw)
 #> 
 #> Generalized Kumaraswamy Regression Model Summary
@@ -238,31 +237,31 @@ summary(fit_ekw)
 #> 
 #> Residuals:
 #>     Min  Q1.25%  Median    Mean  Q3.75%     Max 
-#> -0.2927  0.1036  0.1499  0.1947  0.3299  0.9989 
+#> -0.2679 -0.1040  0.0321  0.0382  0.1321  0.6589 
 #> 
 #> Coefficients:
-#>                                  Estimate Std. Error z value Pr(>|z|)    
-#> alpha:(Intercept)               -14.59427    0.36201 -40.315  < 2e-16 ***
-#> alpha:taskSalesperson           -11.81563    0.53713 -21.998  < 2e-16 ***
-#> alpha:NFCCscale                   0.22010    0.08734   2.520   0.0117 *  
-#> alpha:taskSalesperson:NFCCscale  -0.31692    0.16846  -1.881   0.0599 .  
-#> beta:(Intercept)                  0.85723    0.02072  41.381  < 2e-16 ***
-#> beta:taskSalesperson             -0.12052    0.02288  -5.267 1.39e-07 ***
-#> lambda:(Intercept)               32.63595        NaN     NaN      NaN    
-#> lambda:taskSalesperson           23.05168        NaN     NaN      NaN    
+#>                                 Estimate Std. Error z value Pr(>|z|)    
+#> alpha:(Intercept)               -8.05880   36.69755  -0.220   0.8262    
+#> alpha:taskSalesperson           -5.67320   36.73465  -0.154   0.8773    
+#> alpha:NFCCscale                  0.21932    0.09656   2.271   0.0231 *  
+#> alpha:taskSalesperson:NFCCscale -0.31493    0.15593  -2.020   0.0434 *  
+#> beta:(Intercept)                 0.86425    0.10030   8.617   <2e-16 ***
+#> beta:taskSalesperson            -0.12891    0.14160  -0.910   0.3626    
+#> lambda:(Intercept)              17.16540   86.25090   0.199   0.8422    
+#> lambda:taskSalesperson          11.74932   86.29877   0.136   0.8917    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Confidence intervals (95%):
-#>                                       3%      98%
-#> alpha:(Intercept)               -15.3038 -13.8848
-#> alpha:taskSalesperson           -12.8684 -10.7629
-#> alpha:NFCCscale                   0.0489   0.3913
-#> alpha:taskSalesperson:NFCCscale  -0.6471   0.0133
-#> beta:(Intercept)                  0.8166   0.8978
-#> beta:taskSalesperson             -0.1654  -0.0757
-#> lambda:(Intercept)                   NaN      NaN
-#> lambda:taskSalesperson               NaN      NaN
+#>                                        3%      98%
+#> alpha:(Intercept)                -79.9847  63.8671
+#> alpha:taskSalesperson            -77.6718  66.3254
+#> alpha:NFCCscale                    0.0301   0.4086
+#> alpha:taskSalesperson:NFCCscale   -0.6205  -0.0093
+#> beta:(Intercept)                   0.6677   1.0608
+#> beta:taskSalesperson              -0.4064   0.1486
+#> lambda:(Intercept)              -151.8833 186.2141
+#> lambda:taskSalesperson          -157.3932 180.8918
 #> 
 #> Link functions:
 #> alpha: log
@@ -270,25 +269,25 @@ summary(fit_ekw)
 #> lambda: log
 #> 
 #> Fitted parameter means:
-#> alpha: 4.848e-07
-#> beta: 2.224
+#> alpha: 0.0003335
+#> beta: 2.231
 #> gamma: 1
 #> delta: 0
-#> lambda: 7.595e+23
+#> lambda: 1.792e+12
 #> 
 #> Model fit statistics:
 #> Number of observations: 155 
 #> Number of parameters: 8 
 #> Residual degrees of freedom: 147 
-#> Log-likelihood: 149.7 
-#> AIC: -283.4 
-#> BIC: -259 
-#> RMSE: 0.3211 
-#> Efron's R2: -2.148 
-#> Mean Absolute Error: 0.2569 
+#> Log-likelihood: 55.63 
+#> AIC: -95.26 
+#> BIC: -70.91 
+#> RMSE: 0.1843 
+#> Efron's R2: -0.0374 
+#> Mean Absolute Error: 0.1508 
 #> 
 #> Convergence status: Failed 
-#> Iterations: 57 
+#> Iterations: 67 
 #> 
 
 # Interpretation:
