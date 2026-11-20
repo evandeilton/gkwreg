@@ -788,11 +788,18 @@ Type objective_function<Type>::operator() () {
   REPORT(aic);
   REPORT(bic);
 
-  REPORT(alpha_vec);
-  REPORT(beta_vec);
-  REPORT(gamma_vec);
-  REPORT(delta_vec);
-  REPORT(lambda_vec);
+  // Per-observation parameters, under the names the R side reads
+  // (alphaVec, ..., lambdaVec), as in the other family templates.
+  vector<Type> alphaVec  = alpha_vec;
+  vector<Type> betaVec   = beta_vec;
+  vector<Type> gammaVec  = gamma_vec;
+  vector<Type> deltaVec  = delta_vec;
+  vector<Type> lambdaVec = lambda_vec;
+  REPORT(alphaVec);
+  REPORT(betaVec);
+  REPORT(gammaVec);
+  REPORT(deltaVec);
+  REPORT(lambdaVec);
 
   if (calcFitted == 1) {
     REPORT(fitted);
